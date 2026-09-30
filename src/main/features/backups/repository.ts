@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { AppDatabase } from '@/main/database/connection';
 import type { BackupKind, BackupRunDto } from '@/shared/contracts';
 import type { Instant } from '@/shared/primitives';
@@ -65,6 +66,25 @@ export class BackupRepository {
       )
       .get(...(outcome ? [kind, outcome] : [kind])) as RunRow | undefined;
     return row ? toRunDto(row) : null;
+  }
+
+  /**
+   * File names of successful AUTO runs written to `dir`, newest run first
+   * (by id: completion order, independent of the clock).
+   */
+  successfulAutoFileNames(dir: string): string[] {
+    const target = path.resolve(dir);
+    return (
+      this.db
+        .prepare(
+          `SELECT file_name, destination_dir FROM backup_runs
+            WHERE kind = 'AUTO' AND outcome = 'SUCCEEDED'
+            ORDER BY id DESC`,
+        )
+        .all() as { file_name: string; destination_dir: string }[]
+    )
+      .filter((row) => path.resolve(row.destination_dir) === target)
+      .map((row) => row.file_name);
   }
 
   recentRuns(limit: number): BackupRunDto[] {

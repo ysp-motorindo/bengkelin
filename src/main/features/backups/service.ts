@@ -134,6 +134,15 @@ export class BackupService {
     const { setupCompleted, timezone } = this.repo.shopContext();
     if (!setupCompleted) return false;
     const now = this.deps.clock.now();
+    const lastSuccess = this.repo.lastRun('AUTO', 'SUCCEEDED');
+    if (lastSuccess) {
+      const lastDay = businessDay(lastSuccess.startedAt, timezone);
+      const today = businessDay(now, timezone);
+      if (lastDay > today) {
+        // Recorded while the clock was ahead: never wait for that day.
+        this.deps.logger.warn('backup.clock_skew', { lastDay, today });
+      }
+    }
     return this.nextAutomaticAt(now, timezone) <= now;
   }
 
@@ -253,7 +262,7 @@ export class BackupService {
       file: summary.fileName,
       size: summary.size,
     });
-    if (kind === 'AUTO') this.prune(dir);
+    if (kind === 'AUTO') this.prune(dir, summary.fileName);
     return summary;
   }
 
@@ -294,9 +303,13 @@ export class BackupService {
     }
   }
 
-  private prune(dir: string): void {
+  /** Never deletes `justWritten`; orders by recorded run, not name stamp. */
+  private prune(dir: string, justWritten: string): void {
     try {
-      const deleted = pruneAutoBackups(dir, AUTO_BACKUPS_KEPT);
+      const deleted = pruneAutoBackups(dir, AUTO_BACKUPS_KEPT, {
+        protect: justWritten,
+        recordedNewestFirst: this.repo.successfulAutoFileNames(dir),
+      });
       if (deleted.length > 0) {
         this.deps.logger.info('backup.pruned', { count: deleted.length });
       }
@@ -308,8 +321,10 @@ export class BackupService {
   private nextAutomaticAt(now: Instant, timezone: string): Instant {
     const lastSuccess = this.repo.lastRun('AUTO', 'SUCCEEDED');
     if (lastSuccess) {
+      // Only today's success counts: a future-dated one (the clock was
+      // ahead when it ran) leaves today's backup due.
       const day = businessDay(lastSuccess.startedAt, timezone);
-      if (day >= businessDay(now, timezone)) {
+      if (day === businessDay(now, timezone)) {
         return businessDayRange(day, timezone).end;
       }
     }

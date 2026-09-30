@@ -11,6 +11,7 @@ import {
   rmSync,
   statSync,
   truncateSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -835,6 +836,8 @@ describe('retention', () => {
       const stamp = day.toISOString().slice(0, 10).replaceAll('-', '');
       const name = `bengkelin-auto-${stamp}-020000.sqlite`;
       writeFileSync(path.join(dir, name), `auto ${i}`);
+      // Unrecorded files are ordered by modification time.
+      utimesSync(path.join(dir, name), day, day);
       autos.push(name);
     }
     const kept = [
@@ -899,24 +902,69 @@ describe('retention', () => {
     }
   });
 
-  test('pruneAutoBackups orders by timestamp then sequence', () => {
+  test('pruneAutoBackups orders unrecorded files by modification time, never by the name stamp', () => {
     const dir = path.join(scratch, 'order');
     mkdirSync(dir);
+    // Written oldest first (mtime), with name stamps in a different order.
     const names = [
-      'bengkelin-auto-20260930-100000.sqlite',
+      'bengkelin-auto-20261231-100000.sqlite',
       'bengkelin-auto-20260930-100000-2.sqlite',
-      'bengkelin-auto-20260930-100000-10.sqlite',
-      'bengkelin-auto-20260929-235959.sqlite',
-    ];
-    for (const name of names) writeFileSync(path.join(dir, name), name);
-    expect(pruneAutoBackups(dir, 2).sort()).toEqual([
-      'bengkelin-auto-20260929-235959.sqlite',
       'bengkelin-auto-20260930-100000.sqlite',
+      'bengkelin-auto-20260101-235959.sqlite',
+    ];
+    names.forEach((name, i) => {
+      writeFileSync(path.join(dir, name), name);
+      const at = new Date(T0 + i * MINUTE);
+      utimesSync(path.join(dir, name), at, at);
+    });
+    expect(pruneAutoBackups(dir, 2).sort()).toEqual([
+      'bengkelin-auto-20260930-100000-2.sqlite',
+      'bengkelin-auto-20261231-100000.sqlite',
     ]);
     expect(files(dir)).toEqual([
-      'bengkelin-auto-20260930-100000-10.sqlite',
-      'bengkelin-auto-20260930-100000-2.sqlite',
+      'bengkelin-auto-20260101-235959.sqlite',
+      'bengkelin-auto-20260930-100000.sqlite',
     ]);
+  });
+
+  test('pruneAutoBackups: the protected file is always kept; recorded runs are ordered by run id', () => {
+    const dir = path.join(scratch, 'recorded');
+    mkdirSync(dir);
+    const names = [
+      'bengkelin-auto-20261201-100000.sqlite', // run 1 (oldest run)
+      'bengkelin-auto-20261202-100000.sqlite', // run 2
+      'bengkelin-auto-20260101-100000.sqlite', // run 3 (clock went back)
+      'bengkelin-auto-20250101-100000.sqlite', // unrecorded
+    ];
+    for (const name of names) writeFileSync(path.join(dir, name), name);
+    const deleted = pruneAutoBackups(dir, 2, {
+      protect: 'bengkelin-auto-20250101-100000.sqlite',
+      recordedNewestFirst: [names[2]!, names[1]!, names[0]!],
+    });
+    expect(deleted.sort()).toEqual([names[0]!, names[1]!].sort());
+    expect(files(dir)).toEqual([names[3]!, names[2]!].sort());
+  });
+
+  test('clock went backwards: the new automatic backup survives pruning and the oldest runs go (C2a)', async () => {
+    // 31 automatic backups recorded while the clock was ~1 month ahead.
+    const future = Date.UTC(2026, 10, 1, 3);
+    const recorded: string[] = [];
+    for (let i = 0; i < 31; i += 1) {
+      nowMs = future + i * DAY;
+      const summary = await backups().createValidatedBackup({ kind: 'AUTO' });
+      recorded.push(summary.fileName);
+    }
+    expect(files(h.backupsDir)).toHaveLength(30);
+    // The clock is corrected (back to T0).
+    nowMs = T0;
+    const summary = await backups().createValidatedBackup({ kind: 'AUTO' });
+    const remaining = files(h.backupsDir);
+    expect(remaining).toContain(summary.fileName);
+    expect(remaining).toHaveLength(30);
+    // Pruned by run order: the two oldest runs, not the newest file.
+    expect(remaining).not.toContain(recorded[0]);
+    expect(remaining).not.toContain(recorded[1]);
+    expect(remaining).toContain(recorded[30]);
   });
 });
 
@@ -989,6 +1037,22 @@ describe('automatic schedule', () => {
     await scheduler.whenIdle();
     expect(runs()).toHaveLength(1);
     scheduler.stop();
+  });
+
+  test('a success recorded while the clock was ahead does not stall the schedule (C2b)', async () => {
+    const auto = backups();
+    nowMs = T0 + 10 * DAY; // the clock is 10 days ahead
+    expect(await auto.runAutomaticBackupIfDue()).toBe('SUCCEEDED');
+    nowMs = T0; // corrected
+    expect(auto.isAutomaticBackupDue()).toBe(true);
+    expect(await auto.runAutomaticBackupIfDue()).toBe('SUCCEEDED');
+    nowMs += 5 * MINUTE;
+    expect(await auto.runAutomaticBackupIfDue()).toBe('NOT_DUE');
+    const log = readdirSync(h.logDir)
+      .map((f) => readFileSync(path.join(h.logDir, f), 'utf8'))
+      .join('\n');
+    expect(log).toContain('backup.clock_skew');
+    expect(log).not.toContain(h.backupsDir);
   });
 
   test('no automatic backup before first-run setup', async () => {
