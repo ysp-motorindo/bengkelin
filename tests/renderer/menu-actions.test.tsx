@@ -8,10 +8,17 @@ import { PrintActions } from '@/renderer/features/printing/PrintActions';
 import { runPrintTarget } from '@/renderer/features/printing/print-target';
 import { Shell } from '@/renderer/features/shell/Shell';
 import type { FinalizeClient } from '@/renderer/features/workspace/checkout/finalize-client';
-import type { CashierSession, PublicSettings } from '@/shared/contracts';
+import { trackFinalize } from '@/renderer/features/workspace/checkout/finalize-pending';
+import type {
+  CashierSession,
+  FinalizePreviewDto,
+  InvoiceView,
+  PublicSettings,
+} from '@/shared/contracts';
+import type { Result } from '@/shared/primitives';
 import type { MenuAction } from '@/shared/menu';
 import { MANUAL_SUMMARY, backupBridge } from './helpers/backup-bridge';
-import { ok, workspaceBridge } from './helpers/workspace-bridge';
+import { DRAFT_ID, ok, workspaceBridge } from './helpers/workspace-bridge';
 
 /**
  * Native menu actions arrive through `app.onMenuAction` and are dispatched
@@ -98,6 +105,120 @@ describe('menu action dispatch in the shell', () => {
       await screen.findByRole('dialog', { name: 'Tinjau checkout' }),
     ).toBeInTheDocument();
     expect(finalizer.finalize).not.toHaveBeenCalled();
+  });
+
+  test('New Transaction (Ctrl+N) is ignored while a dialog is open (I3)', async () => {
+    const { bridge, fire } = installBridge();
+    render(
+      <Shell session={cashier} shopName="Bengkel" onLoggedOut={vi.fn()} />,
+    );
+    await screen.findByRole('combobox', { name: 'Cari barang' });
+    expect(bridge.drafts.create).toHaveBeenCalledTimes(1);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Pilih pelanggan/kendaraan' }),
+    );
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    await fire('newTransaction');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(bridge.drafts.create).toHaveBeenCalledTimes(1);
+  });
+
+  test('New Transaction is ignored while a finalize is pending; the finalized view opts in (I3)', async () => {
+    let settle: (value: Result<InvoiceView>) => void = () => undefined;
+    const pendingFinalizer = {
+      previewFinalize: vi.fn(async () =>
+        ok<FinalizePreviewDto>({
+          invoiceId: DRAFT_ID,
+          draftVersion: 1,
+          totals: {
+            subtotal: '0',
+            itemDiscountAmount: '0',
+            invoiceDiscountAmount: '0',
+            discountAmount: '0',
+            amount: '0',
+            checkoutPaymentAmount: '0',
+            outstandingAmount: '0',
+          },
+          checkoutPayments: [],
+          paymentStatusAfterCheckout: 'PAID',
+          errors: [],
+          warnings: [],
+        }),
+      ),
+      finalize: vi.fn(
+        () =>
+          new Promise<Result<InvoiceView>>((resolve) => {
+            settle = resolve;
+          }),
+      ),
+    } satisfies FinalizeClient;
+    const { bridge, fire } = installBridge({
+      printing: {
+        getOptions: vi.fn(async () =>
+          ok({
+            defaultInvoiceFormat: 'THERMAL',
+            thermalFormat: 'THERMAL_80',
+            autoPrintAfterFinalize: false,
+          }),
+        ),
+      },
+    });
+    render(
+      <Shell
+        session={cashier}
+        shopName="Bengkel"
+        onLoggedOut={vi.fn()}
+        finalizer={pendingFinalizer}
+      />,
+    );
+    await screen.findByRole('combobox', { name: 'Cari barang' });
+    await fire('finalize');
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Finalisasi' }),
+    );
+    expect(pendingFinalizer.finalize).toHaveBeenCalledOnce();
+    await fire('newTransaction');
+    expect(bridge.drafts.create).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      settle(
+        ok({
+          id: DRAFT_ID,
+          invoiceNumber: 'INV-20260930-0001',
+          status: 'FINALIZED',
+          totals: { amount: '0' },
+          paymentStatus: 'PAID',
+          payments: [],
+        } as unknown as InvoiceView),
+      );
+    });
+    await screen.findByRole('dialog', { name: 'Faktur final' });
+    await fire('newTransaction');
+    await waitFor(() => expect(bridge.drafts.create).toHaveBeenCalledTimes(2));
+  });
+
+  test('New Transaction is ignored while a finalize request is in flight even with no dialog (I3)', async () => {
+    const { bridge, fire } = installBridge();
+    render(
+      <Shell session={cashier} shopName="Bengkel" onLoggedOut={vi.fn()} />,
+    );
+    await screen.findByRole('combobox', { name: 'Cari barang' });
+    let finish: () => void = () => undefined;
+    const request = trackFinalize(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    await fire('newTransaction');
+    expect(bridge.drafts.create).toHaveBeenCalledTimes(1);
+    finish();
+    await act(async () => {
+      await request;
+    });
+    await fire('newTransaction');
+    await waitFor(() => expect(bridge.drafts.create).toHaveBeenCalledTimes(2));
   });
 
   test('Search Item returns to the workspace and focuses "Cari barang"; Daily Report opens the report', async () => {

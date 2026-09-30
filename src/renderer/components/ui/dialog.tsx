@@ -21,10 +21,20 @@ const FOCUSABLE = [
 
 /** Open dialogs, innermost last (only the innermost reacts to keys). */
 const openDialogs: HTMLElement[] = [];
+/** Open dialogs that opted in to New Transaction (Ctrl+N). */
+const allowingNewTransaction = new Set<HTMLElement>();
 
 /** True while a modal dialog is open (menu shortcuts must not reach behind it). */
 export function hasOpenDialog(): boolean {
   return openDialogs.length > 0;
+}
+
+/**
+ * True while an open dialog does not allow New Transaction. Only a dialog
+ * that opts in (the finalized-success view) lets Ctrl+N through.
+ */
+export function dialogBlocksNewTransaction(): boolean {
+  return openDialogs.some((root) => !allowingNewTransaction.has(root));
 }
 
 function focusables(root: HTMLElement): HTMLElement[] {
@@ -50,6 +60,8 @@ interface DialogProps {
   /** Accessible label of the corner close button (omit to hide it). */
   closeLabel?: string;
   className?: string;
+  /** New Transaction (Ctrl+N) may leave this dialog (default: blocked). */
+  allowNewTransaction?: boolean;
 }
 
 /**
@@ -67,6 +79,7 @@ export function Dialog({
   returnFocus,
   closeLabel,
   className,
+  allowNewTransaction = false,
 }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -117,6 +130,17 @@ export function Dialog({
     };
     // Mount/unmount only: the dialog owns focus for its lifetime.
   }, []);
+
+  // Follows the prop: one Dialog instance may switch views (the checkout
+  // review, then the finalized-success view that opts in).
+  useEffect(() => {
+    const root = panel.current;
+    if (!root || !allowNewTransaction) return undefined;
+    allowingNewTransaction.add(root);
+    return () => {
+      allowingNewTransaction.delete(root);
+    };
+  }, [allowNewTransaction]);
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Escape') {
