@@ -45,6 +45,8 @@ export function createHarness(
   };
   const logDir = path.join(dir, 'logs');
   const assetsDir = path.join(dir, 'assets');
+  // The composition default: `<logDir>/../backups` (userData/backups in the app).
+  const backupsDir = path.join(dir, 'backups');
   const opened: string[] = [];
 
   function build() {
@@ -97,6 +99,7 @@ export function createHarness(
     file,
     logDir,
     assetsDir,
+    backupsDir,
     opened,
     call,
     /**

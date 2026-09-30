@@ -78,5 +78,15 @@
   "PAID_INVOICE_CANNOT_BE_VOIDED": "An invoice that has received a payment cannot be voided.",
   "VOID_REASON_REQUIRED": "Enter a reason for the void.",
   "LOGO_TOO_LARGE": "The logo is larger than 512 KB. Choose a smaller image.",
-  "LOGO_INVALID_TYPE": "The logo must be a PNG or JPEG image."
+  "LOGO_INVALID_TYPE": "The logo must be a PNG or JPEG image.",
+  "BACKUP_DESTINATION_UNAVAILABLE": "The backup folder is not available. Make sure the USB drive or disk is connected, or choose another folder.",
+  "BACKUP_DESTINATION_READ_ONLY": "The backup folder cannot be written to. Choose another folder or check its permissions.",
+  "BACKUP_WRITE_FAILED": "The backup could not be written (the disk may be full). Your data is safe; try again.",
+  "BACKUP_VALIDATION_FAILED": "The backup copy failed its check and was not kept. Your data is safe; try again.",
+  "BACKUP_NOT_FOUND": "The backup file was not found or is empty.",
+  "NOT_SQLITE": "This file is not a Bengkelin database.",
+  "CORRUPT_DATABASE": "The backup file is damaged.",
+  "FOREIGN_DATABASE": "This file belongs to another application, not Bengkelin.",
+  "UNSUPPORTED_SCHEMA": "This database version is not supported by this version of the application.",
+  "MISSING_TABLES": "The backup file is incomplete (core tables are missing)."
 }

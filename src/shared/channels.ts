@@ -106,4 +106,9 @@ export const CHANNELS = {
     print: 'bengkelin:reports:print',
     exportCsv: 'bengkelin:reports:exportCsv',
   },
+  backups: {
+    create: 'bengkelin:backups:create',
+    status: 'bengkelin:backups:status',
+    chooseDestination: 'bengkelin:backups:chooseDestination',
+  },
 } as const;

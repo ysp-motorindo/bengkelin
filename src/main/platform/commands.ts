@@ -77,6 +77,7 @@ export function buildCommands(services: ApplicationServices): Command[] {
     printing,
     reports,
     logo,
+    backups,
     app,
     sessions,
   } = services;
@@ -377,6 +378,16 @@ export function buildCommands(services: ApplicationServices): Command[] {
       C.reports.exportCsv,
       dailyReportInputSchema,
       ({ windowId }, input) => reports.exportCsv(session(windowId), input),
+    ),
+
+    command(C.backups.create, noInput, ({ windowId }) =>
+      backups.create(session(windowId)),
+    ),
+    command(C.backups.status, noInput, ({ windowId }) =>
+      backups.status(session(windowId)),
+    ),
+    command(C.backups.chooseDestination, noInput, ({ windowId }) =>
+      backups.chooseDestination(session(windowId)),
     ),
   ];
 }
