@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { BengkelinApi } from './shared/bridge';
 import { CHANNELS } from './shared/channels';
+import { isMenuAction, type MenuAction } from './shared/menu';
 
 // The only surface the renderer sees. Feature tasks add named methods here;
 // nothing generic (no raw ipcRenderer) is ever exposed. Main validates every
@@ -36,6 +37,7 @@ const api: BengkelinApi = Object.freeze({
     deactivate: call(c.cashiers.deactivate),
     reactivate: call(c.cashiers.reactivate),
     resetPassword: call(c.cashiers.resetPassword),
+    listNames: call(c.cashiers.listNames),
   }),
   references: Object.freeze({
     listActive: call(c.references.listActive),
@@ -54,6 +56,8 @@ const api: BengkelinApi = Object.freeze({
     get: call(c.vehicles.get),
     save: call(c.vehicles.save),
     transferOwnership: call(c.vehicles.transferOwnership),
+    deactivate: call(c.vehicles.deactivate),
+    reactivate: call(c.vehicles.reactivate),
   }),
   catalog: Object.freeze({
     search: call(c.catalog.search),
@@ -83,6 +87,10 @@ const api: BengkelinApi = Object.freeze({
   }),
   adHocReferences: Object.freeze({
     search: call(c.adHocReferences.search),
+    list: call(c.adHocReferences.list),
+    update: call(c.adHocReferences.update),
+    deactivate: call(c.adHocReferences.deactivate),
+    reactivate: call(c.adHocReferences.reactivate),
   }),
   invoices: Object.freeze({
     previewFinalize: call(c.invoices.previewFinalize),
@@ -121,6 +129,7 @@ const api: BengkelinApi = Object.freeze({
     inspectRestore: call(c.backups.inspectRestore),
     restore: call(c.backups.restore),
     cancelRestore: call(c.backups.cancelRestore),
+    takeRestoreNotice: call(c.backups.takeRestoreNotice),
   }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),
@@ -134,6 +143,19 @@ const api: BengkelinApi = Object.freeze({
     },
     readyToClose: () => {
       ipcRenderer.send(c.app.readyToClose);
+    },
+    about: call(c.app.about),
+    setMenuContext: call(c.app.setMenuContext),
+    // One fixed channel, main -> renderer; only the finite MenuAction values
+    // pass, and the callback never sees the IPC event object.
+    onMenuAction: (callback: (action: MenuAction) => void) => {
+      const listener = (_event: unknown, action: unknown) => {
+        if (isMenuAction(action)) callback(action);
+      };
+      ipcRenderer.on(c.app.menuAction, listener);
+      return () => {
+        ipcRenderer.removeListener(c.app.menuAction, listener);
+      };
     },
   }),
 });

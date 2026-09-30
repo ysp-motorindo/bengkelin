@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Instant, Rupiah } from '../primitives';
-import type { UUID } from './common';
+import { optionalText, uuidSchema, type UUID } from './common';
 
 /** AdHocItemReference types (spec 12). */
 export const AD_HOC_ITEM_TYPES = ['SERVICE', 'NON_STOCK_ITEM'] as const;
@@ -36,3 +36,30 @@ export interface AdHocReferenceDto {
 export interface SearchAdHocReferencesResult {
   results: AdHocReferenceDto[];
 }
+
+/** ADMIN listing: inactive references included, optional title filter. */
+export const listAdHocReferencesInputSchema = z.strictObject({
+  query: z
+    .string('validation.invalid')
+    .trim()
+    .max(100, 'validation.tooLong')
+    .optional(),
+});
+export type ListAdHocReferencesInput = z.input<
+  typeof listAdHocReferencesInputSchema
+>;
+
+export const adHocReferenceIdInputSchema = z.strictObject({ id: uuidSchema });
+export type AdHocReferenceIdInput = z.infer<typeof adHocReferenceIdInputSchema>;
+
+/** ADMIN: the description is the editable part (type and title identify it). */
+export const updateAdHocReferenceInputSchema = z.strictObject({
+  id: uuidSchema,
+  description: optionalText(300),
+});
+export type UpdateAdHocReferenceInput = z.input<
+  typeof updateAdHocReferenceInputSchema
+>;
+export type UpdateAdHocReferenceData = z.output<
+  typeof updateAdHocReferenceInputSchema
+>;

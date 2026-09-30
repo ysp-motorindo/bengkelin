@@ -17,6 +17,7 @@
   },
   "status": { "active": "Active", "inactive": "Inactive" },
   "actions": {
+    "label": "Actions",
     "add": "Add",
     "edit": "Edit",
     "save": "Save",

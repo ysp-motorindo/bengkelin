@@ -213,7 +213,15 @@ test('ADMIN restores backup A over data B; the app restarts to login with A and 
     ),
   ).toHaveLength(1);
 
+  expect(existsSync(path.join(dataDir, 'restore-notice.json'))).toBe(true);
   await signIn(page);
+  // T17: the outcome is shown once to the next ADMIN, then cleared.
+  await expect(page.getByTestId('restore-notice')).toContainText(
+    t('shell.restoreNotice.COMPLETED'),
+  );
+  await expect
+    .poll(() => existsSync(path.join(dataDir, 'restore-notice.json')))
+    .toBe(false);
   expect(await issuedNumbers(page)).toEqual([numberA]);
   // B's number stays used: the next one is -0003, never -0002 again.
   const next = await issueInvoice(page, 'Servis setelah pemulihan');

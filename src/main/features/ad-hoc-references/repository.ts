@@ -96,6 +96,32 @@ export class AdHocReferenceRepository {
       .run(use.defaultPrice, use.unitId, use.now, id);
   }
 
+  /** ADMIN listing: active and inactive, optionally filtered by title. */
+  list(query: string): AdHocReferenceDto[] {
+    const where = query === '' ? '' : "WHERE title LIKE ? ESCAPE '\\'";
+    const params = query === '' ? [] : [likePattern(query)];
+    const rows = this.db
+      .prepare(`${SELECT} ${where} ORDER BY title COLLATE NOCASE, type`)
+      .all(...params) as AdHocReferenceRow[];
+    return rows.map(toAdHocReferenceDto);
+  }
+
+  setActive(id: string, active: boolean, now: Instant): void {
+    this.db
+      .prepare(
+        'UPDATE ad_hoc_item_references SET is_active = ?, updated_at = ? WHERE id = ?',
+      )
+      .run(flag(active), now, id);
+  }
+
+  setDescription(id: string, description: string | null, now: Instant): void {
+    this.db
+      .prepare(
+        'UPDATE ad_hoc_item_references SET description = ?, updated_at = ? WHERE id = ?',
+      )
+      .run(description, now, id);
+  }
+
   /** Active references whose title contains `query` (LIKE wildcards literal). */
   search(
     query: string,

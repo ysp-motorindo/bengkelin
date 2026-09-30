@@ -1,0 +1,30 @@
+{
+  "tab": "Item khusus",
+  "description": "Judul item khusus yang pernah dipakai kasir, untuk isian otomatis. Item nonaktif tidak muncul lagi di isian otomatis, tetapi baris faktur yang memakainya tidak berubah.",
+  "search": "Cari judul",
+  "fields": {
+    "title": "Judul",
+    "type": "Jenis",
+    "description": "Keterangan",
+    "defaultPrice": "Harga terakhir",
+    "status": "Status"
+  },
+  "types": {
+    "SERVICE": "Jasa",
+    "NON_STOCK_ITEM": "Barang non-stok"
+  },
+  "status": {
+    "active": "Aktif",
+    "inactive": "Nonaktif"
+  },
+  "actions": {
+    "label": "Tindakan",
+    "edit": "Ubah",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "deactivate": "Nonaktifkan",
+    "reactivate": "Aktifkan kembali"
+  },
+  "editTitle": "Ubah keterangan: {{title}}",
+  "empty": "Belum ada item khusus."
+}

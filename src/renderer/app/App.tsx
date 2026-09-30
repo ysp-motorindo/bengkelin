@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { LoginScreen } from '@/renderer/features/auth/LoginScreen';
 import { SetupWizard } from '@/renderer/features/setup/SetupWizard';
+import { AboutDialog } from '@/renderer/features/shell/AboutDialog';
 import { Shell } from '@/renderer/features/shell/Shell';
 import { DEFAULT_LANGUAGE, setLanguage } from '@/renderer/i18n';
 import { flushAll } from '@/renderer/lib/flush-registry';
 import { onUnauthenticated } from '@/renderer/lib/session-events';
 import { applyAppearance } from '@/renderer/lib/theme';
+import { reloadAfterFlush, useMenuActions } from './menu-actions';
 import type {
   Appearance,
   CashierSession,
@@ -33,6 +35,16 @@ export function App() {
     language: Language;
     appearance: Appearance;
   } | null>(null);
+
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const closeAbout = useCallback(() => setAboutOpen(false), []);
+
+  // Menu actions that need no session: Help > About and View > Reload
+  // (which flushes draft input first). The shell handles the rest.
+  useMenuActions((action) => {
+    if (action === 'about') setAboutOpen(true);
+    else if (action === 'reload') void reloadAfterFlush();
+  });
 
   const settings = phase.kind === 'ready' ? phase.settings : null;
   const language = preview?.language ?? settings?.language ?? DEFAULT_LANGUAGE;
@@ -86,61 +98,70 @@ export function App() {
     });
   }, []);
 
-  if (phase.kind === 'loading') {
-    return (
-      <main className="flex min-h-screen items-center justify-center text-muted-foreground">
-        <p role="status">{t('common.loading')}</p>
-      </main>
-    );
-  }
+  function content(): ReactNode {
+    if (phase.kind === 'loading') {
+      return (
+        <main className="flex min-h-screen items-center justify-center text-muted-foreground">
+          <p role="status">{t('common.loading')}</p>
+        </main>
+      );
+    }
 
-  if (phase.kind === 'failed') {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
-        <Alert>{t('errors.LOAD_FAILED')}</Alert>
-        <Button onClick={() => void load()}>{t('common.retry')}</Button>
-      </main>
-    );
-  }
+    if (phase.kind === 'failed') {
+      return (
+        <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
+          <Alert>{t('errors.LOAD_FAILED')}</Alert>
+          <Button onClick={() => void load()}>{t('common.retry')}</Button>
+        </main>
+      );
+    }
 
-  const { session } = phase;
+    const { session } = phase;
 
-  if (!phase.settings.setupCompleted) {
-    return (
-      <SetupWizard
-        language={language}
-        appearance={appearance}
-        onPreview={setPreview}
-        onCompleted={(completed) => {
-          setPreview(null);
-          setPhase({ kind: 'ready', settings: completed, session: null });
-        }}
-      />
-    );
-  }
+    if (!phase.settings.setupCompleted) {
+      return (
+        <SetupWizard
+          language={language}
+          appearance={appearance}
+          onPreview={setPreview}
+          onCompleted={(completed) => {
+            setPreview(null);
+            setPhase({ kind: 'ready', settings: completed, session: null });
+          }}
+        />
+      );
+    }
 
-  if (!session) {
+    if (!session) {
+      return (
+        <LoginScreen
+          shopName={phase.settings.shopName}
+          onLoggedIn={(next) =>
+            setPhase({ kind: 'ready', settings: phase.settings, session: next })
+          }
+        />
+      );
+    }
+
     return (
-      <LoginScreen
+      <Shell
+        session={session}
         shopName={phase.settings.shopName}
-        onLoggedIn={(next) =>
-          setPhase({ kind: 'ready', settings: phase.settings, session: next })
+        settings={phase.settings}
+        onLoggedOut={() =>
+          setPhase({ kind: 'ready', settings: phase.settings, session: null })
+        }
+        onPreferencesChanged={(next) =>
+          setPhase({ kind: 'ready', settings: next, session })
         }
       />
     );
   }
 
   return (
-    <Shell
-      session={session}
-      shopName={phase.settings.shopName}
-      settings={phase.settings}
-      onLoggedOut={() =>
-        setPhase({ kind: 'ready', settings: phase.settings, session: null })
-      }
-      onPreferencesChanged={(next) =>
-        setPhase({ kind: 'ready', settings: next, session })
-      }
-    />
+    <>
+      {content()}
+      {aboutOpen ? <AboutDialog onClose={closeAbout} /> : null}
+    </>
   );
 }

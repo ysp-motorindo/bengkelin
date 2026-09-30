@@ -1,5 +1,5 @@
-import { LogOut, Wrench } from 'lucide-react';
-import { useState } from 'react';
+import { LogOut, Wrench, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
@@ -7,6 +7,9 @@ import { flushAll } from '@/renderer/lib/flush-registry';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
 import { BackupNoticeBanner } from '@/renderer/features/backups/BackupNoticeBanner';
+import { RestoreOutcomeNotice } from '@/renderer/features/backups/RestoreOutcomeNotice';
+import { CashiersScreen } from '@/renderer/features/cashiers/CashiersScreen';
+import { reportPrintContext } from '@/renderer/features/printing/print-target';
 import { CatalogScreen } from '@/renderer/features/catalog/CatalogScreen';
 import { CatalogTransferScreen } from '@/renderer/features/catalog-transfer/CatalogTransferScreen';
 import { InventoryScreen } from '@/renderer/features/inventory/InventoryScreen';
@@ -20,6 +23,7 @@ import { CashierWorkspace } from '@/renderer/features/workspace/CashierWorkspace
 import type { FinalizeClient } from '@/renderer/features/workspace/checkout/finalize-client';
 import type { CashierSession, PublicSettings } from '@/shared/contracts';
 import { PreferencesControls } from './PreferencesControls';
+import { useShellMenu } from './use-shell-menu';
 
 type View =
   | 'workspace'
@@ -31,6 +35,7 @@ type View =
   | 'catalogTransfer'
   | 'inventory'
   | 'references'
+  | 'cashiers'
   | 'settings';
 
 interface ShellProps {
@@ -60,6 +65,10 @@ export function Shell({
   const { t } = useTranslation();
   const [view, setView] = useState<View>('workspace');
   const { busy, error, setError, run, check } = useAction();
+  const menu = useShellMenu({ session, showView: setView });
+
+  // After a reload main may still hold the previous page's print context.
+  useEffect(() => reportPrintContext(), []);
 
   function logout() {
     void run(async () => {
@@ -85,6 +94,7 @@ export function Shell({
           'catalogTransfer',
           'inventory',
           'references',
+          'cashiers',
           'settings',
         ]
       : [
@@ -151,15 +161,38 @@ export function Shell({
         ))}
       </nav>
       {session.role === 'ADMIN' ? <BackupNoticeBanner /> : null}
+      {session.role === 'ADMIN' ? <RestoreOutcomeNotice /> : null}
       <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
         {error ? <Alert className="mb-4">{error}</Alert> : null}
+        {menu.notice ? (
+          <div
+            data-testid="menu-notice"
+            role={menu.notice.tone}
+            className={cn(
+              'mb-4 flex items-start justify-between gap-2 rounded-md border px-3 py-2 text-sm',
+              menu.notice.tone === 'alert'
+                ? 'border-destructive/50 text-destructive'
+                : 'border-border bg-card',
+            )}
+          >
+            <span>{menu.notice.text}</span>
+            <button
+              type="button"
+              aria-label={t('shell.menuNotice.dismiss')}
+              onClick={menu.dismiss}
+              className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X aria-hidden="true" className="size-4" />
+            </button>
+          </div>
+        ) : null}
         <div hidden={view !== 'workspace'}>
           <CashierWorkspace finalizer={finalizer} />
         </div>
         {view === 'history' ? <HistoryScreen session={session} /> : null}
         {view === 'receivables' ? <ReceivablesScreen /> : null}
         {view === 'reports' ? <DailyReportScreen session={session} /> : null}
-        {view === 'customers' ? <CustomersScreen /> : null}
+        {view === 'customers' ? <CustomersScreen role={session.role} /> : null}
         {view === 'catalog' ? <CatalogScreen role={session.role} /> : null}
         {view === 'catalogTransfer' && session.role === 'ADMIN' ? (
           <CatalogTransferScreen />
@@ -168,8 +201,11 @@ export function Shell({
         {view === 'references' && session.role === 'ADMIN' ? (
           <ReferencesScreen />
         ) : null}
+        {view === 'cashiers' && session.role === 'ADMIN' ? (
+          <CashiersScreen />
+        ) : null}
         {view === 'settings' && session.role === 'ADMIN' ? (
-          <SettingsScreen />
+          <SettingsScreen onShopSaved={onPreferencesChanged} />
         ) : null}
       </main>
     </div>

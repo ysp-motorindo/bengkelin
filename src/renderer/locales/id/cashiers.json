@@ -1,0 +1,36 @@
+{
+  "title": "Kasir",
+  "description": "Kelola akun kasir dan admin. Akun tidak pernah dihapus; nonaktifkan akun yang tidak dipakai lagi.",
+  "fields": {
+    "username": "Nama pengguna",
+    "displayName": "Nama tampilan",
+    "password": "Kata sandi",
+    "newPassword": "Kata sandi baru",
+    "role": "Peran",
+    "status": "Status"
+  },
+  "status": {
+    "active": "Aktif",
+    "inactive": "Nonaktif"
+  },
+  "create": {
+    "title": "Tambah kasir",
+    "submit": "Tambah kasir",
+    "created": "{{name}} ditambahkan."
+  },
+  "actions": {
+    "label": "Tindakan",
+    "manage": "Kelola"
+  },
+  "manage": {
+    "title": "Kelola kasir: {{name}}",
+    "sessionNote": "Mengubah peran, menonaktifkan, atau mengatur ulang kata sandi langsung mengakhiri sesi kasir tersebut.",
+    "saveName": "Simpan nama",
+    "saveRole": "Simpan peran",
+    "resetPassword": "Atur ulang kata sandi",
+    "deactivate": "Nonaktifkan",
+    "reactivate": "Aktifkan kembali",
+    "saved": "Perubahan tersimpan.",
+    "passwordReset": "Kata sandi diatur ulang."
+  }
+}

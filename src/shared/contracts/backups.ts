@@ -143,3 +143,23 @@ export interface RestoreStartedDto {
   restarting: true;
   safetyBackupFileName: string;
 }
+
+/**
+ * How the last interrupted or completed restore ended, as found by startup
+ * recovery. Shown once to the next ADMIN after login, then cleared.
+ * - COMPLETED: the restored database is in use;
+ * - ROLLED_FORWARD: an interrupted restore was finished at startup;
+ * - ROLLED_BACK: an interrupted restore was undone; the previous data is kept.
+ */
+export const RESTORE_NOTICE_OUTCOMES = [
+  'COMPLETED',
+  'ROLLED_FORWARD',
+  'ROLLED_BACK',
+] as const;
+export type RestoreNoticeOutcome = (typeof RESTORE_NOTICE_OUTCOMES)[number];
+
+export interface RestoreNoticeDto {
+  outcome: RestoreNoticeOutcome;
+  /** When startup recovery decided it. */
+  at: Instant;
+}

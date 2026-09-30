@@ -27,10 +27,12 @@ import {
 } from '@/main/features/backups/restore';
 import type { RestoreFs } from '@/main/features/backups/restore-fs';
 import { CatalogTransferService } from '@/main/features/catalog-transfer/service';
+import { RestoreNoticeService } from '@/main/features/backups/restore-notice';
 import path from 'node:path';
 import { AppService } from '@/main/platform/app-service';
 import { createLogger, type Logger } from '@/main/platform/logger';
 import { MaintenanceGate } from '@/main/platform/maintenance';
+import { MenuState } from '@/main/platform/menu-state';
 import type { ApplicationServices } from '@/main/platform/services';
 import type { Clock } from '@/shared/time';
 
@@ -53,6 +55,8 @@ export interface CompositionDeps {
   /** The live database file; default: the connection's file name. */
   databasePath?: string;
   restore?: RestoreCompositionDeps;
+  /** Help > About (the app passes `app.getVersion()`). */
+  appVersion?: string;
 }
 
 /** Restore wiring: the app passes relaunch/close hooks; tests add seams. */
@@ -73,6 +77,13 @@ export function createApplicationServices(
   const { db, clock } = deps;
   const logger = deps.logger ?? createLogger({ dir: deps.logDir, clock });
   const sessions = new SessionStore();
+  // The printable context belongs to a signed-in window: forget it when
+  // the window's session ends.
+  const menu = new MenuState();
+  sessions.onChange((windowId) => {
+    if (!sessions.get(windowId)) menu.clear(windowId);
+  });
+  const dataDir = deps.dataDir ?? path.dirname(deps.logDir);
   const catalog = new CatalogService({ db, clock });
   const inventory = new InventoryService({ db, clock });
   // Once stock has moved, whether an item tracks inventory is locked.
@@ -107,7 +118,7 @@ export function createApplicationServices(
     dialogs,
     backups,
     maintenance,
-    dataDir: deps.dataDir ?? path.dirname(deps.logDir),
+    dataDir,
     databasePath: deps.databasePath ?? db.name,
     relaunch:
       restoreDeps.relaunch ??
@@ -132,7 +143,7 @@ export function createApplicationServices(
     vehicles: new VehicleService({ db, clock }),
     inventory,
     drafts: new DraftService({ db, clock, catalog }),
-    adHocReferences: new AdHocReferenceService({ db }),
+    adHocReferences: new AdHocReferenceService({ db, clock }),
     // Production composition never passes the test-only `onStep` hook.
     invoices: new InvoiceService({ db, clock }),
     printing,
@@ -148,6 +159,13 @@ export function createApplicationServices(
       trackingChangeGuard: inventory.trackingChangeGuard,
       logger,
     }),
-    app: new AppService({ logDir: deps.logDir, openPath: deps.openPath }),
+    restoreNotice: new RestoreNoticeService({ dataDir, logger }),
+    app: new AppService({
+      logDir: deps.logDir,
+      openPath: deps.openPath,
+      db,
+      appVersion: deps.appVersion ?? '0.0.0',
+    }),
+    menu,
   };
 }

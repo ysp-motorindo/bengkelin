@@ -54,6 +54,10 @@ import {
   transferOwnershipInputSchema,
   updateDisplayNameInputSchema,
   vehicleIdInputSchema,
+  menuContextInputSchema,
+  listAdHocReferencesInputSchema,
+  updateAdHocReferenceInputSchema,
+  adHocReferenceIdInputSchema,
 } from '@/shared/contracts';
 import { command, type Command } from './command';
 import type { MaintenanceGate } from './maintenance';
@@ -69,11 +73,15 @@ const C = CHANNELS;
 const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
   C.app.ping,
   C.app.openLogFolder,
+  C.app.about,
+  // UI state only (no database).
+  C.app.setMenuContext,
   C.auth.currentSession,
   C.settings.getPublic,
   C.settings.getShop,
   C.settings.getLogo,
   C.cashiers.list,
+  C.cashiers.listNames,
   C.references.listActive,
   C.references.list,
   C.customers.search,
@@ -90,6 +98,7 @@ const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
   C.drafts.list,
   C.drafts.get,
   C.adHocReferences.search,
+  C.adHocReferences.list,
   C.invoices.previewFinalize,
   C.invoices.get,
   C.invoices.search,
@@ -157,6 +166,8 @@ export function buildCommands(services: ApplicationServices): Command[] {
     restore,
     catalogTransfer,
     app,
+    menu,
+    restoreNotice,
     sessions,
     maintenance,
   } = services;
@@ -166,6 +177,12 @@ export function buildCommands(services: ApplicationServices): Command[] {
     command(C.app.ping, noInput, () => 'pong'),
     command(C.app.openLogFolder, noInput, ({ windowId }) =>
       app.openLogFolder(session(windowId)),
+    ),
+    command(C.app.about, noInput, () => app.about()),
+    command(
+      C.app.setMenuContext,
+      menuContextInputSchema,
+      ({ windowId }, input) => menu.report(session(windowId), windowId, input),
     ),
 
     command(C.auth.login, loginInputSchema, ({ windowId }, input) =>
@@ -207,6 +224,9 @@ export function buildCommands(services: ApplicationServices): Command[] {
 
     command(C.cashiers.list, noInput, ({ windowId }) =>
       cashiers.list(session(windowId)),
+    ),
+    command(C.cashiers.listNames, noInput, ({ windowId }) =>
+      cashiers.listNames(session(windowId)),
     ),
     command(
       C.cashiers.create,
@@ -294,6 +314,16 @@ export function buildCommands(services: ApplicationServices): Command[] {
       transferOwnershipInputSchema,
       ({ windowId }, input) =>
         vehicles.transferOwnership(session(windowId), input),
+    ),
+    command(
+      C.vehicles.deactivate,
+      vehicleIdInputSchema,
+      ({ windowId }, input) => vehicles.deactivate(session(windowId), input),
+    ),
+    command(
+      C.vehicles.reactivate,
+      vehicleIdInputSchema,
+      ({ windowId }, input) => vehicles.reactivate(session(windowId), input),
     ),
 
     command(C.catalog.search, searchCatalogInputSchema, ({ windowId }, input) =>
@@ -385,6 +415,28 @@ export function buildCommands(services: ApplicationServices): Command[] {
       C.adHocReferences.search,
       searchAdHocReferencesInputSchema,
       ({ windowId }, input) => adHocReferences.search(session(windowId), input),
+    ),
+    command(
+      C.adHocReferences.list,
+      listAdHocReferencesInputSchema,
+      ({ windowId }, input) => adHocReferences.list(session(windowId), input),
+    ),
+    command(
+      C.adHocReferences.update,
+      updateAdHocReferenceInputSchema,
+      ({ windowId }, input) => adHocReferences.update(session(windowId), input),
+    ),
+    command(
+      C.adHocReferences.deactivate,
+      adHocReferenceIdInputSchema,
+      ({ windowId }, input) =>
+        adHocReferences.deactivate(session(windowId), input),
+    ),
+    command(
+      C.adHocReferences.reactivate,
+      adHocReferenceIdInputSchema,
+      ({ windowId }, input) =>
+        adHocReferences.reactivate(session(windowId), input),
     ),
 
     command(
@@ -492,6 +544,9 @@ export function buildCommands(services: ApplicationServices): Command[] {
       C.backups.cancelRestore,
       cancelRestoreInputSchema,
       ({ windowId }, input) => restore.cancel(session(windowId), input),
+    ),
+    command(C.backups.takeRestoreNotice, noInput, ({ windowId }) =>
+      restoreNotice.take(session(windowId)),
     ),
   ];
   return commands.map((cmd) => guarded(cmd, maintenance));

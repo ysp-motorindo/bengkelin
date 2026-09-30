@@ -10,6 +10,12 @@ export const CHANNELS = {
     beforeClose: 'bengkelin:app:beforeClose',
     /** renderer -> main: flushed, the window may close now. */
     readyToClose: 'bengkelin:app:readyToClose',
+    /** main -> renderer event: a native menu item was chosen (MenuAction). */
+    menuAction: 'bengkelin:app:menuAction',
+    /** renderer -> main: what the menu depends on (printable context). */
+    setMenuContext: 'bengkelin:app:setMenuContext',
+    /** Help > About: app and schema version (no session needed). */
+    about: 'bengkelin:app:about',
   },
   auth: {
     login: 'bengkelin:auth:login',
@@ -34,6 +40,8 @@ export const CHANNELS = {
     deactivate: 'bengkelin:cashiers:deactivate',
     reactivate: 'bengkelin:cashiers:reactivate',
     resetPassword: 'bengkelin:cashiers:resetPassword',
+    /** Names only, any session (filters). */
+    listNames: 'bengkelin:cashiers:listNames',
   },
   references: {
     listActive: 'bengkelin:references:listActive',
@@ -52,6 +60,8 @@ export const CHANNELS = {
     get: 'bengkelin:vehicles:get',
     save: 'bengkelin:vehicles:save',
     transferOwnership: 'bengkelin:vehicles:transferOwnership',
+    deactivate: 'bengkelin:vehicles:deactivate',
+    reactivate: 'bengkelin:vehicles:reactivate',
   },
   catalog: {
     search: 'bengkelin:catalog:search',
@@ -81,6 +91,10 @@ export const CHANNELS = {
   },
   adHocReferences: {
     search: 'bengkelin:adHocReferences:search',
+    list: 'bengkelin:adHocReferences:list',
+    update: 'bengkelin:adHocReferences:update',
+    deactivate: 'bengkelin:adHocReferences:deactivate',
+    reactivate: 'bengkelin:adHocReferences:reactivate',
   },
   invoices: {
     previewFinalize: 'bengkelin:invoices:previewFinalize',
@@ -119,5 +133,7 @@ export const CHANNELS = {
     inspectRestore: 'bengkelin:backups:inspectRestore',
     restore: 'bengkelin:backups:restore',
     cancelRestore: 'bengkelin:backups:cancelRestore',
+    /** ADMIN: the one-time restore outcome notice (taken = cleared). */
+    takeRestoreNotice: 'bengkelin:backups:takeRestoreNotice',
   },
 } as const;

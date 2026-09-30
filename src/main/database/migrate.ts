@@ -15,6 +15,16 @@ export { readSchemaVersion };
 
 export type Migration = { version: number; name: string; sql: string };
 
+/** What a migration run did (logged at startup, spec 48). */
+export interface MigrationOutcome {
+  /** Schema version before the run. */
+  from: number;
+  /** Schema version after the run. */
+  to: number;
+  /** Versions applied by this run, in order (empty when up to date). */
+  applied: number[];
+}
+
 // Bundled at build time (Vite inlines the SQL text), so dev, tests and the
 // packaged asar all load the same migrations without any runtime file path.
 const sources = import.meta.glob('./migrations/*.sql', {
@@ -83,11 +93,13 @@ function orderAndValidate(migrations: readonly Migration[]): Migration[] {
 export function migrateDatabase(
   db: AppDatabase,
   migrations: readonly Migration[] = bundledMigrations,
-): void {
+): MigrationOutcome {
   const ordered = orderAndValidate(migrations);
   assertOwnDatabase(db);
   assertSupportedSchema(db, ordered.length);
   registerMigrationFunctions(db);
+  const from = readSchemaVersion(db);
+  const applied: number[] = [];
 
   for (const migration of ordered) {
     if (migration.version <= readSchemaVersion(db)) continue;
@@ -104,5 +116,7 @@ export function migrateDatabase(
         { cause: error },
       );
     }
+    applied.push(migration.version);
   }
+  return { from, to: readSchemaVersion(db), applied };
 }

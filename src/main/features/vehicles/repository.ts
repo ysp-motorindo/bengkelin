@@ -230,6 +230,12 @@ export class VehicleRepository {
       );
   }
 
+  setActive(id: string, active: boolean, now: Instant): void {
+    this.db
+      .prepare('UPDATE vehicles SET is_active = ?, updated_at = ? WHERE id = ?')
+      .run(flag(active), now, id);
+  }
+
   activeOwnership(vehicleId: string): ActiveOwnership | undefined {
     const row = this.db
       .prepare(

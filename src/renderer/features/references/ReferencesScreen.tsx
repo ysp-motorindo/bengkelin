@@ -13,34 +13,39 @@ import { Input } from '@/renderer/components/ui/input';
 import { Select } from '@/renderer/components/ui/select';
 import { cn } from '@/renderer/lib/utils';
 import { useAction } from '@/renderer/lib/use-action';
+import { AdHocReferencesPanel } from './AdHocReferencesPanel';
 import {
   REFERENCE_ENTITIES,
   type ReferenceDto,
   type ReferenceEntity,
 } from '@/shared/contracts';
 
+type Tab = ReferenceEntity | 'adHoc';
+const TABS: readonly Tab[] = [...REFERENCE_ENTITIES, 'adHoc'];
+
 /**
  * ADMIN reference management (spec 55): one tab per entity with create, edit,
- * deactivate and reactivate. Authorization is enforced in main; this screen is
- * only reachable from the ADMIN navigation. T17 polishes it.
+ * deactivate and reactivate, plus the custom-line references (spec 12).
+ * Authorization is enforced in main; this screen is only reachable from the
+ * ADMIN navigation.
  */
 export function ReferencesScreen() {
   const { t } = useTranslation();
-  const [entity, setEntity] = useState<ReferenceEntity>('mechanic');
+  const [entity, setEntity] = useState<Tab>('mechanic');
 
   function onTabKey(event: KeyboardEvent<HTMLDivElement>) {
-    const index = REFERENCE_ENTITIES.indexOf(entity);
+    const index = TABS.indexOf(entity);
     let next = index;
-    if (event.key === 'ArrowRight')
-      next = (index + 1) % REFERENCE_ENTITIES.length;
+    if (event.key === 'ArrowRight') next = (index + 1) % TABS.length;
     else if (event.key === 'ArrowLeft')
-      next =
-        (index - 1 + REFERENCE_ENTITIES.length) % REFERENCE_ENTITIES.length;
+      next = (index - 1 + TABS.length) % TABS.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = TABS.length - 1;
     else return;
     event.preventDefault();
-    setEntity(REFERENCE_ENTITIES[next] as ReferenceEntity);
+    setEntity(TABS[next] as Tab);
     requestAnimationFrame(() =>
-      document.getElementById(`ref-tab-${REFERENCE_ENTITIES[next]}`)?.focus(),
+      document.getElementById(`ref-tab-${TABS[next]}`)?.focus(),
     );
   }
 
@@ -53,7 +58,7 @@ export function ReferencesScreen() {
         className="flex flex-wrap gap-1 border-b border-border"
         onKeyDown={onTabKey}
       >
-        {REFERENCE_ENTITIES.map((name) => (
+        {TABS.map((name) => (
           <button
             key={name}
             id={`ref-tab-${name}`}
@@ -70,12 +75,18 @@ export function ReferencesScreen() {
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {t(`references.entities.${name}`)}
+            {name === 'adHoc'
+              ? t('adHocReferences.tab')
+              : t(`references.entities.${name}`)}
           </button>
         ))}
       </div>
       <div id="ref-panel" role="tabpanel" aria-labelledby={`ref-tab-${entity}`}>
-        <EntityPanel key={entity} entity={entity} />
+        {entity === 'adHoc' ? (
+          <AdHocReferencesPanel />
+        ) : (
+          <EntityPanel key={entity} entity={entity} />
+        )}
       </div>
     </div>
   );
@@ -182,7 +193,9 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
               <th scope="col" className="p-2">
                 {t('references.fields.status')}
               </th>
-              <td className="p-2" />
+              <th scope="col" className="p-2">
+                <span className="sr-only">{t('references.actions.label')}</span>
+              </th>
             </tr>
           </thead>
           <tbody>

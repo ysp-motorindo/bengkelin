@@ -12,6 +12,7 @@ import type {
 import type { Result } from '@/shared/primitives';
 import { bridgePrintClient, type PrintClient } from './print-client';
 import { PrintPreviewDialog } from './PrintPreviewDialog';
+import { registerPrintTarget } from './print-target';
 
 type Notice = { tone: 'status' | 'alert'; text: string } | null;
 
@@ -117,6 +118,11 @@ export function PrintActions({
       current = false;
     };
   }, [client]);
+
+  // File > Print (CmdOrCtrl+P) prints this invoice in the default format.
+  const printDefault = useRef(() => print(defaultFormat));
+  printDefault.current = () => print(defaultFormat);
+  useEffect(() => registerPrintTarget(() => printDefault.current()), []);
 
   // Auto-print once, only when the shop enabled it.
   useEffect(() => {

@@ -132,5 +132,6 @@
   "RESTORE_VALIDATION_FAILED": "The backup copy failed its check before restoring. Nothing changed.",
   "RESTORE_FAILED": "The restore could not be completed. Your data is intact; if the application restarts, check your data after signing in.",
   "RESTORE_STAGING_FAILED": "The backup file could not be copied for checking (the disk may be full). Nothing changed.",
-  "RESTORE_BUSY": "A save was still running, so the restore was cancelled. Try again in a moment."
+  "RESTORE_BUSY": "A save was still running, so the restore was cancelled. Try again in a moment.",
+  "VEHICLE_INACTIVE": "This vehicle is inactive and cannot be selected. An admin can reactivate it."
 }

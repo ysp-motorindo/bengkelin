@@ -16,3 +16,4 @@ export * from './printing';
 export * from './reports';
 export * from './backups';
 export * from './catalog-transfer';
+export * from './app';

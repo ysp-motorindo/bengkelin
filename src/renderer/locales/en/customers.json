@@ -16,7 +16,8 @@
     "selected": "Selected customer",
     "clear": "Clear customer",
     "vehicles": "Vehicles owned by this customer",
-    "noVehicles": "No vehicles yet."
+    "noVehicles": "No vehicles yet.",
+    "edit": "Edit full details"
   },
   "quickCustomer": {
     "title": "New customer",
@@ -56,7 +57,11 @@
     "from": "From",
     "until": "Until",
     "current": "now",
-    "select": "View"
+    "select": "View",
+    "inactive": "Inactive",
+    "inactiveNote": "This vehicle is inactive: it cannot be selected for new transactions. Its history is kept.",
+    "deactivate": "Deactivate vehicle",
+    "reactivate": "Reactivate vehicle"
   },
   "mismatch": "Warning: this vehicle's owner ({{owner}}) differs from the selected customer ({{customer}}). Ownership does not change unless you explicitly transfer it.",
   "transfer": {
@@ -66,5 +71,22 @@
     "confirm": "Yes, transfer",
     "cancel": "Cancel",
     "done": "Ownership transferred."
+  },
+  "edit": {
+    "title": "Customer details",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "birthdate": "Birthdate",
+    "address": "Address",
+    "rt": "RT",
+    "rw": "RW",
+    "kelurahan": "Kelurahan (village)",
+    "kecamatan": "Kecamatan (district)",
+    "cityOrRegency": "City/Regency",
+    "province": "Province",
+    "postalCode": "Postal code",
+    "submit": "Save customer",
+    "cancel": "Cancel"
   }
 }

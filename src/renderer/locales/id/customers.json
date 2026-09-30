@@ -16,7 +16,8 @@
     "selected": "Pelanggan terpilih",
     "clear": "Lepas pelanggan",
     "vehicles": "Kendaraan milik pelanggan ini",
-    "noVehicles": "Belum ada kendaraan."
+    "noVehicles": "Belum ada kendaraan.",
+    "edit": "Ubah data lengkap"
   },
   "quickCustomer": {
     "title": "Pelanggan baru",
@@ -56,7 +57,11 @@
     "from": "Sejak",
     "until": "Sampai",
     "current": "sekarang",
-    "select": "Lihat"
+    "select": "Lihat",
+    "inactive": "Nonaktif",
+    "inactiveNote": "Kendaraan ini nonaktif: tidak dapat dipilih untuk transaksi baru. Riwayatnya tetap tersimpan.",
+    "deactivate": "Nonaktifkan kendaraan",
+    "reactivate": "Aktifkan kembali kendaraan"
   },
   "mismatch": "Peringatan: pemilik kendaraan ini ({{owner}}) berbeda dengan pelanggan terpilih ({{customer}}). Kepemilikan tidak berubah kecuali Anda memindahkannya secara eksplisit.",
   "transfer": {
@@ -66,5 +71,22 @@
     "confirm": "Ya, pindahkan",
     "cancel": "Batal",
     "done": "Kepemilikan dipindahkan."
+  },
+  "edit": {
+    "title": "Data pelanggan",
+    "name": "Nama",
+    "phone": "Telepon",
+    "email": "Email",
+    "birthdate": "Tanggal lahir",
+    "address": "Alamat",
+    "rt": "RT",
+    "rw": "RW",
+    "kelurahan": "Kelurahan",
+    "kecamatan": "Kecamatan",
+    "cityOrRegency": "Kota/Kabupaten",
+    "province": "Provinsi",
+    "postalCode": "Kode pos",
+    "submit": "Simpan pelanggan",
+    "cancel": "Batal"
   }
 }

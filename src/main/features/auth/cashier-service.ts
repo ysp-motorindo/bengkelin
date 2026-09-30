@@ -6,6 +6,7 @@ import {
 } from '@/main/database/connection';
 import type {
   CashierDto,
+  CashierNameDto,
   CashierIdInput,
   ChangeRoleInput,
   CreateCashierInput,
@@ -14,7 +15,7 @@ import type {
 } from '@/shared/contracts';
 import { DomainError } from '@/shared/primitives';
 import type { Clock } from '@/shared/time';
-import { requireAdmin } from './authorize';
+import { requireAdmin, requireSession } from './authorize';
 import { hashPassword } from './passwords';
 import {
   CashierRepository,
@@ -43,6 +44,19 @@ export class CashierService {
   list(session: Session | undefined): CashierDto[] {
     requireAdmin(session);
     return this.repo.list().map(toCashierDto);
+  }
+
+  /**
+   * Names only, for filters in any session (T11 carry: a CASHIER can
+   * filter history and the daily report by any cashier).
+   */
+  listNames(session: Session | undefined): CashierNameDto[] {
+    requireSession(session);
+    return this.repo.list().map((record) => ({
+      id: record.id,
+      displayName: record.displayName,
+      isActive: record.isActive,
+    }));
   }
 
   async create(

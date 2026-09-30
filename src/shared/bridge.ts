@@ -1,4 +1,14 @@
+import type { MenuAction } from './menu';
 import type {
+  AboutDto,
+  AdHocReferenceDto,
+  AdHocReferenceIdInput,
+  CashierNameDto,
+  VehicleDto,
+  ListAdHocReferencesInput,
+  MenuContextInput,
+  RestoreNoticeDto,
+  UpdateAdHocReferenceInput,
   CatalogFileOutcomeDto,
   CommitImportInput,
   ImportPreviewDto,
@@ -132,6 +142,8 @@ export interface BengkelinApi {
     deactivate(input: CashierIdInput): Promise<Result<CashierDto>>;
     reactivate(input: CashierIdInput): Promise<Result<CashierDto>>;
     resetPassword(input: ResetPasswordInput): Promise<Result<void>>;
+    /** Any signed-in cashier: names for filters (no usernames or roles). */
+    listNames(): Promise<Result<CashierNameDto[]>>;
   };
   readonly references: {
     /** Active entries for pickers: any signed-in cashier. */
@@ -156,6 +168,10 @@ export interface BengkelinApi {
     transferOwnership(
       input: OwnershipTransferInput,
     ): Promise<Result<VehicleDetailDto>>;
+    /** ADMIN: hidden from new drafts; history and ownership unchanged. */
+    deactivate(input: VehicleIdInput): Promise<Result<VehicleDto>>;
+    /** ADMIN. */
+    reactivate(input: VehicleIdInput): Promise<Result<VehicleDto>>;
   };
   readonly catalog: {
     search(input: SearchCatalogInput): Promise<Result<SearchCatalogResult>>;
@@ -208,6 +224,20 @@ export interface BengkelinApi {
     search(
       input: SearchAdHocReferencesInput,
     ): Promise<Result<SearchAdHocReferencesResult>>;
+    /** ADMIN: every reference, inactive ones included. */
+    list(input: ListAdHocReferencesInput): Promise<Result<AdHocReferenceDto[]>>;
+    /** ADMIN: edit the description. */
+    update(
+      input: UpdateAdHocReferenceInput,
+    ): Promise<Result<AdHocReferenceDto>>;
+    /** ADMIN: hide from autocomplete; lines that used it are unchanged. */
+    deactivate(
+      input: AdHocReferenceIdInput,
+    ): Promise<Result<AdHocReferenceDto>>;
+    /** ADMIN. */
+    reactivate(
+      input: AdHocReferenceIdInput,
+    ): Promise<Result<AdHocReferenceDto>>;
   };
   /** Official invoices (any signed-in cashier). */
   readonly invoices: {
@@ -300,6 +330,8 @@ export interface BengkelinApi {
      */
     restore(input: RestoreInput): Promise<Result<RestoreStartedDto>>;
     cancelRestore(input: CancelRestoreInput): Promise<Result<void>>;
+    /** The last restore's outcome, once, for the next ADMIN; else null. */
+    takeRestoreNotice(): Promise<Result<RestoreNoticeDto | null>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;
@@ -310,5 +342,14 @@ export interface BengkelinApi {
      */
     onBeforeClose(callback: () => void): () => void;
     readyToClose(): void;
+    /** Help > About: app and schema version (no session needed). */
+    about(): Promise<Result<AboutDto>>;
+    /**
+     * Native menu: main sends one of the finite MenuAction values; anything
+     * else is dropped by the preload. Returns an unsubscribe function.
+     */
+    onMenuAction(callback: (action: MenuAction) => void): () => void;
+    /** Tells main what the menu depends on (the printable context). */
+    setMenuContext(input: MenuContextInput): Promise<Result<void>>;
   };
 }
