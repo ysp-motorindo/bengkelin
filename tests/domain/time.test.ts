@@ -27,7 +27,12 @@ describe('instants', () => {
     expect([c, a, b].sort()).toEqual([a, b, c]);
   });
   test('rejects invalid dates', () => {
-    expect(() => toInstant(NaN)).toThrow();
+    expect(() => toInstant(NaN)).toThrowError(
+      expect.objectContaining({ code: 'INVALID_INSTANT' }),
+    );
+    expect(() => toInstant(Date.UTC(10000, 0, 1))).toThrowError(
+      expect.objectContaining({ code: 'INVALID_INSTANT' }),
+    );
   });
 });
 
@@ -105,15 +110,30 @@ describe('resolveLocalDateTime', () => {
       kind: 'nonexistent',
     });
   });
-  test('rejects malformed input', () => {
+  test('rejects malformed input with typed codes', () => {
+    const bad = expect.objectContaining({ code: 'INVALID_LOCAL_DATE_TIME' });
     expect(() =>
       resolveLocalDateTime('2026-09-30 14:00', 'Asia/Jakarta'),
-    ).toThrow();
+    ).toThrowError(bad);
     expect(() =>
       resolveLocalDateTime('2026-02-30T14:00', 'Asia/Jakarta'),
-    ).toThrow();
+    ).toThrowError(bad);
     expect(() =>
       resolveLocalDateTime('2026-09-30T25:00', 'Asia/Jakarta'),
-    ).toThrow();
+    ).toThrowError(bad);
+  });
+  test('rejects invalid timezone', () => {
+    const bad = expect.objectContaining({ code: 'INVALID_TIMEZONE' });
+    expect(() =>
+      resolveLocalDateTime('2026-09-30T14:00', 'Mars/Base'),
+    ).toThrowError(bad);
+    expect(() =>
+      businessDay('2026-09-30T14:00:00.000Z', 'Mars/Base'),
+    ).toThrowError(bad);
+  });
+  test('businessDay rejects invalid instant', () => {
+    expect(() => businessDay('garbage', 'Asia/Jakarta')).toThrowError(
+      expect.objectContaining({ code: 'INVALID_INSTANT' }),
+    );
   });
 });

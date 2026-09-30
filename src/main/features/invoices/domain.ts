@@ -21,7 +21,7 @@ export type DiscountResult = {
 function assertNonNegative(value: bigint): bigint {
   assertInt64(value);
   if (value < 0n)
-    throw new DomainError('MONEY_OVERFLOW', 'Amount must not be negative');
+    throw new DomainError('NEGATIVE_MONEY', 'Amount must not be negative');
   return value;
 }
 
@@ -151,8 +151,13 @@ export function calculateDueDate(
       'TOP days must be an integer of at least 0',
     );
   }
-  if (!LOCAL_DATE.test(invoiceDate)) throw new RangeError('Invalid LocalDate');
-  return Temporal.PlainDate.from(invoiceDate, { overflow: 'reject' })
-    .add({ days: topDays })
-    .toString();
+  if (!LOCAL_DATE.test(invoiceDate))
+    throw new DomainError('INVALID_DATE', 'Invalid LocalDate');
+  try {
+    return Temporal.PlainDate.from(invoiceDate, { overflow: 'reject' })
+      .add({ days: topDays })
+      .toString();
+  } catch {
+    throw new DomainError('INVALID_DATE', 'Invalid LocalDate');
+  }
 }

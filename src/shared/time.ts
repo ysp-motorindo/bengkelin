@@ -1,5 +1,5 @@
 import { Temporal } from 'temporal-polyfill';
-import type { Instant, LocalDate } from './primitives';
+import { DomainError, type Instant, type LocalDate } from './primitives';
 
 export type Clock = { now(): Instant };
 
@@ -9,10 +9,11 @@ const INSTANT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 export function toInstant(value: Date | number): Instant {
   const date = typeof value === 'number' ? new Date(value) : value;
   const ms = date.getTime();
-  if (!Number.isFinite(ms)) throw new RangeError('Invalid time value');
+  if (!Number.isFinite(ms))
+    throw new DomainError('INVALID_INSTANT', 'Invalid time value');
   const iso = date.toISOString();
   if (!INSTANT_PATTERN.test(iso))
-    throw new RangeError('Instant year outside 0000-9999');
+    throw new DomainError('INVALID_INSTANT', 'Instant year outside 0000-9999');
   return iso;
 }
 
@@ -23,10 +24,17 @@ export function isInstant(value: string): value is Instant {
 }
 
 export function businessDay(instant: Instant, timezone: string): LocalDate {
-  return Temporal.Instant.from(instant)
-    .toZonedDateTimeISO(timezone)
-    .toPlainDate()
-    .toString();
+  let parsed: Temporal.Instant;
+  try {
+    parsed = Temporal.Instant.from(instant);
+  } catch {
+    throw new DomainError('INVALID_INSTANT', 'Invalid instant');
+  }
+  try {
+    return parsed.toZonedDateTimeISO(timezone).toPlainDate().toString();
+  } catch {
+    throw new DomainError('INVALID_TIMEZONE', 'Invalid time zone');
+  }
 }
 
 export type OffsetChoice = 'earlier' | 'later';
@@ -49,14 +57,27 @@ export function resolveLocalDateTime(
 ): LocalDateTimeResolution {
   const match = LOCAL_DATE_TIME.exec(localDateTime);
   if (!match)
-    throw new RangeError('Local date-time must be YYYY-MM-DDTHH:mm[:ss]');
-  const plain = Temporal.PlainDateTime.from(localDateTime, {
-    overflow: 'reject',
-  });
-  const earlier = plain.toZonedDateTime(timezone, {
-    disambiguation: 'earlier',
-  });
-  const later = plain.toZonedDateTime(timezone, { disambiguation: 'later' });
+    throw new DomainError(
+      'INVALID_LOCAL_DATE_TIME',
+      'Local date-time must be YYYY-MM-DDTHH:mm[:ss]',
+    );
+  let plain: Temporal.PlainDateTime;
+  try {
+    plain = Temporal.PlainDateTime.from(localDateTime, { overflow: 'reject' });
+  } catch {
+    throw new DomainError(
+      'INVALID_LOCAL_DATE_TIME',
+      'Impossible local date-time',
+    );
+  }
+  let earlier: Temporal.ZonedDateTime;
+  let later: Temporal.ZonedDateTime;
+  try {
+    earlier = plain.toZonedDateTime(timezone, { disambiguation: 'earlier' });
+    later = plain.toZonedDateTime(timezone, { disambiguation: 'later' });
+  } catch {
+    throw new DomainError('INVALID_TIMEZONE', 'Invalid time zone');
+  }
   if (earlier.epochMilliseconds === later.epochMilliseconds) {
     return { kind: 'ok', instant: toInstant(earlier.epochMilliseconds) };
   }
