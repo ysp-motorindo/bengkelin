@@ -136,7 +136,21 @@ beforeEach(() => {
       })),
       list: vi.fn(),
     },
-    cashiers: { list: vi.fn() },
+    // Names only, any session (T17: the T11 "me only" limit is lifted).
+    cashiers: {
+      list: vi.fn(),
+      listNames: vi.fn(async () => ({
+        ok: true,
+        value: [
+          {
+            id: 'a1b2c3d4-0000-4000-8000-000000000001',
+            displayName: 'Pak Budi',
+            isActive: true,
+          },
+          { id: SITI.cashierId, displayName: 'Siti', isActive: true },
+        ],
+      })),
+    },
   };
 });
 afterEach(() => vi.useRealTimers());
@@ -176,7 +190,7 @@ describe('daily report screen', () => {
     ).toBeInTheDocument();
   });
 
-  test('a CASHIER can filter on themselves and a channel; the report reloads', async () => {
+  test('a CASHIER can filter on any cashier and a channel; the report reloads', async () => {
     const fake = client();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<DailyReportScreen session={SITI} client={fake} />);
@@ -186,7 +200,7 @@ describe('daily report screen', () => {
       within(cashier)
         .getAllByRole('option')
         .map((o) => o.textContent),
-    ).toEqual(['Semua', 'Saya (Siti)']);
+    ).toEqual(['Semua', 'Pak Budi', 'Siti']);
     await user.selectOptions(cashier, SITI.cashierId);
     await user.selectOptions(await screen.findByLabelText('Kanal'), BENGKEL);
     const date = screen.getByLabelText('Tanggal');

@@ -15,6 +15,17 @@ import { createFileDialogs } from './main/platform/dialogs';
 import { createElectronPrintDriver } from './main/features/printing/electron-driver';
 import { BackupScheduler } from './main/features/backups/scheduler';
 import { recoverInterruptedRestore } from './main/features/backups/restore-recovery';
+import { recordRestoreNotice } from './main/features/backups/restore-notice';
+import {
+  routePrintsToPdf,
+  testPrintToPdfDir,
+} from './main/features/printing/test-print-route';
+import { installCrashLogging } from './main/platform/crash-logging';
+import {
+  installApplicationMenu,
+  MENU_REFRESH_CHANNELS,
+  type ApplicationMenu,
+} from './main/platform/menu';
 
 // Must run before the single-instance lock and before anything reads userData.
 applyDataDirOverride(app);
@@ -23,6 +34,7 @@ let mainWindow: BrowserWindow | null = null;
 let database: AppDatabase | null = null;
 let services: ApplicationServices | null = null;
 let backupScheduler: BackupScheduler | null = null;
+let applicationMenu: ApplicationMenu | null = null;
 
 const clock = { now: () => toInstant(new Date()) };
 // Created lazily: userData may be redirected (test override) before this runs.
@@ -54,6 +66,13 @@ function recoverRestore(): boolean {
   if (recovery.outcome !== 'FATAL') {
     if (recovery.outcome !== 'NO_MARKER') {
       log().info('startup.restore_recovery', { outcome: recovery.outcome });
+      // Shown once to the next ADMIN who signs in (T17 ruling).
+      recordRestoreNotice({
+        dataDir: app.getPath('userData'),
+        recovery,
+        at: clock.now(),
+        logger: log(),
+      });
     }
     return true;
   }
@@ -94,8 +113,10 @@ function startDatabase(): boolean {
   if (!recoverRestore()) return false;
   try {
     database = openDatabase(databasePath());
-    migrateDatabase(database);
+    const migration = migrateDatabase(database);
     log().info('startup', { version: app.getVersion() });
+    // Spec 48: migration outcomes.
+    log().info('startup.migrations', { ...migration });
     return true;
   } catch (error) {
     log().error('startup.database_failed', { error });
@@ -110,6 +131,16 @@ function startDatabase(): boolean {
   }
 }
 
+/**
+ * The real print driver. Unpackaged test runs may route paper prints to
+ * PDF files (BENGKELIN_TEST_PRINT_TO_PDF_DIR, T17 ruling, like R3).
+ */
+function printDriver() {
+  const driver = createElectronPrintDriver();
+  const testDir = testPrintToPdfDir(app);
+  return testDir ? routePrintsToPdf(driver, testDir) : driver;
+}
+
 function showMainWindow(): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
     if (mainWindow.isMinimized()) mainWindow.restore();
@@ -119,11 +150,23 @@ function showMainWindow(): void {
   mainWindow = createMainWindow();
   // Normal exit waits (briefly) for the renderer to flush draft input.
   installCloseGuard(mainWindow);
+  if (services) {
+    applicationMenu?.dispose();
+    applicationMenu = installApplicationMenu({
+      window: mainWindow,
+      services,
+      appName: 'Bengkelin',
+    });
+  }
 
   // Sessions are bound to the window: end them when it closes or crashes.
   const { webContents } = mainWindow;
   const windowId = webContents.id;
   const endSession = () => services?.sessions.endWindow(windowId);
+  mainWindow.once('closed', () => {
+    applicationMenu?.dispose();
+    applicationMenu = null;
+  });
   webContents.once('render-process-gone', endSession);
   mainWindow.once('closed', endSession);
 }
@@ -134,6 +177,26 @@ if (started || !app.requestSingleInstanceLock()) {
 } else {
   app.on('second-instance', showMainWindow);
 
+  // Spec 46/48: unexpected failures outside commands are logged (sanitized);
+  // an uncaught exception is also explained once to the user.
+  let explained = false;
+  installCrashLogging({
+    process,
+    app,
+    logger: log(),
+    onUncaughtException: () => {
+      if (explained) return;
+      explained = true;
+      dialog.showErrorBox(
+        'Bengkelin',
+        [
+          'Terjadi kesalahan tak terduga. Transaksi yang sudah disimpan tetap aman; tutup dan buka kembali aplikasi bila ada yang tidak berfungsi.',
+          'An unexpected error occurred. Saved transactions are safe; close and reopen the app if something stops working.',
+        ].join('\n\n'),
+      );
+    },
+  });
+
   void app.whenReady().then(() => {
     if (!startDatabase()) return;
     if (!database) return;
@@ -143,7 +206,8 @@ if (started || !app.requestSingleInstanceLock()) {
       logDir: logDirectory(),
       logger: log(),
       openPath: (target) => shell.openPath(target),
-      printDriver: createElectronPrintDriver(),
+      printDriver: printDriver(),
+      appVersion: app.getVersion(),
       dialogs: createFileDialogs(app),
       assetsDir: path.join(app.getPath('userData'), 'assets'),
       backupsDir: path.join(app.getPath('userData'), 'backups'),
@@ -158,7 +222,9 @@ if (started || !app.requestSingleInstanceLock()) {
         },
       },
     });
-    registerApplicationIpc(services);
+    registerApplicationIpc(services, (channel) => {
+      if (MENU_REFRESH_CHANNELS.has(channel)) applicationMenu?.refresh();
+    });
     showMainWindow();
     // Daily automatic backup: a catch-up check on the next tick (never
     // delaying the window), then every 15 minutes while the app is open.

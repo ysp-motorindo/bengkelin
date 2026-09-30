@@ -41,6 +41,16 @@ export const resetPasswordInputSchema = z.strictObject({
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordInputSchema>;
 
+/**
+ * Names only, for filters (history, daily report) in any session: no
+ * username, role or timestamps.
+ */
+export interface CashierNameDto {
+  id: UUID;
+  displayName: string;
+  isActive: boolean;
+}
+
 /** Never includes the password hash. */
 export interface CashierDto {
   id: UUID;

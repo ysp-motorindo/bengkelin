@@ -12,7 +12,8 @@
     "receivables": "Receivables",
     "reports": "Daily Report",
     "settings": "Settings",
-    "catalogTransfer": "Catalog Import/Export"
+    "catalogTransfer": "Catalog Import/Export",
+    "cashiers": "Cashiers"
   },
   "preferences": {
     "language": "Language",
@@ -26,5 +27,61 @@
       "DARK": "Dark",
       "SYSTEM": "System"
     }
+  },
+  "menu": {
+    "file": "File",
+    "edit": "Edit",
+    "view": "View",
+    "transaction": "Transaction",
+    "reports": "Reports",
+    "help": "Help",
+    "newTransaction": "New Transaction",
+    "print": "Print",
+    "backupDatabase": "Backup Database",
+    "exit": "Exit",
+    "undo": "Undo",
+    "redo": "Redo",
+    "cut": "Cut",
+    "copy": "Copy",
+    "paste": "Paste",
+    "selectAll": "Select All",
+    "reload": "Reload",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "resetZoom": "Reset Zoom",
+    "toggleFullScreen": "Full Screen",
+    "searchItem": "Search Item",
+    "addCustomItem": "Add Custom Item",
+    "saveDraft": "Save Draft",
+    "finalize": "Finalize (Review)",
+    "dailyReport": "Daily Report",
+    "about": "About Bengkelin",
+    "openLogFolder": "Open Log Folder",
+    "services": "Services",
+    "hide": "Hide Bengkelin",
+    "hideOthers": "Hide Others",
+    "unhide": "Show All",
+    "quit": "Quit Bengkelin"
+  },
+  "about": {
+    "title": "About Bengkelin",
+    "description": "Motorcycle workshop cashier, running entirely on this computer.",
+    "version": "App version",
+    "schema": "Database schema version",
+    "close": "Close"
+  },
+  "menuNotice": {
+    "backupRunning": "Creating a database backup...",
+    "backupDone": "Database backup created: {{fileName}}",
+    "logFolderOpened": "Log folder opened.",
+    "dismiss": "Dismiss message"
+  },
+  "restoreNotice": {
+    "title": "Database restore",
+    "COMPLETED": "The last database restore completed. The data from the selected backup is in use.",
+    "ROLLED_FORWARD": "An interrupted database restore was completed when the app started. The data from the selected backup is in use.",
+    "ROLLED_BACK": "The last database restore did not complete and was rolled back. The previous data is still in use.",
+    "at": "Time: {{time}}",
+    "dismiss": "Dismiss"
   }
 }

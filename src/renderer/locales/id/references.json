@@ -17,6 +17,7 @@
   },
   "status": { "active": "Aktif", "inactive": "Nonaktif" },
   "actions": {
+    "label": "Tindakan",
     "add": "Tambah",
     "edit": "Ubah",
     "save": "Simpan",

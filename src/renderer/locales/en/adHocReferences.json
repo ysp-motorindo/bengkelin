@@ -1,0 +1,30 @@
+{
+  "tab": "Custom items",
+  "description": "Custom item titles cashiers have used, for autocomplete. Inactive items no longer appear in autocomplete, but invoice lines that used them do not change.",
+  "search": "Search title",
+  "fields": {
+    "title": "Title",
+    "type": "Type",
+    "description": "Description",
+    "defaultPrice": "Last price",
+    "status": "Status"
+  },
+  "types": {
+    "SERVICE": "Service",
+    "NON_STOCK_ITEM": "Non-stock item"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "label": "Actions",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate"
+  },
+  "editTitle": "Edit description: {{title}}",
+  "empty": "No custom items yet."
+}

@@ -1,0 +1,16 @@
+{
+  "shop": {
+    "title": "Informasi bengkel",
+    "description": "Dicetak pada faktur baru. Faktur yang sudah terbit tetap memakai data saat difinalisasi.",
+    "name": "Nama bengkel",
+    "address": "Alamat",
+    "phone": "Telepon",
+    "email": "Email",
+    "footer": "Catatan kaki faktur",
+    "timezone": "Zona waktu",
+    "timezoneHint": "Nama zona IANA, misalnya Asia/Jakarta (WIB), Asia/Makassar (WITA), Asia/Jayapura (WIT).",
+    "timezoneWarning": "Mengubah zona waktu memengaruhi batas hari laporan dan penomoran faktur mulai sekarang. Faktur dan laporan yang sudah ada tidak berubah.",
+    "save": "Simpan informasi bengkel",
+    "saved": "Informasi bengkel tersimpan."
+  }
+}

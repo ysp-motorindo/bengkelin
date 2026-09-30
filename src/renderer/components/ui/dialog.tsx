@@ -22,6 +22,11 @@ const FOCUSABLE = [
 /** Open dialogs, innermost last (only the innermost reacts to keys). */
 const openDialogs: HTMLElement[] = [];
 
+/** True while a modal dialog is open (menu shortcuts must not reach behind it). */
+export function hasOpenDialog(): boolean {
+  return openDialogs.length > 0;
+}
+
 function focusables(root: HTMLElement): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
     (el) => el.closest('[hidden]') === null,

@@ -48,12 +48,16 @@ export function updateHeader(
   ) {
     throw new DomainError('CUSTOMER_NOT_FOUND', 'Customer not found');
   }
-  if (
-    header.vehicleId !== null &&
-    header.vehicleId !== invoice.vehicle_id &&
-    !ctx.vehicles.find(header.vehicleId)
-  ) {
-    throw new DomainError('VEHICLE_NOT_FOUND', 'Vehicle not found');
+  if (header.vehicleId !== null && header.vehicleId !== invoice.vehicle_id) {
+    // A newly selected vehicle must exist and be active; one already on
+    // the draft stays even if it was deactivated meanwhile.
+    const vehicle = ctx.vehicles.find(header.vehicleId);
+    if (!vehicle) {
+      throw new DomainError('VEHICLE_NOT_FOUND', 'Vehicle not found');
+    }
+    if (!vehicle.isActive) {
+      throw new DomainError('VEHICLE_INACTIVE', 'Vehicle is inactive');
+    }
   }
   repo.saveHeader(invoice.id, header);
 }

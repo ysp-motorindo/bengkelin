@@ -25,10 +25,34 @@ export function toSessionDto(session: Session): CashierSession {
  */
 export class SessionStore {
   private readonly sessions = new Map<number, Session>();
+  private readonly listeners = new Set<(windowId: number) => void>();
+
+  /**
+   * Called with the window id after its session started or ended (login,
+   * logout, invalidation). The native menu rebuilds from it. Returns an
+   * unsubscribe function.
+   */
+  onChange(listener: (windowId: number) => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private changed(windowId: number): void {
+    for (const listener of this.listeners) {
+      try {
+        listener(windowId);
+      } catch {
+        // A listener (menu rebuild) must never break authentication.
+      }
+    }
+  }
 
   /** Starts (replacing any previous) session for the window. */
   start(session: Session): Session {
     this.sessions.set(session.windowId, session);
+    this.changed(session.windowId);
     return session;
   }
 
@@ -40,6 +64,7 @@ export class SessionStore {
   endWindow(windowId: number): Session | undefined {
     const session = this.sessions.get(windowId);
     this.sessions.delete(windowId);
+    if (session) this.changed(windowId);
     return session;
   }
 
@@ -49,6 +74,7 @@ export class SessionStore {
     for (const [windowId, session] of this.sessions) {
       if (session.cashierId === cashierId) {
         this.sessions.delete(windowId);
+        this.changed(windowId);
         ended += 1;
       }
     }

@@ -5,7 +5,7 @@ import {
   type AppDatabase,
 } from '@/main/database/connection';
 import { runIdempotent } from '@/main/database/idempotency';
-import { requireSession } from '@/main/features/auth/authorize';
+import { requireAdmin, requireSession } from '@/main/features/auth/authorize';
 import type { Session } from '@/main/features/auth/sessions';
 import type {
   OwnershipTransferInput,
@@ -196,6 +196,33 @@ export class VehicleService {
           )
         : work(),
     );
+  }
+
+  /**
+   * ADMIN (spec 55, T5 carry): an inactive vehicle stays searchable and on
+   * its history, but cannot be newly selected on a draft. Ownership is
+   * unchanged.
+   */
+  deactivate(session: Session | undefined, input: VehicleIdInput): VehicleDto {
+    return this.setActive(requireAdmin(session), input.id, false);
+  }
+
+  reactivate(session: Session | undefined, input: VehicleIdInput): VehicleDto {
+    return this.setActive(requireAdmin(session), input.id, true);
+  }
+
+  private setActive(actor: Session, id: string, active: boolean): VehicleDto {
+    return withWriteTransaction(this.deps.db, () => {
+      this.mustFind(id);
+      this.repo.setActive(id, active, this.deps.clock.now());
+      this.audit(
+        actor,
+        active ? 'VEHICLE_REACTIVATED' : 'VEHICLE_DEACTIVATED',
+        id,
+        {},
+      );
+      return this.mustFind(id);
+    });
   }
 
   private assertModelUsable(brandId: string | null, modelId: string | null) {

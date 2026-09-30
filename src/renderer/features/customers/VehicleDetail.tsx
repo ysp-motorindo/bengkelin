@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/renderer/components/ui/card';
 import { useAction } from '@/renderer/lib/use-action';
-import type { CustomerDto, VehicleDetailDto } from '@/shared/contracts';
+import type { CustomerDto, Role, VehicleDetailDto } from '@/shared/contracts';
 import { detectOwnerMismatch } from '@/shared/ownership';
 import { customerLabel, customerName } from './labels';
 
@@ -17,6 +17,9 @@ interface VehicleDetailProps {
   detail: VehicleDetailDto;
   /** The customer picked in this screen (never changes ownership by itself). */
   customer: CustomerDto | null;
+  /** ADMIN may deactivate/reactivate the vehicle (T5 carry). */
+  role?: Role;
+  /** The vehicle changed here (ownership transfer or active status). */
   onTransferred(detail: VehicleDetailDto): void;
 }
 
@@ -24,6 +27,7 @@ interface VehicleDetailProps {
 export function VehicleDetail({
   detail,
   customer,
+  role = 'CASHIER',
   onTransferred,
 }: VehicleDetailProps) {
   const { t } = useTranslation();
@@ -75,6 +79,16 @@ export function VehicleDetail({
     });
   }
 
+  function toggleActive() {
+    void run(async () => {
+      const call = vehicle.isActive
+        ? window.bengkelin.vehicles.deactivate
+        : window.bengkelin.vehicles.reactivate;
+      const result = await call({ id: vehicle.id });
+      if (check(result)) onTransferred({ ...detail, vehicle: result.value });
+    });
+  }
+
   const model = [vehicle.brandName, vehicle.modelName]
     .filter(Boolean)
     .join(' ');
@@ -92,6 +106,33 @@ export function VehicleDetail({
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {error ? <Alert>{error}</Alert> : null}
+        {!vehicle.isActive ? (
+          <p
+            data-testid="vehicle-inactive"
+            className="rounded-md border border-warning/50 bg-warning-surface px-3 py-2 text-sm"
+          >
+            <span className="font-medium">
+              {t('customers.vehicle.inactive')}:
+            </span>{' '}
+            {t('customers.vehicle.inactiveNote')}
+          </p>
+        ) : null}
+        {role === 'ADMIN' ? (
+          <div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={toggleActive}
+            >
+              {t(
+                vehicle.isActive
+                  ? 'customers.vehicle.deactivate'
+                  : 'customers.vehicle.reactivate',
+              )}
+            </Button>
+          </div>
+        ) : null}
         {done ? (
           <p role="status" className="text-sm text-muted-foreground">
             {t('customers.transfer.done')}

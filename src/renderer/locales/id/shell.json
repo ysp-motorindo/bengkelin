@@ -12,7 +12,8 @@
     "receivables": "Piutang",
     "reports": "Laporan Harian",
     "settings": "Pengaturan",
-    "catalogTransfer": "Impor/Ekspor Katalog"
+    "catalogTransfer": "Impor/Ekspor Katalog",
+    "cashiers": "Kasir"
   },
   "preferences": {
     "language": "Bahasa",
@@ -26,5 +27,61 @@
       "DARK": "Gelap",
       "SYSTEM": "Ikuti sistem"
     }
+  },
+  "menu": {
+    "file": "Berkas",
+    "edit": "Edit",
+    "view": "Tampilan",
+    "transaction": "Transaksi",
+    "reports": "Laporan",
+    "help": "Bantuan",
+    "newTransaction": "Transaksi Baru",
+    "print": "Cetak",
+    "backupDatabase": "Cadangkan Database",
+    "exit": "Keluar Aplikasi",
+    "undo": "Urungkan",
+    "redo": "Ulangi",
+    "cut": "Potong",
+    "copy": "Salin",
+    "paste": "Tempel",
+    "selectAll": "Pilih Semua",
+    "reload": "Muat Ulang",
+    "zoomIn": "Perbesar",
+    "zoomOut": "Perkecil",
+    "resetZoom": "Ukuran Normal",
+    "toggleFullScreen": "Layar Penuh",
+    "searchItem": "Cari Barang",
+    "addCustomItem": "Tambah Item Khusus",
+    "saveDraft": "Simpan Draf",
+    "finalize": "Finalisasi (Tinjau)",
+    "dailyReport": "Laporan Harian",
+    "about": "Tentang Bengkelin",
+    "openLogFolder": "Buka Folder Log",
+    "services": "Layanan",
+    "hide": "Sembunyikan Bengkelin",
+    "hideOthers": "Sembunyikan Lainnya",
+    "unhide": "Tampilkan Semua",
+    "quit": "Keluar dari Bengkelin"
+  },
+  "about": {
+    "title": "Tentang Bengkelin",
+    "description": "Aplikasi kasir bengkel motor, berjalan sepenuhnya di komputer ini.",
+    "version": "Versi aplikasi",
+    "schema": "Versi skema database",
+    "close": "Tutup"
+  },
+  "menuNotice": {
+    "backupRunning": "Membuat cadangan database...",
+    "backupDone": "Cadangan database dibuat: {{fileName}}",
+    "logFolderOpened": "Folder log dibuka.",
+    "dismiss": "Tutup pesan"
+  },
+  "restoreNotice": {
+    "title": "Pemulihan database",
+    "COMPLETED": "Pemulihan database terakhir selesai. Data dari cadangan yang dipilih sedang digunakan.",
+    "ROLLED_FORWARD": "Pemulihan database yang sempat terputus telah diselesaikan saat aplikasi dimulai. Data dari cadangan yang dipilih sedang digunakan.",
+    "ROLLED_BACK": "Pemulihan database terakhir tidak selesai dan telah dibatalkan. Data sebelumnya tetap digunakan.",
+    "at": "Waktu: {{time}}",
+    "dismiss": "Tutup"
   }
 }

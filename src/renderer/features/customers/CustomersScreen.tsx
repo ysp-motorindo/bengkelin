@@ -8,9 +8,11 @@ import { Input } from '@/renderer/components/ui/input';
 import { useAction } from '@/renderer/lib/use-action';
 import type {
   CustomerDto,
+  Role,
   VehicleDetailDto,
   VehicleDto,
 } from '@/shared/contracts';
+import { CustomerEditForm } from './CustomerEditForm';
 import { QuickCustomerForm } from './QuickCustomerForm';
 import { QuickVehicleForm } from './QuickVehicleForm';
 import { VehicleDetail } from './VehicleDetail';
@@ -27,8 +29,9 @@ interface Results {
  * a vehicle never changes ownership; the transfer is its own confirmed action.
  * (Checkout-time use of this arrives with the draft workspace.)
  */
-export function CustomersScreen() {
+export function CustomersScreen({ role = 'CASHIER' }: { role?: Role } = {}) {
   const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Results | null>(null);
   const [customer, setCustomer] = useState<CustomerDto | null>(null);
@@ -53,6 +56,7 @@ export function CustomersScreen() {
 
   function selectCustomer(next: CustomerDto) {
     setCustomer(next);
+    setEditing(false);
     void refreshOwned(next.id);
   }
 
@@ -70,6 +74,7 @@ export function CustomersScreen() {
 
   function clearCustomer() {
     setCustomer(null);
+    setEditing(false);
     setOwned([]);
   }
 
@@ -106,11 +111,43 @@ export function CustomersScreen() {
               </span>
               <span className="font-medium">{customerLabel(t, customer)}</span>
             </p>
-            <Button variant="ghost" size="sm" onClick={clearCustomer}>
-              <X aria-hidden="true" />
-              {t('customers.customer.clear')}
-            </Button>
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                aria-expanded={editing}
+                onClick={() => setEditing((open) => !open)}
+              >
+                {t('customers.customer.edit')}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={clearCustomer}>
+                <X aria-hidden="true" />
+                {t('customers.customer.clear')}
+              </Button>
+            </div>
           </div>
+        ) : null}
+
+        {customer && editing ? (
+          <CustomerEditForm
+            key={customer.id}
+            customer={customer}
+            onCancel={() => setEditing(false)}
+            onSaved={(saved) => {
+              setCustomer(saved);
+              setEditing(false);
+              setResults((current) =>
+                current
+                  ? {
+                      ...current,
+                      customers: current.customers.map((c) =>
+                        c.id === saved.id ? saved : c,
+                      ),
+                    }
+                  : current,
+              );
+            }}
+          />
         ) : null}
 
         {customer ? (
@@ -179,6 +216,7 @@ export function CustomersScreen() {
           <VehicleDetail
             detail={detail}
             customer={customer}
+            role={role}
             onTransferred={(next) => {
               setDetail(next);
               setResults((current) =>

@@ -10,8 +10,8 @@ export interface FilterOption {
 /**
  * Channel and cashier choices for list/report filters (history, daily
  * report). ADMIN sees every channel (inactive ones too, for old sales) and
- * every cashier. A CASHIER, who may not list cashiers, sees active channels
- * and only "Me (name)"; main still accepts any cashier id.
+ * every cashier. A CASHIER sees active channels and every cashier's name
+ * from the names-only listing (falling back to "Me (name)").
  */
 export function useFilterOptions(session: CashierSession): {
   channels: FilterOption[];
@@ -47,13 +47,20 @@ export function useFilterOptions(session: CashierSession): {
             })),
           );
         }
-      } else if (live) {
-        setCashiers([
-          {
-            id: session.cashierId,
-            label: t('history.filters.me', { name: session.displayName }),
-          },
-        ]);
+      } else {
+        // Names only (T11 carry): a CASHIER may filter by any cashier.
+        const names = await b.cashiers.listNames();
+        if (!live) return;
+        setCashiers(
+          names.ok
+            ? names.value.map((c) => ({ id: c.id, label: c.displayName }))
+            : [
+                {
+                  id: session.cashierId,
+                  label: t('history.filters.me', { name: session.displayName }),
+                },
+              ],
+        );
       }
     })().catch(() => undefined);
     return () => {

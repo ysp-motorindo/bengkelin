@@ -16,9 +16,11 @@ import type { ReportService } from '@/main/features/reports/service';
 import type { BackupService } from '@/main/features/backups/service';
 import type { RestoreService } from '@/main/features/backups/restore';
 import type { CatalogTransferService } from '@/main/features/catalog-transfer/service';
+import type { RestoreNoticeService } from '@/main/features/backups/restore-notice';
 import type { AppService } from './app-service';
 import type { Logger } from './logger';
 import type { MaintenanceGate } from './maintenance';
+import type { MenuState } from './menu-state';
 
 /**
  * Application services handed to the command table. Feature tasks add their
@@ -47,5 +49,8 @@ export interface ApplicationServices {
   backups: BackupService;
   restore: RestoreService;
   catalogTransfer: CatalogTransferService;
+  restoreNotice: RestoreNoticeService;
   app: AppService;
+  /** Renderer-reported menu context (printable), per window. */
+  menu: MenuState;
 }

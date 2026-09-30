@@ -1,0 +1,36 @@
+{
+  "title": "Cashiers",
+  "description": "Manage cashier and admin accounts. Accounts are never deleted; deactivate accounts that are no longer used.",
+  "fields": {
+    "username": "Username",
+    "displayName": "Display name",
+    "password": "Password",
+    "newPassword": "New password",
+    "role": "Role",
+    "status": "Status"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "create": {
+    "title": "Add cashier",
+    "submit": "Add cashier",
+    "created": "{{name}} added."
+  },
+  "actions": {
+    "label": "Actions",
+    "manage": "Manage"
+  },
+  "manage": {
+    "title": "Manage cashier: {{name}}",
+    "sessionNote": "Changing the role, deactivating or resetting the password ends that cashier's sessions immediately.",
+    "saveName": "Save name",
+    "saveRole": "Save role",
+    "resetPassword": "Reset password",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "saved": "Changes saved.",
+    "passwordReset": "Password reset."
+  }
+}
