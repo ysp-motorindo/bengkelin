@@ -248,9 +248,6 @@
     "statusAfter": "Payment status after checkout:",
     "doneTitle": "Invoice finalized",
     "numberLabel": "Invoice number",
-    "printThermal": "Print Thermal",
-    "printA4": "Print A4",
-    "printLater": "Printing will be available in a later version.",
     "newTransaction": "New Transaction",
     "issues": {
       "CATALOG_ITEM_INACTIVE": "“{{title}}” is inactive and cannot be sold. Remove the line or reactivate the item."

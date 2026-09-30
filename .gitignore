@@ -148,3 +148,6 @@ out/
 # Playwright output
 test-results/
 playwright-report/
+
+# Generated print samples (npm run print:samples)
+artifacts/

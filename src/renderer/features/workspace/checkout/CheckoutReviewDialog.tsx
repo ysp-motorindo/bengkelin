@@ -1,8 +1,7 @@
-import { AlertTriangle, CheckCircle2, FilePlus2, Printer } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FilePlus2 } from 'lucide-react';
 import {
   useCallback,
   useEffect,
-  useId,
   useRef,
   useState,
   type RefObject,
@@ -12,6 +11,11 @@ import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { customerLabel } from '@/renderer/features/customers/labels';
+import { PrintActions } from '@/renderer/features/printing/PrintActions';
+import {
+  bridgePrintClient,
+  type PrintClient,
+} from '@/renderer/features/printing/print-client';
 import { errorMessage } from '@/renderer/lib/errors';
 import { formatIdr } from '@/renderer/lib/money';
 import { watchSessionError } from '@/renderer/lib/session-events';
@@ -27,6 +31,8 @@ interface CheckoutReviewDialogProps {
   /** The flushed, acknowledged draft view. */
   view: DraftView;
   finalizer: FinalizeClient;
+  /** Printing of the finalized invoice (default: the bridge). */
+  printer?: PrintClient;
   onClose(): void;
   /** After a successful finalization: leave the draft for a new one. */
   onNewTransaction(): void;
@@ -49,12 +55,14 @@ const REVIEW_AGAIN = new Set([
  * to finalize: it previews in main (read-only), shows blocking errors and
  * warnings (negative stock needs an explicit acknowledgement), and sends
  * exactly the warnings it showed. If they changed meanwhile, it previews
- * again and asks again. On success it shows the invoice number with the
- * print hooks (T12) and New Transaction.
+ * again and asks again. On success it shows the invoice number, the print
+ * actions (auto-print when enabled, only once the result is received) and
+ * New Transaction.
  */
 export function CheckoutReviewDialog({
   view,
   finalizer,
+  printer = bridgePrintClient,
   onClose,
   onNewTransaction,
 }: CheckoutReviewDialogProps) {
@@ -137,6 +145,7 @@ export function CheckoutReviewDialog({
       >
         <FinalizedContent
           invoice={phase.invoice}
+          printer={printer}
           newTransactionRef={newTransactionRef}
           onNewTransaction={onNewTransaction}
         />
@@ -379,16 +388,16 @@ function ReviewBody({
 
 function FinalizedContent({
   invoice,
+  printer,
   newTransactionRef,
   onNewTransaction,
 }: {
   invoice: InvoiceView;
+  printer: PrintClient;
   newTransactionRef: RefObject<HTMLButtonElement | null>;
   onNewTransaction(): void;
 }) {
   const { t } = useTranslation();
-  const printLater = t('workspace.finalize.printLater');
-  const printLaterId = useId();
   // The Finalize button that had focus is gone: focus the next action.
   useEffect(() => {
     newTransactionRef.current?.focus();
@@ -413,28 +422,14 @@ function FinalizedContent({
           </span>
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-2 pt-2">
-        {/* T12 wires printing; until then the hooks are visible but disabled. */}
-        <span title={printLater}>
-          <Button variant="outline" disabled aria-describedby={printLaterId}>
-            <Printer aria-hidden="true" />
-            {t('workspace.finalize.printThermal')}
-          </Button>
-        </span>
-        <span title={printLater}>
-          <Button variant="outline" disabled aria-describedby={printLaterId}>
-            <Printer aria-hidden="true" />
-            {t('workspace.finalize.printA4')}
-          </Button>
-        </span>
+      {/* Mounted only after the finalize result: printing follows commit. */}
+      <PrintActions invoiceId={invoice.id} client={printer} autoPrint />
+      <div className="flex flex-wrap items-center gap-2">
         <Button ref={newTransactionRef} onClick={onNewTransaction}>
           <FilePlus2 aria-hidden="true" />
           {t('workspace.finalize.newTransaction')}
         </Button>
       </div>
-      <p id={printLaterId} className="text-xs text-muted-foreground">
-        {printLater}
-      </p>
     </>
   );
 }

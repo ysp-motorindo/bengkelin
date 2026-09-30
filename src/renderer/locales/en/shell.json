@@ -9,7 +9,8 @@
     "inventory": "Inventory",
     "references": "Reference Data",
     "history": "History",
-    "receivables": "Receivables"
+    "receivables": "Receivables",
+    "settings": "Settings"
   },
   "preferences": {
     "language": "Language",

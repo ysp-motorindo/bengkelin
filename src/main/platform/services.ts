@@ -10,6 +10,8 @@ import type { CustomerService } from '@/main/features/customers/service';
 import type { ReferenceService } from '@/main/features/references/service';
 import type { VehicleService } from '@/main/features/vehicles/service';
 import type { SettingsService } from '@/main/features/settings/service';
+import type { LogoService } from '@/main/features/settings/logo-service';
+import type { PrintingService } from '@/main/features/printing/service';
 import type { AppService } from './app-service';
 import type { Logger } from './logger';
 
@@ -32,5 +34,7 @@ export interface ApplicationServices {
   drafts: DraftService;
   adHocReferences: AdHocReferenceService;
   invoices: InvoiceService;
+  printing: PrintingService;
+  logo: LogoService;
   app: AppService;
 }

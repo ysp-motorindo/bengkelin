@@ -78,6 +78,24 @@ export class SettingsRepository {
     };
   }
 
+  /** The shop logo's content-addressed asset key (`<sha256>.png|jpg`). */
+  logoAsset(): string | null {
+    const row = this.db
+      .prepare('SELECT logo_asset FROM settings WHERE id = 1')
+      .get() as { logo_asset: string | null };
+    return row.logo_asset;
+  }
+
+  setLogoAsset(asset: string | null): void {
+    this.db
+      .prepare('UPDATE settings SET logo_asset = ? WHERE id = 1')
+      .run(asset);
+  }
+
+  language(): Language {
+    return this.getPublic().language;
+  }
+
   isSetupCompleted(): boolean {
     return this.getPublic().setupCompleted;
   }

@@ -22,6 +22,9 @@ export const CHANNELS = {
     completeSetup: 'bengkelin:settings:completeSetup',
     updateShop: 'bengkelin:settings:updateShop',
     updatePreferences: 'bengkelin:settings:updatePreferences',
+    chooseLogo: 'bengkelin:settings:chooseLogo',
+    removeLogo: 'bengkelin:settings:removeLogo',
+    getLogo: 'bengkelin:settings:getLogo',
   },
   cashiers: {
     list: 'bengkelin:cashiers:list',
@@ -87,5 +90,14 @@ export const CHANNELS = {
     void: 'bengkelin:invoices:void',
     search: 'bengkelin:invoices:search',
     receivables: 'bengkelin:invoices:receivables',
+  },
+  printing: {
+    preview: 'bengkelin:printing:preview',
+    print: 'bengkelin:printing:print',
+    exportPdf: 'bengkelin:printing:exportPdf',
+    getOptions: 'bengkelin:printing:getOptions',
+    listPrinters: 'bengkelin:printing:listPrinters',
+    getSettings: 'bengkelin:printing:getSettings',
+    updateSettings: 'bengkelin:printing:updateSettings',
   },
 } as const;

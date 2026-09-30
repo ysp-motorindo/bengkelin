@@ -9,7 +9,8 @@
     "inventory": "Persediaan",
     "references": "Data Referensi",
     "history": "Riwayat",
-    "receivables": "Piutang"
+    "receivables": "Piutang",
+    "settings": "Pengaturan"
   },
   "preferences": {
     "language": "Bahasa",

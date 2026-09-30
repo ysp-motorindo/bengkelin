@@ -188,10 +188,11 @@ test('scan, split payment, review, finalize, see the number, new transaction', a
   await expect(done.getByTestId('finalized-payment-status')).toHaveText(
     t('workspace.paymentStatus.PAID'),
   );
-  for (const key of ['printThermal', 'printA4']) {
+  // Printing is offered once the invoice is committed (auto-print is off).
+  for (const key of ['printThermal', 'printA4', 'preview', 'exportPdf']) {
     await expect(
-      done.getByRole('button', { name: t(`workspace.finalize.${key}`) }),
-    ).toBeDisabled();
+      done.getByRole('button', { name: t(`printing.actions.${key}`) }),
+    ).toBeEnabled();
   }
   const newTransaction = done.getByRole('button', {
     name: t('workspace.finalize.newTransaction'),

@@ -1,9 +1,11 @@
-import { ArrowLeft, Ban, Printer, Wallet } from 'lucide-react';
+import { ArrowLeft, Ban, Wallet } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { PrintActions } from '@/renderer/features/printing/PrintActions';
+import type { PrintClient } from '@/renderer/features/printing/print-client';
 import { formatIdr } from '@/renderer/lib/money';
 import { useAction } from '@/renderer/lib/use-action';
 import type { DiscountStageDto, InvoiceView } from '@/shared/contracts';
@@ -19,6 +21,8 @@ interface InvoiceDetailProps {
   onBack(): void;
   /** After a payment or void, so lists can refresh. */
   onChanged?(): void;
+  /** Printing (default: the bridge). */
+  printer?: PrintClient;
 }
 
 type Dialog = 'payment' | 'void' | null;
@@ -26,13 +30,14 @@ type Dialog = 'payment' | 'void' | null;
 /**
  * Read-only issued invoice (spec 34): everything in InvoiceView, from its
  * snapshots. The only actions are the permitted ones: record a payment,
- * void (only while unpaid) and print (hooks wired by T12).
+ * void (only while unpaid), and print, preview, reprint or export the PDF.
  */
 export function InvoiceDetail({
   invoiceId,
   timezone,
   onBack,
   onChanged,
+  printer,
 }: InvoiceDetailProps) {
   const { t, i18n } = useTranslation();
   const [invoice, setInvoice] = useState<InvoiceView | null>(null);
@@ -41,7 +46,6 @@ export function InvoiceDetail({
   const heading = useRef<HTMLHeadingElement>(null);
   const load = useAction();
   const { run, check } = load;
-  const printNoteId = useId();
   const voidNoteId = useId();
   const paymentNoteId = useId();
 
@@ -207,19 +211,14 @@ export function InvoiceDetail({
             <Ban aria-hidden="true" />
             {t('history.detail.void')}
           </Button>
-          {/* T12 wires printing; until then the hooks are visible but disabled. */}
-          <span title={t('history.detail.printLater')}>
-            <Button variant="outline" disabled aria-describedby={printNoteId}>
-              <Printer aria-hidden="true" />
-              {t('history.detail.printThermal')}
-            </Button>
-          </span>
-          <span title={t('history.detail.printLater')}>
-            <Button variant="outline" disabled aria-describedby={printNoteId}>
-              <Printer aria-hidden="true" />
-              {t('history.detail.printA4')}
-            </Button>
-          </span>
+        </div>
+        <div className="mt-2">
+          {/* Reprints use the same actions; VOID invoices print marked VOID. */}
+          <PrintActions
+            invoiceId={invoice.id}
+            size="sm"
+            {...(printer ? { client: printer } : {})}
+          />
         </div>
         <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
           {!canPay ? (
@@ -236,7 +235,6 @@ export function InvoiceDetail({
                 : t('history.detail.voidBlockedPaid')}
             </p>
           ) : null}
-          <p id={printNoteId}>{t('history.detail.printLater')}</p>
           <p>{t('history.detail.readOnly')}</p>
         </div>
       </section>

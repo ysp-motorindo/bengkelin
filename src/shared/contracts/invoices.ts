@@ -183,7 +183,11 @@ export interface ShopIdentitySnapshot {
   phoneNumber: string | null;
   email: string | null;
   invoiceFooter: string | null;
-  /** Reserved for the printing task (no logo reference exists yet). */
+  /**
+   * The shop logo's content-addressed asset key (`<sha256>.png|jpg`) at
+   * finalization; null when none was set (and for invoices finalized
+   * before logos existed).
+   */
   logo: string | null;
 }
 
