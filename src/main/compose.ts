@@ -6,6 +6,7 @@ import { CatalogService } from '@/main/features/catalog/service';
 import { InventoryService } from '@/main/features/inventory/service';
 import { DraftService } from '@/main/features/drafts/service';
 import { AdHocReferenceService } from '@/main/features/ad-hoc-references/service';
+import { InvoiceService } from '@/main/features/invoices/service';
 import { CustomerService } from '@/main/features/customers/service';
 import { ReferenceService } from '@/main/features/references/service';
 import { VehicleService } from '@/main/features/vehicles/service';
@@ -47,6 +48,8 @@ export function createApplicationServices(
     inventory,
     drafts: new DraftService({ db, clock, catalog }),
     adHocReferences: new AdHocReferenceService({ db }),
+    // Production composition never passes the test-only `onStep` hook.
+    invoices: new InvoiceService({ db, clock }),
     app: new AppService({ logDir: deps.logDir, openPath: deps.openPath }),
   };
 }

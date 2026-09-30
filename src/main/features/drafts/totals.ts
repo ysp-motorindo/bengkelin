@@ -1,6 +1,9 @@
 import { toNumber } from '@/main/database/rows';
-import { calculateInvoice } from '@/main/features/invoices/domain';
-import type { DraftRepository, StageRow } from './repository';
+import {
+  calculateInvoice,
+  type InvoiceCalculation,
+} from '@/main/features/invoices/domain';
+import type { DraftRepository, LineRow, StageRow } from './repository';
 
 function groupByOwner(stages: StageRow[]): Map<string, StageRow[]> {
   const map = new Map<string, StageRow[]>();
@@ -10,6 +13,37 @@ function groupByOwner(stages: StageRow[]): Map<string, StageRow[]> {
     map.set(stage.owner_id, list);
   }
   return map;
+}
+
+export interface DraftCalculation {
+  lines: LineRow[];
+  lineStages: Map<string, StageRow[]>;
+  invoiceStages: StageRow[];
+  calc: InvoiceCalculation;
+}
+
+/**
+ * The shared domain calculation (spec 20, 21, 58) over the draft's live lines
+ * and discount stages. Reads only.
+ */
+export function calculateDraftTotals(
+  repo: DraftRepository,
+  invoiceId: string,
+): DraftCalculation {
+  const lines = repo.liveLines(invoiceId);
+  const lineStages = groupByOwner(repo.lineStages(invoiceId));
+  const invoiceStages = repo.invoiceStages(invoiceId);
+  const calc = calculateInvoice({
+    lines: lines.map((line) => ({
+      quantity: toNumber(line.quantity),
+      unitPrice: line.unit_price,
+      discountStages: (lineStages.get(line.id) ?? []).map((s) =>
+        toNumber(s.percentage_bps),
+      ),
+    })),
+    discountStages: invoiceStages.map((s) => toNumber(s.percentage_bps)),
+  });
+  return { lines, lineStages, invoiceStages, calc };
 }
 
 /**
@@ -23,20 +57,10 @@ export function recalculateDraft(
   repo: DraftRepository,
   invoiceId: string,
 ): void {
-  const lines = repo.liveLines(invoiceId);
-  const lineStages = groupByOwner(repo.lineStages(invoiceId));
-  const invoiceStages = repo.invoiceStages(invoiceId);
-
-  const calc = calculateInvoice({
-    lines: lines.map((line) => ({
-      quantity: toNumber(line.quantity),
-      unitPrice: line.unit_price,
-      discountStages: (lineStages.get(line.id) ?? []).map((s) =>
-        toNumber(s.percentage_bps),
-      ),
-    })),
-    discountStages: invoiceStages.map((s) => toNumber(s.percentage_bps)),
-  });
+  const { lines, lineStages, invoiceStages, calc } = calculateDraftTotals(
+    repo,
+    invoiceId,
+  );
 
   lines.forEach((line, index) => {
     const result = calc.lines[index]!;

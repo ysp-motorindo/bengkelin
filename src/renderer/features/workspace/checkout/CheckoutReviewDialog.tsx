@@ -1,54 +1,147 @@
-import { CheckCircle2 } from 'lucide-react';
-import { useState } from 'react';
+import { AlertTriangle, CheckCircle2, FilePlus2, Printer } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { customerLabel } from '@/renderer/features/customers/labels';
+import { errorMessage } from '@/renderer/lib/errors';
 import { formatIdr } from '@/renderer/lib/money';
-import type { DraftView } from '@/shared/contracts';
-
-/**
- * T10 hook: finalization receives the flushed, acknowledged view (use its
- * `version` as expectedVersion). Resolve to close the review; throw or
- * return an error message to keep it open and show the message.
- */
-export type FinalizeHandler = (view: DraftView) => Promise<string | null>;
+import { watchSessionError } from '@/renderer/lib/session-events';
+import type {
+  DraftView,
+  FinalizePreviewDto,
+  FinalizeWarning,
+  InvoiceView,
+} from '@/shared/contracts';
+import type { FinalizeClient } from './finalize-client';
 
 interface CheckoutReviewDialogProps {
+  /** The flushed, acknowledged draft view. */
   view: DraftView;
-  /** Absent until T10 wires finalization: the button is shown disabled. */
-  onFinalize?: FinalizeHandler | undefined;
+  finalizer: FinalizeClient;
   onClose(): void;
+  /** After a successful finalization: leave the draft for a new one. */
+  onNewTransaction(): void;
 }
 
+type Phase =
+  | { kind: 'loading' }
+  | { kind: 'failed'; message: string }
+  | { kind: 'ready'; preview: FinalizePreviewDto }
+  | { kind: 'done'; invoice: InvoiceView };
+
+/** Codes after which the review must be shown again and re-acknowledged. */
+const REVIEW_AGAIN = new Set([
+  'FINALIZE_WARNINGS_CHANGED',
+  'DRAFT_VERSION_CONFLICT',
+]);
+
 /**
- * "Review checkout" (F8 in T17): a read-only summary of what finalization
- * will commit. Opened only after pending draft input is flushed.
+ * "Review checkout" (F8 in T17) and finalization (spec 26, 52). The ONLY way
+ * to finalize: it previews in main (read-only), shows blocking errors and
+ * warnings (negative stock needs an explicit acknowledgement), and sends
+ * exactly the warnings it showed. If they changed meanwhile, it previews
+ * again and asks again. On success it shows the invoice number with the
+ * print hooks (T12) and New Transaction.
  */
 export function CheckoutReviewDialog({
   view,
-  onFinalize,
+  finalizer,
   onClose,
+  onNewTransaction,
 }: CheckoutReviewDialogProps) {
   const { t } = useTranslation();
+  const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { totals } = view;
-  const credit = BigInt(totals.unallocatedAmount) > 0n;
+  const [notice, setNotice] = useState<string | null>(null);
+  const [stockAcknowledged, setStockAcknowledged] = useState(false);
+  /** One requestId per submission of the same payload, reused on retry. */
+  const submission = useRef<{ key: string; requestId: string } | null>(null);
+  const newTransactionRef = useRef<HTMLButtonElement>(null);
 
-  async function finalize() {
-    if (!onFinalize || busy) return;
+  const loadPreview = useCallback(async () => {
+    try {
+      const result = await finalizer.previewFinalize({ invoiceId: view.id });
+      if (!result.ok) {
+        watchSessionError(result.error);
+        setPhase({ kind: 'failed', message: errorMessage(t, result.error) });
+        return;
+      }
+      setStockAcknowledged(false);
+      setPhase({ kind: 'ready', preview: result.value });
+    } catch {
+      setPhase({ kind: 'failed', message: t('errors.INTERNAL_ERROR') });
+    }
+  }, [finalizer, t, view.id]);
+
+  useEffect(() => {
+    void loadPreview();
+  }, [loadPreview]);
+
+  async function finalize(preview: FinalizePreviewDto) {
+    if (busy) return;
     setBusy(true);
     setError(null);
+    setNotice(null);
+    const payload = {
+      invoiceId: preview.invoiceId,
+      expectedVersion: preview.draftVersion,
+      acknowledgedWarnings: preview.warnings,
+    };
+    const key = JSON.stringify(payload);
+    if (submission.current?.key !== key) {
+      submission.current = { key, requestId: crypto.randomUUID() };
+    }
     try {
-      const failure = await onFinalize(view);
-      if (failure) setError(failure);
+      const result = await finalizer.finalize({
+        requestId: submission.current.requestId,
+        ...payload,
+      });
+      if (result.ok) {
+        setPhase({ kind: 'done', invoice: result.value });
+        return;
+      }
+      watchSessionError(result.error);
+      if (REVIEW_AGAIN.has(result.error.code)) {
+        setNotice(t('workspace.finalize.reviewAgain'));
+        await loadPreview();
+      } else {
+        setError(errorMessage(t, result.error));
+      }
     } catch {
+      // Transport failure: the same requestId is reused on the next attempt.
       setError(t('errors.INTERNAL_ERROR'));
     } finally {
       setBusy(false);
     }
+  }
+
+  // ONE dialog for review and result: swapping dialogs would let the closing
+  // one restore focus to the opener after the new one took it.
+  if (phase.kind === 'done') {
+    return (
+      <Dialog
+        title={t('workspace.finalize.doneTitle')}
+        onClose={onNewTransaction}
+        closeLabel={t('workspace.common.close')}
+        className="max-w-xl"
+      >
+        <FinalizedContent
+          invoice={phase.invoice}
+          newTransactionRef={newTransactionRef}
+          onNewTransaction={onNewTransaction}
+        />
+      </Dialog>
+    );
   }
 
   return (
@@ -58,7 +151,149 @@ export function CheckoutReviewDialog({
       closeLabel={t('workspace.common.close')}
       className="max-w-xl"
     >
+      {notice ? (
+        <p
+          role="status"
+          data-testid="review-notice"
+          className="rounded-md border border-warning/50 bg-warning-surface px-3 py-2 text-sm"
+        >
+          {notice}
+        </p>
+      ) : null}
       {error ? <Alert>{error}</Alert> : null}
+      {phase.kind === 'loading' ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t('common.loading')}
+        </p>
+      ) : null}
+      {phase.kind === 'failed' ? <Alert>{phase.message}</Alert> : null}
+      {phase.kind === 'ready' ? (
+        <ReviewBody
+          view={view}
+          preview={phase.preview}
+          stockAcknowledged={stockAcknowledged}
+          onStockAcknowledged={setStockAcknowledged}
+        />
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <Button
+          data-testid="finalize-button"
+          disabled={
+            busy ||
+            phase.kind !== 'ready' ||
+            phase.preview.errors.length > 0 ||
+            (hasNegativeStock(phase.preview.warnings) && !stockAcknowledged)
+          }
+          onClick={() => {
+            if (phase.kind === 'ready') void finalize(phase.preview);
+          }}
+        >
+          <CheckCircle2 aria-hidden="true" />
+          {busy
+            ? t('workspace.finalize.finalizing')
+            : t('workspace.review.finalize')}
+        </Button>
+        <Button variant="outline" onClick={onClose}>
+          {t('workspace.review.back')}
+        </Button>
+      </div>
+    </Dialog>
+  );
+}
+
+function hasNegativeStock(warnings: FinalizeWarning[]): boolean {
+  return warnings.some((w) => w.code === 'NEGATIVE_STOCK');
+}
+
+function ReviewBody({
+  view,
+  preview,
+  stockAcknowledged,
+  onStockAcknowledged,
+}: {
+  view: DraftView;
+  preview: FinalizePreviewDto;
+  stockAcknowledged: boolean;
+  onStockAcknowledged(value: boolean): void;
+}) {
+  const { t } = useTranslation();
+  const { totals } = preview;
+  const credit = BigInt(totals.outstandingAmount) > 0n;
+  const negative = preview.warnings.filter((w) => w.code === 'NEGATIVE_STOCK');
+  const other = preview.warnings.filter((w) => w.code !== 'NEGATIVE_STOCK');
+
+  return (
+    <>
+      {preview.errors.length > 0 ? (
+        <div
+          role="alert"
+          data-testid="finalize-errors"
+          className="rounded-md border border-destructive/50 px-3 py-2 text-sm text-destructive"
+        >
+          <p className="font-medium">{t('workspace.finalize.errorsTitle')}</p>
+          <ul className="list-disc pl-5">
+            {preview.errors.map((issue) => (
+              <li key={issue.code}>
+                {t(`errors.${issue.code}`, { ...issue.params })}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {negative.length > 0 ? (
+        <div
+          role="alert"
+          data-testid="negative-stock-warning"
+          className="rounded-md border-2 border-warning bg-warning-surface px-3 py-2 text-sm"
+        >
+          <p className="flex items-center gap-2 font-semibold">
+            <AlertTriangle aria-hidden="true" className="size-4 text-warning" />
+            {t('workspace.finalize.negativeStockTitle')}
+          </p>
+          <ul className="tabular list-disc pl-5">
+            {negative.map((w) =>
+              w.code === 'NEGATIVE_STOCK' ? (
+                <li key={w.params.catalogItemId}>
+                  {t('workspace.finalize.negativeStockItem', {
+                    title: w.params.title,
+                    observed: w.params.observedStock,
+                    demand: w.params.demand,
+                    result: w.params.resultingStock,
+                  })}
+                </li>
+              ) : null,
+            )}
+          </ul>
+          <label className="mt-2 flex items-center gap-2 font-medium">
+            <input
+              type="checkbox"
+              checked={stockAcknowledged}
+              onChange={(event) => onStockAcknowledged(event.target.checked)}
+            />
+            {t('workspace.finalize.acknowledgeNegative')}
+          </label>
+        </div>
+      ) : null}
+
+      {other.length > 0 ? (
+        <ul
+          data-testid="finalize-warnings"
+          className="rounded-md border border-warning/50 bg-warning-surface px-3 py-2 text-sm"
+        >
+          {other.map((w) => (
+            <li key={w.code}>
+              {w.code === 'ODOMETER_LOWER_THAN_PREVIOUS'
+                ? t('workspace.finalize.odometerLower', {
+                    previous: w.params.previousOdometer,
+                  })
+                : t('workspace.finalize.ownerMismatch')}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       <dl className="tabular grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-muted-foreground">
           {t('workspace.header.channel')}
@@ -97,17 +332,17 @@ export function CheckoutReviewDialog({
         <h3 className="text-sm font-medium">
           {t('workspace.checkout.payments')}
         </h3>
-        {view.checkoutAllocations.length === 0 ? (
+        {preview.checkoutPayments.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {t('workspace.review.noPayments')}
           </p>
         ) : (
-          <ul className="tabular text-sm">
-            {view.checkoutAllocations.map((allocation) => (
-              <li key={allocation.sequence}>
-                {t(`workspace.paymentMethod.${allocation.method}`)}:{' '}
-                {formatIdr(allocation.amount)}
-                {allocation.reference ? ` (${allocation.reference})` : ''}
+          <ul className="tabular text-sm" data-testid="review-payments">
+            {preview.checkoutPayments.map((payment, index) => (
+              <li key={index}>
+                {t(`workspace.paymentMethod.${payment.method}`)}:{' '}
+                {formatIdr(payment.amount)}
+                {payment.reference ? ` (${payment.reference})` : ''}
               </li>
             ))}
           </ul>
@@ -115,39 +350,84 @@ export function CheckoutReviewDialog({
         {credit ? (
           <p className="mt-1 text-sm">
             {t('workspace.review.credit', {
-              amount: formatIdr(totals.unallocatedAmount),
+              amount: formatIdr(totals.outstandingAmount),
               date: view.dueDate,
             })}
           </p>
         ) : null}
-      </section>
-
-      {view.allocationsExceedAmount ? (
-        <Alert>{t('workspace.checkout.exceeds')}</Alert>
-      ) : null}
-      {view.lines.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {t('workspace.review.empty')}
-        </p>
-      ) : null}
-
-      <div className="flex flex-wrap items-center gap-2 pt-1">
-        <Button
-          disabled={!onFinalize || busy || view.lines.length === 0}
-          onClick={() => void finalize()}
-        >
-          <CheckCircle2 aria-hidden="true" />
-          {t('workspace.review.finalize')}
-        </Button>
-        <Button variant="outline" onClick={onClose}>
-          {t('workspace.review.back')}
-        </Button>
-        {!onFinalize ? (
-          <p className="text-xs text-muted-foreground">
-            {t('workspace.review.finalizeUnavailable')}
+        {preview.paymentStatusAfterCheckout ? (
+          <p className="mt-1 text-sm">
+            {t('workspace.finalize.statusAfter')}{' '}
+            <span className="font-semibold" data-testid="review-payment-status">
+              {t(
+                `workspace.paymentStatus.${preview.paymentStatusAfterCheckout}`,
+              )}
+            </span>
           </p>
         ) : null}
+      </section>
+    </>
+  );
+}
+
+function FinalizedContent({
+  invoice,
+  newTransactionRef,
+  onNewTransaction,
+}: {
+  invoice: InvoiceView;
+  newTransactionRef: RefObject<HTMLButtonElement | null>;
+  onNewTransaction(): void;
+}) {
+  const { t } = useTranslation();
+  const printLater = t('workspace.finalize.printLater');
+  const printLaterId = useId();
+  // The Finalize button that had focus is gone: focus the next action.
+  useEffect(() => {
+    newTransactionRef.current?.focus();
+  }, [newTransactionRef]);
+  return (
+    <>
+      <div className="flex flex-col items-start gap-1" role="status">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CheckCircle2 aria-hidden="true" className="size-4 text-success" />
+          {t('workspace.finalize.numberLabel')}
+        </p>
+        <p
+          className="tabular text-2xl font-semibold"
+          data-testid="finalized-invoice-number"
+        >
+          {invoice.invoiceNumber}
+        </p>
+        <p className="tabular text-sm">
+          {formatIdr(invoice.totals.amount)} ·{' '}
+          <span data-testid="finalized-payment-status">
+            {t(`workspace.paymentStatus.${invoice.paymentStatus}`)}
+          </span>
+        </p>
       </div>
-    </Dialog>
+      <div className="flex flex-wrap items-center gap-2 pt-2">
+        {/* T12 wires printing; until then the hooks are visible but disabled. */}
+        <span title={printLater}>
+          <Button variant="outline" disabled aria-describedby={printLaterId}>
+            <Printer aria-hidden="true" />
+            {t('workspace.finalize.printThermal')}
+          </Button>
+        </span>
+        <span title={printLater}>
+          <Button variant="outline" disabled aria-describedby={printLaterId}>
+            <Printer aria-hidden="true" />
+            {t('workspace.finalize.printA4')}
+          </Button>
+        </span>
+        <Button ref={newTransactionRef} onClick={onNewTransaction}>
+          <FilePlus2 aria-hidden="true" />
+          {t('workspace.finalize.newTransaction')}
+        </Button>
+      </div>
+      <p id={printLaterId} className="text-xs text-muted-foreground">
+        {printLater}
+      </p>
+    </>
   );
 }

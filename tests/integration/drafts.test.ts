@@ -1578,11 +1578,8 @@ describe('checkout allocations', () => {
     });
     expect(v4.allocationsExceedAmount).toBe(true);
     expect(v4.totals.unallocatedAmount).toBe('-13500');
-    expect(
-      rows(
-        `SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%payment%'`,
-      ),
-    ).toEqual([]);
+    // Allocations are plans: no payment exists until finalization (T10).
+    expect(count('SELECT COUNT(*) AS n FROM payments')).toBe(0);
   });
 });
 

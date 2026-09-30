@@ -1,5 +1,8 @@
 import { CHANNELS } from '@/shared/channels';
 import {
+  finalizeInputSchema,
+  invoiceIdInputSchema,
+  previewFinalizeInputSchema,
   adjustStockInputSchema,
   applyPriceChangeInputSchema,
   cashierIdInputSchema,
@@ -62,6 +65,7 @@ export function buildCommands(services: ApplicationServices): Command[] {
     inventory,
     drafts,
     adHocReferences,
+    invoices,
     app,
     sessions,
   } = services;
@@ -281,6 +285,19 @@ export function buildCommands(services: ApplicationServices): Command[] {
       C.adHocReferences.search,
       searchAdHocReferencesInputSchema,
       ({ windowId }, input) => adHocReferences.search(session(windowId), input),
+    ),
+
+    command(
+      C.invoices.previewFinalize,
+      previewFinalizeInputSchema,
+      ({ windowId }, input) =>
+        invoices.previewFinalize(session(windowId), input),
+    ),
+    command(C.invoices.finalize, finalizeInputSchema, ({ windowId }, input) =>
+      invoices.finalize(session(windowId), input),
+    ),
+    command(C.invoices.get, invoiceIdInputSchema, ({ windowId }, input) =>
+      invoices.get(session(windowId), input),
     ),
   ];
 }

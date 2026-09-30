@@ -11,7 +11,7 @@ import { InventoryScreen } from '@/renderer/features/inventory/InventoryScreen';
 import { CustomersScreen } from '@/renderer/features/customers/CustomersScreen';
 import { ReferencesScreen } from '@/renderer/features/references/ReferencesScreen';
 import { CashierWorkspace } from '@/renderer/features/workspace/CashierWorkspace';
-import type { FinalizeHandler } from '@/renderer/features/workspace/checkout/CheckoutReviewDialog';
+import type { FinalizeClient } from '@/renderer/features/workspace/checkout/finalize-client';
 import type { CashierSession, PublicSettings } from '@/shared/contracts';
 import { PreferencesControls } from './PreferencesControls';
 
@@ -23,8 +23,8 @@ interface ShellProps {
   settings?: PublicSettings | undefined;
   onLoggedOut(): void;
   onPreferencesChanged?: ((settings: PublicSettings) => void) | undefined;
-  /** T10 wires finalization into the checkout review. */
-  onFinalize?: FinalizeHandler | undefined;
+  /** Finalization client for the checkout review (default: the bridge). */
+  finalizer?: FinalizeClient | undefined;
 }
 
 /**
@@ -39,7 +39,7 @@ export function Shell({
   settings,
   onLoggedOut,
   onPreferencesChanged,
-  onFinalize,
+  finalizer,
 }: ShellProps) {
   const { t } = useTranslation();
   const [view, setView] = useState<View>('workspace');
@@ -118,7 +118,7 @@ export function Shell({
       <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
         {error ? <Alert className="mb-4">{error}</Alert> : null}
         <div hidden={view !== 'workspace'}>
-          <CashierWorkspace onFinalize={onFinalize} />
+          <CashierWorkspace finalizer={finalizer} />
         </div>
         {view === 'customers' ? <CustomersScreen /> : null}
         {view === 'catalog' ? <CatalogScreen role={session.role} /> : null}

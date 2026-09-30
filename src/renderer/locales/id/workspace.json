@@ -188,8 +188,7 @@
     "credit": "Sisa {{amount}} menjadi piutang, jatuh tempo {{date}}.",
     "empty": "Transaksi belum berisi barang.",
     "finalize": "Finalisasi",
-    "back": "Kembali",
-    "finalizeUnavailable": "Finalisasi belum tersedia di versi ini."
+    "back": "Kembali"
   },
   "repricing": {
     "open": "Tinjau harga",
@@ -236,5 +235,27 @@
     "percentage": "Persen 0–100, maksimal 2 desimal.",
     "discountGap": "Isi diskon secara berurutan mulai dari Diskon 1.",
     "wholeNumber": "Masukkan bilangan bulat."
+  },
+  "finalize": {
+    "finalizing": "Memfinalisasi…",
+    "reviewAgain": "Ada yang berubah sejak ditinjau. Periksa tinjauan lagi, lalu finalisasi.",
+    "errorsTitle": "Transaksi ini belum bisa difinalisasi:",
+    "negativeStockTitle": "Stok akan menjadi minus",
+    "negativeStockItem": "{{title}}: stok {{observed}}, dijual {{demand}}, stok setelah penjualan {{result}}",
+    "acknowledgeNegative": "Saya mengerti stok akan menjadi minus",
+    "odometerLower": "Odometer lebih rendah dari kunjungan sebelumnya ({{previous}} km).",
+    "ownerMismatch": "Kendaraan terdaftar atas nama pelanggan lain.",
+    "statusAfter": "Status pembayaran setelah checkout:",
+    "doneTitle": "Faktur final",
+    "numberLabel": "Nomor faktur",
+    "printThermal": "Cetak Thermal",
+    "printA4": "Cetak A4",
+    "printLater": "Pencetakan akan tersedia di versi berikutnya.",
+    "newTransaction": "Transaksi Baru"
+  },
+  "paymentStatus": {
+    "UNPAID": "Belum dibayar",
+    "PARTIALLY_PAID": "Dibayar sebagian",
+    "PAID": "Lunas"
   }
 }

@@ -65,5 +65,10 @@
   "AD_HOC_REFERENCE_INACTIVE": "Item lain-lain ini tidak aktif.",
   "MONEY_OVERFLOW": "Jumlahnya terlalu besar.",
   "INVALID_TOP_DAYS": "Isi TOP dengan jumlah hari bulat (0 atau lebih).",
-  "INVALID_DATE": "Tanggal tidak valid."
+  "INVALID_DATE": "Tanggal tidak valid.",
+  "DRAFT_EMPTY": "Transaksi belum memiliki barang.",
+  "INVOICE_DATE_IN_FUTURE": "Tanggal faktur {{invoiceDate}} masih di masa depan (hari ini {{today}}). Ubah tanggal faktur.",
+  "ZERO_TOTAL_WITH_ALLOCATIONS": "Totalnya nol, jadi tidak ada pembayaran yang bisa dicatat. Hapus rencana pembayaran.",
+  "FINALIZE_WARNINGS_CHANGED": "Peringatan berubah sejak Anda meninjaunya. Tinjau checkout lagi.",
+  "INVOICE_NOT_FOUND": "Faktur tidak ditemukan."
 }

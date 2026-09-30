@@ -12,10 +12,11 @@ import type {
   ReferenceDto,
 } from '@/shared/contracts';
 import type { Result } from '@/shared/primitives';
+import { CheckoutReviewDialog } from './checkout/CheckoutReviewDialog';
 import {
-  CheckoutReviewDialog,
-  type FinalizeHandler,
-} from './checkout/CheckoutReviewDialog';
+  bridgeFinalizeClient,
+  type FinalizeClient,
+} from './checkout/finalize-client';
 import { CheckoutPanel } from './checkout/CheckoutPanel';
 import { CustomLineDialog } from './CustomLineDialog';
 import { DraftHeader } from './DraftHeader';
@@ -47,7 +48,8 @@ interface DraftWorkspaceProps {
   onDiscardOther(summary: DraftSummary): Promise<string | null>;
   /** The draft was discarded/finalized elsewhere (or here): leave it. */
   onLeave(code: string): void;
-  onFinalize?: FinalizeHandler | undefined;
+  /** Finalization from the review step (default: the preload bridge). */
+  finalizer?: FinalizeClient | undefined;
 }
 
 type Dialog =
@@ -76,7 +78,7 @@ export function DraftWorkspace({
   onOpenDraft,
   onDiscardOther,
   onLeave,
-  onFinalize,
+  finalizer = bridgeFinalizeClient,
 }: DraftWorkspaceProps) {
   const { t } = useTranslation();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -390,8 +392,12 @@ export function DraftWorkspace({
       {dialog?.kind === 'review' ? (
         <CheckoutReviewDialog
           view={view}
-          onFinalize={onFinalize}
+          finalizer={finalizer}
           onClose={closeDialog}
+          onNewTransaction={() => {
+            setDialog(null);
+            void onNewDraft();
+          }}
         />
       ) : null}
     </div>

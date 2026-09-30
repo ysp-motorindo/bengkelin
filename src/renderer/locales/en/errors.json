@@ -65,5 +65,10 @@
   "AD_HOC_REFERENCE_INACTIVE": "This custom item is inactive.",
   "MONEY_OVERFLOW": "The amount is too large.",
   "INVALID_TOP_DAYS": "Enter TOP as a whole number of days (0 or more).",
-  "INVALID_DATE": "Invalid date."
+  "INVALID_DATE": "Invalid date.",
+  "DRAFT_EMPTY": "The transaction has no items yet.",
+  "INVOICE_DATE_IN_FUTURE": "The invoice date {{invoiceDate}} is in the future (today is {{today}}). Change the invoice date.",
+  "ZERO_TOTAL_WITH_ALLOCATIONS": "The total is zero, so no payment can be recorded. Remove the planned payments.",
+  "FINALIZE_WARNINGS_CHANGED": "The warnings changed since you reviewed them. Review the checkout again.",
+  "INVOICE_NOT_FOUND": "Invoice not found."
 }

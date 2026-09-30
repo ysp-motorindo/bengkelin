@@ -79,4 +79,9 @@ export const CHANNELS = {
   adHocReferences: {
     search: 'bengkelin:adHocReferences:search',
   },
+  invoices: {
+    previewFinalize: 'bengkelin:invoices:previewFinalize',
+    finalize: 'bengkelin:invoices:finalize',
+    get: 'bengkelin:invoices:get',
+  },
 } as const;
