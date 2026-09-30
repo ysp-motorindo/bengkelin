@@ -122,5 +122,15 @@
   "UNIT_REQUIRED": "A unit is required for a new SKU.",
   "SERVICE_WITH_OPENING_STOCK": "Services have no stock; leave opening_stock empty.",
   "OPENING_STOCK_IGNORED": "The SKU already exists: opening stock is ignored. Change stock in Inventory.",
-  "PRICE_UNCHANGED": "Same as the price in force; no new price point."
+  "PRICE_UNCHANGED": "Same as the price in force; no new price point.",
+  "RESTORE_IN_PROGRESS": "A database restore is in progress. Changes cannot be saved until the application restarts.",
+  "RESTORE_SAFETY_BACKUP_FAILED": "The safety backup could not be created, so the restore was cancelled and nothing changed. Check the backup folder and try again.",
+  "RESTORE_MIGRATION_FAILED": "This backup cannot be upgraded to the current application version. Nothing changed.",
+  "RESTORE_NO_ACTIVE_ADMIN": "This backup has no active ADMIN, so nobody could sign in after restoring it. Choose another backup.",
+  "RESTORE_TOKEN_EXPIRED": "The restore preview has expired. Choose the backup file again.",
+  "RESTORE_NOT_CONFIRMED": "The restore must be confirmed first.",
+  "RESTORE_VALIDATION_FAILED": "The backup copy failed its check before restoring. Nothing changed.",
+  "RESTORE_FAILED": "The restore could not be completed. Your data is intact; if the application restarts, check your data after signing in.",
+  "RESTORE_STAGING_FAILED": "The backup file could not be copied for checking (the disk may be full). Nothing changed.",
+  "RESTORE_BUSY": "A save was still running, so the restore was cancelled. Try again in a moment."
 }

@@ -4,6 +4,10 @@ import type {
   ImportPreviewDto,
   ImportSummaryDto,
   BackupDestinationChoiceDto,
+  CancelRestoreInput,
+  RestoreInput,
+  RestoreInspectionDto,
+  RestoreStartedDto,
   BackupStatusDto,
   BackupSummary,
   DailyReport,
@@ -285,6 +289,17 @@ export interface BengkelinApi {
     /** Folder, recent runs, next automatic backup, failure notice. */
     status(): Promise<Result<BackupStatusDto>>;
     chooseDestination(): Promise<Result<BackupDestinationChoiceDto>>;
+    /**
+     * Restore, step 1: main shows the open dialog, stages, validates and
+     * migrates a copy, and returns a preview with a single-use token.
+     */
+    inspectRestore(): Promise<Result<RestoreInspectionDto>>;
+    /**
+     * Restore, step 2 (flush draft input first): replaces the database and
+     * restarts the application.
+     */
+    restore(input: RestoreInput): Promise<Result<RestoreStartedDto>>;
+    cancelRestore(input: CancelRestoreInput): Promise<Result<void>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;

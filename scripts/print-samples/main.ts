@@ -98,6 +98,7 @@ async function main(): Promise<void> {
         chooseCsvDestination: async () => null,
         chooseCsvFile: async () => null,
         chooseBackupDirectory: async () => null,
+        chooseRestoreFile: async () => null,
       },
       openPath: async () => '',
     });

@@ -44,6 +44,8 @@ export interface BackupServiceDeps {
   pagesPerStep?: number;
   /** After a failed automatic backup, wait this long before retrying. */
   retryAfterMs?: number;
+  /** True while a restore is running: automatic backups are skipped. */
+  isPaused?: () => boolean;
 }
 
 export interface CreateBackupInput {
@@ -141,6 +143,7 @@ export class BackupService {
    */
   runAutomaticBackupIfDue(): Promise<AutomaticBackupOutcome> {
     return this.serialized(async () => {
+      if (this.deps.isPaused?.()) return 'NOT_DUE';
       try {
         if (!this.isAutomaticBackupDue()) return 'NOT_DUE';
       } catch (error) {
@@ -154,6 +157,11 @@ export class BackupService {
         return 'FAILED';
       }
     });
+  }
+
+  /** The folder the next backup is written to (configured or default). */
+  backupDirectory(): string {
+    return this.destination().dir;
   }
 
   // ---- internals ----

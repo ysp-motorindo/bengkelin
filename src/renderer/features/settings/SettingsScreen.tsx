@@ -1,11 +1,12 @@
 import { BackupSection } from '@/renderer/features/backups/BackupSection';
+import { RestoreSection } from '@/renderer/features/backups/RestoreSection';
 import { PrintSettingsSection } from './PrintSettingsSection';
 import { ShopLogoSection } from './ShopLogoSection';
 
 /**
- * ADMIN settings (spec 31, 32, 42): the shop logo, print settings and
- * backups. Shop identity editing and the other admin screens arrive with
- * T17.
+ * ADMIN settings (spec 31, 32, 42, 43): the shop logo, print settings,
+ * backups and restore. Shop identity editing and the other admin screens
+ * arrive with T17.
  */
 export function SettingsScreen() {
   return (
@@ -13,6 +14,7 @@ export function SettingsScreen() {
       <ShopLogoSection />
       <PrintSettingsSection />
       <BackupSection />
+      <RestoreSection />
     </div>
   );
 }

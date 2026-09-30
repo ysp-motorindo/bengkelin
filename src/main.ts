@@ -14,6 +14,7 @@ import { installCloseGuard } from './main/platform/close-guard';
 import { createFileDialogs } from './main/platform/dialogs';
 import { createElectronPrintDriver } from './main/features/printing/electron-driver';
 import { BackupScheduler } from './main/features/backups/scheduler';
+import { recoverInterruptedRestore } from './main/features/backups/restore-recovery';
 
 // Must run before the single-instance lock and before anything reads userData.
 applyDataDirOverride(app);
@@ -34,12 +35,65 @@ function logDirectory(): string {
   return path.join(app.getPath('userData'), 'logs');
 }
 
+function databasePath(): string {
+  return path.join(app.getPath('userData'), 'bengkelin.sqlite');
+}
+
+/**
+ * Finishes or undoes an interrupted restore BEFORE the database is opened
+ * (T16). When no complete database can be recovered, shows where the safety
+ * backup and the moved-aside files are and quits: a fresh empty database
+ * must never be created over them.
+ */
+function recoverRestore(): boolean {
+  const recovery = recoverInterruptedRestore({
+    dataDir: app.getPath('userData'),
+    databasePath: databasePath(),
+    logger: log(),
+  });
+  if (recovery.outcome !== 'FATAL') {
+    if (recovery.outcome !== 'NO_MARKER') {
+      log().info('startup.restore_recovery', { outcome: recovery.outcome });
+    }
+    return true;
+  }
+  const lines = [
+    'Pemulihan database tidak dapat diselesaikan. Aplikasi ditutup tanpa mengubah file berikut.',
+    'The database restore could not be completed. The application will close without touching these files.',
+    '',
+    `Cadangan pengaman / Safety backup: ${recovery.safetyBackup ?? '-'}`,
+    ...(recovery.asideFiles.length > 0
+      ? [
+          'Database sebelumnya / Previous database:',
+          ...recovery.asideFiles.map((file) => `  ${file}`),
+        ]
+      : []),
+  ];
+  dialog.showErrorBox('Bengkelin', lines.join('\n'));
+  app.quit();
+  return false;
+}
+
+/**
+ * The app restarts after a restore. In UNPACKAGED builds only, e2e tests
+ * set BENGKELIN_TEST_RESTORE_EXIT=1 to exit instead (Playwright cannot
+ * follow a relaunched process); the harness launches the app again.
+ */
+function relaunchAfterRestore(): void {
+  // Let the renderer receive the result ("restarting...") first.
+  setTimeout(() => {
+    if (app.isPackaged || !process.env.BENGKELIN_TEST_RESTORE_EXIT) {
+      app.relaunch();
+    }
+    app.exit(0);
+  }, 300);
+}
+
 /** Opens and migrates the database; on failure shows a native error and quits. */
 function startDatabase(): boolean {
+  if (!recoverRestore()) return false;
   try {
-    database = openDatabase(
-      path.join(app.getPath('userData'), 'bengkelin.sqlite'),
-    );
+    database = openDatabase(databasePath());
     migrateDatabase(database);
     log().info('startup', { version: app.getVersion() });
     return true;
@@ -93,6 +147,16 @@ if (started || !app.requestSingleInstanceLock()) {
       dialogs: createFileDialogs(app),
       assetsDir: path.join(app.getPath('userData'), 'assets'),
       backupsDir: path.join(app.getPath('userData'), 'backups'),
+      dataDir: app.getPath('userData'),
+      databasePath: databasePath(),
+      restore: {
+        relaunch: relaunchAfterRestore,
+        // The restore closes the connection itself: stop its other users.
+        onDatabaseClosing: () => {
+          backupScheduler?.stop();
+          database = null;
+        },
+      },
     });
     registerApplicationIpc(services);
     showMainWindow();

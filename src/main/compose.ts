@@ -21,10 +21,16 @@ import {
 import { PrintingService } from '@/main/features/printing/service';
 import { ReportService } from '@/main/features/reports/service';
 import { BackupService } from '@/main/features/backups/service';
+import {
+  RestoreService,
+  type RestoreHooks,
+} from '@/main/features/backups/restore';
+import type { RestoreFs } from '@/main/features/backups/restore-fs';
 import { CatalogTransferService } from '@/main/features/catalog-transfer/service';
 import path from 'node:path';
 import { AppService } from '@/main/platform/app-service';
 import { createLogger, type Logger } from '@/main/platform/logger';
+import { MaintenanceGate } from '@/main/platform/maintenance';
 import type { ApplicationServices } from '@/main/platform/services';
 import type { Clock } from '@/shared/time';
 
@@ -42,6 +48,22 @@ export interface CompositionDeps {
   assetsDir?: string;
   /** Default backup folder; default: `<logDir>/../backups`. */
   backupsDir?: string;
+  /** userData (restore staging and marker); default: `<logDir>/..`. */
+  dataDir?: string;
+  /** The live database file; default: the connection's file name. */
+  databasePath?: string;
+  restore?: RestoreCompositionDeps;
+}
+
+/** Restore wiring: the app passes relaunch/close hooks; tests add seams. */
+export interface RestoreCompositionDeps {
+  /** app.relaunch() + app.exit(0) in main; a stub in tests. */
+  relaunch?: () => void;
+  /** Stops background database users (the backup scheduler). */
+  onDatabaseClosing?: () => void;
+  hooks?: RestoreHooks;
+  fs?: RestoreFs;
+  tokenTtlMs?: number;
 }
 
 /** The one place services are constructed and wired (app and tests alike). */
@@ -66,6 +88,8 @@ export function createApplicationServices(
     assetsDir,
     logger,
   });
+  // Restore's maintenance flag: the command table refuses writes while set.
+  const maintenance = new MaintenanceGate();
   const backups = new BackupService({
     db,
     clock,
@@ -73,10 +97,32 @@ export function createApplicationServices(
     dialogs,
     defaultDir:
       deps.backupsDir ?? path.join(path.dirname(deps.logDir), 'backups'),
+    isPaused: () => maintenance.active,
+  });
+  const restoreDeps = deps.restore ?? {};
+  const restore = new RestoreService({
+    db,
+    clock,
+    logger,
+    dialogs,
+    backups,
+    maintenance,
+    dataDir: deps.dataDir ?? path.dirname(deps.logDir),
+    databasePath: deps.databasePath ?? db.name,
+    relaunch:
+      restoreDeps.relaunch ??
+      (() => logger.warn('restore.relaunch_unavailable', {})),
+    ...(restoreDeps.onDatabaseClosing
+      ? { onDatabaseClosing: restoreDeps.onDatabaseClosing }
+      : {}),
+    ...(restoreDeps.hooks ? { hooks: restoreDeps.hooks } : {}),
+    ...(restoreDeps.fs ? { fs: restoreDeps.fs } : {}),
+    ...(restoreDeps.tokenTtlMs ? { tokenTtlMs: restoreDeps.tokenTtlMs } : {}),
   });
   return {
     logger,
     sessions,
+    maintenance,
     auth: new AuthService({ db, clock, sessions }),
     settings: new SettingsService({ db, clock }),
     cashiers: new CashierService({ db, clock, sessions }),
@@ -93,6 +139,7 @@ export function createApplicationServices(
     reports: new ReportService({ db, clock, printing, dialogs, logger }),
     logo: new LogoService({ db, clock, dialogs, assetsDir, logger }),
     backups,
+    restore,
     catalogTransfer: new CatalogTransferService({
       db,
       clock,

@@ -116,5 +116,8 @@ export const CHANNELS = {
     create: 'bengkelin:backups:create',
     status: 'bengkelin:backups:status',
     chooseDestination: 'bengkelin:backups:chooseDestination',
+    inspectRestore: 'bengkelin:backups:inspectRestore',
+    restore: 'bengkelin:backups:restore',
+    cancelRestore: 'bengkelin:backups:cancelRestore',
   },
 } as const;

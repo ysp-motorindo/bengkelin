@@ -118,6 +118,9 @@ const api: BengkelinApi = Object.freeze({
     create: call(c.backups.create),
     status: call(c.backups.status),
     chooseDestination: call(c.backups.chooseDestination),
+    inspectRestore: call(c.backups.inspectRestore),
+    restore: call(c.backups.restore),
+    cancelRestore: call(c.backups.cancelRestore),
   }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),

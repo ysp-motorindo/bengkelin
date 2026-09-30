@@ -44,6 +44,8 @@ export interface FileDialogs {
   chooseCsvFile(): Promise<string | null>;
   /** A folder for backups; null when cancelled. */
   chooseBackupDirectory(): Promise<string | null>;
+  /** A backup file to restore; null when cancelled. */
+  chooseRestoreFile(): Promise<string | null>;
 }
 
 /** Used when no driver is wired (never in the app): every print fails. */
@@ -61,4 +63,5 @@ export const noFileDialogs: FileDialogs = {
   chooseCsvDestination: async () => null,
   chooseCsvFile: async () => null,
   chooseBackupDirectory: async () => null,
+  chooseRestoreFile: async () => null,
 };
