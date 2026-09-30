@@ -290,6 +290,12 @@ export class PrintingService {
       });
       return { outcome: 'FAILED', code: 'PRINT_FAILED' };
     }
+    if (result.outcome === 'FAILED' && result.code === 'PRINT_TIMEOUT') {
+      this.deps.logger.warn('printing.timeout', {
+        format: options.format,
+        silent: options.silent,
+      });
+    }
     return result.outcome === 'FAILED'
       ? { outcome: 'FAILED', code: result.code }
       : { outcome: result.outcome };

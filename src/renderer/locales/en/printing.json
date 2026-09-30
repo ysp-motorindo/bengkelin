@@ -26,6 +26,7 @@
     "cancelled": "Cancelled.",
     "PRINTER_NOT_FOUND": "Printer “{{printerName}}” was not found. The invoice is saved; check the printer or the print settings.",
     "PRINT_FAILED": "Printing failed. The invoice is saved; try again.",
+    "PRINT_TIMEOUT": "The printer did not respond in time. The invoice is saved; check the printer and try again.",
     "PDF_FAILED": "The PDF could not be created or saved. The invoice is saved; try again."
   },
   "settings": {

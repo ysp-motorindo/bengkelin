@@ -70,6 +70,7 @@
     "cancelled": "Dibatalkan.",
     "PRINTER_NOT_FOUND": "Printer “{{printerName}}” tidak ditemukan. Periksa printer atau pengaturan cetak.",
     "PRINT_FAILED": "Gagal mencetak laporan. Coba lagi.",
+    "PRINT_TIMEOUT": "Printer tidak merespons tepat waktu. Periksa printer lalu coba lagi.",
     "PDF_FAILED": "Gagal mencetak laporan. Coba lagi.",
     "EXPORT_FAILED": "CSV gagal disimpan. Coba lagi atau pilih lokasi lain."
   }

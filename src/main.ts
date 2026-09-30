@@ -23,6 +23,10 @@ import {
 } from './main/features/printing/test-print-route';
 import { installCrashLogging } from './main/platform/crash-logging';
 import {
+  createStartupFailureHandler,
+  shouldLogLoadFailure,
+} from './main/platform/startup-errors';
+import {
   installApplicationMenu,
   MENU_REFRESH_CHANNELS,
   type ApplicationMenu,
@@ -170,7 +174,10 @@ function showMainWindow(): void {
   // support read this; no URL or path is logged).
   webContents.once('did-finish-load', () => log().info('window.loaded'));
   webContents.on('did-fail-load', (_event, code, description, _url, main) => {
-    if (main) log().error('window.load_failed', { code, description });
+    // ERR_ABORTED (-3) is a superseded navigation, not a failure.
+    if (shouldLogLoadFailure(code, main)) {
+      log().error('window.load_failed', { code, description });
+    }
   });
   const endSession = () => services?.sessions.endWindow(windowId);
   mainWindow.once('closed', () => {
@@ -217,43 +224,54 @@ if (started || !app.requestSingleInstanceLock()) {
     },
   });
 
-  void app.whenReady().then(() => {
-    if (!startDatabase()) return;
-    if (!database) return;
-    services = createApplicationServices({
-      db: database,
-      clock,
-      logDir: logDirectory(),
-      logger: log(),
-      openPath: (target) => shell.openPath(target),
-      printDriver: printDriver(),
-      appVersion: app.getVersion(),
-      dialogs: createFileDialogs(app),
-      assetsDir: path.join(app.getPath('userData'), 'assets'),
-      backupsDir: path.join(app.getPath('userData'), 'backups'),
-      dataDir: app.getPath('userData'),
-      databasePath: databasePath(),
-      restore: {
-        relaunch: relaunchAfterRestore,
-        // The restore closes the connection itself: stop its other users.
-        onDatabaseClosing: () => {
-          backupScheduler?.stop();
-          database = null;
+  void app
+    .whenReady()
+    .then(() => {
+      if (!startDatabase()) return;
+      if (!database) return;
+      services = createApplicationServices({
+        db: database,
+        clock,
+        logDir: logDirectory(),
+        logger: log(),
+        openPath: (target) => shell.openPath(target),
+        printDriver: printDriver(),
+        appVersion: app.getVersion(),
+        dialogs: createFileDialogs(app),
+        assetsDir: path.join(app.getPath('userData'), 'assets'),
+        backupsDir: path.join(app.getPath('userData'), 'backups'),
+        dataDir: app.getPath('userData'),
+        databasePath: databasePath(),
+        restore: {
+          relaunch: relaunchAfterRestore,
+          // The restore closes the connection itself: stop its other users.
+          onDatabaseClosing: () => {
+            backupScheduler?.stop();
+            database = null;
+          },
         },
-      },
-    });
-    registerApplicationIpc(services, (channel) => {
-      if (MENU_REFRESH_CHANNELS.has(channel)) applicationMenu?.refresh();
-    });
-    showMainWindow();
-    // Daily automatic backup: a catch-up check on the next tick (never
-    // delaying the window), then every 15 minutes while the app is open.
-    backupScheduler = new BackupScheduler({ backups: services.backups });
-    backupScheduler.start();
+      });
+      registerApplicationIpc(services, (channel) => {
+        if (MENU_REFRESH_CHANNELS.has(channel)) applicationMenu?.refresh();
+      });
+      showMainWindow();
+      // Daily automatic backup: a catch-up check on the next tick (never
+      // delaying the window), then every 15 minutes while the app is open.
+      backupScheduler = new BackupScheduler({ backups: services.backups });
+      backupScheduler.start();
 
-    // macOS: re-create the window when the dock icon is clicked.
-    app.on('activate', showMainWindow);
-  });
+      // macOS: re-create the window when the dock icon is clicked.
+      app.on('activate', showMainWindow);
+    })
+    .catch(
+      // A throw here would leave a windowless process holding the
+      // single-instance lock: log (sanitized), explain, exit.
+      createStartupFailureHandler({
+        logger: log,
+        showErrorBox: (title, content) => dialog.showErrorBox(title, content),
+        exit: (code) => app.exit(code),
+      }),
+    );
 
   // A quit (menu, Cmd+Q, test harness) first closes the window, which the
   // close guard holds for the flush; finish the quit once it has closed.

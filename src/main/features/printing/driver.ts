@@ -23,7 +23,7 @@ export interface PrintJobOptions {
 export type PrintDriverResult =
   | { outcome: 'PRINTED' }
   | { outcome: 'CANCELLED' }
-  | { outcome: 'FAILED'; code: 'PRINT_FAILED' };
+  | { outcome: 'FAILED'; code: 'PRINT_FAILED' | 'PRINT_TIMEOUT' };
 
 export interface PrintDriver {
   listPrinters(): Promise<PrinterInfo[]>;
