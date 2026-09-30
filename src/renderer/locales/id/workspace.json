@@ -251,7 +251,10 @@
     "printThermal": "Cetak Thermal",
     "printA4": "Cetak A4",
     "printLater": "Pencetakan akan tersedia di versi berikutnya.",
-    "newTransaction": "Transaksi Baru"
+    "newTransaction": "Transaksi Baru",
+    "issues": {
+      "CATALOG_ITEM_INACTIVE": "“{{title}}” tidak aktif dan tidak dapat dijual. Hapus barisnya atau aktifkan kembali barangnya."
+    }
   },
   "paymentStatus": {
     "UNPAID": "Belum dibayar",

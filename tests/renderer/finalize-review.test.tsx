@@ -193,6 +193,29 @@ describe('checkout review and finalization', () => {
     expect(screen.queryByTestId('review-payment-status')).toBeNull();
   });
 
+  test('an inactive catalog item is a blocking error naming the item', async () => {
+    const blocked = client(
+      [
+        preview({
+          errors: [
+            {
+              code: 'CATALOG_ITEM_INACTIVE',
+              params: { catalogItemId: ITEM_ID, title: 'Kampas Rem' },
+            },
+          ],
+          paymentStatusAfterCheckout: null,
+        }),
+      ],
+      [],
+    );
+    renderReview(blocked);
+    expect(await screen.findByTestId('finalize-errors')).toHaveTextContent(
+      '“Kampas Rem” tidak aktif dan tidak dapat dijual.',
+    );
+    expect(screen.getByRole('button', { name: 'Finalisasi' })).toBeDisabled();
+    expect(blocked.finalize).not.toHaveBeenCalled();
+  });
+
   test('a transport failure keeps the review open and the retry reuses the requestId', async () => {
     const finalizer = client([preview()], [new Error('ipc down'), ok(invoice)]);
     renderReview(finalizer);
