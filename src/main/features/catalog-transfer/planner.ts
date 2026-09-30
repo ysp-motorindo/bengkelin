@@ -51,6 +51,11 @@ export interface BarcodeOwnerRef {
 /** The catalog reads the planner needs (implemented by the repository). */
 export interface PlannerSource {
   itemBySku(sku: string): ExistingItem | undefined;
+  /**
+   * An existing SKU that equals `digits` once its leading zeros are
+   * stripped (e.g. `00123` for `123`), if any.
+   */
+  skuWithLeadingZeros(digits: string): string | undefined;
   barcodeOwner(barcode: string): BarcodeOwnerRef | undefined;
   /** The price in force at `at` (start-only resolution), or null. */
   priceAt(itemId: string, channelId: string, at: Instant): bigint | null;
@@ -118,6 +123,17 @@ export function planImport(
     // ---- item fields ----
     let fields: PlannedFields;
     const changedFields: ImportField[] = [];
+    if (!existing && /^[1-9][0-9]*$/.test(sku)) {
+      // A spreadsheet may have dropped the leading zeros of `00123`.
+      const padded = source.skuWithLeadingZeros(sku);
+      if (padded !== undefined) {
+        warnings.push(
+          issueWarning('POSSIBLE_LEADING_ZERO_LOSS', at('sku'), {
+            existingSku: padded,
+          }),
+        );
+      }
+    }
     if (!existing) {
       if (candidate.title === null)
         errors.push(issueError('TITLE_REQUIRED', at('title')));

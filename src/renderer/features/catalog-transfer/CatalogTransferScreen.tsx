@@ -90,6 +90,12 @@ export function CatalogTransferScreen() {
             {t('catalogTransfer.title')}
           </CardTitle>
           <CardDescription>{t('catalogTransfer.description')}</CardDescription>
+          <p
+            className="text-sm text-muted-foreground"
+            data-testid="csv-separator-note"
+          >
+            {t('catalogTransfer.spreadsheetNote')}
+          </p>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2">

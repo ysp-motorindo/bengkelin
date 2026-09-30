@@ -12,6 +12,11 @@ import { issueError, issueWarning, type Issue } from './issues';
  * that does not exist is UNKNOWN_CHANNEL (channels are never created by an
  * import). A price column for an INACTIVE channel is only a warning: the
  * price still applies, so the item is priced if the channel is re-activated.
+ *
+ * Spreadsheet damage: a header that is ONE cell containing `;` is
+ * WRONG_DELIMITER (the file was saved with a regional list separator, not
+ * as comma-separated CSV); `looksLikeSpreadsheetNumber` finds barcode/SKU
+ * cells that a spreadsheet turned into scientific notation.
  */
 
 export interface RefUnit {
@@ -65,6 +70,13 @@ const FIXED = {
 } as const;
 
 const BARCODE = /^barcode(?:_([1-9][0-9]*))?$/;
+/** e.g. `8.99123E+12`: a long number reformatted by a spreadsheet. */
+const SPREADSHEET_NUMBER = /^\d+(\.\d+)?e\+?\d+$/i;
+
+/** True for a barcode/SKU cell a spreadsheet turned into scientific notation. */
+export function looksLikeSpreadsheetNumber(value: string): boolean {
+  return SPREADSHEET_NUMBER.test(value);
+}
 const PRICE = /^price_(.+)$/;
 
 /** ASCII-only lower case, matching SQLite's NOCASE collation. */
@@ -105,6 +117,12 @@ export function mapHeader(
   );
   const seen = new Set<string>();
   const barcodeNumbers = new Map<number, BarcodeColumn>();
+
+  // `sku;title;...` read as one column: a semicolon-separated file.
+  if (header.length === 1 && header[0]!.includes(';')) {
+    issues.push(issueError('WRONG_DELIMITER', { row: 1, column: null }));
+    return { columns, issues };
+  }
 
   header.forEach((raw, index) => {
     const name = asciiLower(raw.trim());

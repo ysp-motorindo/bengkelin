@@ -6,6 +6,7 @@ import {
 import { DomainError, parseRupiah } from '@/shared/primitives';
 import {
   asciiLower,
+  looksLikeSpreadsheetNumber,
   type ColumnMap,
   type RefChannel,
   type RefUnit,
@@ -115,6 +116,9 @@ export function validateRows(
       fail('SKU_REQUIRED', 'sku');
     } else {
       tooLong('sku', sku, LIMITS.sku);
+      if (looksLikeSpreadsheetNumber(sku)) {
+        fail('SPREADSHEET_NUMBER_FORMAT', 'sku', { value: sku });
+      }
       const key = asciiLower(sku);
       const first = firstRowBySku.get(key);
       if (first !== undefined) {
@@ -149,6 +153,10 @@ export function validateRows(
       const value = cell(index);
       if (value === null) continue;
       tooLong(column, value, LIMITS.barcode);
+      if (looksLikeSpreadsheetNumber(value)) {
+        fail('SPREADSHEET_NUMBER_FORMAT', column, { value });
+        continue;
+      }
       const first = firstRowByBarcode.get(value);
       if (first !== undefined) {
         fail('DUPLICATE_BARCODE_IN_FILE', column, {

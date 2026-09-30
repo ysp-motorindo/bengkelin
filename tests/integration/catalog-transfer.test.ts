@@ -479,6 +479,64 @@ describe('import validation', () => {
     ]);
   });
 
+  test('spreadsheet-damaged barcodes and SKUs (scientific notation) are blocking errors (I4)', async () => {
+    const p = await preview(
+      csv(
+        HEAD,
+        'OLI-9,Oli,STOCK_ITEM,PCS,8.99123E+12,1000,,true',
+        '8.99E+12,Baut,STOCK_ITEM,PCS,,1000,,true',
+        '1e5,Mur,STOCK_ITEM,PCS,4E12,1000,,true',
+      ),
+    );
+    expect(p.canCommit).toBe(false);
+    const found = p.errors.filter(
+      (i) => i.error.code === 'SPREADSHEET_NUMBER_FORMAT',
+    );
+    expect(found.map((i) => [i.row, i.column])).toEqual([
+      [2, 'barcode'],
+      [3, 'sku'],
+      [4, 'sku'],
+      [4, 'barcode'],
+    ]);
+    expect(found[0]!.error.params).toEqual({ value: '8.99123E+12' });
+    // Ordinary numeric-looking values are fine.
+    const fine = await preview(
+      csv(HEAD, '00123,Baut,STOCK_ITEM,PCS,8991234567890,1000,,true'),
+    );
+    expect(codes(fine.errors)).toEqual([]);
+  });
+
+  test('a CREATE whose SKU lost its leading zeros warns POSSIBLE_LEADING_ZERO_LOSS (I4)', async () => {
+    await importCsv(csv(HEAD, '00123,Baut 00123,STOCK_ITEM,PCS,,1000,,true'));
+    const p = await preview(
+      csv(
+        HEAD,
+        '123,Baut 00123,STOCK_ITEM,PCS,,1000,,true',
+        '00123,Baut 00123,STOCK_ITEM,PCS,,1000,,true',
+        '456,Lain,STOCK_ITEM,PCS,,1000,,true',
+      ),
+    );
+    expect(p.errors).toEqual([]);
+    const warnings = p.warnings.filter(
+      (i) => i.error.code === 'POSSIBLE_LEADING_ZERO_LOSS',
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatchObject({ row: 2, column: 'sku', sku: '123' });
+    expect(warnings[0]!.error.params).toEqual({ existingSku: '00123' });
+  });
+
+  test('a semicolon-separated file is WRONG_DELIMITER, not a list of unknown columns (I4)', async () => {
+    const p = await preview(
+      csv(
+        'sku;title;type;unit;price_bengkel',
+        'OLI-1;Oli;STOCK_ITEM;PCS;55000',
+      ),
+    );
+    expect(codes(p.errors)).toEqual(['WRONG_DELIMITER']);
+    expect(issue(p.errors, 'WRONG_DELIMITER')).toMatchObject({ row: 1 });
+    expect(p.canCommit).toBe(false);
+  });
+
   test('missing SKU: a blank cell and a missing column', async () => {
     const blank = await preview(
       csv(HEAD, ',Tanpa SKU,STOCK_ITEM,PCS,,1000,,true'),

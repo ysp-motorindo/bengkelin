@@ -54,7 +54,8 @@
   },
   "actions": {
     "preview": "Pratinjau & cetak",
-    "exportCsv": "Ekspor CSV"
+    "exportCsv": "Ekspor CSV",
+    "csvSeparatorNote": "CSV memakai koma. Bila Excel menampilkan semuanya dalam satu kolom (pemisah daftar Windows adalah titik koma), buka lewat Data > From Text/CSV lalu pilih Koma sebagai pemisah."
   },
   "preview": {
     "title": "Pratinjau laporan harian",
