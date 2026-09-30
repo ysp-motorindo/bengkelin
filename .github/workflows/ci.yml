@@ -1,6 +1,8 @@
 # Bengkelin CI: the plan §4 verification gates on every trial platform
-# (Windows 11 x64, macOS 14+ Apple Silicon and Intel, Ubuntu 24.04 x64),
+# (Windows x64, macOS 14+ Apple Silicon and Intel, Ubuntu 24.04 x64),
 # then packaging, release checks, installers and the packaged smoke test.
+# `windows-latest` is a Windows Server image, not Windows 11: Windows 11
+# acceptance stays a manual check in the client-trial checklist.
 # No signing and no publishing (plan §5); installers are uploaded as
 # workflow artifacts for the manual client-trial checks
 # (docs/testing/client-trial-checklist.md).
@@ -34,7 +36,7 @@ jobs:
           - name: macOS arm64 (Apple Silicon)
             os: macos-14
           - name: macOS x64 (Intel)
-            os: macos-13
+            os: macos-15-intel
     steps:
       - uses: actions/checkout@v4
 

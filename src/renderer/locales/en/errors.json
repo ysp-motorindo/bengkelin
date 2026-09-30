@@ -68,6 +68,7 @@
   "INVALID_DATE": "Invalid date.",
   "DRAFT_EMPTY": "The transaction has no items yet.",
   "INVOICE_DATE_IN_FUTURE": "The invoice date {{invoiceDate}} is in the future (today is {{today}}). Change the invoice date.",
+  "PRICING_AT_IN_FUTURE": "The pricing time is later than now. Change the pricing time to now or earlier.",
   "ZERO_TOTAL_WITH_ALLOCATIONS": "The total is zero, so no payment can be recorded. Remove the planned payments.",
   "FINALIZE_WARNINGS_CHANGED": "The warnings changed since you reviewed them. Review the checkout again.",
   "INVOICE_NOT_FOUND": "Invoice not found.",

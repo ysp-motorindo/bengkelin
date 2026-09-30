@@ -14,7 +14,6 @@
     "make": "electron-forge make",
     "release:check": "node scripts/release-check.mts",
     "smoke:packaged": "node scripts/smoke-packaged.mts",
-    "release": "electron-forge release",
     "lint": "oxlint && oxfmt --check",
     "lint:fix": "oxlint --fix && oxfmt --write",
     "typecheck": "tsc --noEmit",

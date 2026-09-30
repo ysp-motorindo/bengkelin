@@ -68,6 +68,7 @@
   "INVALID_DATE": "Tanggal tidak valid.",
   "DRAFT_EMPTY": "Transaksi belum memiliki barang.",
   "INVOICE_DATE_IN_FUTURE": "Tanggal faktur {{invoiceDate}} masih di masa depan (hari ini {{today}}). Ubah tanggal faktur.",
+  "PRICING_AT_IN_FUTURE": "Waktu harga lebih lambat dari sekarang. Ubah waktu harga ke sekarang atau sebelumnya.",
   "ZERO_TOTAL_WITH_ALLOCATIONS": "Totalnya nol, jadi tidak ada pembayaran yang bisa dicatat. Hapus rencana pembayaran.",
   "FINALIZE_WARNINGS_CHANGED": "Peringatan berubah sejak Anda meninjaunya. Tinjau checkout lagi.",
   "INVOICE_NOT_FOUND": "Faktur tidak ditemukan.",

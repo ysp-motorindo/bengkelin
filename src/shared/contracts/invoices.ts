@@ -68,6 +68,8 @@ export type FinalizeWarningCode = FinalizeWarning['code'];
 export type FinalizeErrorCode =
   | 'DRAFT_EMPTY'
   | 'INVOICE_DATE_IN_FUTURE'
+  /** The draft's pricing time is later than the finalize instant. */
+  | 'PRICING_AT_IN_FUTURE'
   | 'ALLOCATION_EXCEEDS_AMOUNT'
   | 'ZERO_TOTAL_WITH_ALLOCATIONS'
   | 'CHANNEL_INACTIVE'
