@@ -13,6 +13,7 @@ import { createMainWindow } from './main/platform/window';
 import { installCloseGuard } from './main/platform/close-guard';
 import { createFileDialogs } from './main/platform/dialogs';
 import { createElectronPrintDriver } from './main/features/printing/electron-driver';
+import { BackupScheduler } from './main/features/backups/scheduler';
 
 // Must run before the single-instance lock and before anything reads userData.
 applyDataDirOverride(app);
@@ -20,6 +21,7 @@ applyDataDirOverride(app);
 let mainWindow: BrowserWindow | null = null;
 let database: AppDatabase | null = null;
 let services: ApplicationServices | null = null;
+let backupScheduler: BackupScheduler | null = null;
 
 const clock = { now: () => toInstant(new Date()) };
 // Created lazily: userData may be redirected (test override) before this runs.
@@ -90,9 +92,14 @@ if (started || !app.requestSingleInstanceLock()) {
       printDriver: createElectronPrintDriver(),
       dialogs: createFileDialogs(app),
       assetsDir: path.join(app.getPath('userData'), 'assets'),
+      backupsDir: path.join(app.getPath('userData'), 'backups'),
     });
     registerApplicationIpc(services);
     showMainWindow();
+    // Daily automatic backup: a catch-up check on the next tick (never
+    // delaying the window), then every 15 minutes while the app is open.
+    backupScheduler = new BackupScheduler({ backups: services.backups });
+    backupScheduler.start();
 
     // macOS: re-create the window when the dock icon is clicked.
     app.on('activate', showMainWindow);
@@ -111,6 +118,7 @@ if (started || !app.requestSingleInstanceLock()) {
   });
 
   app.on('will-quit', () => {
+    backupScheduler?.stop();
     database?.close();
     database = null;
   });

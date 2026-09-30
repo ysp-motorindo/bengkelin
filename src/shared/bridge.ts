@@ -1,4 +1,7 @@
 import type {
+  BackupDestinationChoiceDto,
+  BackupStatusDto,
+  BackupSummary,
   DailyReport,
   DailyReportInput,
   ReportOutcomeDto,
@@ -256,6 +259,17 @@ export interface BengkelinApi {
     preview(input: DailyReportInput): Promise<Result<ReportPreviewDto>>;
     print(input: DailyReportInput): Promise<Result<ReportOutcomeDto>>;
     exportCsv(input: DailyReportInput): Promise<Result<ReportOutcomeDto>>;
+  };
+  /**
+   * Validated local backups (ADMIN only). The folder is chosen in a native
+   * dialog in main; the renderer never passes a path.
+   */
+  readonly backups: {
+    /** "Backup now": a MANUAL backup to the configured folder. */
+    create(): Promise<Result<BackupSummary>>;
+    /** Folder, recent runs, next automatic backup, failure notice. */
+    status(): Promise<Result<BackupStatusDto>>;
+    chooseDestination(): Promise<Result<BackupDestinationChoiceDto>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;

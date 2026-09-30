@@ -108,6 +108,11 @@ const api: BengkelinApi = Object.freeze({
     print: call(c.reports.print),
     exportCsv: call(c.reports.exportCsv),
   }),
+  backups: Object.freeze({
+    create: call(c.backups.create),
+    status: call(c.backups.status),
+    chooseDestination: call(c.backups.chooseDestination),
+  }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),
     // The callback never sees the IPC event object.

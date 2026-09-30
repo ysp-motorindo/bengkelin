@@ -78,5 +78,15 @@
   "PAID_INVOICE_CANNOT_BE_VOIDED": "Faktur yang sudah menerima pembayaran tidak bisa dibatalkan.",
   "VOID_REASON_REQUIRED": "Isi alasan pembatalan.",
   "LOGO_TOO_LARGE": "Logo lebih besar dari 512 KB. Pilih gambar yang lebih kecil.",
-  "LOGO_INVALID_TYPE": "Logo harus berupa gambar PNG atau JPEG."
+  "LOGO_INVALID_TYPE": "Logo harus berupa gambar PNG atau JPEG.",
+  "BACKUP_DESTINATION_UNAVAILABLE": "Folder cadangan tidak tersedia. Pastikan flashdisk atau drive terpasang, atau pilih folder lain.",
+  "BACKUP_DESTINATION_READ_ONLY": "Folder cadangan tidak dapat ditulisi. Pilih folder lain atau periksa izin folder.",
+  "BACKUP_WRITE_FAILED": "Cadangan gagal ditulis (mungkin ruang disk penuh). Data tetap aman; coba lagi.",
+  "BACKUP_VALIDATION_FAILED": "Salinan cadangan tidak lolos pemeriksaan dan tidak disimpan. Data tetap aman; coba lagi.",
+  "BACKUP_NOT_FOUND": "File cadangan tidak ditemukan atau kosong.",
+  "NOT_SQLITE": "File ini bukan database Bengkelin.",
+  "CORRUPT_DATABASE": "File cadangan rusak.",
+  "FOREIGN_DATABASE": "File ini adalah database aplikasi lain, bukan Bengkelin.",
+  "UNSUPPORTED_SCHEMA": "Versi database ini tidak didukung oleh versi aplikasi ini.",
+  "MISSING_TABLES": "File cadangan tidak lengkap (tabel inti hilang)."
 }

@@ -6,6 +6,7 @@ import { Button } from '@/renderer/components/ui/button';
 import { flushAll } from '@/renderer/lib/flush-registry';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
+import { BackupNoticeBanner } from '@/renderer/features/backups/BackupNoticeBanner';
 import { CatalogScreen } from '@/renderer/features/catalog/CatalogScreen';
 import { InventoryScreen } from '@/renderer/features/inventory/InventoryScreen';
 import { CustomersScreen } from '@/renderer/features/customers/CustomersScreen';
@@ -146,6 +147,7 @@ export function Shell({
           </button>
         ))}
       </nav>
+      {session.role === 'ADMIN' ? <BackupNoticeBanner /> : null}
       <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
         {error ? <Alert className="mb-4">{error}</Alert> : null}
         <div hidden={view !== 'workspace'}>

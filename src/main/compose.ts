@@ -20,6 +20,7 @@ import {
 } from '@/main/features/printing/driver';
 import { PrintingService } from '@/main/features/printing/service';
 import { ReportService } from '@/main/features/reports/service';
+import { BackupService } from '@/main/features/backups/service';
 import path from 'node:path';
 import { AppService } from '@/main/platform/app-service';
 import { createLogger, type Logger } from '@/main/platform/logger';
@@ -38,6 +39,8 @@ export interface CompositionDeps {
   dialogs?: FileDialogs;
   /** Content-addressed assets (logo); default: `<logDir>/../assets`. */
   assetsDir?: string;
+  /** Default backup folder; default: `<logDir>/../backups`. */
+  backupsDir?: string;
 }
 
 /** The one place services are constructed and wired (app and tests alike). */
@@ -80,6 +83,14 @@ export function createApplicationServices(
     printing,
     reports: new ReportService({ db, clock, printing, dialogs, logger }),
     logo: new LogoService({ db, clock, dialogs, assetsDir, logger }),
+    backups: new BackupService({
+      db,
+      clock,
+      logger,
+      dialogs,
+      defaultDir:
+        deps.backupsDir ?? path.join(path.dirname(deps.logDir), 'backups'),
+    }),
     app: new AppService({ logDir: deps.logDir, openPath: deps.openPath }),
   };
 }

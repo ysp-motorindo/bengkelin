@@ -1,0 +1,30 @@
+{
+  "title": "Backup",
+  "description": "An automatic database backup is made once a day while the application is open. Make a manual backup at any time.",
+  "destination": "Backup folder",
+  "defaultFolder": "(default folder)",
+  "chooseFolder": "Choose folder...",
+  "folderUpdated": "Backup folder updated.",
+  "backupNow": "Backup now",
+  "working": "Creating backup...",
+  "created": "Backup created: {{fileName}}",
+  "lastAutomatic": "Last automatic backup",
+  "nextAutomatic": "Next automatic backup",
+  "never": "Never",
+  "recent": "Backup history",
+  "none": "No backups yet.",
+  "kind": {
+    "AUTO": "Automatic",
+    "MANUAL": "Manual",
+    "SAFETY": "Safety"
+  },
+  "outcome": {
+    "SUCCEEDED": "Succeeded",
+    "FAILED": "Failed"
+  },
+  "notice": {
+    "title": "Automatic backup failed",
+    "detail": "Failed at {{time}}: {{reason}} Transactions are safe, but the data has not been backed up.",
+    "action": "Backup now"
+  }
+}

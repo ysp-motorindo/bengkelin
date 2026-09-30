@@ -1,0 +1,30 @@
+{
+  "title": "Cadangan / Backup",
+  "description": "Cadangan database otomatis dibuat sekali setiap hari saat aplikasi terbuka. Buat cadangan manual kapan saja.",
+  "destination": "Folder cadangan",
+  "defaultFolder": "(folder bawaan)",
+  "chooseFolder": "Pilih folder...",
+  "folderUpdated": "Folder cadangan diperbarui.",
+  "backupNow": "Cadangkan sekarang",
+  "working": "Membuat cadangan...",
+  "created": "Cadangan dibuat: {{fileName}}",
+  "lastAutomatic": "Cadangan otomatis terakhir",
+  "nextAutomatic": "Cadangan otomatis berikutnya",
+  "never": "Belum pernah",
+  "recent": "Riwayat cadangan",
+  "none": "Belum ada cadangan.",
+  "kind": {
+    "AUTO": "Otomatis",
+    "MANUAL": "Manual",
+    "SAFETY": "Pengaman"
+  },
+  "outcome": {
+    "SUCCEEDED": "Berhasil",
+    "FAILED": "Gagal"
+  },
+  "notice": {
+    "title": "Cadangan otomatis gagal",
+    "detail": "Gagal pada {{time}}: {{reason}} Transaksi tetap aman, tetapi data belum dicadangkan.",
+    "action": "Cadangkan sekarang"
+  }
+}

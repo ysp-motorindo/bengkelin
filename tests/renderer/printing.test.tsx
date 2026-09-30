@@ -4,6 +4,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { PrintActions } from '@/renderer/features/printing/PrintActions';
 import type { PrintClient } from '@/renderer/features/printing/print-client';
 import { SettingsScreen } from '@/renderer/features/settings/SettingsScreen';
+import { backupBridge } from './helpers/backup-bridge';
 import type {
   PrintFormat,
   PrintOutcomeDto,
@@ -201,7 +202,9 @@ describe('ADMIN settings screen', () => {
           }),
         ),
         removeLogo: vi.fn(async () => ok(undefined)),
+        getShop: vi.fn(async () => ok({ timezone: 'Asia/Jakarta' })),
       },
+      backups: backupBridge(),
       printing: {
         getSettings: vi.fn(async () => ok(settings)),
         listPrinters: vi.fn(async () =>
