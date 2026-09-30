@@ -115,7 +115,11 @@ test('IPC is rejected from untrusted frames and accepted from the app frame', as
         const invoke = (
           window as unknown as { rawInvoke(channel: string): Promise<unknown> }
         ).rawInvoke;
-        return `ok:${String(await invoke('bengkelin:app:ping'))}`;
+        const result = (await invoke('bengkelin:app:ping')) as {
+          ok: boolean;
+          value: unknown;
+        };
+        return `ok:${String(result.value)}`;
       } catch (error) {
         return `error:${(error as Error).message}`;
       }

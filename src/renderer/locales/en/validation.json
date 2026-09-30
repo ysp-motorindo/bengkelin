@@ -1,0 +1,11 @@
+{
+  "required": "This field is required.",
+  "tooLong": "Too long.",
+  "invalid": "Invalid value.",
+  "passwordTooShort": "Password must be at least 8 characters.",
+  "passwordMismatch": "Password confirmation does not match.",
+  "usernameTooShort": "Username must be at least 3 characters.",
+  "usernameFormat": "Letters, numbers, dots, underscores and hyphens only.",
+  "invalidTimezone": "Unknown timezone.",
+  "invalidEmail": "Invalid email format."
+}

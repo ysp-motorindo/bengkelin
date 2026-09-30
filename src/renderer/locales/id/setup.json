@@ -1,0 +1,65 @@
+{
+  "progress": "Langkah {{current}} dari {{total}}",
+  "steps": {
+    "shop": "Toko",
+    "admin": "Admin",
+    "preferences": "Tampilan",
+    "printer": "Printer",
+    "finish": "Mulai"
+  },
+  "shop": {
+    "title": "Informasi toko",
+    "description": "Data ini tampil pada faktur.",
+    "name": "Nama bengkel",
+    "address": "Alamat",
+    "phone": "Nomor telepon",
+    "email": "Email",
+    "footer": "Catatan kaki faktur"
+  },
+  "admin": {
+    "title": "Akun admin",
+    "description": "Admin mengelola kasir, harga, stok, dan pengaturan.",
+    "username": "Nama pengguna",
+    "displayName": "Nama tampilan",
+    "password": "Kata sandi",
+    "passwordHint": "Minimal 8 karakter.",
+    "confirmPassword": "Ulangi kata sandi"
+  },
+  "preferences": {
+    "title": "Bahasa dan tampilan",
+    "description": "Dapat diubah nanti oleh admin.",
+    "language": "Bahasa",
+    "appearance": "Tampilan",
+    "timezone": "Zona waktu",
+    "languages": { "id": "Bahasa Indonesia", "en": "English" },
+    "appearances": {
+      "LIGHT": "Terang",
+      "DARK": "Gelap",
+      "SYSTEM": "Ikuti sistem"
+    },
+    "timezones": {
+      "Asia/Jakarta": "WIB (Asia/Jakarta)",
+      "Asia/Makassar": "WITA (Asia/Makassar)",
+      "Asia/Jayapura": "WIT (Asia/Jayapura)"
+    }
+  },
+  "printer": {
+    "title": "Printer (opsional)",
+    "description": "Anda dapat melewati langkah ini dan mengaturnya nanti. Tidak ada yang disimpan jika dilewati.",
+    "thermal": "Nama printer struk (thermal)",
+    "a4": "Nama printer A4",
+    "width": "Lebar kertas thermal",
+    "width58": "58 mm",
+    "width80": "80 mm"
+  },
+  "finish": {
+    "title": "Siap dimulai",
+    "description": "Periksa ringkasan, lalu mulai menggunakan Bengkelin.",
+    "summaryShop": "Bengkel",
+    "summaryAdmin": "Admin",
+    "summaryPrinter": "Printer",
+    "printerSkipped": "Dilewati",
+    "start": "Mulai",
+    "starting": "Menyiapkan..."
+  }
+}

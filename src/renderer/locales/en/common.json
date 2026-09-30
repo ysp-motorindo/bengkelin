@@ -1,0 +1,10 @@
+{
+  "appName": "Bengkelin",
+  "loading": "Loading...",
+  "next": "Next",
+  "back": "Back",
+  "skip": "Skip",
+  "optional": "Optional",
+  "retry": "Try again",
+  "role": { "ADMIN": "Admin", "CASHIER": "Cashier" }
+}

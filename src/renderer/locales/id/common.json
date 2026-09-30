@@ -1,0 +1,10 @@
+{
+  "appName": "Bengkelin",
+  "loading": "Memuat...",
+  "next": "Lanjut",
+  "back": "Kembali",
+  "skip": "Lewati",
+  "optional": "Opsional",
+  "retry": "Coba lagi",
+  "role": { "ADMIN": "Admin", "CASHIER": "Kasir" }
+}

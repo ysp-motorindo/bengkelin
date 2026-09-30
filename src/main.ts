@@ -1,9 +1,13 @@
 import path from 'node:path';
-import { app, BrowserWindow, dialog } from 'electron';
+import { app, BrowserWindow, dialog, shell } from 'electron';
 import started from 'electron-squirrel-startup';
 import { openDatabase, type AppDatabase } from './main/database/connection';
 import { migrateDatabase } from './main/database/migrate';
+import { createApplicationServices } from './main/compose';
 import { registerApplicationIpc } from './main/platform/ipc';
+import { createLogger, type Logger } from './main/platform/logger';
+import type { ApplicationServices } from './main/platform/services';
+import { toInstant } from './shared/time';
 import { applyDataDirOverride } from './main/platform/paths';
 import { createMainWindow } from './main/platform/window';
 
@@ -12,6 +16,18 @@ applyDataDirOverride(app);
 
 let mainWindow: BrowserWindow | null = null;
 let database: AppDatabase | null = null;
+let services: ApplicationServices | null = null;
+
+const clock = { now: () => toInstant(new Date()) };
+// Created lazily: userData may be redirected (test override) before this runs.
+let logger: Logger | null = null;
+function log(): Logger {
+  logger ??= createLogger({ dir: logDirectory(), clock });
+  return logger;
+}
+function logDirectory(): string {
+  return path.join(app.getPath('userData'), 'logs');
+}
 
 /** Opens and migrates the database; on failure shows a native error and quits. */
 function startDatabase(): boolean {
@@ -20,8 +36,10 @@ function startDatabase(): boolean {
       path.join(app.getPath('userData'), 'bengkelin.sqlite'),
     );
     migrateDatabase(database);
+    log().info('startup', { version: app.getVersion() });
     return true;
   } catch (error) {
+    log().error('startup.database_failed', { error });
     database?.close();
     database = null;
     dialog.showErrorBox(
@@ -40,6 +58,13 @@ function showMainWindow(): void {
     return;
   }
   mainWindow = createMainWindow();
+
+  // Sessions are bound to the window: end them when it closes or crashes.
+  const { webContents } = mainWindow;
+  const windowId = webContents.id;
+  const endSession = () => services?.sessions.endWindow(windowId);
+  webContents.once('render-process-gone', endSession);
+  mainWindow.once('closed', endSession);
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -50,7 +75,15 @@ if (started || !app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(() => {
     if (!startDatabase()) return;
-    registerApplicationIpc({});
+    if (!database) return;
+    services = createApplicationServices({
+      db: database,
+      clock,
+      logDir: logDirectory(),
+      logger: log(),
+      openPath: (target) => shell.openPath(target),
+    });
+    registerApplicationIpc(services);
     showMainWindow();
 
     // macOS: re-create the window when the dock icon is clicked.
