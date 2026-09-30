@@ -53,7 +53,7 @@ describe('applyDiscounts', () => {
     );
   });
   test('rejects negative base and overflow base', () => {
-    expect(() => applyDiscounts(-1n, [])).toThrowError(code('MONEY_OVERFLOW'));
+    expect(() => applyDiscounts(-1n, [])).toThrowError(code('NEGATIVE_MONEY'));
     expect(() => applyDiscounts(2n ** 63n, [])).toThrowError(
       code('MONEY_OVERFLOW'),
     );
@@ -127,7 +127,7 @@ describe('calculateInvoice', () => {
         lines: [{ quantity: 1, unitPrice: -1n, discountStages: [] }],
         discountStages: [],
       }),
-    ).toThrowError(code('MONEY_OVERFLOW'));
+    ).toThrowError(code('NEGATIVE_MONEY'));
   });
   test('line multiplication overflow', () => {
     expect(() =>
@@ -183,8 +183,12 @@ describe('derivePaymentStatus', () => {
     );
   });
   test('negatives throw', () => {
-    expect(() => derivePaymentStatus(-1n, 0n)).toThrow();
-    expect(() => derivePaymentStatus(1000n, -1n)).toThrow();
+    expect(() => derivePaymentStatus(-1n, 0n)).toThrowError(
+      code('NEGATIVE_MONEY'),
+    );
+    expect(() => derivePaymentStatus(1000n, -1n)).toThrowError(
+      code('NEGATIVE_MONEY'),
+    );
   });
 });
 
@@ -211,7 +215,11 @@ describe('calculateDueDate', () => {
     }
   });
   test('rejects invalid date', () => {
-    expect(() => calculateDueDate('2026-02-30', 1)).toThrow();
-    expect(() => calculateDueDate('2026-9-3', 1)).toThrow();
+    expect(() => calculateDueDate('2026-02-30', 1)).toThrowError(
+      code('INVALID_DATE'),
+    );
+    expect(() => calculateDueDate('2026-9-3', 1)).toThrowError(
+      code('INVALID_DATE'),
+    );
   });
 });
