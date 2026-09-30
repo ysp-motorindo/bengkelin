@@ -1,4 +1,13 @@
 import type {
+  CreateDraftInput,
+  DraftCommand,
+  DraftSummary,
+  DraftView,
+  PreviewPriceRefreshInput,
+  PriceRefreshPreviewDto,
+  SearchAdHocReferencesInput,
+  SearchAdHocReferencesResult,
+  UUID,
   AdjustStockInput,
   LedgerDto,
   ListStockInput,
@@ -134,6 +143,26 @@ export interface BengkelinApi {
     adjust(input: AdjustStockInput): Promise<Result<StockChangeDto>>;
     /** ADMIN. A reason is required; the delta is computed in main. */
     setStock(input: SetStockInput): Promise<Result<StockChangeDto>>;
+  };
+  /**
+   * Shared shop drafts (any signed-in cashier). Every `apply` carries a
+   * `requestId` (once per user action, reused on retry) and the
+   * `expectedVersion` of the view it was built from.
+   */
+  readonly drafts: {
+    create(input: CreateDraftInput): Promise<Result<DraftView>>;
+    list(): Promise<Result<DraftSummary[]>>;
+    get(id: UUID): Promise<Result<DraftView>>;
+    apply(input: DraftCommand): Promise<Result<DraftView>>;
+    /** Read-only proposals at the draft's current channel and pricingAt. */
+    previewPriceRefresh(
+      input: PreviewPriceRefreshInput,
+    ): Promise<Result<PriceRefreshPreviewDto>>;
+  };
+  readonly adHocReferences: {
+    search(
+      input: SearchAdHocReferencesInput,
+    ): Promise<Result<SearchAdHocReferencesResult>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;

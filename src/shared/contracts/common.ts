@@ -78,15 +78,22 @@ export const optionalPhone = z
   .nullish()
   .transform((value) => (value ? value : null));
 
+/** True for a real calendar date written `YYYY-MM-DD`. */
+export function isLocalDate(v: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const date = new Date(`${v}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(v);
+}
+
+/** Required calendar date `YYYY-MM-DD` (a LocalDate). */
+export const localDateSchema = z
+  .string('validation.required')
+  .refine(isLocalDate, 'validation.invalidDate');
+
 /** Optional calendar date `YYYY-MM-DD`; blank becomes `null`. */
 export const optionalLocalDate = z
   .string('validation.invalid')
   .trim()
-  .refine((v) => {
-    if (v === '') return true;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
-    const date = new Date(`${v}T00:00:00.000Z`);
-    return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(v);
-  }, 'validation.invalidDate')
+  .refine((v) => v === '' || isLocalDate(v), 'validation.invalidDate')
   .nullish()
   .transform((value) => (value ? value : null));

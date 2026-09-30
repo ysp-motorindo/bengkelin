@@ -70,6 +70,16 @@ const api: BengkelinApi = Object.freeze({
     adjust: call(c.inventory.adjust),
     setStock: call(c.inventory.setStock),
   }),
+  drafts: Object.freeze({
+    create: call(c.drafts.create),
+    list: call(c.drafts.list),
+    get: call(c.drafts.get),
+    apply: call(c.drafts.apply),
+    previewPriceRefresh: call(c.drafts.previewPriceRefresh),
+  }),
+  adHocReferences: Object.freeze({
+    search: call(c.adHocReferences.search),
+  }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),
   }),

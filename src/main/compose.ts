@@ -4,6 +4,8 @@ import { AuthService } from '@/main/features/auth/service';
 import { SessionStore } from '@/main/features/auth/sessions';
 import { CatalogService } from '@/main/features/catalog/service';
 import { InventoryService } from '@/main/features/inventory/service';
+import { DraftService } from '@/main/features/drafts/service';
+import { AdHocReferenceService } from '@/main/features/ad-hoc-references/service';
 import { CustomerService } from '@/main/features/customers/service';
 import { ReferenceService } from '@/main/features/references/service';
 import { VehicleService } from '@/main/features/vehicles/service';
@@ -43,6 +45,8 @@ export function createApplicationServices(
     catalog,
     vehicles: new VehicleService({ db, clock }),
     inventory,
+    drafts: new DraftService({ db, clock, catalog }),
+    adHocReferences: new AdHocReferenceService({ db }),
     app: new AppService({ logDir: deps.logDir, openPath: deps.openPath }),
   };
 }
