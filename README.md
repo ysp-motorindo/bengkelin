@@ -65,10 +65,30 @@ automated tests. The app honours them only when unpackaged
 
 ### CI
 
-`.github/workflows/ci.yml` runs every gate on Ubuntu 24.04, Windows,
-macOS 14 (arm64) and macOS 13 (x64), then packages, runs the release
-checks, makes the installers, smoke-tests the package and uploads the
-installers. There is no code signing and no auto-updater in v1.
+`.github/workflows/ci.yml` runs every gate on Ubuntu 24.04, Windows
+(`windows-latest`, a Windows Server image, not pinned to Windows 11),
+macOS 14 (arm64) and macOS 15 Intel (x64, `macos-15-intel`), then
+packages, runs the release checks, makes the installers, smoke-tests the
+package and uploads the installers. Windows 11 acceptance is a manual
+check (`docs/testing/client-trial-checklist.md`). There is no code
+signing, no auto-updater and no publish step in v1.
+
+### Backups that are never pruned (privacy)
+
+Automatic backups keep the 30 most recent `bengkelin-auto-…` files.
+Nothing else is ever deleted automatically:
+
+- SAFETY backups (`bengkelin-safety-…sqlite`), written in the backup
+  folder before every catalog import and before every restore;
+- the `bengkelin.sqlite.pre-restore-…` copies of the previous database
+  that a restore leaves next to the live database in the data folder;
+- manual backups (`bengkelin-manual-…sqlite`).
+
+Each of these is a full copy of the business data, including customer
+names, phone numbers and vehicles (personal data). Review the backup
+folder and the data folder periodically (for example monthly and after
+each restore): keep what you may still need to recover from, move older
+copies to protected offline storage or delete them, and never share them.
 
 ### Client trial
 

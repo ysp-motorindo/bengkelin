@@ -209,6 +209,10 @@ describe('checkout review and finalization', () => {
         preview({
           errors: [
             {
+              code: 'PRICING_AT_IN_FUTURE',
+              params: { pricingAt: '2026-09-30T04:00:00.000Z' },
+            },
+            {
               code: 'INVOICE_DATE_IN_FUTURE',
               params: { invoiceDate: '2026-10-01', today: '2026-09-30' },
             },
@@ -221,6 +225,10 @@ describe('checkout review and finalization', () => {
     renderReview(blocked);
     expect(await screen.findByTestId('finalize-errors')).toHaveTextContent(
       '2026-10-01',
+    );
+    // M1: the future pricing time is shown as its own translated error.
+    expect(screen.getByTestId('finalize-errors')).toHaveTextContent(
+      'Waktu harga',
     );
     expect(screen.getByRole('button', { name: 'Finalisasi' })).toBeDisabled();
     expect(screen.queryByTestId('review-payment-status')).toBeNull();

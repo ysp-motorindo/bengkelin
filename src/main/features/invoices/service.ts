@@ -104,10 +104,12 @@ export class InvoiceService {
     // One consistent read snapshot (deferred transaction: no write lock).
     return this.deps.db.transaction(() => {
       const invoice = this.requireOpenDraft(input.invoiceId);
+      const now = this.deps.clock.now();
       const check = checkFinalization(
         this.ctx,
         invoice,
-        this.today(this.deps.clock.now()).today,
+        this.today(now).today,
+        now,
       );
       const { calc } = check.calculation;
       return {

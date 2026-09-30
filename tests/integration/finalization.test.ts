@@ -605,6 +605,27 @@ describe('numbering', () => {
     expect(view.dueDate).toBe('2026-10-02');
   });
 
+  test('a pricing time later than the finalize instant is rejected (M1)', async () => {
+    const item = await pricedItem();
+    const later = at(nowMs + 60 * 60_000); // one hour ahead, same day
+    const draft = await draftWith([{ itemId: item.id }], {
+      pricingAt: later,
+    });
+    const shown = value(await preview(draft.id));
+    expect(shown.errors).toEqual([
+      { code: 'PRICING_AT_IN_FUTURE', params: { pricingAt: later } },
+    ]);
+    const before = dump();
+    const error = failure(await finalize(draft));
+    expect(error.code).toBe('PRICING_AT_IN_FUTURE');
+    expect(error.messageKey).toBe('errors.PRICING_AT_IN_FUTURE');
+    expect(dump()).toEqual(before);
+    // Exactly at the pricing time it is no longer in the future.
+    nowMs += 60 * 60_000;
+    expect(value(await preview(draft.id)).errors).toEqual([]);
+    expect((await finalizeOk(draft)).status).toBe('FINALIZED');
+  });
+
   test('a future invoice date is rejected at finalization', async () => {
     const item = await pricedItem();
     const draft = await draftWith([{ itemId: item.id }], {

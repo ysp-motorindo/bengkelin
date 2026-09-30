@@ -19,7 +19,11 @@ import type {
   PaymentStatus,
 } from '@/shared/contracts';
 import { detectOwnerMismatch } from '@/shared/ownership';
-import { formatRupiah, type LocalDate } from '@/shared/primitives';
+import {
+  formatRupiah,
+  type Instant,
+  type LocalDate,
+} from '@/shared/primitives';
 import { derivePaymentStatus } from './domain';
 import type { InvoiceRepository, TrackedDemandRow } from './repository';
 
@@ -52,6 +56,8 @@ export function checkFinalization(
   deps: CheckDeps,
   invoice: InvoiceRow,
   today: LocalDate,
+  /** The command's single instant (the fixed clock inside `finalize`). */
+  now: Instant,
 ): FinalizationCheck {
   const calculation = calculateDraftTotals(deps.drafts, invoice.id);
   const amount = calculation.calc.amount;
@@ -69,6 +75,14 @@ export function checkFinalization(
     errors.push({
       code: 'INVOICE_DATE_IN_FUTURE',
       params: { invoiceDate: invoice.invoice_date, today },
+    });
+  }
+  // Prices must not be taken from a time that has not happened yet.
+  // Canonical instants (UTC ISO with ms + Z) compare chronologically.
+  if (invoice.pricing_at > now) {
+    errors.push({
+      code: 'PRICING_AT_IN_FUTURE',
+      params: { pricingAt: invoice.pricing_at },
     });
   }
   const channel = deps.drafts.channel(invoice.channel_id);

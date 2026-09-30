@@ -1,10 +1,6 @@
 import { BrowserWindow, type WebContents } from 'electron';
 import type { PrintFormat } from '@/shared/contracts';
-import type {
-  PrintDriver,
-  PrintJobOptions,
-  PrinterInfo,
-} from './driver';
+import type { PrintDriver, PrintJobOptions, PrinterInfo } from './driver';
 import { pdfOptionsFor, printOptionsFor } from './driver-options';
 import { printWithTimeout } from './print-job';
 

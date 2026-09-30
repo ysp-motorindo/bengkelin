@@ -72,7 +72,7 @@ export function finalizeDraft(
   const step = (name: FinalizeStep) => ctx.onStep?.(name);
 
   // Validation and warnings on committed state, inside the write lock.
-  const check = checkFinalization(ctx, invoice, today);
+  const check = checkFinalization(ctx, invoice, today, now);
   const firstError = check.errors[0];
   if (firstError) {
     throw new DomainError(
