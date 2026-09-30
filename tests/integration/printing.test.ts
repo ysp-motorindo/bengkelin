@@ -725,6 +725,23 @@ describe('printer selection and failures', () => {
     expect(driver.printCalls[0]!.options.silent).toBe(false);
   });
 
+  test('a print that timed out is a FAILED PRINT_TIMEOUT outcome, logged in print_jobs (I1)', async () => {
+    driver.willReturn({ outcome: 'FAILED', code: 'PRINT_TIMEOUT' });
+    expect(value(await print(invoice.id, 'A4'))).toMatchObject({
+      outcome: 'FAILED',
+      code: 'PRINT_TIMEOUT',
+    });
+    expect(printJobs(invoice.id)).toMatchObject([
+      { outcome: 'FAILED', error_code: 'PRINT_TIMEOUT' },
+    ]);
+    // A retry prints (the busy state was released).
+    value(await print(invoice.id, 'A4'));
+    expect(printJobs(invoice.id)).toMatchObject([
+      { outcome: 'FAILED', error_code: 'PRINT_TIMEOUT' },
+      { outcome: 'PRINTED', error_code: null },
+    ]);
+  });
+
   test('a driver failure, a thrown error and a cancellation are outcomes; a retry prints', async () => {
     driver.willReturn(
       { outcome: 'FAILED', code: 'PRINT_FAILED' },

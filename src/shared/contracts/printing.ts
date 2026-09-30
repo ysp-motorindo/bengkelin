@@ -94,10 +94,11 @@ export interface PrintPreviewDto {
 }
 
 export type PrintOutcome = 'PRINTED' | 'CANCELLED' | 'FAILED';
-/** PRINTER_NOT_FOUND {printerName} | PRINT_FAILED | PDF_FAILED */
+/** PRINTER_NOT_FOUND {printerName} | PRINT_FAILED | PRINT_TIMEOUT | PDF_FAILED */
 export type PrintFailureCode =
   | 'PRINTER_NOT_FOUND'
   | 'PRINT_FAILED'
+  | 'PRINT_TIMEOUT'
   | 'PDF_FAILED';
 
 export interface PrintOutcomeDto {

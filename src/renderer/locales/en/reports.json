@@ -70,6 +70,7 @@
     "cancelled": "Cancelled.",
     "PRINTER_NOT_FOUND": "Printer “{{printerName}}” was not found. Check the printer or the print settings.",
     "PRINT_FAILED": "The report could not be printed. Try again.",
+    "PRINT_TIMEOUT": "The printer did not respond in time. Check the printer and try again.",
     "PDF_FAILED": "The report could not be printed. Try again.",
     "EXPORT_FAILED": "The CSV could not be saved. Try again or choose another location."
   }

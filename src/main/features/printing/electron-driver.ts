@@ -2,11 +2,11 @@ import { BrowserWindow, type WebContents } from 'electron';
 import type { PrintFormat } from '@/shared/contracts';
 import type {
   PrintDriver,
-  PrintDriverResult,
   PrintJobOptions,
   PrinterInfo,
 } from './driver';
 import { pdfOptionsFor, printOptionsFor } from './driver-options';
+import { printWithTimeout } from './print-job';
 
 /**
  * The real driver: renders the template in a hidden, sandboxed window with
@@ -24,7 +24,7 @@ const FALLBACK_HEIGHT_MICRONS = 297_000;
 
 async function withDocument<T>(
   html: string | null,
-  work: (contents: WebContents) => Promise<T>,
+  work: (contents: WebContents, window: BrowserWindow) => Promise<T>,
 ): Promise<T> {
   const window = new BrowserWindow({
     show: false,
@@ -58,7 +58,7 @@ async function withDocument<T>(
       const encoded = Buffer.from(html, 'utf8').toString('base64');
       await window.loadURL(`data:text/html;charset=utf-8;base64,${encoded}`);
     }
-    return await work(contents);
+    return await work(contents, window);
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }
@@ -127,25 +127,17 @@ export function createElectronPrintDriver(): PrintDriver {
       ),
 
     print: (html: string, options: PrintJobOptions) =>
-      withDocument(html, async (contents) => {
+      withDocument(html, async (contents, window) => {
         const page = printOptionsFor(
           options.format,
           await measuredHeight(contents, options.format),
         );
-        return new Promise<PrintDriverResult>((resolve) => {
-          contents.print(
-            {
-              ...page,
-              silent: options.silent,
-              ...(options.deviceName ? { deviceName: options.deviceName } : {}),
-            },
-            (success, failureReason) => {
-              if (success) resolve({ outcome: 'PRINTED' });
-              else if (/cancel/i.test(failureReason ?? '')) {
-                resolve({ outcome: 'CANCELLED' });
-              } else resolve({ outcome: 'FAILED', code: 'PRINT_FAILED' });
-            },
-          );
+        // Times out (PRINT_TIMEOUT, window destroyed) if the callback
+        // never returns: see print-job.ts.
+        return printWithTimeout(window, {
+          ...page,
+          silent: options.silent,
+          ...(options.deviceName ? { deviceName: options.deviceName } : {}),
         });
       }),
 

@@ -26,6 +26,7 @@
     "cancelled": "Dibatalkan.",
     "PRINTER_NOT_FOUND": "Printer “{{printerName}}” tidak ditemukan. Faktur tetap tersimpan; periksa printer atau pengaturan cetak.",
     "PRINT_FAILED": "Gagal mencetak. Faktur tetap tersimpan; coba lagi.",
+    "PRINT_TIMEOUT": "Printer tidak merespons tepat waktu. Faktur tetap tersimpan; periksa printer lalu coba lagi.",
     "PDF_FAILED": "PDF gagal dibuat atau disimpan. Faktur tetap tersimpan; coba lagi."
   },
   "settings": {
