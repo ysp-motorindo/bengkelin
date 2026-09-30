@@ -81,6 +81,11 @@ const api: BengkelinApi = Object.freeze({
   adHocReferences: Object.freeze({
     search: call(c.adHocReferences.search),
   }),
+  invoices: Object.freeze({
+    previewFinalize: call(c.invoices.previewFinalize),
+    finalize: call(c.invoices.finalize),
+    get: call(c.invoices.get),
+  }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),
     // The callback never sees the IPC event object.

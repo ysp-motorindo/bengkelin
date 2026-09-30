@@ -602,12 +602,16 @@ test('custom service line with mechanic, checkout allocations and the review ste
   });
   await expect(review).toBeVisible();
   await expect(review.getByTestId('review-total')).toHaveText('Rp 90.000');
-  await expect(
-    review.getByRole('button', {
-      name: t('workspace.review.finalize'),
-      ...exact,
-    }),
-  ).toBeDisabled();
+  // No opening stock was recorded: finalization would make it negative, so
+  // Finalize needs an explicit acknowledgement (T10).
+  const finalizeButton = review.getByRole('button', {
+    name: t('workspace.review.finalize'),
+    ...exact,
+  });
+  await expect(review.getByTestId('negative-stock-warning')).toBeVisible();
+  await expect(finalizeButton).toBeDisabled();
+  await review.getByLabel(t('workspace.finalize.acknowledgeNegative')).check();
+  await expect(finalizeButton).toBeEnabled();
   await page.keyboard.press('Escape');
   await expect(review).toHaveCount(0);
 });

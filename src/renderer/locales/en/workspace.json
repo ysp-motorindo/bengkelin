@@ -188,8 +188,7 @@
     "credit": "{{amount}} remains on credit, due {{date}}.",
     "empty": "The transaction has no items yet.",
     "finalize": "Finalize",
-    "back": "Back",
-    "finalizeUnavailable": "Finalization is not available in this version yet."
+    "back": "Back"
   },
   "repricing": {
     "open": "Review prices",
@@ -236,5 +235,27 @@
     "percentage": "Percent 0–100, at most 2 decimals.",
     "discountGap": "Fill discounts in order, starting with Discount 1.",
     "wholeNumber": "Enter a whole number."
+  },
+  "finalize": {
+    "finalizing": "Finalizing…",
+    "reviewAgain": "Something changed since the review. Check the review again, then finalize.",
+    "errorsTitle": "This transaction cannot be finalized yet:",
+    "negativeStockTitle": "Stock will go negative",
+    "negativeStockItem": "{{title}}: stock {{observed}}, selling {{demand}}, stock after sale {{result}}",
+    "acknowledgeNegative": "I understand the stock will go negative",
+    "odometerLower": "The odometer is lower than on the previous visit ({{previous}} km).",
+    "ownerMismatch": "The vehicle is registered to another customer.",
+    "statusAfter": "Payment status after checkout:",
+    "doneTitle": "Invoice finalized",
+    "numberLabel": "Invoice number",
+    "printThermal": "Print Thermal",
+    "printA4": "Print A4",
+    "printLater": "Printing will be available in a later version.",
+    "newTransaction": "New Transaction"
+  },
+  "paymentStatus": {
+    "UNPAID": "Unpaid",
+    "PARTIALLY_PAID": "Partially paid",
+    "PAID": "Paid"
   }
 }

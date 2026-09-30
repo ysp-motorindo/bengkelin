@@ -5,6 +5,7 @@ import type { CatalogService } from '@/main/features/catalog/service';
 import type { InventoryService } from '@/main/features/inventory/service';
 import type { DraftService } from '@/main/features/drafts/service';
 import type { AdHocReferenceService } from '@/main/features/ad-hoc-references/service';
+import type { InvoiceService } from '@/main/features/invoices/service';
 import type { CustomerService } from '@/main/features/customers/service';
 import type { ReferenceService } from '@/main/features/references/service';
 import type { VehicleService } from '@/main/features/vehicles/service';
@@ -30,5 +31,6 @@ export interface ApplicationServices {
   inventory: InventoryService;
   drafts: DraftService;
   adHocReferences: AdHocReferenceService;
+  invoices: InvoiceService;
   app: AppService;
 }

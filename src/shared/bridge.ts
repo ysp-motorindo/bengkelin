@@ -1,4 +1,9 @@
 import type {
+  FinalizeInput,
+  FinalizePreviewDto,
+  InvoiceIdInput,
+  InvoiceView,
+  PreviewFinalizeInput,
   CreateDraftInput,
   DraftCommand,
   DraftSummary,
@@ -166,6 +171,21 @@ export interface BengkelinApi {
     search(
       input: SearchAdHocReferencesInput,
     ): Promise<Result<SearchAdHocReferencesResult>>;
+  };
+  /** Official invoices (any signed-in cashier). */
+  readonly invoices: {
+    /** Read-only: totals, blocking errors and warnings to acknowledge. */
+    previewFinalize(
+      input: PreviewFinalizeInput,
+    ): Promise<Result<FinalizePreviewDto>>;
+    /**
+     * Atomic finalization with checkout payments. `requestId` once per
+     * submission (reused on retry); `expectedVersion` and
+     * `acknowledgedWarnings` from the preview.
+     */
+    finalize(input: FinalizeInput): Promise<Result<InvoiceView>>;
+    /** A FINALIZED or VOID invoice. */
+    get(input: InvoiceIdInput): Promise<Result<InvoiceView>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;

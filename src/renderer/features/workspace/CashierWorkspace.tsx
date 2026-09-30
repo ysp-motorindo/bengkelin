@@ -12,13 +12,13 @@ import type {
   ShopSettingsDto,
 } from '@/shared/contracts';
 import type { Result } from '@/shared/primitives';
-import type { FinalizeHandler } from './checkout/CheckoutReviewDialog';
+import type { FinalizeClient } from './checkout/finalize-client';
 import { DraftWorkspace, type WorkspaceReferences } from './DraftWorkspace';
 import { nowInstant, todayInShop } from './shop-time';
 
 interface CashierWorkspaceProps {
-  /** T10: finalization from the review step. Absent: shown disabled. */
-  onFinalize?: FinalizeHandler | undefined;
+  /** Finalization from the review step (default: the preload bridge). */
+  finalizer?: FinalizeClient | undefined;
 }
 
 type Phase =
@@ -51,7 +51,7 @@ function must<T>(result: Result<T>): T {
  * or starts a new one. Switching drafts and starting new ones always flush
  * pending input first.
  */
-export function CashierWorkspace({ onFinalize }: CashierWorkspaceProps) {
+export function CashierWorkspace({ finalizer }: CashierWorkspaceProps) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [notice, setNotice] = useState<string | null>(null);
@@ -246,7 +246,7 @@ export function CashierWorkspace({ onFinalize }: CashierWorkspaceProps) {
         onOpenDraft={openDraft}
         onDiscardOther={discardOther}
         onLeave={leave}
-        onFinalize={onFinalize}
+        finalizer={finalizer}
       />
     </div>
   );
