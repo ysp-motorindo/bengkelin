@@ -7,3 +7,6 @@ export * from './customers';
 export * from './vehicles';
 export * from './catalog';
 export * from './inventory';
+export * from './payments';
+export * from './ad-hoc-references';
+export * from './drafts';

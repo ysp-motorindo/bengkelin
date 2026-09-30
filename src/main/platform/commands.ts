@@ -3,6 +3,11 @@ import {
   adjustStockInputSchema,
   applyPriceChangeInputSchema,
   cashierIdInputSchema,
+  createDraftInputSchema,
+  draftCommandSchema,
+  draftIdSchema,
+  previewPriceRefreshInputSchema,
+  searchAdHocReferencesInputSchema,
   catalogIdInputSchema,
   changeRoleInputSchema,
   createCashierInputSchema,
@@ -55,6 +60,8 @@ export function buildCommands(services: ApplicationServices): Command[] {
     vehicles,
     catalog,
     inventory,
+    drafts,
+    adHocReferences,
     app,
     sessions,
   } = services;
@@ -247,6 +254,30 @@ export function buildCommands(services: ApplicationServices): Command[] {
     ),
     command(C.inventory.setStock, setStockInputSchema, ({ windowId }, input) =>
       inventory.setStock(session(windowId), input),
+    ),
+
+    command(C.drafts.create, createDraftInputSchema, ({ windowId }, input) =>
+      drafts.create(session(windowId), input),
+    ),
+    command(C.drafts.list, noInput, ({ windowId }) =>
+      drafts.list(session(windowId)),
+    ),
+    command(C.drafts.get, draftIdSchema, ({ windowId }, id) =>
+      drafts.get(session(windowId), id),
+    ),
+    command(C.drafts.apply, draftCommandSchema, ({ windowId }, input) =>
+      drafts.apply(session(windowId), input),
+    ),
+    command(
+      C.drafts.previewPriceRefresh,
+      previewPriceRefreshInputSchema,
+      ({ windowId }, input) =>
+        drafts.previewPriceRefresh(session(windowId), input),
+    ),
+    command(
+      C.adHocReferences.search,
+      searchAdHocReferencesInputSchema,
+      ({ windowId }, input) => adHocReferences.search(session(windowId), input),
     ),
   ];
 }

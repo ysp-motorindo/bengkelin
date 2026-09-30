@@ -64,4 +64,14 @@ export const CHANNELS = {
     adjust: 'bengkelin:inventory:adjust',
     setStock: 'bengkelin:inventory:setStock',
   },
+  drafts: {
+    create: 'bengkelin:drafts:create',
+    list: 'bengkelin:drafts:list',
+    get: 'bengkelin:drafts:get',
+    apply: 'bengkelin:drafts:apply',
+    previewPriceRefresh: 'bengkelin:drafts:previewPriceRefresh',
+  },
+  adHocReferences: {
+    search: 'bengkelin:adHocReferences:search',
+  },
 } as const;

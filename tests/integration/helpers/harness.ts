@@ -32,23 +32,32 @@ export function validSetup(overrides: Record<string, unknown> = {}) {
 /** A migrated temp database plus the full command table, without Electron. */
 export function createHarness(options: { clock?: Clock } = {}) {
   const dir = mkdtempSync(path.join(tmpdir(), 'bengkelin-auth-'));
-  const db: AppDatabase = openDatabase(path.join(dir, 'db.sqlite'));
-  migrateDatabase(db);
+  const file = path.join(dir, 'db.sqlite');
   const clock: Clock = options.clock ?? {
     now: () => toInstant(Date.UTC(2026, 8, 30, 3, 0, 0)),
   };
   const logDir = path.join(dir, 'logs');
   const opened: string[] = [];
-  const services = createApplicationServices({
-    db,
-    clock,
-    logDir,
-    openPath: async (target) => {
-      opened.push(target);
-      return '';
-    },
-  });
-  const commands = new Map(buildCommands(services).map((c) => [c.channel, c]));
+
+  function build() {
+    const db: AppDatabase = openDatabase(file);
+    migrateDatabase(db);
+    const services = createApplicationServices({
+      db,
+      clock,
+      logDir,
+      openPath: async (target) => {
+        opened.push(target);
+        return '';
+      },
+    });
+    const commands = new Map(
+      buildCommands(services).map((c) => [c.channel, c]),
+    );
+    return { db, services, commands };
+  }
+
+  let current = build();
 
   /** Invokes a channel exactly as IPC would (validation, Result mapping). */
   async function call<T = unknown>(
@@ -56,25 +65,38 @@ export function createHarness(options: { clock?: Clock } = {}) {
     input?: unknown,
     windowId = 1,
   ): Promise<Result<T>> {
-    const command = commands.get(channel);
+    const command = current.commands.get(channel);
     if (!command) throw new Error(`Unknown channel ${channel}`);
     return (await executeCommand(
       command,
       { windowId },
       input,
-      services.logger,
+      current.services.logger,
     )) as Result<T>;
   }
 
   return {
-    db,
+    get db() {
+      return current.db;
+    },
+    get services() {
+      return current.services;
+    },
     dir,
+    file,
     logDir,
     opened,
-    services,
     call,
+    /**
+     * Closes the connection and opens the same file again with fresh
+     * services (an app restart: every session is gone).
+     */
+    reopen() {
+      current.db.close();
+      current = build();
+    },
     close() {
-      db.close();
+      if (current.db.open) current.db.close();
       rmSync(dir, { recursive: true, force: true });
     },
   };
