@@ -1,0 +1,70 @@
+{
+  "title": "Customers & Vehicles",
+  "anonymous": "Walk-in",
+  "noName": "(no name)",
+  "noPhone": "(no phone)",
+  "search": {
+    "label": "Search name, phone or plate",
+    "placeholder": "e.g. Budi, 0812..., B 1234 XYZ",
+    "submit": "Search",
+    "customers": "Customers",
+    "vehicles": "Vehicles",
+    "none": "No results."
+  },
+  "customer": {
+    "select": "Select",
+    "selected": "Selected customer",
+    "clear": "Clear customer",
+    "vehicles": "Vehicles owned by this customer",
+    "noVehicles": "No vehicles yet."
+  },
+  "quickCustomer": {
+    "title": "New customer",
+    "name": "Name",
+    "phone": "Phone",
+    "submit": "Save customer",
+    "hint": "Enter a name or a phone number. Full details can be added later."
+  },
+  "duplicate": {
+    "title": "This phone number belongs to another customer",
+    "description": "Use the existing customer, or save anyway as a new customer.",
+    "use": "Use this customer",
+    "acknowledge": "Save anyway as a new customer",
+    "cancel": "Cancel"
+  },
+  "quickVehicle": {
+    "title": "New vehicle",
+    "plate": "Plate number",
+    "brand": "Brand",
+    "model": "Model",
+    "noBrand": "(no brand)",
+    "noModel": "(no model)",
+    "submit": "Save vehicle",
+    "ownerWill": "First owner: {{name}}",
+    "ownerNone": "No owner. Select a customer first to make them the owner."
+  },
+  "plateExists": {
+    "title": "This plate is already registered",
+    "description": "No new vehicle was created. Use the existing vehicle.",
+    "use": "Use this vehicle"
+  },
+  "vehicle": {
+    "detail": "Vehicle details",
+    "owner": "Current owner",
+    "noOwner": "No owner yet",
+    "history": "Ownership history",
+    "from": "From",
+    "until": "Until",
+    "current": "now",
+    "select": "View"
+  },
+  "mismatch": "Warning: this vehicle's owner ({{owner}}) differs from the selected customer ({{customer}}). Ownership does not change unless you explicitly transfer it.",
+  "transfer": {
+    "action": "Transfer ownership to {{name}}",
+    "confirmTitle": "Transfer ownership?",
+    "confirmBody": "Vehicle {{plate}} will belong to {{name}}. The previous owner stays in the history.",
+    "confirm": "Yes, transfer",
+    "cancel": "Cancel",
+    "done": "Ownership transferred."
+  }
+}

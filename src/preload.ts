@@ -33,6 +33,24 @@ const api: BengkelinApi = Object.freeze({
     reactivate: call(c.cashiers.reactivate),
     resetPassword: call(c.cashiers.resetPassword),
   }),
+  references: Object.freeze({
+    listActive: call(c.references.listActive),
+    list: call(c.references.list),
+    save: call(c.references.save),
+    deactivate: call(c.references.deactivate),
+    reactivate: call(c.references.reactivate),
+  }),
+  customers: Object.freeze({
+    search: call(c.customers.search),
+    get: call(c.customers.get),
+    save: call(c.customers.save),
+  }),
+  vehicles: Object.freeze({
+    searchByPlate: call(c.vehicles.searchByPlate),
+    get: call(c.vehicles.get),
+    save: call(c.vehicles.save),
+    transferOwnership: call(c.vehicles.transferOwnership),
+  }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),
   }),

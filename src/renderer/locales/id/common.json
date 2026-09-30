@@ -6,5 +6,9 @@
   "skip": "Lewati",
   "optional": "Opsional",
   "retry": "Coba lagi",
-  "role": { "ADMIN": "Admin", "CASHIER": "Kasir" }
+  "role": {
+    "ADMIN": "Admin",
+    "CASHIER": "Kasir"
+  },
+  "saving": "Menyimpan..."
 }

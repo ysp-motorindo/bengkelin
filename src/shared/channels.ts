@@ -27,4 +27,22 @@ export const CHANNELS = {
     reactivate: 'bengkelin:cashiers:reactivate',
     resetPassword: 'bengkelin:cashiers:resetPassword',
   },
+  references: {
+    listActive: 'bengkelin:references:listActive',
+    list: 'bengkelin:references:list',
+    save: 'bengkelin:references:save',
+    deactivate: 'bengkelin:references:deactivate',
+    reactivate: 'bengkelin:references:reactivate',
+  },
+  customers: {
+    search: 'bengkelin:customers:search',
+    get: 'bengkelin:customers:get',
+    save: 'bengkelin:customers:save',
+  },
+  vehicles: {
+    searchByPlate: 'bengkelin:vehicles:searchByPlate',
+    get: 'bengkelin:vehicles:get',
+    save: 'bengkelin:vehicles:save',
+    transferOwnership: 'bengkelin:vehicles:transferOwnership',
+  },
 } as const;

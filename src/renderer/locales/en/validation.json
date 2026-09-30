@@ -7,5 +7,9 @@
   "usernameTooShort": "Username must be at least 3 characters.",
   "usernameFormat": "Letters, numbers, dots, underscores and hyphens only.",
   "invalidTimezone": "Unknown timezone.",
-  "invalidEmail": "Invalid email format."
+  "invalidEmail": "Invalid email format.",
+  "invalidPhone": "Phone number must contain digits.",
+  "invalidDate": "Invalid date (YYYY-MM-DD).",
+  "invalidPlate": "Invalid plate number.",
+  "codeFormat": "Letters, numbers, underscores and hyphens only."
 }

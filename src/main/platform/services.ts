@@ -1,6 +1,9 @@
 import type { CashierService } from '@/main/features/auth/cashier-service';
 import type { AuthService } from '@/main/features/auth/service';
 import type { SessionStore } from '@/main/features/auth/sessions';
+import type { CustomerService } from '@/main/features/customers/service';
+import type { ReferenceService } from '@/main/features/references/service';
+import type { VehicleService } from '@/main/features/vehicles/service';
 import type { SettingsService } from '@/main/features/settings/service';
 import type { AppService } from './app-service';
 import type { Logger } from './logger';
@@ -16,5 +19,8 @@ export interface ApplicationServices {
   auth: AuthService;
   settings: SettingsService;
   cashiers: CashierService;
+  references: ReferenceService;
+  customers: CustomerService;
+  vehicles: VehicleService;
   app: AppService;
 }

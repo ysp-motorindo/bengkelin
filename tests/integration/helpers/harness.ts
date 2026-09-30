@@ -7,7 +7,7 @@ import { createApplicationServices } from '@/main/compose';
 import { executeCommand } from '@/main/platform/command';
 import { buildCommands } from '@/main/platform/commands';
 import type { Result } from '@/shared/primitives';
-import { toInstant } from '@/shared/time';
+import { toInstant, type Clock } from '@/shared/time';
 
 export const ADMIN_PASSWORD = 'correct-horse-battery';
 
@@ -30,11 +30,13 @@ export function validSetup(overrides: Record<string, unknown> = {}) {
 }
 
 /** A migrated temp database plus the full command table, without Electron. */
-export function createHarness() {
+export function createHarness(options: { clock?: Clock } = {}) {
   const dir = mkdtempSync(path.join(tmpdir(), 'bengkelin-auth-'));
   const db: AppDatabase = openDatabase(path.join(dir, 'db.sqlite'));
   migrateDatabase(db);
-  const clock = { now: () => toInstant(Date.UTC(2026, 8, 30, 3, 0, 0)) };
+  const clock: Clock = options.clock ?? {
+    now: () => toInstant(Date.UTC(2026, 8, 30, 3, 0, 0)),
+  };
   const logDir = path.join(dir, 'logs');
   const opened: string[] = [];
   const services = createApplicationServices({
