@@ -231,6 +231,12 @@ export function DailyReportScreen({
               </Button>
             </div>
           </div>
+          <p
+            className="text-xs text-muted-foreground"
+            data-testid="csv-separator-note"
+          >
+            {t('reports.actions.csvSeparatorNote')}
+          </p>
           {notice ? (
             <p
               role={notice.tone}

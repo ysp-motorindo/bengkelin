@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { CatalogTransferScreen } from '@/renderer/features/catalog-transfer/CatalogTransferScreen';
 import type { ImportReadyDto, ImportSummaryDto } from '@/shared/contracts';
+import { resources } from '@/renderer/i18n';
 
 const ok = <T,>(value: T) => ({ ok: true as const, value });
 const TOKEN = '11111111-1111-4111-8111-111111111111';
@@ -126,6 +127,45 @@ describe('Catalog import/export screen', () => {
     expect(commit).toBeDisabled();
     await userEvent.click(commit);
     expect(bridge.commitImport).not.toHaveBeenCalled();
+  });
+
+  test('spreadsheet notes and the new CSV issue codes are translated (I4)', async () => {
+    install(
+      readyPreview({
+        canCommit: false,
+        errorCount: 1,
+        errors: [
+          {
+            row: 1,
+            column: null,
+            sku: null,
+            error: {
+              code: 'WRONG_DELIMITER',
+              messageKey: 'errors.WRONG_DELIMITER',
+            },
+          },
+        ],
+      }),
+    );
+    render(<CatalogTransferScreen />);
+    expect(screen.getByTestId('csv-separator-note')).toHaveTextContent(
+      /pemisah daftar/,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Impor CSV...' }));
+    expect(await screen.findByTestId('import-errors')).toHaveTextContent(
+      'CSV UTF-8 (comma delimited)',
+    );
+    for (const language of Object.keys(resources)) {
+      const errors = resources[language]!.translation.errors as Record<
+        string,
+        string
+      >;
+      expect(errors.WRONG_DELIMITER, language).toBeTruthy();
+      expect(errors.SPREADSHEET_NUMBER_FORMAT, language).toContain('{{value}}');
+      expect(errors.POSSIBLE_LEADING_ZERO_LOSS, language).toContain(
+        '{{existingSku}}',
+      );
+    }
   });
 
   test('export warns about items without a SKU', async () => {

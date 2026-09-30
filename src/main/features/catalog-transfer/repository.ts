@@ -88,6 +88,17 @@ export class CatalogTransferRepository implements PlannerSource {
     return row && toExisting(row);
   }
 
+  skuWithLeadingZeros(digits: string): string | undefined {
+    const row = this.db
+      .prepare(
+        `SELECT sku FROM catalog_items
+          WHERE sku GLOB '0*' AND ltrim(sku, '0') = ?
+          ORDER BY sku LIMIT 1`,
+      )
+      .get(digits) as { sku: string } | undefined;
+    return row?.sku;
+  }
+
   itemById(id: string): ExistingItem | undefined {
     const row = this.db.prepare(`${ITEM_SELECT} WHERE i.id = ?`).get(id) as
       | ItemRow

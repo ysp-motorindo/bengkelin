@@ -233,6 +233,10 @@ describe('daily report screen', () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<DailyReportScreen session={SITI} client={fake} />);
     await screen.findByTestId('daily-report');
+    // Excel's regional list separator (I4).
+    expect(screen.getByTestId('csv-separator-note')).toHaveTextContent(
+      /pemisah daftar/,
+    );
     await user.click(screen.getByRole('button', { name: 'Ekspor CSV' }));
     expect(await screen.findByTestId('report-notice')).toHaveTextContent(
       'CSV disimpan: laporan.csv',

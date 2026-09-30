@@ -54,7 +54,8 @@
   },
   "actions": {
     "preview": "Preview & print",
-    "exportCsv": "Export CSV"
+    "exportCsv": "Export CSV",
+    "csvSeparatorNote": "The CSV uses commas. If Excel shows everything in one column (the Windows list separator is a semicolon), open it with Data > From Text/CSV and choose Comma as the delimiter."
   },
   "preview": {
     "title": "Daily report preview",
