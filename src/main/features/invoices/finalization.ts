@@ -92,6 +92,7 @@ export function finalizeDraft(
   step('snapshots');
 
   const plan = check.allocations;
+  const receiverName = ctx.drafts.cashierName(actor.cashierId);
   ctx.invoices.clearAllocations(invoice.id);
   step('allocationsCleared');
 
@@ -134,6 +135,7 @@ export function finalizeDraft(
       reference: allocation.reference,
       note: allocation.note,
       receivedByCashierId: actor.cashierId,
+      receivedByName: receiverName,
       source: 'CHECKOUT',
       createdAt: now,
     });

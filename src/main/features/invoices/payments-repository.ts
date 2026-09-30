@@ -17,7 +17,8 @@ export interface PaymentRow {
   reference: string | null;
   note: string | null;
   received_by_cashier_id: string;
-  received_by_name: string;
+  /** The receiver's display name when the payment was recorded (008). */
+  received_by_name_snapshot: string;
   source: PaymentSource;
   created_at: Instant;
 }
@@ -31,6 +32,8 @@ export interface NewPayment {
   reference: string | null;
   note: string | null;
   receivedByCashierId: string;
+  /** Frozen so a later rename never changes the payment's history. */
+  receivedByName: string;
   source: PaymentSource;
   createdAt: Instant;
 }
@@ -42,8 +45,8 @@ export class PaymentRepository {
     this.db
       .prepare(
         `INSERT INTO payments (id, invoice_id, method, amount, paid_at, reference, note,
-           received_by_cashier_id, source, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           received_by_cashier_id, received_by_name_snapshot, source, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         payment.id,
@@ -54,6 +57,7 @@ export class PaymentRepository {
         payment.reference,
         payment.note,
         payment.receivedByCashierId,
+        payment.receivedByName,
         payment.source,
         payment.createdAt,
       );
@@ -63,11 +67,11 @@ export class PaymentRepository {
   forInvoice(invoiceId: string): PaymentRow[] {
     return this.db
       .prepare(
-        `SELECT p.id, p.invoice_id, p.method, p.amount, p.paid_at, p.reference, p.note,
-           p.received_by_cashier_id, c.display_name AS received_by_name, p.source, p.created_at
-         FROM payments p JOIN cashiers c ON c.id = p.received_by_cashier_id
-         WHERE p.invoice_id = ?
-         ORDER BY p.paid_at, p.rowid`,
+        `SELECT id, invoice_id, method, amount, paid_at, reference, note,
+           received_by_cashier_id, received_by_name_snapshot, source, created_at
+         FROM payments
+         WHERE invoice_id = ?
+         ORDER BY paid_at, rowid`,
       )
       .all(invoiceId) as PaymentRow[];
   }

@@ -70,5 +70,11 @@
   "INVOICE_DATE_IN_FUTURE": "The invoice date {{invoiceDate}} is in the future (today is {{today}}). Change the invoice date.",
   "ZERO_TOTAL_WITH_ALLOCATIONS": "The total is zero, so no payment can be recorded. Remove the planned payments.",
   "FINALIZE_WARNINGS_CHANGED": "The warnings changed since you reviewed them. Review the checkout again.",
-  "INVOICE_NOT_FOUND": "Invoice not found."
+  "INVOICE_NOT_FOUND": "Invoice not found.",
+  "PAYMENT_EXCEEDS_OUTSTANDING": "The payment is more than the outstanding amount. Enter at most this invoice's remaining balance.",
+  "INVOICE_VOID": "This invoice is void, so it cannot receive payments.",
+  "INVOICE_NOT_FINALIZED": "This invoice is not finalized yet. Finish the transaction first.",
+  "INVOICE_ALREADY_VOID": "This invoice is already void.",
+  "PAID_INVOICE_CANNOT_BE_VOIDED": "An invoice that has received a payment cannot be voided.",
+  "VOID_REASON_REQUIRED": "Enter a reason for the void."
 }

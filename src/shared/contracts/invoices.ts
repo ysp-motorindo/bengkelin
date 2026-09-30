@@ -1,13 +1,14 @@
 import { z } from 'zod';
 import type { Instant, LocalDate, Rupiah } from '../primitives';
-import { uuidSchema, type UUID } from './common';
-import type {
-  CashierRefDto,
-  DiscountStageDto,
-  InvoiceStatus,
-  LineItemType,
+import { optionalText, uuidSchema, type UUID } from './common';
+import {
+  positiveRupiahSchema,
+  type CashierRefDto,
+  type DiscountStageDto,
+  type InvoiceStatus,
+  type LineItemType,
 } from './drafts';
-import type { PaymentMethod } from './payments';
+import { paymentMethodSchema, type PaymentMethod } from './payments';
 
 /**
  * Official invoices (spec 15, 17, 22, 23, 26; Part A).
@@ -105,6 +106,40 @@ export type FinalizeData = z.output<typeof finalizeInputSchema>;
 
 export const invoiceIdInputSchema = z.strictObject({ invoiceId: uuidSchema });
 export type InvoiceIdInput = z.input<typeof invoiceIdInputSchema>;
+
+/**
+ * A later payment (spec 22) on a FINALIZED invoice. `amount` is whole rupiah,
+ * > 0 and at most the outstanding amount recomputed inside the write
+ * transaction (PAYMENT_EXCEEDS_OUTSTANDING, also on a fully PAID invoice).
+ * VOID -> INVOICE_VOID, DRAFT -> INVOICE_NOT_FINALIZED. `paidAt` is the
+ * receipt time (never backdated in v1) and the receiver is the session.
+ */
+export const recordPaymentInputSchema = z.strictObject({
+  /** Once per payment submission; reuse it on retry. */
+  requestId: uuidSchema,
+  invoiceId: uuidSchema,
+  method: paymentMethodSchema,
+  amount: positiveRupiahSchema,
+  reference: optionalText(100),
+  note: optionalText(500),
+});
+export type RecordPaymentInput = z.input<typeof recordPaymentInputSchema>;
+export type RecordPaymentData = z.output<typeof recordPaymentInputSchema>;
+
+/**
+ * Voids an unpaid FINALIZED invoice (spec 29; Part A "Voiding"). A blank
+ * reason is VOID_REASON_REQUIRED; any payment is
+ * PAID_INVOICE_CANNOT_BE_VOIDED; a second void is INVOICE_ALREADY_VOID.
+ */
+export const voidInvoiceInputSchema = z.strictObject({
+  /** Once per void submission; reuse it on retry. */
+  requestId: uuidSchema,
+  invoiceId: uuidSchema,
+  /** Trimmed; blank is checked by the service (VOID_REASON_REQUIRED). */
+  reason: z.string('validation.required').trim().max(500, 'validation.tooLong'),
+});
+export type VoidInvoiceInput = z.input<typeof voidInvoiceInputSchema>;
+export type VoidInvoiceData = z.output<typeof voidInvoiceInputSchema>;
 
 // ---- DTOs ----
 

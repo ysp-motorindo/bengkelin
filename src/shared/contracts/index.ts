@@ -11,3 +11,4 @@ export * from './payments';
 export * from './ad-hoc-references';
 export * from './drafts';
 export * from './invoices';
+export * from './invoice-history';

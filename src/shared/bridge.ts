@@ -2,8 +2,14 @@ import type {
   FinalizeInput,
   FinalizePreviewDto,
   InvoiceIdInput,
+  InvoicePage,
+  InvoiceSearchInput,
   InvoiceView,
   PreviewFinalizeInput,
+  ReceivablesInput,
+  ReceivablesPage,
+  RecordPaymentInput,
+  VoidInvoiceInput,
   CreateDraftInput,
   DraftCommand,
   DraftSummary,
@@ -186,6 +192,17 @@ export interface BengkelinApi {
     finalize(input: FinalizeInput): Promise<Result<InvoiceView>>;
     /** A FINALIZED or VOID invoice. */
     get(input: InvoiceIdInput): Promise<Result<InvoiceView>>;
+    /**
+     * A later payment on a FINALIZED invoice, at most the outstanding
+     * amount. `requestId` once per submission (reused on retry).
+     */
+    recordPayment(input: RecordPaymentInput): Promise<Result<InvoiceView>>;
+    /** Voids an invoice with no payments; a reason is required. */
+    void(input: VoidInvoiceInput): Promise<Result<InvoiceView>>;
+    /** History: FINALIZED and VOID invoices matched on their snapshots. */
+    search(input: InvoiceSearchInput): Promise<Result<InvoicePage>>;
+    /** Outstanding or overdue FINALIZED invoices. */
+    receivables(input: ReceivablesInput): Promise<Result<ReceivablesPage>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;

@@ -70,5 +70,11 @@
   "INVOICE_DATE_IN_FUTURE": "Tanggal faktur {{invoiceDate}} masih di masa depan (hari ini {{today}}). Ubah tanggal faktur.",
   "ZERO_TOTAL_WITH_ALLOCATIONS": "Totalnya nol, jadi tidak ada pembayaran yang bisa dicatat. Hapus rencana pembayaran.",
   "FINALIZE_WARNINGS_CHANGED": "Peringatan berubah sejak Anda meninjaunya. Tinjau checkout lagi.",
-  "INVOICE_NOT_FOUND": "Faktur tidak ditemukan."
+  "INVOICE_NOT_FOUND": "Faktur tidak ditemukan.",
+  "PAYMENT_EXCEEDS_OUTSTANDING": "Jumlah pembayaran melebihi sisa tagihan. Masukkan paling banyak sisa tagihan faktur ini.",
+  "INVOICE_VOID": "Faktur ini sudah dibatalkan (VOID), jadi tidak bisa menerima pembayaran.",
+  "INVOICE_NOT_FINALIZED": "Faktur ini belum final. Selesaikan transaksinya terlebih dahulu.",
+  "INVOICE_ALREADY_VOID": "Faktur ini sudah dibatalkan (VOID).",
+  "PAID_INVOICE_CANNOT_BE_VOIDED": "Faktur yang sudah menerima pembayaran tidak bisa dibatalkan.",
+  "VOID_REASON_REQUIRED": "Isi alasan pembatalan."
 }

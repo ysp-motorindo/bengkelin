@@ -7,7 +7,9 @@
     "customers": "Pelanggan & Kendaraan",
     "catalog": "Katalog & Harga",
     "inventory": "Persediaan",
-    "references": "Data Referensi"
+    "references": "Data Referensi",
+    "history": "Riwayat",
+    "receivables": "Piutang"
   },
   "preferences": {
     "language": "Bahasa",

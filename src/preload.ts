@@ -85,6 +85,10 @@ const api: BengkelinApi = Object.freeze({
     previewFinalize: call(c.invoices.previewFinalize),
     finalize: call(c.invoices.finalize),
     get: call(c.invoices.get),
+    recordPayment: call(c.invoices.recordPayment),
+    void: call(c.invoices.void),
+    search: call(c.invoices.search),
+    receivables: call(c.invoices.receivables),
   }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),

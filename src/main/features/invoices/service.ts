@@ -18,8 +18,14 @@ import type {
   FinalizeData,
   FinalizePreviewDto,
   InvoiceIdInput,
+  InvoicePage,
+  InvoiceSearchData,
   InvoiceView,
   PreviewFinalizeInput,
+  ReceivablesData,
+  ReceivablesPage,
+  RecordPaymentData,
+  VoidInvoiceData,
 } from '@/shared/contracts';
 import { DomainError, formatRupiah } from '@/shared/primitives';
 import { businessDay, type Clock } from '@/shared/time';
@@ -29,9 +35,13 @@ import {
   type FinalizationContext,
   type FinalizeStep,
 } from './finalization';
+import { listReceivables, searchInvoices } from './history';
+import { InvoiceHistoryRepository } from './history-repository';
+import { recordLaterPayment } from './payments';
 import { PaymentRepository } from './payments-repository';
 import { InvoiceRepository } from './repository';
 import { loadInvoiceView, type InvoiceViewDeps } from './view';
+import { voidIssuedInvoice } from './voiding';
 
 export { FINALIZE_STEPS, type FinalizeStep } from './finalization';
 
@@ -48,13 +58,15 @@ export interface InvoiceServiceDeps {
 
 /**
  * Official invoices: finalization preview, atomic finalization with checkout
- * payments, and reading issued invoices. Any signed-in cashier (CASHIER or
- * ADMIN) may use them; the finalizer is the session's cashier.
+ * payments, later payments, voids, history and receivables. Any signed-in
+ * cashier (CASHIER or ADMIN) may use them; the acting cashier is always the
+ * session's cashier.
  */
 export class InvoiceService {
   private readonly ctx: FinalizationContext;
   private readonly settings: SettingsRepository;
   private readonly viewDeps: InvoiceViewDeps;
+  private readonly history: InvoiceHistoryRepository;
 
   constructor(private readonly deps: InvoiceServiceDeps) {
     const { db } = deps;
@@ -76,6 +88,7 @@ export class InvoiceService {
       invoices: this.ctx.invoices,
       payments: this.ctx.payments,
     };
+    this.history = new InvoiceHistoryRepository(db);
   }
 
   /**
@@ -163,7 +176,81 @@ export class InvoiceService {
     return view;
   }
 
+  /**
+   * A later payment (spec 22): one write transaction wrapping
+   * `runIdempotent`. A retried requestId returns the stored InvoiceView and
+   * adds nothing.
+   */
+  recordPayment(
+    session: Session | undefined,
+    input: RecordPaymentData,
+  ): InvoiceView {
+    const actor = requireSession(session);
+    return this.idempotent('invoices.recordPayment', actor, input, () => {
+      recordLaterPayment(this.ctx, input, actor);
+      return loadInvoiceView(this.viewDeps, input.invoiceId)!;
+    });
+  }
+
+  /**
+   * Voids an unpaid invoice (spec 29): stock reversals, VOID marking and the
+   * audit row in one write transaction. A retried requestId replays; a new
+   * one on a VOID invoice is INVOICE_ALREADY_VOID.
+   */
+  void(session: Session | undefined, input: VoidInvoiceData): InvoiceView {
+    const actor = requireSession(session);
+    if (input.reason.trim() === '') {
+      throw new DomainError('VOID_REASON_REQUIRED', 'A void needs a reason');
+    }
+    return this.idempotent('invoices.void', actor, input, () => {
+      voidIssuedInvoice(this.ctx, input, actor);
+      return loadInvoiceView(this.viewDeps, input.invoiceId)!;
+    });
+  }
+
+  /** History (spec 34): FINALIZED and VOID invoices matched on snapshots. */
+  search(session: Session | undefined, input: InvoiceSearchData): InvoicePage {
+    requireSession(session);
+    return this.deps.db.transaction(() =>
+      searchInvoices(this.history, input),
+    )();
+  }
+
+  /** Outstanding or overdue FINALIZED invoices (VOID excluded). */
+  receivables(
+    session: Session | undefined,
+    input: ReceivablesData,
+  ): ReceivablesPage {
+    requireSession(session);
+    const { today } = this.today();
+    return this.deps.db.transaction(() =>
+      listReceivables(this.history, input.kind, today, input.page),
+    )();
+  }
+
   // ---- internals ----
+
+  private idempotent<T>(
+    command: string,
+    actor: Session,
+    input: { requestId: string },
+    work: () => T,
+  ): T {
+    const { requestId, ...payload } = input;
+    return withWriteTransaction(this.deps.db, () =>
+      runIdempotent(
+        this.deps.db,
+        {
+          requestId,
+          command,
+          payload,
+          actorCashierId: actor.cashierId,
+          clock: this.deps.clock,
+        },
+        work,
+      ),
+    );
+  }
 
   /** The finalization business day in the shop timezone. */
   private today(): { today: string; timezone: string } {

@@ -70,7 +70,7 @@ export function toPaymentDto(row: PaymentRow): PaymentDto {
     note: row.note,
     receivedBy: {
       id: row.received_by_cashier_id,
-      displayName: row.received_by_name,
+      displayName: row.received_by_name_snapshot,
     },
     source: row.source,
   };
@@ -155,7 +155,7 @@ export function buildInvoiceView(
             voidedAt: invoice.voided_at,
             voidedBy: {
               id: invoice.voided_by_cashier_id!,
-              displayName: invoice.voided_by_name ?? '',
+              displayName: invoice.voided_by_name_snapshot!,
             },
             reason: invoice.void_reason!,
           },

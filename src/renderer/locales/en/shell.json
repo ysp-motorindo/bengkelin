@@ -7,7 +7,9 @@
     "customers": "Customers & Vehicles",
     "catalog": "Catalog & Prices",
     "inventory": "Inventory",
-    "references": "Reference Data"
+    "references": "Reference Data",
+    "history": "History",
+    "receivables": "Receivables"
   },
   "preferences": {
     "language": "Language",

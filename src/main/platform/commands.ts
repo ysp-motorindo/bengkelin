@@ -2,6 +2,10 @@ import { CHANNELS } from '@/shared/channels';
 import {
   finalizeInputSchema,
   invoiceIdInputSchema,
+  invoiceSearchInputSchema,
+  receivablesInputSchema,
+  recordPaymentInputSchema,
+  voidInvoiceInputSchema,
   previewFinalizeInputSchema,
   adjustStockInputSchema,
   applyPriceChangeInputSchema,
@@ -298,6 +302,24 @@ export function buildCommands(services: ApplicationServices): Command[] {
     ),
     command(C.invoices.get, invoiceIdInputSchema, ({ windowId }, input) =>
       invoices.get(session(windowId), input),
+    ),
+    command(
+      C.invoices.recordPayment,
+      recordPaymentInputSchema,
+      ({ windowId }, input) => invoices.recordPayment(session(windowId), input),
+    ),
+    command(C.invoices.void, voidInvoiceInputSchema, ({ windowId }, input) =>
+      invoices.void(session(windowId), input),
+    ),
+    command(
+      C.invoices.search,
+      invoiceSearchInputSchema,
+      ({ windowId }, input) => invoices.search(session(windowId), input),
+    ),
+    command(
+      C.invoices.receivables,
+      receivablesInputSchema,
+      ({ windowId }, input) => invoices.receivables(session(windowId), input),
     ),
   ];
 }
