@@ -30,6 +30,9 @@ export function createMainWindow(): BrowserWindow {
       webSecurity: true,
       allowRunningInsecureContent: false,
       webviewTag: false,
+      // Offline app: Chromium's spellchecker would download its dictionary
+      // from Google on first load. Fields here are names, codes and numbers.
+      spellcheck: false,
       // DevTools exist only in development builds.
       devTools: isDevelopment,
     },

@@ -15,6 +15,7 @@ import {
 } from './helpers/app-probe';
 import { tr } from './helpers/i18n';
 import { launchApp, type LaunchedApp } from './helpers/launch';
+import { NetworkGuard } from './helpers/network-guard';
 import {
   CASHIER_PASSWORD,
   HELMET_BARCODE,
@@ -39,7 +40,15 @@ import {
  * go through the native menu accelerators.
  *
  * Paper prints are routed to printToPDF by the unpackaged-only test hook
- * BENGKELIN_TEST_PRINT_TO_PDF_DIR; the app makes no network request at all.
+ * BENGKELIN_TEST_PRINT_TO_PDF_DIR.
+ *
+ * Offline (verified for BOTH launches, from process start to exit): the
+ * Chromium net-log of each launch holds no request or host lookup that is
+ * not local (file:, data:, devtools:, localhost...), non-local names are
+ * unresolvable (--host-resolver-rules), and main-process Node made no
+ * non-local socket connection (net-guard hook). The in-page webRequest
+ * recorder is an extra signal, checked per launch. Not covered: traffic
+ * from outside the app's own processes.
  */
 
 const t = (key: string, params: Record<string, string> = {}) =>
@@ -51,25 +60,39 @@ const t = (key: string, params: Record<string, string> = {}) =>
 let launched: LaunchedApp | undefined;
 let dataDir: string;
 let printDir: string;
+let guard: NetworkGuard;
 
 test.beforeEach(async () => {
   dataDir = await mkdtemp(path.join(tmpdir(), 'bengkelin-e2e-workflow-'));
   printDir = await mkdtemp(path.join(tmpdir(), 'bengkelin-e2e-prints-'));
+  guard = new NetworkGuard(
+    await mkdtemp(path.join(tmpdir(), 'bengkelin-e2e-netguard-')),
+  );
 });
 test.afterEach(async () => {
   await launched?.close();
   launched = undefined;
   await rm(dataDir, { recursive: true, force: true });
   await rm(printDir, { recursive: true, force: true });
+  await rm(guard.dir, { recursive: true, force: true });
 });
 
 async function launch(): Promise<LaunchedApp> {
+  const observed = guard.launchOptions();
   const app = await launchApp({
     dataDir,
-    env: { BENGKELIN_TEST_PRINT_TO_PDF_DIR: printDir },
+    args: observed.args,
+    env: { ...observed.env, BENGKELIN_TEST_PRINT_TO_PDF_DIR: printDir },
   });
+  // Extra signal only (installed after the first window loads).
   await recordRequests(app.app);
   return app;
+}
+
+/** The in-page recorder saw requests, and none of them was non-local. */
+async function expectNoPageNetwork(app: LaunchedApp['app']): Promise<void> {
+  expect(await allRequests(app)).not.toHaveLength(0);
+  expect(await networkRequests(app)).toEqual([]);
 }
 
 async function openLineEditor(page: Page, index: number) {
@@ -203,7 +226,12 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   );
 
   // ---- Restart mid-workflow: the draft survives ----
+  // First process (setup, login, scans, custom item, discounts): offline.
+  await expectNoPageNetwork(app);
   await launched.close();
+  expect(guard.netLogFiles()).toHaveLength(1);
+  expect(guard.netLogEventCounts()[0]).toBeGreaterThan(0);
+  expect(guard.nonLocalActivity()).toEqual([]);
   launched = await launch();
   ({ page, app } = launched);
   await loginWithKeyboard(page, 'siti', CASHIER_PASSWORD);
@@ -329,13 +357,18 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
     page.getByTestId('history-row').getByTestId('payment-status'),
   ).toHaveText(t('workspace.paymentStatus.PAID'));
 
-  // ---- Offline: no request ever left the machine ----
-  expect(await allRequests(app)).not.toHaveLength(0);
-  expect(await networkRequests(app)).toEqual([]);
+  // ---- Offline: second process, in-page signal ----
+  await expectNoPageNetwork(app);
 
   // ---- The print is recorded in print_jobs ----
   await launched.close();
   launched = undefined;
+  // Both launches, whole lifetime: no non-local request, lookup or socket.
+  expect(guard.netLogFiles()).toHaveLength(2);
+  for (const events of guard.netLogEventCounts()) {
+    expect(events).toBeGreaterThan(0);
+  }
+  expect(guard.nonLocalActivity()).toEqual([]);
   const jobs = queryDatabase<{
     format: string;
     action: string;

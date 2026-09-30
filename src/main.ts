@@ -177,6 +177,16 @@ if (started || !app.requestSingleInstanceLock()) {
 } else {
   app.on('second-instance', showMainWindow);
 
+  // Offline app (spec A.5: no runtime network dependencies): Chromium's
+  // session spellchecker downloads a dictionary for the OS locale from
+  // Google (redirector.gvt1.com) as soon as a renderer starts, even with
+  // `spellcheck: false` on the window. No dictionary languages and the
+  // checker off, for every session (default, print partition), prevents it.
+  app.on('session-created', (session) => {
+    session.setSpellCheckerLanguages([]);
+    session.setSpellCheckerEnabled(false);
+  });
+
   // Spec 46/48: unexpected failures outside commands are logged (sanitized);
   // an uncaught exception is also explained once to the user.
   let explained = false;
