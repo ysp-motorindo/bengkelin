@@ -1,0 +1,70 @@
+{
+  "title": "Pelanggan & Kendaraan",
+  "anonymous": "Umum",
+  "noName": "(tanpa nama)",
+  "noPhone": "(tanpa telepon)",
+  "search": {
+    "label": "Cari nama, telepon, atau plat",
+    "placeholder": "Contoh: Budi, 0812..., B 1234 XYZ",
+    "submit": "Cari",
+    "customers": "Pelanggan",
+    "vehicles": "Kendaraan",
+    "none": "Tidak ada hasil."
+  },
+  "customer": {
+    "select": "Pilih",
+    "selected": "Pelanggan terpilih",
+    "clear": "Lepas pelanggan",
+    "vehicles": "Kendaraan milik pelanggan ini",
+    "noVehicles": "Belum ada kendaraan."
+  },
+  "quickCustomer": {
+    "title": "Pelanggan baru",
+    "name": "Nama",
+    "phone": "Telepon",
+    "submit": "Simpan pelanggan",
+    "hint": "Isi nama atau telepon. Data lengkap bisa dilengkapi nanti."
+  },
+  "duplicate": {
+    "title": "Nomor telepon ini sudah dipakai pelanggan lain",
+    "description": "Pakai pelanggan yang sudah ada, atau tetap simpan sebagai pelanggan baru.",
+    "use": "Pakai pelanggan ini",
+    "acknowledge": "Tetap simpan sebagai pelanggan baru",
+    "cancel": "Batal"
+  },
+  "quickVehicle": {
+    "title": "Kendaraan baru",
+    "plate": "Nomor plat",
+    "brand": "Merek",
+    "model": "Model",
+    "noBrand": "(tanpa merek)",
+    "noModel": "(tanpa model)",
+    "submit": "Simpan kendaraan",
+    "ownerWill": "Pemilik pertama: {{name}}",
+    "ownerNone": "Tanpa pemilik. Pilih pelanggan lebih dulu untuk menjadikannya pemilik."
+  },
+  "plateExists": {
+    "title": "Plat ini sudah terdaftar",
+    "description": "Tidak dibuat kendaraan baru. Pakai kendaraan yang sudah ada.",
+    "use": "Pakai kendaraan ini"
+  },
+  "vehicle": {
+    "detail": "Detail kendaraan",
+    "owner": "Pemilik saat ini",
+    "noOwner": "Belum ada pemilik",
+    "history": "Riwayat kepemilikan",
+    "from": "Sejak",
+    "until": "Sampai",
+    "current": "sekarang",
+    "select": "Lihat"
+  },
+  "mismatch": "Peringatan: pemilik kendaraan ini ({{owner}}) berbeda dengan pelanggan terpilih ({{customer}}). Kepemilikan tidak berubah kecuali Anda memindahkannya secara eksplisit.",
+  "transfer": {
+    "action": "Pindahkan kepemilikan ke {{name}}",
+    "confirmTitle": "Pindahkan kepemilikan?",
+    "confirmBody": "Kendaraan {{plate}} akan menjadi milik {{name}}. Pemilik sebelumnya tercatat di riwayat.",
+    "confirm": "Ya, pindahkan",
+    "cancel": "Batal",
+    "done": "Kepemilikan dipindahkan."
+  }
+}

@@ -2,5 +2,11 @@
   "signedInAs": "Signed in as",
   "logout": "Sign out",
   "welcome": "Welcome, {{name}}",
-  "placeholder": "Cashier features will appear here."
+  "placeholder": "Cashier features will appear here.",
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "customers": "Customers & Vehicles",
+    "references": "Reference Data"
+  }
 }

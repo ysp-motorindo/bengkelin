@@ -9,5 +9,16 @@
   "LAST_ACTIVE_ADMIN": "The last active administrator cannot be deactivated or demoted.",
   "CASHIER_NOT_FOUND": "Cashier not found.",
   "LOG_FOLDER_UNAVAILABLE": "The log folder could not be opened.",
-  "LOAD_FAILED": "The application could not load its settings. Close and reopen the application."
+  "LOAD_FAILED": "The application could not load its settings. Close and reopen the application.",
+  "CUSTOMER_NAME_OR_PHONE_REQUIRED": "Enter the customer name or phone number.",
+  "CUSTOMER_NOT_FOUND": "Customer not found.",
+  "VEHICLE_NOT_FOUND": "Vehicle not found.",
+  "PLATE_EXISTS": "That plate number is already registered to another vehicle.",
+  "INVALID_BRAND_MODEL": "The model does not belong to the selected brand.",
+  "REFERENCE_INACTIVE": "The selected reference entry is inactive.",
+  "REFERENCE_NOT_FOUND": "Reference entry not found.",
+  "REFERENCE_DUPLICATE": "That name or code is already in use.",
+  "REFERENCE_CODE_IMMUTABLE": "The code cannot be changed after creation.",
+  "ALREADY_OWNER": "This customer already owns the vehicle.",
+  "OWNERSHIP_TRANSFER_TOO_SOON": "Ownership was just recorded. Wait a moment and try again."
 }

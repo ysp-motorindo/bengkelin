@@ -1,0 +1,30 @@
+{
+  "title": "Data Referensi",
+  "entities": {
+    "mechanic": "Mekanik",
+    "vehicleBrand": "Merek kendaraan",
+    "vehicleModel": "Model kendaraan",
+    "channel": "Kanal",
+    "unit": "Satuan"
+  },
+  "fields": {
+    "name": "Nama",
+    "phone": "Telepon",
+    "brand": "Merek",
+    "code": "Kode",
+    "label": "Label",
+    "status": "Status"
+  },
+  "status": { "active": "Aktif", "inactive": "Nonaktif" },
+  "actions": {
+    "add": "Tambah",
+    "edit": "Ubah",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "deactivate": "Nonaktifkan",
+    "reactivate": "Aktifkan kembali"
+  },
+  "codeHint": "Kode tidak dapat diubah setelah dibuat.",
+  "empty": "Belum ada data.",
+  "form": { "create": "Tambah data", "edit": "Ubah data" }
+}

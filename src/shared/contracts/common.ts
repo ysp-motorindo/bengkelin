@@ -68,3 +68,25 @@ export const timezoneSchema = z
 
 /** Input for commands that take no arguments. */
 export const noInput = z.undefined('validation.invalid');
+
+/** Optional phone as typed by the cashier; must contain at least one digit. */
+export const optionalPhone = z
+  .string('validation.invalid')
+  .trim()
+  .max(40, 'validation.tooLong')
+  .refine((v) => v === '' || /\d/.test(v), 'validation.invalidPhone')
+  .nullish()
+  .transform((value) => (value ? value : null));
+
+/** Optional calendar date `YYYY-MM-DD`; blank becomes `null`. */
+export const optionalLocalDate = z
+  .string('validation.invalid')
+  .trim()
+  .refine((v) => {
+    if (v === '') return true;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+    const date = new Date(`${v}T00:00:00.000Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(v);
+  }, 'validation.invalidDate')
+  .nullish()
+  .transform((value) => (value ? value : null));

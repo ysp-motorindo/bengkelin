@@ -3,13 +3,23 @@ import {
   cashierIdInputSchema,
   changeRoleInputSchema,
   createCashierInputSchema,
+  customerIdInputSchema,
+  listReferencesInputSchema,
   loginInputSchema,
   noInput,
   preferencesInputSchema,
+  referenceIdInputSchema,
   resetPasswordInputSchema,
+  saveCustomerInputSchema,
+  saveReferenceInputSchema,
+  saveVehicleInputSchema,
+  searchCustomersInputSchema,
+  searchVehiclesInputSchema,
   setupInputSchema,
   shopSettingsInputSchema,
+  transferOwnershipInputSchema,
   updateDisplayNameInputSchema,
+  vehicleIdInputSchema,
 } from '@/shared/contracts';
 import { command, type Command } from './command';
 import type { ApplicationServices } from './services';
@@ -21,7 +31,16 @@ import type { ApplicationServices } from './services';
  * Add a feature by appending its commands here (and its channels/bridge/preload).
  */
 export function buildCommands(services: ApplicationServices): Command[] {
-  const { auth, settings, cashiers, app, sessions } = services;
+  const {
+    auth,
+    settings,
+    cashiers,
+    references,
+    customers,
+    vehicles,
+    app,
+    sessions,
+  } = services;
   const C = CHANNELS;
   const session = (windowId: number) => sessions.get(windowId);
 
@@ -88,6 +107,62 @@ export function buildCommands(services: ApplicationServices): Command[] {
       C.cashiers.resetPassword,
       resetPasswordInputSchema,
       ({ windowId }, input) => cashiers.resetPassword(session(windowId), input),
+    ),
+
+    command(
+      C.references.listActive,
+      listReferencesInputSchema,
+      ({ windowId }, input) => references.listActive(session(windowId), input),
+    ),
+    command(
+      C.references.list,
+      listReferencesInputSchema,
+      ({ windowId }, input) => references.list(session(windowId), input),
+    ),
+    command(
+      C.references.save,
+      saveReferenceInputSchema,
+      ({ windowId }, input) => references.save(session(windowId), input),
+    ),
+    command(
+      C.references.deactivate,
+      referenceIdInputSchema,
+      ({ windowId }, input) => references.deactivate(session(windowId), input),
+    ),
+    command(
+      C.references.reactivate,
+      referenceIdInputSchema,
+      ({ windowId }, input) => references.reactivate(session(windowId), input),
+    ),
+
+    command(
+      C.customers.search,
+      searchCustomersInputSchema,
+      ({ windowId }, input) => customers.search(session(windowId), input),
+    ),
+    command(C.customers.get, customerIdInputSchema, ({ windowId }, input) =>
+      customers.get(session(windowId), input),
+    ),
+    command(C.customers.save, saveCustomerInputSchema, ({ windowId }, input) =>
+      customers.save(session(windowId), input),
+    ),
+
+    command(
+      C.vehicles.searchByPlate,
+      searchVehiclesInputSchema,
+      ({ windowId }, input) => vehicles.searchByPlate(session(windowId), input),
+    ),
+    command(C.vehicles.get, vehicleIdInputSchema, ({ windowId }, input) =>
+      vehicles.get(session(windowId), input),
+    ),
+    command(C.vehicles.save, saveVehicleInputSchema, ({ windowId }, input) =>
+      vehicles.save(session(windowId), input),
+    ),
+    command(
+      C.vehicles.transferOwnership,
+      transferOwnershipInputSchema,
+      ({ windowId }, input) =>
+        vehicles.transferOwnership(session(windowId), input),
     ),
   ];
 }

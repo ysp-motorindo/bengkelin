@@ -1,0 +1,30 @@
+{
+  "title": "Reference Data",
+  "entities": {
+    "mechanic": "Mechanics",
+    "vehicleBrand": "Vehicle brands",
+    "vehicleModel": "Vehicle models",
+    "channel": "Channels",
+    "unit": "Units"
+  },
+  "fields": {
+    "name": "Name",
+    "phone": "Phone",
+    "brand": "Brand",
+    "code": "Code",
+    "label": "Label",
+    "status": "Status"
+  },
+  "status": { "active": "Active", "inactive": "Inactive" },
+  "actions": {
+    "add": "Add",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate"
+  },
+  "codeHint": "The code cannot be changed after creation.",
+  "empty": "No entries yet.",
+  "form": { "create": "Add entry", "edit": "Edit entry" }
+}

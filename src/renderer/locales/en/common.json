@@ -6,5 +6,9 @@
   "skip": "Skip",
   "optional": "Optional",
   "retry": "Try again",
-  "role": { "ADMIN": "Admin", "CASHIER": "Cashier" }
+  "role": {
+    "ADMIN": "Admin",
+    "CASHIER": "Cashier"
+  },
+  "saving": "Saving..."
 }

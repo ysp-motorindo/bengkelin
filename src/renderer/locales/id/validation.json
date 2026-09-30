@@ -7,5 +7,9 @@
   "usernameTooShort": "Nama pengguna minimal 3 karakter.",
   "usernameFormat": "Hanya huruf, angka, titik, garis bawah, dan tanda hubung.",
   "invalidTimezone": "Zona waktu tidak dikenal.",
-  "invalidEmail": "Format email tidak valid."
+  "invalidEmail": "Format email tidak valid.",
+  "invalidPhone": "Nomor telepon harus berisi angka.",
+  "invalidDate": "Tanggal tidak valid (YYYY-MM-DD).",
+  "invalidPlate": "Nomor plat tidak valid.",
+  "codeFormat": "Huruf, angka, garis bawah dan tanda hubung saja."
 }

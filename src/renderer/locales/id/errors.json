@@ -9,5 +9,16 @@
   "LAST_ACTIVE_ADMIN": "Admin aktif terakhir tidak dapat dinonaktifkan atau diubah perannya.",
   "CASHIER_NOT_FOUND": "Kasir tidak ditemukan.",
   "LOG_FOLDER_UNAVAILABLE": "Folder log tidak dapat dibuka.",
-  "LOAD_FAILED": "Aplikasi gagal memuat pengaturan. Tutup lalu buka kembali aplikasi."
+  "LOAD_FAILED": "Aplikasi gagal memuat pengaturan. Tutup lalu buka kembali aplikasi.",
+  "CUSTOMER_NAME_OR_PHONE_REQUIRED": "Isi nama atau nomor telepon pelanggan.",
+  "CUSTOMER_NOT_FOUND": "Pelanggan tidak ditemukan.",
+  "VEHICLE_NOT_FOUND": "Kendaraan tidak ditemukan.",
+  "PLATE_EXISTS": "Nomor plat sudah terdaftar pada kendaraan lain.",
+  "INVALID_BRAND_MODEL": "Model tidak sesuai dengan merek yang dipilih.",
+  "REFERENCE_INACTIVE": "Data referensi yang dipilih sudah nonaktif.",
+  "REFERENCE_NOT_FOUND": "Data referensi tidak ditemukan.",
+  "REFERENCE_DUPLICATE": "Nama atau kode itu sudah dipakai.",
+  "REFERENCE_CODE_IMMUTABLE": "Kode tidak dapat diubah setelah dibuat.",
+  "ALREADY_OWNER": "Pelanggan ini sudah menjadi pemilik kendaraan.",
+  "OWNERSHIP_TRANSFER_TOO_SOON": "Kepemilikan baru saja dicatat. Tunggu sebentar lalu coba lagi."
 }
