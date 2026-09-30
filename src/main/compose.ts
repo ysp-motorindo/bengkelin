@@ -3,6 +3,7 @@ import { CashierService } from '@/main/features/auth/cashier-service';
 import { AuthService } from '@/main/features/auth/service';
 import { SessionStore } from '@/main/features/auth/sessions';
 import { CatalogService } from '@/main/features/catalog/service';
+import { InventoryService } from '@/main/features/inventory/service';
 import { CustomerService } from '@/main/features/customers/service';
 import { ReferenceService } from '@/main/features/references/service';
 import { VehicleService } from '@/main/features/vehicles/service';
@@ -27,6 +28,10 @@ export function createApplicationServices(
   const { db, clock } = deps;
   const logger = deps.logger ?? createLogger({ dir: deps.logDir, clock });
   const sessions = new SessionStore();
+  const catalog = new CatalogService({ db, clock });
+  const inventory = new InventoryService({ db, clock });
+  // Once stock has moved, whether an item tracks inventory is locked.
+  catalog.setTrackingChangeGuard(inventory.trackingChangeGuard);
   return {
     logger,
     sessions,
@@ -35,8 +40,9 @@ export function createApplicationServices(
     cashiers: new CashierService({ db, clock, sessions }),
     references: new ReferenceService({ db, clock }),
     customers: new CustomerService({ db, clock }),
-    catalog: new CatalogService({ db, clock }),
+    catalog,
     vehicles: new VehicleService({ db, clock }),
+    inventory,
     app: new AppService({ logDir: deps.logDir, openPath: deps.openPath }),
   };
 }

@@ -6,11 +6,12 @@ import { Button } from '@/renderer/components/ui/button';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
 import { CatalogScreen } from '@/renderer/features/catalog/CatalogScreen';
+import { InventoryScreen } from '@/renderer/features/inventory/InventoryScreen';
 import { CustomersScreen } from '@/renderer/features/customers/CustomersScreen';
 import { ReferencesScreen } from '@/renderer/features/references/ReferencesScreen';
 import type { CashierSession } from '@/shared/contracts';
 
-type View = 'home' | 'customers' | 'catalog' | 'references';
+type View = 'home' | 'customers' | 'catalog' | 'inventory' | 'references';
 
 interface ShellProps {
   session: CashierSession;
@@ -33,8 +34,8 @@ export function Shell({ session, shopName, onLoggedOut }: ShellProps) {
 
   const views: View[] =
     session.role === 'ADMIN'
-      ? ['home', 'customers', 'catalog', 'references']
-      : ['home', 'customers', 'catalog'];
+      ? ['home', 'customers', 'catalog', 'inventory', 'references']
+      : ['home', 'customers', 'catalog', 'inventory'];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -87,6 +88,7 @@ export function Shell({ session, shopName, onLoggedOut }: ShellProps) {
         {error ? <Alert className="mb-4">{error}</Alert> : null}
         {view === 'customers' ? <CustomersScreen /> : null}
         {view === 'catalog' ? <CatalogScreen role={session.role} /> : null}
+        {view === 'inventory' ? <InventoryScreen role={session.role} /> : null}
         {view === 'references' && session.role === 'ADMIN' ? (
           <ReferencesScreen />
         ) : null}

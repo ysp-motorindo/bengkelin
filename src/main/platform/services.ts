@@ -2,6 +2,7 @@ import type { CashierService } from '@/main/features/auth/cashier-service';
 import type { AuthService } from '@/main/features/auth/service';
 import type { SessionStore } from '@/main/features/auth/sessions';
 import type { CatalogService } from '@/main/features/catalog/service';
+import type { InventoryService } from '@/main/features/inventory/service';
 import type { CustomerService } from '@/main/features/customers/service';
 import type { ReferenceService } from '@/main/features/references/service';
 import type { VehicleService } from '@/main/features/vehicles/service';
@@ -24,5 +25,6 @@ export interface ApplicationServices {
   customers: CustomerService;
   catalog: CatalogService;
   vehicles: VehicleService;
+  inventory: InventoryService;
   app: AppService;
 }

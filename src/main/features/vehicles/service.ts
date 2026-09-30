@@ -185,6 +185,10 @@ export class VehicleService {
             {
               requestId: input.requestId,
               command: 'vehicles.transferOwnership',
+              payload: {
+                vehicleId: input.vehicleId,
+                newCustomerId: input.newCustomerId,
+              },
               actorCashierId: actor.cashierId,
               clock: this.deps.clock,
             },

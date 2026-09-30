@@ -37,5 +37,14 @@
   "PRICE_PREVIEW_STALE": "Harga berubah sejak pratinjau. Periksa pratinjau baru sebelum menerapkan.",
   "PRICE_PREVIEW_EXPIRED": "Pratinjau kedaluwarsa. Lihat pratinjau perubahan lagi.",
   "INVALID_INSTANT": "Tanggal dan jam tidak valid.",
-  "NEGATIVE_MONEY": "Harga tidak boleh negatif."
+  "NEGATIVE_MONEY": "Harga tidak boleh negatif.",
+  "REASON_REQUIRED": "Isi alasan perubahan stok ini.",
+  "OPENING_BALANCE_EXISTS": "Barang ini sudah punya riwayat stok, sehingga saldo awal tidak dapat diatur. Gunakan terima barang, penyesuaian, atau atur stok.",
+  "ITEM_NOT_INVENTORY_TRACKED": "Barang ini tidak melacak persediaan (jasa tidak pernah mengubah stok).",
+  "TRACKING_LOCKED_BY_LEDGER": "Pelacakan persediaan tidak dapat diubah karena barang ini sudah punya mutasi stok.",
+  "IDEMPOTENCY_KEY_REUSED": "Permintaan ini sudah dipakai untuk tindakan lain. Muat ulang lalu coba lagi.",
+  "SALE_ALREADY_RECORDED": "Stok untuk faktur dan barang ini sudah tercatat.",
+  "SALE_ENTRY_NOT_FOUND": "Catatan stok penjualan tidak ditemukan.",
+  "SALE_ALREADY_REVERSED": "Stok penjualan ini sudah dikembalikan.",
+  "INVALID_QUANTITY": "Isi jumlah bulat minimal 1."
 }

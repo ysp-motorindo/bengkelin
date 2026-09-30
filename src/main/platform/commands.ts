@@ -1,5 +1,6 @@
 import { CHANNELS } from '@/shared/channels';
 import {
+  adjustStockInputSchema,
   applyPriceChangeInputSchema,
   cashierIdInputSchema,
   catalogIdInputSchema,
@@ -7,12 +8,15 @@ import {
   createCashierInputSchema,
   customerIdInputSchema,
   listPricesInputSchema,
+  listStockInputSchema,
   listReferencesInputSchema,
   loginInputSchema,
   lookupBarcodeInputSchema,
   noInput,
+  openBalanceInputSchema,
   preferencesInputSchema,
   priceChangeInputSchema,
+  receiveStockInputSchema,
   referenceIdInputSchema,
   resetPasswordInputSchema,
   saveBarcodesInputSchema,
@@ -23,8 +27,11 @@ import {
   searchCatalogInputSchema,
   searchCustomersInputSchema,
   searchVehiclesInputSchema,
+  setStockInputSchema,
   setupInputSchema,
   shopSettingsInputSchema,
+  stockHistoryInputSchema,
+  stockItemInputSchema,
   transferOwnershipInputSchema,
   updateDisplayNameInputSchema,
   vehicleIdInputSchema,
@@ -47,6 +54,7 @@ export function buildCommands(services: ApplicationServices): Command[] {
     customers,
     vehicles,
     catalog,
+    inventory,
     app,
     sessions,
   } = services;
@@ -209,6 +217,36 @@ export function buildCommands(services: ApplicationServices): Command[] {
       applyPriceChangeInputSchema,
       ({ windowId }, input) =>
         catalog.applyPriceChange(session(windowId), input.token),
+    ),
+
+    command(C.inventory.getStock, stockItemInputSchema, ({ windowId }, input) =>
+      inventory.getStock(session(windowId), input),
+    ),
+    command(
+      C.inventory.listStock,
+      listStockInputSchema,
+      ({ windowId }, input) => inventory.listStock(session(windowId), input),
+    ),
+    command(
+      C.inventory.history,
+      stockHistoryInputSchema,
+      ({ windowId }, input) => inventory.history(session(windowId), input),
+    ),
+    command(
+      C.inventory.openBalance,
+      openBalanceInputSchema,
+      ({ windowId }, input) => inventory.openBalance(session(windowId), input),
+    ),
+    command(
+      C.inventory.receive,
+      receiveStockInputSchema,
+      ({ windowId }, input) => inventory.receive(session(windowId), input),
+    ),
+    command(C.inventory.adjust, adjustStockInputSchema, ({ windowId }, input) =>
+      inventory.adjust(session(windowId), input),
+    ),
+    command(C.inventory.setStock, setStockInputSchema, ({ windowId }, input) =>
+      inventory.setStock(session(windowId), input),
     ),
   ];
 }

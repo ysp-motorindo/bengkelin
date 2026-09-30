@@ -692,6 +692,19 @@ describe('vehicle ownership', () => {
     );
     expect(replay).toEqual(first);
     expect(rows('SELECT id FROM vehicle_ownerships')).toHaveLength(1);
+
+    // The same key for a different target is a client error, not a replay.
+    const b = await newCustomer({ name: 'Cici' });
+    const reused = await h.call(
+      C.vehicles.transferOwnership,
+      { requestId, vehicleId: vehicle.id, newCustomerId: b.id },
+      CASHIER,
+    );
+    expect(failure(reused)).toMatchObject({
+      code: 'IDEMPOTENCY_KEY_REUSED',
+      messageKey: 'errors.IDEMPOTENCY_KEY_REUSED',
+    });
+    expect(rows('SELECT id FROM vehicle_ownerships')).toHaveLength(1);
   });
 
   test('selecting or looking up a vehicle and customer never changes ownership', async () => {
