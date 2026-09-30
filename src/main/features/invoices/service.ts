@@ -27,7 +27,7 @@ import type {
   RecordPaymentData,
   VoidInvoiceData,
 } from '@/shared/contracts';
-import { DomainError, formatRupiah } from '@/shared/primitives';
+import { DomainError, formatRupiah, type Instant } from '@/shared/primitives';
 import { businessDay, type Clock } from '@/shared/time';
 import { checkFinalization } from './checks';
 import {
@@ -104,7 +104,11 @@ export class InvoiceService {
     // One consistent read snapshot (deferred transaction: no write lock).
     return this.deps.db.transaction(() => {
       const invoice = this.requireOpenDraft(input.invoiceId);
-      const check = checkFinalization(this.ctx, invoice, this.today().today);
+      const check = checkFinalization(
+        this.ctx,
+        invoice,
+        this.today(this.deps.clock.now()).today,
+      );
       const { calc } = check.calculation;
       return {
         invoiceId: invoice.id,
@@ -140,15 +144,19 @@ export class InvoiceService {
   finalize(session: Session | undefined, input: FinalizeData): InvoiceView {
     const actor = requireSession(session);
     const { requestId, ...payload } = input;
-    return withWriteTransaction(this.deps.db, () =>
-      runIdempotent(
+    return withWriteTransaction(this.deps.db, () => {
+      // The ONE clock read of this command: the invoice-number date, the
+      // future-date check, finalized_at, payments, stock and audit all use it.
+      const clock = this.fixedClock();
+      const ctx: FinalizationContext = { ...this.ctx, clock };
+      return runIdempotent(
         this.deps.db,
         {
           requestId,
           command: 'invoices.finalize',
           payload,
           actorCashierId: actor.cashierId,
-          clock: this.deps.clock,
+          clock,
         },
         () => {
           const invoice = this.requireOpenDraft(input.invoiceId);
@@ -158,12 +166,12 @@ export class InvoiceService {
               'The draft changed since it was loaded',
             );
           }
-          const { today, timezone } = this.today();
-          finalizeDraft(this.ctx, invoice, input, actor, timezone, today);
+          const { timezone } = this.settings.getShop();
+          finalizeDraft(ctx, invoice, input, actor, timezone);
           return loadInvoiceView(this.viewDeps, invoice.id)!;
         },
-      ),
-    );
+      );
+    });
   }
 
   /** An issued (FINALIZED or VOID) invoice; drafts are INVOICE_NOT_FOUND. */
@@ -186,8 +194,8 @@ export class InvoiceService {
     input: RecordPaymentData,
   ): InvoiceView {
     const actor = requireSession(session);
-    return this.idempotent('invoices.recordPayment', actor, input, () => {
-      recordLaterPayment(this.ctx, input, actor);
+    return this.idempotent('invoices.recordPayment', actor, input, (ctx) => {
+      recordLaterPayment(ctx, input, actor);
       return loadInvoiceView(this.viewDeps, input.invoiceId)!;
     });
   }
@@ -202,8 +210,8 @@ export class InvoiceService {
     if (input.reason.trim() === '') {
       throw new DomainError('VOID_REASON_REQUIRED', 'A void needs a reason');
     }
-    return this.idempotent('invoices.void', actor, input, () => {
-      voidIssuedInvoice(this.ctx, input, actor);
+    return this.idempotent('invoices.void', actor, input, (ctx) => {
+      voidIssuedInvoice(ctx, input, actor);
       return loadInvoiceView(this.viewDeps, input.invoiceId)!;
     });
   }
@@ -222,7 +230,7 @@ export class InvoiceService {
     input: ReceivablesData,
   ): ReceivablesPage {
     requireSession(session);
-    const { today } = this.today();
+    const { today } = this.today(this.deps.clock.now());
     return this.deps.db.transaction(() =>
       listReceivables(this.history, input.kind, today, input.page),
     )();
@@ -234,28 +242,36 @@ export class InvoiceService {
     command: string,
     actor: Session,
     input: { requestId: string },
-    work: () => T,
+    work: (ctx: FinalizationContext) => T,
   ): T {
     const { requestId, ...payload } = input;
-    return withWriteTransaction(this.deps.db, () =>
-      runIdempotent(
+    return withWriteTransaction(this.deps.db, () => {
+      // One clock read per command, shared by receipt, rows and audit.
+      const clock = this.fixedClock();
+      return runIdempotent(
         this.deps.db,
         {
           requestId,
           command,
           payload,
           actorCashierId: actor.cashierId,
-          clock: this.deps.clock,
+          clock,
         },
-        work,
-      ),
-    );
+        () => work({ ...this.ctx, clock }),
+      );
+    });
   }
 
-  /** The finalization business day in the shop timezone. */
-  private today(): { today: string; timezone: string } {
+  /** Reads the real clock once; every later `now()` returns that instant. */
+  private fixedClock(): Clock {
+    const now = this.deps.clock.now();
+    return { now: () => now };
+  }
+
+  /** The business day of `now` in the shop timezone. */
+  private today(now: Instant): { today: string; timezone: string } {
     const { timezone } = this.settings.getShop();
-    return { today: businessDay(this.deps.clock.now(), timezone), timezone };
+    return { today: businessDay(now, timezone), timezone };
   }
 
   private requireOpenDraft(id: string): InvoiceRow {

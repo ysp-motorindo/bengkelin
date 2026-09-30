@@ -5,7 +5,7 @@ import type { InvoiceRow } from '@/main/features/drafts/repository';
 import { recordSale } from '@/main/features/inventory/ledger';
 import type { FinalizeData } from '@/shared/contracts';
 import { DomainError, type Instant, type LocalDate } from '@/shared/primitives';
-import type { Clock } from '@/shared/time';
+import { businessDay, type Clock } from '@/shared/time';
 import { checkFinalization, sameWarnings, type CheckDeps } from './checks';
 import { allocateInvoiceNumber } from './numbering';
 import type { PaymentRepository } from './payments-repository';
@@ -65,9 +65,10 @@ export function finalizeDraft(
   input: FinalizeData,
   actor: { cashierId: string },
   timezone: string,
-  today: LocalDate,
 ): void {
+  // The single clock read of the command; the business day derives from it.
   const now: Instant = ctx.clock.now();
+  const today: LocalDate = businessDay(now, timezone);
   const step = (name: FinalizeStep) => ctx.onStep?.(name);
 
   // Validation and warnings on committed state, inside the write lock.

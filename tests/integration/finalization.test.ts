@@ -20,7 +20,7 @@ import {
   type SaveVehicleResult,
 } from '@/shared/contracts';
 import type { Instant } from '@/shared/primitives';
-import { toInstant } from '@/shared/time';
+import { businessDay, toInstant } from '@/shared/time';
 import {
   ADMIN_PASSWORD,
   createHarness,
@@ -46,6 +46,8 @@ const at = (ms: number): Instant => toInstant(ms);
 
 let h: Harness;
 let nowMs = T0;
+/** When set, successive clock reads return these instants (last repeats). */
+let scripted: number[] | null = null;
 let counter = 0;
 let adminId: string;
 let cashierId: string;
@@ -70,8 +72,20 @@ async function login(username: string, password: string, windowId: number) {
 
 beforeEach(async () => {
   nowMs = T0;
+  scripted = null;
   counter = 0;
-  h = createHarness({ clock: { now: () => toInstant(nowMs) } });
+  h = createHarness({
+    clock: {
+      now: () =>
+        toInstant(
+          scripted && scripted.length > 0
+            ? scripted.length > 1
+              ? scripted.shift()!
+              : scripted[0]!
+            : nowMs,
+        ),
+    },
+  });
   value(await h.call(C.settings.completeSetup, validSetup()));
   adminId = await login('admin', ADMIN_PASSWORD, ADMIN);
   value(
@@ -469,6 +483,47 @@ describe('numbering', () => {
     expect(early.invoiceNumber).toBe('INV-20261001-0001');
     expect(early.invoiceDate).toBe('2026-09-30');
     expect(early.finalizedAt).toBe('2026-09-30T17:00:00.000Z');
+  });
+
+  test('one clock read per finalization: number date, finalized_at and payments agree across midnight', async () => {
+    const { draft } = await stockedDraft(2, '65000');
+    const withPlan = await applyOk(draft, {
+      kind: 'setCheckoutAllocations',
+      allocations: [
+        { method: 'CASH', amount: '50000' },
+        { method: 'QRIS', amount: '30000' },
+      ],
+    });
+    const shown = value(await preview(withPlan.id));
+    // The first read is 23:59:59.999 WIB; every later read is past midnight.
+    scripted = [
+      Date.UTC(2026, 8, 30, 16, 59, 59, 999),
+      Date.UTC(2026, 8, 30, 17, 0, 0, 0),
+      Date.UTC(2026, 8, 30, 17, 0, 1, 0),
+    ];
+    const view = value(
+      await finalize(
+        { id: withPlan.id, version: shown.draftVersion },
+        { acknowledgedWarnings: shown.warnings },
+      ),
+    );
+    const finalizedAt = view.finalizedAt as string;
+    const day = businessDay(finalizedAt as Instant, 'Asia/Jakarta').replaceAll(
+      '-',
+      '',
+    );
+    expect(view.invoiceNumber).toBe(`INV-${day}-0001`);
+    const payments = paymentRows(withPlan.id);
+    expect(payments).toHaveLength(2);
+    for (const payment of payments) {
+      expect(payment.paid_at).toBe(finalizedAt);
+    }
+    const audit = h.db
+      .prepare(
+        "SELECT created_at FROM audit_log WHERE action = 'INVOICE_FINALIZED'",
+      )
+      .get() as { created_at: string };
+    expect(audit.created_at).toBe(finalizedAt);
   });
 
   test('the sequence increments within a day, resets per day and never wraps', async () => {
