@@ -19,6 +19,7 @@ import {
   type PrintDriver,
 } from '@/main/features/printing/driver';
 import { PrintingService } from '@/main/features/printing/service';
+import { ReportService } from '@/main/features/reports/service';
 import path from 'node:path';
 import { AppService } from '@/main/platform/app-service';
 import { createLogger, type Logger } from '@/main/platform/logger';
@@ -53,6 +54,14 @@ export function createApplicationServices(
   const dialogs = deps.dialogs ?? noFileDialogs;
   const assetsDir =
     deps.assetsDir ?? path.join(path.dirname(deps.logDir), 'assets');
+  const printing = new PrintingService({
+    db,
+    clock,
+    driver: deps.printDriver ?? unavailablePrintDriver,
+    dialogs,
+    assetsDir,
+    logger,
+  });
   return {
     logger,
     sessions,
@@ -68,14 +77,8 @@ export function createApplicationServices(
     adHocReferences: new AdHocReferenceService({ db }),
     // Production composition never passes the test-only `onStep` hook.
     invoices: new InvoiceService({ db, clock }),
-    printing: new PrintingService({
-      db,
-      clock,
-      driver: deps.printDriver ?? unavailablePrintDriver,
-      dialogs,
-      assetsDir,
-      logger,
-    }),
+    printing,
+    reports: new ReportService({ db, clock, printing, dialogs, logger }),
     logo: new LogoService({ db, clock, dialogs, assetsDir, logger }),
     app: new AppService({ logDir: deps.logDir, openPath: deps.openPath }),
   };

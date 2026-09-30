@@ -1,0 +1,76 @@
+{
+  "title": "Laporan Harian",
+  "subtitle": "Aktivitas satu tanggal kalender di zona waktu toko ({{timezone}}), bukan laporan shift kasir.",
+  "loading": "Memuat laporan...",
+  "heading": "Tanggal {{date}} · zona waktu {{timezone}} · dibuat pukul {{time}}",
+  "empty": "Tidak ada",
+  "filters": {
+    "label": "Filter laporan",
+    "date": "Tanggal",
+    "cashier": "Kasir",
+    "channel": "Kanal",
+    "any": "Semua",
+    "submit": "Tampilkan"
+  },
+  "sales": {
+    "title": "Aktivitas penjualan",
+    "basis": "Faktur yang difinalisasi pada tanggal ini, termasuk yang kemudian dibatalkan. Filter kasir = kasir yang memfinalisasi.",
+    "invoiceCount": "Jumlah faktur",
+    "grossSubtotal": "Subtotal kotor",
+    "itemDiscounts": "Diskon barang",
+    "invoiceDiscounts": "Diskon faktur",
+    "netBeforeVoids": "Penjualan bersih sebelum void",
+    "byChannel": "Penjualan per kanal",
+    "byCashier": "Penjualan per kasir",
+    "channel": "Kanal",
+    "cashier": "Kasir",
+    "net": "Penjualan bersih"
+  },
+  "voids": {
+    "title": "Void",
+    "basis": "Faktur yang dibatalkan pada tanggal ini, kapan pun dijual; nilainya dipotong pada hari void. Filter kasir = kasir yang membatalkan.",
+    "list": "Faktur dibatalkan",
+    "count": "Jumlah void",
+    "deduction": "Potongan void",
+    "netAfterVoids": "Penjualan bersih setelah void",
+    "invoiceNumber": "No. faktur",
+    "finalizedDate": "Tanggal penjualan",
+    "voidedAt": "Waktu void",
+    "voidedBy": "Dibatalkan oleh",
+    "channel": "Kanal",
+    "reason": "Alasan",
+    "amount": "Jumlah"
+  },
+  "payments": {
+    "title": "Aktivitas pembayaran",
+    "basis": "Uang yang diterima pada tanggal ini, termasuk pembayaran faktur hari sebelumnya. Filter kasir = kasir yang menerima.",
+    "received": "Total uang diterima",
+    "count": "Jumlah pembayaran",
+    "sameDay": "Untuk faktur hari ini",
+    "older": "Untuk faktur sebelumnya",
+    "byMethod": "Pembayaran per metode",
+    "method": "Metode",
+    "amount": "Jumlah"
+  },
+  "actions": {
+    "preview": "Pratinjau & cetak",
+    "exportCsv": "Ekspor CSV"
+  },
+  "preview": {
+    "title": "Pratinjau laporan harian",
+    "print": "Cetak A4",
+    "close": "Tutup",
+    "loading": "Menyiapkan pratinjau...",
+    "documentLabel": "Pratinjau laporan harian (A4)"
+  },
+  "outcome": {
+    "working": "Memproses...",
+    "printed": "Laporan dicetak.",
+    "csvSaved": "CSV disimpan: {{fileName}}",
+    "cancelled": "Dibatalkan.",
+    "PRINTER_NOT_FOUND": "Printer “{{printerName}}” tidak ditemukan. Periksa printer atau pengaturan cetak.",
+    "PRINT_FAILED": "Gagal mencetak laporan. Coba lagi.",
+    "PDF_FAILED": "Gagal mencetak laporan. Coba lagi.",
+    "EXPORT_FAILED": "CSV gagal disimpan. Coba lagi atau pilih lokasi lain."
+  }
+}

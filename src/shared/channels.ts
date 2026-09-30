@@ -100,4 +100,10 @@ export const CHANNELS = {
     getSettings: 'bengkelin:printing:getSettings',
     updateSettings: 'bengkelin:printing:updateSettings',
   },
+  reports: {
+    daily: 'bengkelin:reports:daily',
+    preview: 'bengkelin:reports:preview',
+    print: 'bengkelin:reports:print',
+    exportCsv: 'bengkelin:reports:exportCsv',
+  },
 } as const;

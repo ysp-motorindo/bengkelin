@@ -95,6 +95,7 @@ async function main(): Promise<void> {
       dialogs: {
         chooseImage: async () => logoFile,
         choosePdfDestination: async () => null,
+        chooseCsvDestination: async () => null,
       },
       openPath: async () => '',
     });

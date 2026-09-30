@@ -46,8 +46,10 @@ export class FakePrintDriver implements PrintDriver {
 export class FakeDialogs implements FileDialogs {
   openAnswers: (string | null)[] = [];
   saveAnswers: (string | null)[] = [];
+  csvAnswers: (string | null)[] = [];
   openCalls = 0;
   saveCalls: string[] = [];
+  csvCalls: string[] = [];
 
   async chooseImage(): Promise<string | null> {
     this.openCalls += 1;
@@ -57,5 +59,10 @@ export class FakeDialogs implements FileDialogs {
   async choosePdfDestination(defaultFileName: string): Promise<string | null> {
     this.saveCalls.push(defaultFileName);
     return this.saveAnswers.shift() ?? null;
+  }
+
+  async chooseCsvDestination(defaultFileName: string): Promise<string | null> {
+    this.csvCalls.push(defaultFileName);
+    return this.csvAnswers.shift() ?? null;
   }
 }

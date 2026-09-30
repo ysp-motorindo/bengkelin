@@ -1,4 +1,8 @@
 import type {
+  DailyReport,
+  DailyReportInput,
+  ReportOutcomeDto,
+  ReportPreviewDto,
   ExportPdfInput,
   LogoChoiceDto,
   LogoDto,
@@ -240,6 +244,18 @@ export interface BengkelinApi {
     updateSettings(
       input: PrintSettingsInput,
     ): Promise<Result<PrintSettingsDto>>;
+  };
+  /**
+   * Daily report for a calendar day in the shop timezone (any signed-in
+   * cashier). Sales by finalization, voids by void time, payments by
+   * receipt time. Print (A4) and CSV export render the same report; the CSV
+   * destination is chosen in a native dialog in main.
+   */
+  readonly reports: {
+    daily(input: DailyReportInput): Promise<Result<DailyReport>>;
+    preview(input: DailyReportInput): Promise<Result<ReportPreviewDto>>;
+    print(input: DailyReportInput): Promise<Result<ReportOutcomeDto>>;
+    exportCsv(input: DailyReportInput): Promise<Result<ReportOutcomeDto>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;

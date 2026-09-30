@@ -38,6 +38,8 @@ export interface FileDialogs {
   chooseImage(): Promise<string | null>;
   /** Where to save a PDF; null when cancelled. */
   choosePdfDestination(defaultFileName: string): Promise<string | null>;
+  /** Where to save a CSV export; null when cancelled. */
+  chooseCsvDestination(defaultFileName: string): Promise<string | null>;
 }
 
 /** Used when no driver is wired (never in the app): every print fails. */
@@ -52,4 +54,5 @@ export const unavailablePrintDriver: PrintDriver = {
 export const noFileDialogs: FileDialogs = {
   chooseImage: async () => null,
   choosePdfDestination: async () => null,
+  chooseCsvDestination: async () => null,
 };

@@ -1253,7 +1253,10 @@ describe('migration 009 on a populated version-8 database', () => {
 
       // ---- upgrade ----
       db = openDatabase(file);
-      migrateDatabase(db);
+      migrateDatabase(
+        db,
+        bundledMigrations.filter((m) => m.version <= 9),
+      );
       expect(readSchemaVersion(db)).toBe(9);
       const after = dump();
       for (const name of tables) {

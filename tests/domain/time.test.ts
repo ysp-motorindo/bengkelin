@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   businessDay,
+  businessDayRange,
   isInstant,
   resolveLocalDateTime,
   toInstant,
@@ -134,6 +135,43 @@ describe('resolveLocalDateTime', () => {
   test('businessDay rejects invalid instant', () => {
     expect(() => businessDay('garbage', 'Asia/Jakarta')).toThrowError(
       expect.objectContaining({ code: 'INVALID_INSTANT' }),
+    );
+  });
+});
+
+describe('businessDayRange', () => {
+  test('WIB day is [17:00Z previous day, 17:00Z)', () => {
+    expect(businessDayRange('2026-09-30', 'Asia/Jakarta')).toEqual({
+      start: '2026-09-29T17:00:00.000Z',
+      end: '2026-09-30T17:00:00.000Z',
+    });
+  });
+
+  test('is the inverse of businessDay at both edges', () => {
+    const { start, end } = businessDayRange('2026-09-30', 'Asia/Makassar');
+    expect(businessDay(start, 'Asia/Makassar')).toBe('2026-09-30');
+    const last = new Date(Date.parse(end) - 1).toISOString();
+    expect(businessDay(last, 'Asia/Makassar')).toBe('2026-09-30');
+    expect(businessDay(end, 'Asia/Makassar')).toBe('2026-10-01');
+  });
+
+  test('DST days are 23 and 25 hours long', () => {
+    const spring = businessDayRange('2026-03-08', 'America/New_York');
+    expect(Date.parse(spring.end) - Date.parse(spring.start)).toBe(
+      23 * 3600_000,
+    );
+    const fall = businessDayRange('2026-11-01', 'America/New_York');
+    expect(Date.parse(fall.end) - Date.parse(fall.start)).toBe(25 * 3600_000);
+  });
+
+  test('rejects impossible dates and zones with typed errors', () => {
+    for (const bad of ['2026-02-30', '20260930', '2026-9-30', '']) {
+      expect(() => businessDayRange(bad, 'Asia/Jakarta')).toThrow(
+        expect.objectContaining({ code: 'INVALID_DATE' }),
+      );
+    }
+    expect(() => businessDayRange('2026-09-30', 'Mars/Base')).toThrow(
+      expect.objectContaining({ code: 'INVALID_TIMEZONE' }),
     );
   });
 });

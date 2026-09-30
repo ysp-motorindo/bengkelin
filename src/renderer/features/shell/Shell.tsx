@@ -11,6 +11,7 @@ import { InventoryScreen } from '@/renderer/features/inventory/InventoryScreen';
 import { CustomersScreen } from '@/renderer/features/customers/CustomersScreen';
 import { HistoryScreen } from '@/renderer/features/history/HistoryScreen';
 import { ReceivablesScreen } from '@/renderer/features/history/ReceivablesScreen';
+import { DailyReportScreen } from '@/renderer/features/reports/DailyReportScreen';
 import { ReferencesScreen } from '@/renderer/features/references/ReferencesScreen';
 import { SettingsScreen } from '@/renderer/features/settings/SettingsScreen';
 import { CashierWorkspace } from '@/renderer/features/workspace/CashierWorkspace';
@@ -22,6 +23,7 @@ type View =
   | 'workspace'
   | 'history'
   | 'receivables'
+  | 'reports'
   | 'customers'
   | 'catalog'
   | 'inventory'
@@ -74,6 +76,7 @@ export function Shell({
           'workspace',
           'history',
           'receivables',
+          'reports',
           'customers',
           'catalog',
           'inventory',
@@ -84,6 +87,7 @@ export function Shell({
           'workspace',
           'history',
           'receivables',
+          'reports',
           'customers',
           'catalog',
           'inventory',
@@ -149,6 +153,7 @@ export function Shell({
         </div>
         {view === 'history' ? <HistoryScreen session={session} /> : null}
         {view === 'receivables' ? <ReceivablesScreen /> : null}
+        {view === 'reports' ? <DailyReportScreen session={session} /> : null}
         {view === 'customers' ? <CustomersScreen /> : null}
         {view === 'catalog' ? <CatalogScreen role={session.role} /> : null}
         {view === 'inventory' ? <InventoryScreen role={session.role} /> : null}

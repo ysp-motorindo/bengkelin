@@ -96,3 +96,43 @@ export function resolveLocalDateTime(
     ],
   };
 }
+
+export interface InstantRange {
+  /** Inclusive: the first instant of the business day. */
+  start: Instant;
+  /** Exclusive: the first instant of the next business day. */
+  end: Instant;
+}
+
+/**
+ * The instants of one calendar day in a zone: `[start, end)`, the inverse of
+ * `businessDay` (an instant `t` has `businessDay(t, tz) === date` exactly when
+ * `start <= t < end`). Uses Temporal's start-of-day, so a day whose midnight
+ * is skipped by DST still starts at its first existing instant, and a 23- or
+ * 25-hour day is handled. Canonical instants compare correctly as text.
+ */
+export function businessDayRange(
+  date: LocalDate,
+  timezone: string,
+): InstantRange {
+  if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new DomainError('INVALID_DATE', 'Date must be YYYY-MM-DD');
+  }
+  let day: Temporal.PlainDate;
+  try {
+    day = Temporal.PlainDate.from(date, { overflow: 'reject' });
+  } catch {
+    throw new DomainError('INVALID_DATE', 'Invalid date');
+  }
+  try {
+    const start = day.toZonedDateTime({ timeZone: timezone });
+    const end = day.add({ days: 1 }).toZonedDateTime({ timeZone: timezone });
+    return {
+      start: toInstant(start.epochMilliseconds),
+      end: toInstant(end.epochMilliseconds),
+    };
+  } catch (error) {
+    if (error instanceof DomainError) throw error;
+    throw new DomainError('INVALID_TIMEZONE', 'Invalid time zone');
+  }
+}
