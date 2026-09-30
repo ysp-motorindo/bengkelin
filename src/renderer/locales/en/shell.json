@@ -11,7 +11,8 @@
     "history": "History",
     "receivables": "Receivables",
     "reports": "Daily Report",
-    "settings": "Settings"
+    "settings": "Settings",
+    "catalogTransfer": "Catalog Import/Export"
   },
   "preferences": {
     "language": "Language",

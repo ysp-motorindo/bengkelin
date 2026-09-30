@@ -1,0 +1,2 @@
+# CSV fixtures are byte-exact (BOM, CRLF vs LF, invalid UTF-8): never convert.
+tests/fixtures/csv/*.csv -text

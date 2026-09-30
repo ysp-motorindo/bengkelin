@@ -1,4 +1,8 @@
 import type {
+  CatalogFileOutcomeDto,
+  CommitImportInput,
+  ImportPreviewDto,
+  ImportSummaryDto,
   BackupDestinationChoiceDto,
   BackupStatusDto,
   BackupSummary,
@@ -259,6 +263,17 @@ export interface BengkelinApi {
     preview(input: DailyReportInput): Promise<Result<ReportPreviewDto>>;
     print(input: DailyReportInput): Promise<Result<ReportOutcomeDto>>;
     exportCsv(input: DailyReportInput): Promise<Result<ReportOutcomeDto>>;
+  };
+  /**
+   * Catalog CSV transfer (ADMIN only). Files are chosen in native dialogs in
+   * main; the renderer never passes a path. An import is previewed first and
+   * committed with the preview token (a SAFETY backup is taken first).
+   */
+  readonly catalogTransfer: {
+    previewImport(): Promise<Result<ImportPreviewDto>>;
+    commitImport(input: CommitImportInput): Promise<Result<ImportSummaryDto>>;
+    exportCatalog(): Promise<Result<CatalogFileOutcomeDto>>;
+    downloadTemplate(): Promise<Result<CatalogFileOutcomeDto>>;
   };
   /**
    * Validated local backups (ADMIN only). The folder is chosen in a native

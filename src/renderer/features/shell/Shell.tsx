@@ -8,6 +8,7 @@ import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
 import { BackupNoticeBanner } from '@/renderer/features/backups/BackupNoticeBanner';
 import { CatalogScreen } from '@/renderer/features/catalog/CatalogScreen';
+import { CatalogTransferScreen } from '@/renderer/features/catalog-transfer/CatalogTransferScreen';
 import { InventoryScreen } from '@/renderer/features/inventory/InventoryScreen';
 import { CustomersScreen } from '@/renderer/features/customers/CustomersScreen';
 import { HistoryScreen } from '@/renderer/features/history/HistoryScreen';
@@ -27,6 +28,7 @@ type View =
   | 'reports'
   | 'customers'
   | 'catalog'
+  | 'catalogTransfer'
   | 'inventory'
   | 'references'
   | 'settings';
@@ -80,6 +82,7 @@ export function Shell({
           'reports',
           'customers',
           'catalog',
+          'catalogTransfer',
           'inventory',
           'references',
           'settings',
@@ -158,6 +161,9 @@ export function Shell({
         {view === 'reports' ? <DailyReportScreen session={session} /> : null}
         {view === 'customers' ? <CustomersScreen /> : null}
         {view === 'catalog' ? <CatalogScreen role={session.role} /> : null}
+        {view === 'catalogTransfer' && session.role === 'ADMIN' ? (
+          <CatalogTransferScreen />
+        ) : null}
         {view === 'inventory' ? <InventoryScreen role={session.role} /> : null}
         {view === 'references' && session.role === 'ADMIN' ? (
           <ReferencesScreen />

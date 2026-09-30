@@ -1,0 +1,61 @@
+{
+  "title": "Impor/Ekspor Katalog",
+  "description": "Unduh template, ekspor katalog saat ini, atau impor katalog dari berkas CSV. SKU menjadi kunci impor.",
+  "downloadTemplate": "Unduh template",
+  "export": "Ekspor katalog",
+  "import": "Impor CSV...",
+  "working": "Sedang memproses...",
+  "saved": "Berkas disimpan: {{fileName}} ({{count}} baris).",
+  "skuMissing": "{{count}} barang belum punya SKU. Isi SKU-nya sebelum berkas ini diimpor kembali.",
+  "exportFailed": "Berkas tidak dapat disimpan. Pilih lokasi lain.",
+  "preview": {
+    "title": "Pratinjau impor: {{fileName}}",
+    "summary": "Ringkasan",
+    "creates": "Barang baru",
+    "updates": "Barang diubah",
+    "unchanged": "Tanpa perubahan",
+    "priceChanges": "Titik harga baru",
+    "openingBalances": "Stok awal",
+    "barcodeChanges": "Barcode ditambah/diaktifkan",
+    "errors": "Kesalahan ({{count}})",
+    "warnings": "Peringatan ({{count}})",
+    "noErrors": "Tidak ada kesalahan.",
+    "fileLevel": "Berkas",
+    "row": "Baris {{row}}",
+    "rows": "Baris data ({{count}})",
+    "truncated": "Hanya {{shown}} baris pertama yang ditampilkan.",
+    "moreIssues": "Dan {{count}} lainnya.",
+    "backupNote": "Sebelum impor, aplikasi membuat cadangan pengaman database. Jika cadangan gagal, impor dibatalkan dan tidak ada yang berubah. Semua perubahan disimpan sekaligus, atau tidak sama sekali.",
+    "commit": "Impor sekarang",
+    "cancel": "Batal",
+    "blocked": "Perbaiki kesalahan di berkas, lalu impor lagi."
+  },
+  "columns": {
+    "row": "Baris",
+    "sku": "SKU",
+    "title": "Nama",
+    "action": "Tindakan",
+    "details": "Rincian"
+  },
+  "action": {
+    "CREATE": "Baru",
+    "UPDATE": "Diubah",
+    "UNCHANGED": "Tetap",
+    "INVALID": "Salah"
+  },
+  "field": {
+    "title": "nama",
+    "description": "deskripsi",
+    "type": "tipe",
+    "unit": "satuan",
+    "trackInventory": "pelacakan stok",
+    "isActive": "status aktif"
+  },
+  "details": {
+    "fields": "Ubah: {{fields}}",
+    "price": "{{channel}}: {{from}} -> {{to}}",
+    "barcodes": "Barcode: {{barcodes}}",
+    "openingStock": "Stok awal: {{count}}"
+  },
+  "result": "Impor selesai: {{creates}} baru, {{updates}} diubah, {{priceChanges}} titik harga baru, {{openingBalances}} stok awal. Cadangan: {{backupFileName}}"
+}

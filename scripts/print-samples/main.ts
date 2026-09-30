@@ -96,6 +96,7 @@ async function main(): Promise<void> {
         chooseImage: async () => logoFile,
         choosePdfDestination: async () => null,
         chooseCsvDestination: async () => null,
+        chooseCsvFile: async () => null,
         chooseBackupDirectory: async () => null,
       },
       openPath: async () => '',
