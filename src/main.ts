@@ -10,6 +10,7 @@ import type { ApplicationServices } from './main/platform/services';
 import { toInstant } from './shared/time';
 import { applyDataDirOverride } from './main/platform/paths';
 import { createMainWindow } from './main/platform/window';
+import { installCloseGuard } from './main/platform/close-guard';
 
 // Must run before the single-instance lock and before anything reads userData.
 applyDataDirOverride(app);
@@ -58,6 +59,8 @@ function showMainWindow(): void {
     return;
   }
   mainWindow = createMainWindow();
+  // Normal exit waits (briefly) for the renderer to flush draft input.
+  installCloseGuard(mainWindow);
 
   // Sessions are bound to the window: end them when it closes or crashes.
   const { webContents } = mainWindow;
@@ -88,6 +91,18 @@ if (started || !app.requestSingleInstanceLock()) {
 
     // macOS: re-create the window when the dock icon is clicked.
     app.on('activate', showMainWindow);
+  });
+
+  // A quit (menu, Cmd+Q, test harness) first closes the window, which the
+  // close guard holds for the flush; finish the quit once it has closed.
+  let quitting = false;
+  app.on('before-quit', () => {
+    quitting = true;
+  });
+  app.on('browser-window-created', (_event, window) => {
+    window.once('closed', () => {
+      if (quitting && BrowserWindow.getAllWindows().length === 0) app.quit();
+    });
   });
 
   app.on('will-quit', () => {

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { Shell } from '@/renderer/features/shell/Shell';
 import type { CashierSession } from '@/shared/contracts';
+import { workspaceBridge } from './helpers/workspace-bridge';
 
 const cashier: CashierSession = {
   cashierId: '5b9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11',
@@ -17,11 +18,16 @@ describe('shell', () => {
       throw new Error('ipc down');
     });
     (window as unknown as { bengkelin: unknown }).bengkelin = {
+      ...workspaceBridge(),
       auth: { logout },
     };
     render(
       <Shell session={cashier} shopName="Bengkel" onLoggedOut={vi.fn()} />,
     );
+    // The cashier workspace is the default view after login.
+    expect(
+      await screen.findByRole('combobox', { name: 'Cari barang' }),
+    ).toBeInTheDocument();
     const button = screen.getByRole('button', { name: 'Keluar' });
     await userEvent.click(button);
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
@@ -29,6 +35,7 @@ describe('shell', () => {
   });
 
   test('reference management is offered to ADMIN only', () => {
+    (window as unknown as { bengkelin: unknown }).bengkelin = workspaceBridge();
     const { unmount } = render(
       <Shell session={cashier} shopName="Bengkel" onLoggedOut={vi.fn()} />,
     );

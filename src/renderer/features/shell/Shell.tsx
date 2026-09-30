@@ -3,30 +3,55 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
+import { flushAll } from '@/renderer/lib/flush-registry';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
 import { CatalogScreen } from '@/renderer/features/catalog/CatalogScreen';
 import { InventoryScreen } from '@/renderer/features/inventory/InventoryScreen';
 import { CustomersScreen } from '@/renderer/features/customers/CustomersScreen';
 import { ReferencesScreen } from '@/renderer/features/references/ReferencesScreen';
-import type { CashierSession } from '@/shared/contracts';
+import { CashierWorkspace } from '@/renderer/features/workspace/CashierWorkspace';
+import type { FinalizeHandler } from '@/renderer/features/workspace/checkout/CheckoutReviewDialog';
+import type { CashierSession, PublicSettings } from '@/shared/contracts';
+import { PreferencesControls } from './PreferencesControls';
 
-type View = 'home' | 'customers' | 'catalog' | 'inventory' | 'references';
+type View = 'workspace' | 'customers' | 'catalog' | 'inventory' | 'references';
 
 interface ShellProps {
   session: CashierSession;
   shopName: string;
+  settings?: PublicSettings | undefined;
   onLoggedOut(): void;
+  onPreferencesChanged?: ((settings: PublicSettings) => void) | undefined;
+  /** T10 wires finalization into the checkout review. */
+  onFinalize?: FinalizeHandler | undefined;
 }
 
-/** Minimal post-login shell. Later tasks add navigation and screens here. */
-export function Shell({ session, shopName, onLoggedOut }: ShellProps) {
+/**
+ * Post-login shell. "New Transaction" (the cashier workspace) is the default
+ * view; the other screens stay reachable from the navigation. The workspace
+ * stays mounted while another screen is shown so an open draft keeps its
+ * state.
+ */
+export function Shell({
+  session,
+  shopName,
+  settings,
+  onLoggedOut,
+  onPreferencesChanged,
+  onFinalize,
+}: ShellProps) {
   const { t } = useTranslation();
-  const [view, setView] = useState<View>('home');
-  const { busy, error, run, check } = useAction();
+  const [view, setView] = useState<View>('workspace');
+  const { busy, error, setError, run, check } = useAction();
 
   function logout() {
     void run(async () => {
+      // Pending draft input is sent before the session ends.
+      if (!(await flushAll())) {
+        setError(t('workspace.notices.unsaved'));
+        return;
+      }
       const result = await window.bengkelin.auth.logout();
       if (check(result)) onLoggedOut();
     });
@@ -34,17 +59,23 @@ export function Shell({ session, shopName, onLoggedOut }: ShellProps) {
 
   const views: View[] =
     session.role === 'ADMIN'
-      ? ['home', 'customers', 'catalog', 'inventory', 'references']
-      : ['home', 'customers', 'catalog', 'inventory'];
+      ? ['workspace', 'customers', 'catalog', 'inventory', 'references']
+      : ['workspace', 'customers', 'catalog', 'inventory'];
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between gap-4 border-b border-border bg-card px-6 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card px-4 py-2 sm:px-6">
         <div className="flex items-center gap-2 font-semibold">
           <Wrench aria-hidden="true" className="size-5 text-primary" />
           <span>{shopName || t('common.appName')}</span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {session.role === 'ADMIN' && settings && onPreferencesChanged ? (
+            <PreferencesControls
+              settings={settings}
+              onChanged={onPreferencesChanged}
+            />
+          ) : null}
           <p className="text-sm text-muted-foreground">
             {t('shell.signedInAs')}{' '}
             <span
@@ -65,7 +96,7 @@ export function Shell({ session, shopName, onLoggedOut }: ShellProps) {
       </header>
       <nav
         aria-label={t('shell.nav.label')}
-        className="flex gap-1 border-b border-border bg-card px-6"
+        className="flex flex-wrap gap-1 border-b border-border bg-card px-4 sm:px-6"
       >
         {views.map((name) => (
           <button
@@ -84,23 +115,16 @@ export function Shell({ session, shopName, onLoggedOut }: ShellProps) {
           </button>
         ))}
       </nav>
-      <main className="flex-1 p-6">
+      <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
         {error ? <Alert className="mb-4">{error}</Alert> : null}
+        <div hidden={view !== 'workspace'}>
+          <CashierWorkspace onFinalize={onFinalize} />
+        </div>
         {view === 'customers' ? <CustomersScreen /> : null}
         {view === 'catalog' ? <CatalogScreen role={session.role} /> : null}
         {view === 'inventory' ? <InventoryScreen role={session.role} /> : null}
         {view === 'references' && session.role === 'ADMIN' ? (
           <ReferencesScreen />
-        ) : null}
-        {view === 'home' ? (
-          <>
-            <h1 className="text-xl font-semibold">
-              {t('shell.welcome', { name: session.displayName })}
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              {t('shell.placeholder')}
-            </p>
-          </>
         ) : null}
       </main>
     </div>

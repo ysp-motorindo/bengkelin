@@ -6,6 +6,10 @@ export const CHANNELS = {
   app: {
     ping: 'bengkelin:app:ping',
     openLogFolder: 'bengkelin:app:openLogFolder',
+    /** main -> renderer event: the window is about to close; flush. */
+    beforeClose: 'bengkelin:app:beforeClose',
+    /** renderer -> main: flushed, the window may close now. */
+    readyToClose: 'bengkelin:app:readyToClose',
   },
   auth: {
     login: 'bengkelin:auth:login',
@@ -14,6 +18,7 @@ export const CHANNELS = {
   },
   settings: {
     getPublic: 'bengkelin:settings:getPublic',
+    getShop: 'bengkelin:settings:getShop',
     completeSetup: 'bengkelin:settings:completeSetup',
     updateShop: 'bengkelin:settings:updateShop',
     updatePreferences: 'bengkelin:settings:updatePreferences',

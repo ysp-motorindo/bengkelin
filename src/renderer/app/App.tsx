@@ -6,6 +6,8 @@ import { LoginScreen } from '@/renderer/features/auth/LoginScreen';
 import { SetupWizard } from '@/renderer/features/setup/SetupWizard';
 import { Shell } from '@/renderer/features/shell/Shell';
 import { DEFAULT_LANGUAGE, setLanguage } from '@/renderer/i18n';
+import { flushAll } from '@/renderer/lib/flush-registry';
+import { onUnauthenticated } from '@/renderer/lib/session-events';
 import { applyAppearance } from '@/renderer/lib/theme';
 import type {
   Appearance,
@@ -64,6 +66,26 @@ export function App() {
     void load();
   }, []);
 
+  // A session lost behind this window's back (UNAUTHENTICATED) -> login.
+  useEffect(
+    () =>
+      onUnauthenticated(() =>
+        setPhase((current) =>
+          current.kind === 'ready' ? { ...current, session: null } : current,
+        ),
+      ),
+    [],
+  );
+
+  // Normal exit: flush pending draft input, then let main close the window.
+  useEffect(() => {
+    const bridge = window.bengkelin.app;
+    if (typeof bridge?.onBeforeClose !== 'function') return undefined;
+    return bridge.onBeforeClose(() => {
+      void flushAll().finally(() => bridge.readyToClose());
+    });
+  }, []);
+
   if (phase.kind === 'loading') {
     return (
       <main className="flex min-h-screen items-center justify-center text-muted-foreground">
@@ -112,8 +134,12 @@ export function App() {
     <Shell
       session={session}
       shopName={phase.settings.shopName}
+      settings={phase.settings}
       onLoggedOut={() =>
         setPhase({ kind: 'ready', settings: phase.settings, session: null })
+      }
+      onPreferencesChanged={(next) =>
+        setPhase({ kind: 'ready', settings: next, session })
       }
     />
   );

@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Result } from '@/shared/primitives';
 import { errorMessage } from './errors';
+import { watchSessionError } from './session-events';
 
 /**
  * Runs one async UI action at a time. `busy` is always cleared (try/finally),
@@ -38,6 +39,7 @@ export function useAction() {
   const check = useCallback(
     <T>(result: Result<T>): result is Extract<Result<T>, { ok: true }> => {
       if (result.ok) return true;
+      watchSessionError(result.error);
       setFieldErrors(result.error.fieldErrors ?? {});
       setError(errorMessage(t, result.error));
       return false;

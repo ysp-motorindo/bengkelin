@@ -9,14 +9,21 @@ import { getTrustedAppLocation } from './window';
 
 export type { ApplicationServices } from './services';
 
-/** Throws unless the invoking frame is the app's own top-level document. */
-export function assertTrustedSender(event: IpcMainInvokeEvent): void {
+type SenderEvent = Pick<IpcMainInvokeEvent, 'senderFrame' | 'sender'>;
+
+/** True when the sending frame is the app's own top-level document. */
+export function isTrustedSender(event: SenderEvent): boolean {
   const frame = event.senderFrame;
-  const trusted =
+  return (
     frame !== null &&
     frame === event.sender.mainFrame &&
-    isTrustedAppUrl(frame.url, getTrustedAppLocation());
-  if (!trusted) {
+    isTrustedAppUrl(frame.url, getTrustedAppLocation())
+  );
+}
+
+/** Throws unless the invoking frame is the app's own top-level document. */
+export function assertTrustedSender(event: SenderEvent): void {
+  if (!isTrustedSender(event)) {
     throw new Error('Rejected IPC from untrusted frame');
   }
 }

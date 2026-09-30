@@ -4,7 +4,7 @@ import {
   withWriteTransaction,
   type AppDatabase,
 } from '@/main/database/connection';
-import { requireAdmin } from '@/main/features/auth/authorize';
+import { requireAdmin, requireSession } from '@/main/features/auth/authorize';
 import { hashPassword } from '@/main/features/auth/passwords';
 import { CashierRepository } from '@/main/features/auth/repository';
 import type { Session } from '@/main/features/auth/sessions';
@@ -13,6 +13,7 @@ import type {
   PublicSettings,
   SetupData,
   ShopSettingsData,
+  ShopSettingsDto,
 } from '@/shared/contracts';
 import { DomainError } from '@/shared/primitives';
 import type { Clock } from '@/shared/time';
@@ -53,6 +54,12 @@ export class SettingsService {
   /** Public on purpose: the login screen needs language and theme. */
   getPublic(): PublicSettings {
     return this.repo.getPublic();
+  }
+
+  /** Shop identity and timezone for any signed-in cashier. */
+  getShop(session: Session | undefined): ShopSettingsDto {
+    requireSession(session);
+    return this.repo.getShop();
   }
 
   /**

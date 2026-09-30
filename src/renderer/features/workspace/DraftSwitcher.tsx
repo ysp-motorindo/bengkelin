@@ -1,0 +1,213 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Alert } from '@/renderer/components/ui/alert';
+import { Button } from '@/renderer/components/ui/button';
+import { Dialog } from '@/renderer/components/ui/dialog';
+import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { errorMessage } from '@/renderer/lib/errors';
+import { formatIdr } from '@/renderer/lib/money';
+import { watchSessionError } from '@/renderer/lib/session-events';
+import type { DraftSummary } from '@/shared/contracts';
+
+interface DraftSwitcherProps {
+  currentId: string;
+  timezone: string;
+  /** Flushes the current draft, then opens this one. */
+  onResume(id: string): Promise<void>;
+  /** Discards a draft; resolves to an error message or null. */
+  onDiscard(summary: DraftSummary): Promise<string | null>;
+  onClose(): void;
+}
+
+/**
+ * Shared shop drafts (spec 28): resume or discard any open draft. Shows the
+ * creator, last editor, customer, amount and last update.
+ */
+export function DraftSwitcher({
+  currentId,
+  timezone,
+  onResume,
+  onDiscard,
+  onClose,
+}: DraftSwitcherProps) {
+  const { t } = useTranslation();
+  const [drafts, setDrafts] = useState<DraftSummary[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<DraftSummary | null>(null);
+  const [busy, setBusy] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const result = await window.bengkelin.drafts.list();
+      if (!result.ok) {
+        watchSessionError(result.error);
+        setError(errorMessage(t, result.error));
+        return;
+      }
+      setDrafts(result.value);
+    } catch {
+      setError(t('errors.INTERNAL_ERROR'));
+    }
+  }, [t]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function discard(summary: DraftSummary) {
+    setBusy(true);
+    try {
+      const failure = await onDiscard(summary);
+      setError(failure);
+      setConfirming(null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog
+      title={t('workspace.drafts.title')}
+      onClose={onClose}
+      closeLabel={t('workspace.common.close')}
+      className="max-w-4xl"
+    >
+      {error ? <Alert>{error}</Alert> : null}
+      {drafts === null ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t('common.loading')}
+        </p>
+      ) : (
+        <div className="relative overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-sm">
+            <caption className="sr-only">{t('workspace.drafts.title')}</caption>
+            <thead className="text-left text-xs text-muted-foreground">
+              <tr>
+                <th scope="col" className="py-1 pr-2">
+                  {t('workspace.drafts.customer')}
+                </th>
+                <th scope="col" className="py-1 pr-2 text-right">
+                  {t('workspace.drafts.amount')}
+                </th>
+                <th scope="col" className="py-1 pr-2">
+                  {t('workspace.drafts.createdBy')}
+                </th>
+                <th scope="col" className="py-1 pr-2">
+                  {t('workspace.drafts.lastEditedBy')}
+                </th>
+                <th scope="col" className="py-1 pr-2">
+                  {t('workspace.drafts.updatedAt')}
+                </th>
+                <th scope="col" className="py-1">
+                  <span className="sr-only">
+                    {t('workspace.lines.actions')}
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {drafts.map((draft) => {
+                const current = draft.id === currentId;
+                return (
+                  <tr
+                    key={draft.id}
+                    data-testid="draft-row"
+                    aria-current={current ? 'true' : undefined}
+                    className="border-t border-border"
+                  >
+                    <td className="py-1.5 pr-2">
+                      <span className="font-medium">
+                        {draft.customerLabel ?? t('workspace.header.anonymous')}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {[
+                          draft.plateNumber,
+                          draft.channelLabel,
+                          t('workspace.drafts.lineCount', {
+                            count: draft.lineCount,
+                          }),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                        {current ? ` · ${t('workspace.drafts.current')}` : ''}
+                      </span>
+                    </td>
+                    <td className="tabular py-1.5 pr-2 text-right">
+                      {formatIdr(draft.amount)}
+                    </td>
+                    <td className="py-1.5 pr-2">
+                      {draft.createdBy.displayName}
+                    </td>
+                    <td className="py-1.5 pr-2">
+                      {draft.lastEditedBy.displayName}
+                    </td>
+                    <td className="tabular py-1.5 pr-2">
+                      {formatLocal(draft.updatedAt, timezone).slice(0, 16)}
+                    </td>
+                    <td className="whitespace-nowrap py-1 text-right">
+                      <Button
+                        size="sm"
+                        variant={current ? 'ghost' : 'outline'}
+                        disabled={busy || current}
+                        onClick={() => void onResume(draft.id)}
+                      >
+                        {t('workspace.drafts.resume')}
+                      </Button>{' '}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={busy}
+                        onClick={() => setConfirming(draft)}
+                      >
+                        {t('workspace.drafts.discard')}
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {drafts.length === 0 ? (
+            <p className="py-2 text-sm text-muted-foreground">
+              {t('workspace.drafts.none')}
+            </p>
+          ) : null}
+        </div>
+      )}
+
+      {confirming ? (
+        <Dialog
+          role="alertdialog"
+          title={t('workspace.drafts.confirmTitle')}
+          description={t('workspace.drafts.confirmBody', {
+            customer:
+              confirming.customerLabel ?? t('workspace.header.anonymous'),
+            amount: formatIdr(confirming.amount),
+          })}
+          initialFocus={cancelRef}
+          onClose={() => setConfirming(null)}
+        >
+          <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={busy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => void discard(confirming)}
+            >
+              {t('workspace.drafts.confirmDiscard')}
+            </Button>
+            <Button
+              ref={cancelRef}
+              variant="outline"
+              disabled={busy}
+              onClick={() => setConfirming(null)}
+            >
+              {t('workspace.common.cancel')}
+            </Button>
+          </div>
+        </Dialog>
+      ) : null}
+    </Dialog>
+  );
+}

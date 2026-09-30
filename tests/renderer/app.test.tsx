@@ -10,6 +10,7 @@ import type {
   SetupInput,
 } from '@/shared/contracts';
 import type { Result } from '@/shared/primitives';
+import { workspaceBridge } from './helpers/workspace-bridge';
 
 const ok = <T,>(value: T): Result<T> => ({ ok: true, value });
 
@@ -28,13 +29,16 @@ function installBridge(
     completeSetup?: BengkelinApi['settings']['completeSetup'];
   } = {},
 ) {
+  const workspace = workspaceBridge();
   const bridge = {
+    ...workspace,
     auth: {
       login: overrides.login ?? vi.fn(async () => ok(adminSession)),
       logout: vi.fn(async () => ok(undefined)),
       currentSession: vi.fn(async () => ok(overrides.session ?? null)),
     },
     settings: {
+      ...workspace.settings,
       getPublic: vi.fn(async () => ok(settings)),
       completeSetup:
         overrides.completeSetup ??
@@ -131,6 +135,76 @@ describe('login screen', () => {
       'Admin',
     );
     expect(screen.getByRole('button', { name: 'Keluar' })).toBeInTheDocument();
+  });
+});
+
+describe('carried fixes', () => {
+  test('a rejected login call never leaves the form stuck busy', async () => {
+    const login = vi.fn(async () => {
+      throw new Error('ipc down');
+    });
+    installBridge({ ...base, language: 'en' }, { login });
+    render(<App />);
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText('Username'), 'admin');
+    await user.type(screen.getByLabelText('Password'), 'whatever');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /unexpected error/i,
+    );
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeEnabled();
+  });
+
+  test('UNAUTHENTICATED from any call returns to the login screen', async () => {
+    const bridge = installBridge(
+      { ...base, language: 'en' },
+      { session: adminSession },
+    );
+    bridge.drafts.list = vi.fn(async () => ({
+      ok: false as const,
+      error: { code: 'UNAUTHENTICATED', messageKey: 'errors.UNAUTHENTICATED' },
+    }));
+    render(<App />);
+    expect(
+      await screen.findByRole('heading', { name: 'Sign in' }),
+    ).toBeInTheDocument();
+  });
+
+  test('SETUP_ALREADY_COMPLETED sends the wizard to the login screen', async () => {
+    const completeSetup = vi.fn(async (_input: SetupInput) => ({
+      ok: false as const,
+      error: {
+        code: 'SETUP_ALREADY_COMPLETED',
+        messageKey: 'errors.SETUP_ALREADY_COMPLETED',
+      },
+    }));
+    const bridge = installBridge(
+      { ...base, setupCompleted: false },
+      { completeSetup },
+    );
+    render(<App />);
+    const user = userEvent.setup();
+    await user.type(
+      await screen.findByLabelText('Nama bengkel'),
+      'Bengkel Maju',
+    );
+    await user.type(screen.getByLabelText('Alamat'), 'Jl. Merdeka 1');
+    await user.click(screen.getByRole('button', { name: /Lanjut/ }));
+    await user.type(await screen.findByLabelText('Nama pengguna'), 'admin');
+    await user.type(screen.getByLabelText('Nama tampilan'), 'Pak Budi');
+    await user.type(screen.getByLabelText('Kata sandi'), 'correct-horse');
+    await user.type(
+      screen.getByLabelText('Ulangi kata sandi'),
+      'correct-horse',
+    );
+    await user.click(screen.getByRole('button', { name: /Lanjut/ }));
+    bridge.settings.getPublic = vi.fn(async () => ok(base));
+    await user.click(await screen.findByRole('button', { name: /Lanjut/ }));
+    await user.click(await screen.findByRole('button', { name: 'Lewati' }));
+    await user.click(await screen.findByRole('button', { name: 'Mulai' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Masuk' }),
+    ).toBeInTheDocument();
   });
 });
 

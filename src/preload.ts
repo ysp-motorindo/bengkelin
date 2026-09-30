@@ -20,6 +20,7 @@ const api: BengkelinApi = Object.freeze({
   }),
   settings: Object.freeze({
     getPublic: call(c.settings.getPublic),
+    getShop: call(c.settings.getShop),
     completeSetup: call(c.settings.completeSetup),
     updateShop: call(c.settings.updateShop),
     updatePreferences: call(c.settings.updatePreferences),
@@ -82,6 +83,17 @@ const api: BengkelinApi = Object.freeze({
   }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),
+    // The callback never sees the IPC event object.
+    onBeforeClose: (callback: () => void) => {
+      const listener = () => callback();
+      ipcRenderer.on(c.app.beforeClose, listener);
+      return () => {
+        ipcRenderer.removeListener(c.app.beforeClose, listener);
+      };
+    },
+    readyToClose: () => {
+      ipcRenderer.send(c.app.readyToClose);
+    },
   }),
 });
 

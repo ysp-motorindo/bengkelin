@@ -4,6 +4,7 @@ import type {
   Language,
   PreferencesInput,
   PublicSettings,
+  ShopSettingsDto,
 } from '@/shared/contracts';
 import type { Instant } from '@/shared/primitives';
 
@@ -50,6 +51,30 @@ export class SettingsRepository {
       language: row.language as Language,
       appearance: row.appearance as Appearance,
       shopName: row.shop_name,
+    };
+  }
+
+  getShop(): ShopSettingsDto {
+    const row = this.db
+      .prepare(
+        `SELECT shop_name, address, phone_number, email, invoice_footer, timezone
+           FROM settings WHERE id = 1`,
+      )
+      .get() as {
+      shop_name: string;
+      address: string | null;
+      phone_number: string | null;
+      email: string | null;
+      invoice_footer: string | null;
+      timezone: string;
+    };
+    return {
+      name: row.shop_name,
+      address: row.address ?? '',
+      phoneNumber: row.phone_number,
+      email: row.email,
+      invoiceFooter: row.invoice_footer,
+      timezone: row.timezone,
     };
   }
 

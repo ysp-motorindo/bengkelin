@@ -202,17 +202,31 @@ export function SetupWizard({
     }
     setBusy(true);
     setFormError(null);
-    const result = await window.bengkelin.settings.completeSetup(toInput());
-    setBusy(false);
-    if (result.ok) {
-      onCompleted(result.value);
-      return;
+    try {
+      const result = await window.bengkelin.settings.completeSetup(toInput());
+      if (result.ok) {
+        onCompleted(result.value);
+        return;
+      }
+      if (result.error.code === 'SETUP_ALREADY_COMPLETED') {
+        // Another window/run finished setup: continue to the login screen.
+        const current = await window.bengkelin.settings.getPublic();
+        if (current.ok) {
+          onCompleted(current.value);
+          return;
+        }
+      }
+      const fields = result.error.fieldErrors ?? {};
+      const first = Object.keys(fields)[0];
+      setErrors(fields);
+      setFormError(errorMessage(t, result.error));
+      if (first) setStep(stepOfField(first));
+    } catch {
+      setFormError(t('errors.INTERNAL_ERROR'));
+    } finally {
+      // Never leave the wizard stuck busy, even when the IPC call rejects.
+      setBusy(false);
     }
-    const fields = result.error.fieldErrors ?? {};
-    const first = Object.keys(fields)[0];
-    setErrors(fields);
-    setFormError(errorMessage(t, result.error));
-    if (first) setStep(stepOfField(first));
   }
 
   function skipPrinter() {
