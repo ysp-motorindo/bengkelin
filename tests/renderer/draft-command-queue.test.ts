@@ -401,6 +401,71 @@ describe('DraftCommandQueue', () => {
   });
 });
 
+describe('DraftCommandQueue invalid unsent input (C1)', () => {
+  const discountOp = (bps: number) => ({
+    kind: 'setInvoiceDiscounts' as const,
+    stages: [bps],
+  });
+
+  test('an invalid field is never "saved"; flush resolves false while it is invalid', async () => {
+    const { server, queue, states } = setup(1);
+    queue.edit('allocations', {
+      kind: 'setCheckoutAllocations',
+      allocations: [{ method: 'CASH', amount: '150' }],
+    });
+    await vi.advanceTimersByTimeAsync(300);
+    server.calls[0]!.resolve(ok(makeView(2)));
+    await settle();
+    expect(queue.saveState).toBe('saved');
+
+    queue.markInvalid('allocations', true);
+    expect(queue.saveState).toBe('unsaved');
+    expect(states.at(-1)).toBe('unsaved');
+    expect(queue.isDirty('allocations')).toBe(true);
+    await expect(queue.flush()).resolves.toBe(false);
+    expect(server.apply).toHaveBeenCalledTimes(1);
+
+    queue.markInvalid('allocations', false);
+    expect(queue.saveState).toBe('saved');
+    await expect(queue.flush()).resolves.toBe(true);
+  });
+
+  test('marking a field invalid drops its pending debounced (stale) value', async () => {
+    const { server, queue } = setup(1);
+    queue.edit('invoiceDiscounts', discountOp(1000));
+    queue.markInvalid('invoiceDiscounts', true);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(server.apply).not.toHaveBeenCalled();
+    expect(queue.saveState).toBe('unsaved');
+  });
+
+  test('a valid edit of the field clears its invalid mark', async () => {
+    const { server, queue } = setup(1);
+    queue.markInvalid('odometer', true);
+    queue.edit('odometer', {
+      kind: 'updateHeader',
+      changes: { odometerKm: 12 },
+    });
+    const flushed = queue.flush();
+    await settle();
+    server.calls[0]!.resolve(ok(makeView(2)));
+    await expect(flushed).resolves.toBe(true);
+    expect(queue.saveState).toBe('saved');
+  });
+
+  test('flush still sends other pending fields but reports not flushed', async () => {
+    const { server, queue } = setup(1);
+    queue.edit('note', { kind: 'updateHeader', changes: { note: 'x' } });
+    queue.markInvalid('topDays', true);
+    const flushed = queue.flush();
+    await settle();
+    expect(server.apply).toHaveBeenCalledTimes(1);
+    server.calls[0]!.resolve(ok(makeView(2)));
+    await expect(flushed).resolves.toBe(false);
+    expect(queue.saveState).toBe('unsaved');
+  });
+});
+
 describe('useDraftCommands', () => {
   test('exposes the view and save state, and registers a flusher for exit/logout', async () => {
     const server = fakeServer();
@@ -434,6 +499,25 @@ describe('useDraftCommands', () => {
     });
     await expect(flushed).resolves.toBe(true);
     expect(result.current.view.note).toBe('hi');
+    expect(result.current.saveState).toBe('saved');
+  });
+
+  test('markInvalid makes the hook report "unsaved" and flushAll false', async () => {
+    const server = fakeServer();
+    (window as unknown as { bengkelin: unknown }).bengkelin = {
+      drafts: { apply: server.apply, get: server.get },
+    };
+    const { result } = renderHook(() =>
+      useDraftCommands(INVOICE, { initialView: makeView(1) }),
+    );
+    act(() => {
+      result.current.markInvalid('allocations', true);
+    });
+    expect(result.current.saveState).toBe('unsaved');
+    await expect(flushAll()).resolves.toBe(false);
+    act(() => {
+      result.current.markInvalid('allocations', false);
+    });
     expect(result.current.saveState).toBe('saved');
   });
 });

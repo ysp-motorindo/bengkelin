@@ -22,6 +22,8 @@ export interface DraftCommands {
   send(op: DraftOperation, options?: SendOptions): Promise<Result<DraftView>>;
   edit(key: string, op: DraftOperation): void;
   isDirty(key: string): boolean;
+  /** Registers client-invalid input: state 'unsaved', flush() false. */
+  markInvalid(key: string, invalid: boolean): void;
   flush(): Promise<boolean>;
   retry(): void;
   /** Reloads from main (e.g. after an ownership transfer elsewhere). */
@@ -91,6 +93,9 @@ export function useDraftCommands(
     (key: string) => queueRef.current?.isDirty(key) ?? false,
     [],
   );
+  const markInvalid = useCallback((key: string, invalid: boolean) => {
+    queueRef.current?.markInvalid(key, invalid);
+  }, []);
   const flush = useCallback(
     () => queueRef.current?.flush() ?? Promise.resolve(true),
     [],
@@ -108,6 +113,7 @@ export function useDraftCommands(
     send,
     edit,
     isDirty,
+    markInvalid,
     flush,
     retry,
     reload,

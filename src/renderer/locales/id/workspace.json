@@ -9,7 +9,8 @@
     "saving": "Menyimpan…",
     "saved": "Tersimpan",
     "failed": "Gagal menyimpan",
-    "retry": "Coba simpan lagi"
+    "retry": "Coba simpan lagi",
+    "unsaved": "Belum tersimpan: perbaiki isian yang ditandai"
   },
   "search": {
     "label": "Cari barang",
@@ -226,7 +227,7 @@
     "conflictReloaded": "Draf ini diubah di tempat lain dan telah dimuat ulang.",
     "discarded": "Draf dibuang. Membuka draf lain.",
     "left": "Draf ini sudah tidak dapat diubah. Membuka draf lain.",
-    "unsaved": "Perubahan belum tersimpan. Periksa koneksi lalu coba simpan lagi."
+    "unsaved": "Perubahan belum tersimpan. Perbaiki isian yang ditandai, atau periksa koneksi lalu coba simpan lagi."
   },
   "validation": {
     "quantity": "Jumlah harus bilangan bulat 1 atau lebih.",

@@ -23,11 +23,16 @@ import type { Result } from '@/shared/primitives';
  *   conflicting debounced text ONCE against the new version. A conflicting
  *   discrete action is returned to its caller (never silently replayed).
  * - DRAFT_DISCARDED / INVOICE_NOT_DRAFT / DRAFT_NOT_FOUND close the queue.
+ * - Fields that fail client validation register with `markInvalid(key)`.
+ *   While any key is invalid the state is 'unsaved' (never 'saved'), the
+ *   field counts as dirty, its stale debounced value is dropped, and
+ *   `flush()` resolves false, so review/save/close cannot proceed on the
+ *   older server value.
  *
  * Electron- and React-free so it can be tested with fake timers.
  */
 
-export type SaveState = 'saved' | 'saving' | 'failed';
+export type SaveState = 'saved' | 'saving' | 'failed' | 'unsaved';
 
 export type ClosedCode =
   | 'DRAFT_DISCARDED'
@@ -98,6 +103,7 @@ export class DraftCommandQueue {
     { handle: ReturnType<typeof setTimeout>; op: DraftOperation }
   >();
   private readonly failedKeys = new Set<string>();
+  private readonly invalidKeys = new Set<string>();
   private idleWaiters: Array<(flushed: boolean) => void> = [];
   private running = false;
   private halted = false;
@@ -159,6 +165,7 @@ export class DraftCommandQueue {
   /** Free text for one field: debounced; only the latest value is sent. */
   edit(key: string, op: DraftOperation): void {
     if (this.isClosed) return;
+    this.invalidKeys.delete(key);
     const pending = this.timers.get(key);
     if (pending) clearTimeout(pending.handle);
     const handle = setTimeout(() => {
@@ -171,13 +178,36 @@ export class DraftCommandQueue {
 
   /** True while the field has input that is not yet acknowledged. */
   isDirty(key: string): boolean {
-    return this.timers.has(key) || this.items.some((item) => item.key === key);
+    return (
+      this.invalidKeys.has(key) ||
+      this.timers.has(key) ||
+      this.items.some((item) => item.key === key)
+    );
+  }
+
+  /**
+   * Registers (or clears) client-side invalid input for a field. An invalid
+   * field's pending debounced value is stale, so it is dropped, never sent.
+   */
+  markInvalid(key: string, invalid: boolean): void {
+    if (this.isClosed) return;
+    if (invalid) {
+      const pending = this.timers.get(key);
+      if (pending) {
+        clearTimeout(pending.handle);
+        this.timers.delete(key);
+      }
+      this.invalidKeys.add(key);
+    } else {
+      this.invalidKeys.delete(key);
+    }
+    this.emitState();
   }
 
   /**
    * Sends pending debounced text now and resolves once everything queued is
    * acknowledged: true, or false when the queue is stuck on a transport
-   * failure (see `retry`).
+   * failure (see `retry`) or a field still holds invalid (unsent) input.
    */
   flush(): Promise<boolean> {
     for (const [key, { handle, op }] of this.timers) {
@@ -186,11 +216,11 @@ export class DraftCommandQueue {
       this.enqueueText(key, op);
     }
     if (this.halted) return Promise.resolve(false);
-    if (this.isIdle()) return Promise.resolve(true);
-    return new Promise((resolve) => {
+    if (this.isIdle()) return Promise.resolve(this.invalidKeys.size === 0);
+    return new Promise<boolean>((resolve) => {
       this.idleWaiters.push(resolve);
       void this.pump();
-    });
+    }).then((flushed) => flushed && this.invalidKeys.size === 0);
   }
 
   /**
@@ -392,6 +422,7 @@ export class DraftCommandQueue {
 
   private computeState(): SaveState {
     if (this.halted) return 'failed';
+    if (this.invalidKeys.size > 0) return 'unsaved';
     if (this.items.length > 0 || this.timers.size > 0) return 'saving';
     return this.failedKeys.size > 0 ? 'failed' : 'saved';
   }

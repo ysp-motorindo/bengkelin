@@ -9,7 +9,8 @@
     "saving": "Saving…",
     "saved": "Saved",
     "failed": "Save failed",
-    "retry": "Retry saving"
+    "retry": "Retry saving",
+    "unsaved": "Not saved: fix the highlighted field"
   },
   "search": {
     "label": "Search items",
@@ -226,7 +227,7 @@
     "conflictReloaded": "This draft was changed elsewhere and has been reloaded.",
     "discarded": "Draft discarded. Opening another draft.",
     "left": "This draft can no longer be edited. Opening another draft.",
-    "unsaved": "Changes are not saved yet. Check the connection and retry saving."
+    "unsaved": "Changes are not saved yet. Fix the highlighted fields, or check the connection and retry saving."
   },
   "validation": {
     "quantity": "Quantity must be a whole number of 1 or more.",

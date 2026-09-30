@@ -69,6 +69,12 @@ export function CustomLineDialog({
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
+  /**
+   * The line this dialog already added. When the follow-up mechanic
+   * assignment failed, a retry only retries that assignment (never a
+   * second addCustomLine).
+   */
+  const createdLineId = useRef<string | null>(null);
 
   useEffect(() => {
     const query = title.trim();
@@ -124,9 +130,32 @@ export function CustomLineDialog({
     }
   }
 
+  /** Sets the mechanic on the created line; false (with a message) on failure. */
+  async function assignMechanic(lineId: string): Promise<boolean> {
+    if (!mechanicId) return true;
+    const assigned = await send({ kind: 'updateLine', lineId, mechanicId });
+    if (!assigned.ok) {
+      setFormError(errorMessage(t, assigned.error));
+      return false;
+    }
+    return true;
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
+    if (createdLineId.current) {
+      setBusy(true);
+      setFormError(null);
+      try {
+        if (await assignMechanic(createdLineId.current)) onClose();
+      } catch {
+        setFormError(t('errors.INTERNAL_ERROR'));
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     const next: Record<string, string> = {};
     if (!title.trim()) next.title = 'validation.required';
     const unitPrice = parseRupiahInput(price);
@@ -164,15 +193,8 @@ export function CustomLineDialog({
           .filter((l) => !before.has(l.id) && l.source === 'CUSTOM')
           .sort((a, b) => b.position - a.position)[0];
         if (line) {
-          const assigned = await send({
-            kind: 'updateLine',
-            lineId: line.id,
-            mechanicId,
-          });
-          if (!assigned.ok) {
-            setFormError(errorMessage(t, assigned.error));
-            return;
-          }
+          createdLineId.current = line.id;
+          if (!(await assignMechanic(line.id))) return;
         }
       }
       onClose();

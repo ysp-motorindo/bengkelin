@@ -65,6 +65,60 @@ describe('cashier workspace', () => {
   });
 });
 
+describe('invalid unsent input is never labelled saved (C1)', () => {
+  test('150 is saved, then 150.00O: "Not saved", and the checkout review does not open', async () => {
+    const bridge = install();
+    render(<CashierWorkspace />);
+    const user = userEvent.setup();
+    await screen.findByRole('combobox', { name: 'Cari barang' });
+    await user.click(screen.getByRole('button', { name: 'Tambah pembayaran' }));
+    const amount = screen.getByRole('textbox', { name: 'Nominal 1' });
+    await user.type(amount, '150');
+    await waitFor(() =>
+      expect(screen.getByTestId('save-state')).toHaveAttribute(
+        'data-state',
+        'saved',
+      ),
+    );
+    const allocationOps = () =>
+      bridge.drafts.apply.mock.calls
+        .map((call) => (call[0] as DraftCommand).op)
+        .filter((op) => op.kind === 'setCheckoutAllocations');
+    expect(allocationOps().at(-1)).toMatchObject({
+      allocations: [{ method: 'CASH', amount: '150' }],
+    });
+
+    await user.type(amount, '.00O');
+    expect(screen.getByTestId('save-state')).toHaveAttribute(
+      'data-state',
+      'unsaved',
+    );
+    expect(screen.getByTestId('save-state')).not.toHaveTextContent('Tersimpan');
+    const sent = allocationOps().length;
+    await getWorkspaceActions()!.openCheckoutReview();
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Perubahan belum tersimpan',
+    );
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(await getWorkspaceActions()!.saveDraft()).toBe(false);
+    expect(allocationOps()).toHaveLength(sent);
+
+    // Fixing the value sends it; then the state is Saved again.
+    await user.clear(amount);
+    await user.type(amount, '150.000');
+    expect(await getWorkspaceActions()!.saveDraft()).toBe(true);
+    expect(allocationOps().at(-1)).toMatchObject({
+      allocations: [{ method: 'CASH', amount: '150000' }],
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('save-state')).toHaveAttribute(
+        'data-state',
+        'saved',
+      ),
+    );
+  });
+});
+
 describe('scanner Enter after new input is a scan, never a highlighted pick', () => {
   const SERVICE: CatalogItemDto = {
     id: '3c9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11',
