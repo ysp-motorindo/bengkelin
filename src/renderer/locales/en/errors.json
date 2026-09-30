@@ -20,5 +20,22 @@
   "REFERENCE_DUPLICATE": "That name or code is already in use.",
   "REFERENCE_CODE_IMMUTABLE": "The code cannot be changed after creation.",
   "ALREADY_OWNER": "This customer already owns the vehicle.",
-  "OWNERSHIP_TRANSFER_TOO_SOON": "Ownership was just recorded. Wait a moment and try again."
+  "OWNERSHIP_TRANSFER_TOO_SOON": "Ownership was just recorded. Wait a moment and try again.",
+  "DUPLICATE_SKU": "That SKU is already used by another item.",
+  "DUPLICATE_BARCODE": "Barcode {{barcode}} already belongs to \"{{owner}}\".",
+  "UNKNOWN_BARCODE": "Unknown barcode. No item was created.",
+  "BARCODE_INACTIVE": "This barcode is inactive.",
+  "CATALOG_ITEM_INACTIVE": "This item is inactive and cannot be sold.",
+  "CATALOG_ITEM_NOT_FOUND": "Item not found.",
+  "UNIT_NOT_FOUND": "Unit not found.",
+  "UNIT_INACTIVE": "The selected unit is inactive.",
+  "CHANNEL_NOT_FOUND": "Channel not found.",
+  "CHANNEL_INACTIVE": "The selected channel is inactive.",
+  "PRICE_START_CONFLICT": "A price already starts at that exact time for this channel. Choose another time, or correct that price instead.",
+  "CORRECTION_REASON_REQUIRED": "Enter the reason for the correction.",
+  "PRICE_CORRECTION_TARGET_INVALID": "That price can no longer be corrected. Reload and try again.",
+  "PRICE_PREVIEW_STALE": "Prices changed since the preview. Review the new preview before applying.",
+  "PRICE_PREVIEW_EXPIRED": "The preview expired. Preview the change again.",
+  "INVALID_INSTANT": "Invalid date and time.",
+  "NEGATIVE_MONEY": "The price cannot be negative."
 }

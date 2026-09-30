@@ -70,7 +70,11 @@ export async function executeCommand(
       });
       return {
         ok: false,
-        error: { code: error.code, messageKey: `errors.${error.code}` },
+        error: {
+          code: error.code,
+          messageKey: `errors.${error.code}`,
+          ...(error.params ? { params: error.params } : {}),
+        },
       };
     }
     logger.error('command.failed', { channel: cmd.channel, error });

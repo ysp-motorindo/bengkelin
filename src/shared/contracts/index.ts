@@ -5,3 +5,4 @@ export * from './cashiers';
 export * from './references';
 export * from './customers';
 export * from './vehicles';
+export * from './catalog';

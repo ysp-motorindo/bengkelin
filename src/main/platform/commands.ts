@@ -1,18 +1,26 @@
 import { CHANNELS } from '@/shared/channels';
 import {
+  applyPriceChangeInputSchema,
   cashierIdInputSchema,
+  catalogIdInputSchema,
   changeRoleInputSchema,
   createCashierInputSchema,
   customerIdInputSchema,
+  listPricesInputSchema,
   listReferencesInputSchema,
   loginInputSchema,
+  lookupBarcodeInputSchema,
   noInput,
   preferencesInputSchema,
+  priceChangeInputSchema,
   referenceIdInputSchema,
   resetPasswordInputSchema,
+  saveBarcodesInputSchema,
+  saveCatalogItemInputSchema,
   saveCustomerInputSchema,
   saveReferenceInputSchema,
   saveVehicleInputSchema,
+  searchCatalogInputSchema,
   searchCustomersInputSchema,
   searchVehiclesInputSchema,
   setupInputSchema,
@@ -38,6 +46,7 @@ export function buildCommands(services: ApplicationServices): Command[] {
     references,
     customers,
     vehicles,
+    catalog,
     app,
     sessions,
   } = services;
@@ -163,6 +172,43 @@ export function buildCommands(services: ApplicationServices): Command[] {
       transferOwnershipInputSchema,
       ({ windowId }, input) =>
         vehicles.transferOwnership(session(windowId), input),
+    ),
+
+    command(C.catalog.search, searchCatalogInputSchema, ({ windowId }, input) =>
+      catalog.search(session(windowId), input),
+    ),
+    command(C.catalog.get, catalogIdInputSchema, ({ windowId }, input) =>
+      catalog.get(session(windowId), input),
+    ),
+    command(C.catalog.save, saveCatalogItemInputSchema, ({ windowId }, input) =>
+      catalog.save(session(windowId), input),
+    ),
+    command(
+      C.catalog.saveBarcodes,
+      saveBarcodesInputSchema,
+      ({ windowId }, input) => catalog.saveBarcodes(session(windowId), input),
+    ),
+    command(
+      C.catalog.lookupBarcode,
+      lookupBarcodeInputSchema,
+      ({ windowId }, input) => catalog.lookupBarcode(session(windowId), input),
+    ),
+    command(
+      C.catalog.listPrices,
+      listPricesInputSchema,
+      ({ windowId }, input) => catalog.listPrices(session(windowId), input),
+    ),
+    command(
+      C.catalog.previewPriceChange,
+      priceChangeInputSchema,
+      ({ windowId }, input) =>
+        catalog.previewPriceChange(session(windowId), input),
+    ),
+    command(
+      C.catalog.applyPriceChange,
+      applyPriceChangeInputSchema,
+      ({ windowId }, input) =>
+        catalog.applyPriceChange(session(windowId), input.token),
     ),
   ];
 }

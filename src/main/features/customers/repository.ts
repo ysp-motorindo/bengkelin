@@ -51,7 +51,7 @@ const COLUMNS =
   'id, name, phone_number, email, birthdate, address, rt, rw, kelurahan, kecamatan, city_or_regency, province, postal_code, created_at, updated_at';
 
 /** Escapes LIKE wildcards so user input is always matched literally. */
-function likePattern(value: string): string {
+export function likePattern(value: string): string {
   return `%${value.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 }
 

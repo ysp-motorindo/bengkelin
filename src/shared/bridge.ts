@@ -1,24 +1,37 @@
 import type {
+  AppliedPriceChangeDto,
   CashierDto,
+  CatalogIdInput,
+  CatalogItemDto,
   CashierIdInput,
   CashierSession,
   ChangeRoleInput,
   CreateCashierInput,
   CustomerDetailDto,
   CustomerIdInput,
+  ApplyPriceChangeInput,
+  ListPricesInput,
   ListReferencesInput,
   LoginInput,
+  LookupBarcodeInput,
   PreferencesInput,
+  PriceChangeInput,
+  PricePreviewDto,
+  PriceTimelineDto,
   OwnershipTransferInput,
   PublicSettings,
   ReferenceDto,
   ReferenceIdInput,
   ResetPasswordInput,
+  SaveBarcodesInput,
+  SaveCatalogItemInput,
   SaveCustomerInput,
   SaveCustomerResult,
   SaveReferenceInput,
   SaveVehicleInput,
   SaveVehicleResult,
+  SearchCatalogInput,
+  SearchCatalogResult,
   SearchCustomersInput,
   SearchCustomersResult,
   SearchVehiclesInput,
@@ -78,6 +91,24 @@ export interface BengkelinApi {
     transferOwnership(
       input: OwnershipTransferInput,
     ): Promise<Result<VehicleDetailDto>>;
+  };
+  readonly catalog: {
+    search(input: SearchCatalogInput): Promise<Result<SearchCatalogResult>>;
+    get(input: CatalogIdInput): Promise<Result<CatalogItemDto>>;
+    /** ADMIN. */
+    save(input: SaveCatalogItemInput): Promise<Result<CatalogItemDto>>;
+    /** ADMIN. */
+    saveBarcodes(input: SaveBarcodesInput): Promise<Result<CatalogItemDto>>;
+    lookupBarcode(input: LookupBarcodeInput): Promise<Result<CatalogItemDto>>;
+    listPrices(input: ListPricesInput): Promise<Result<PriceTimelineDto>>;
+    /** ADMIN. */
+    previewPriceChange(
+      input: PriceChangeInput,
+    ): Promise<Result<PricePreviewDto>>;
+    /** ADMIN. */
+    applyPriceChange(
+      input: ApplyPriceChangeInput,
+    ): Promise<Result<AppliedPriceChangeDto>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;
