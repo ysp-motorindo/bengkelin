@@ -41,14 +41,18 @@ export interface FullInvoiceRow {
   shop_identity_snapshot: string | null;
   voided_at: Instant | null;
   voided_by_cashier_id: string | null;
-  voided_by_name: string | null;
+  voided_by_name_snapshot: string | null;
   void_reason: string | null;
 }
 
 export interface HeaderSnapshots {
   customerName: string | null;
   customerPhone: string | null;
+  /** normalizePhone(customerPhone): the history search key (008). */
+  customerPhoneNormalized: string | null;
   plateNumber: string | null;
+  /** normalizePlate(plateNumber): the history search key (008). */
+  plateNumberNormalized: string | null;
   vehicleDescription: string | null;
   channelLabel: string;
   cashierName: string;
@@ -76,10 +80,9 @@ export class InvoiceRepository {
            i.invoice_number, i.cashier_id, i.finalized_at, i.customer_name_snapshot,
            i.customer_phone_snapshot, i.plate_number_snapshot, i.vehicle_description_snapshot,
            i.channel_label_snapshot, i.cashier_name_snapshot, i.shop_identity_snapshot,
-           i.voided_at, i.voided_by_cashier_id, vb.display_name AS voided_by_name, i.void_reason
+           i.voided_at, i.voided_by_cashier_id, i.voided_by_name_snapshot, i.void_reason
          FROM invoices i
          JOIN cashiers cb ON cb.id = i.created_by_cashier_id
-         LEFT JOIN cashiers vb ON vb.id = i.voided_by_cashier_id
          WHERE i.id = ?`,
       )
       .get(id) as FullInvoiceRow | undefined;
@@ -146,14 +149,17 @@ export class InvoiceRepository {
     const changes = this.db
       .prepare(
         `UPDATE invoices SET customer_name_snapshot = ?, customer_phone_snapshot = ?,
-           plate_number_snapshot = ?, vehicle_description_snapshot = ?,
+           customer_phone_normalized_snapshot = ?, plate_number_snapshot = ?,
+           plate_number_normalized_snapshot = ?, vehicle_description_snapshot = ?,
            channel_label_snapshot = ?, cashier_name_snapshot = ?, shop_identity_snapshot = ?
          WHERE id = ? AND status = 'DRAFT' AND discarded_at IS NULL`,
       )
       .run(
         s.customerName,
         s.customerPhone,
+        s.customerPhoneNormalized,
         s.plateNumber,
+        s.plateNumberNormalized,
         s.vehicleDescription,
         s.channelLabel,
         s.cashierName,
@@ -210,6 +216,36 @@ export class InvoiceRepository {
           input.now,
           input.invoiceId,
           input.expectedVersion,
+        ).changes === 1
+    );
+  }
+
+  /**
+   * FINALIZED -> VOID in one guarded update (the 006 transition and 008
+   * void-name triggers allow exactly these columns). Returns false when the
+   * row was not FINALIZED.
+   */
+  markVoided(input: {
+    invoiceId: string;
+    cashierId: string;
+    cashierName: string;
+    reason: string;
+    now: Instant;
+  }): boolean {
+    return (
+      this.db
+        .prepare(
+          `UPDATE invoices SET status = 'VOID', voided_at = ?, voided_by_cashier_id = ?,
+             voided_by_name_snapshot = ?, void_reason = ?, version = version + 1, updated_at = ?
+           WHERE id = ? AND status = 'FINALIZED'`,
+        )
+        .run(
+          input.now,
+          input.cashierId,
+          input.cashierName,
+          input.reason,
+          input.now,
+          input.invoiceId,
         ).changes === 1
     );
   }

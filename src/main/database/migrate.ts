@@ -1,4 +1,8 @@
 import type { AppDatabase } from './connection';
+import {
+  normalizePhone,
+  normalizePlate,
+} from '@/main/features/vehicles/normalization';
 import { DatabaseError } from './errors';
 import {
   APPLICATION_ID,
@@ -35,6 +39,27 @@ export const latestBundledVersion: number = bundledMigrations.reduce(
   0,
 );
 
+/**
+ * Deterministic SQL functions available to migration SQL, so a backfill can
+ * use exactly the app's own normalization (008 search snapshots). Only
+ * migrations call them; no trigger, index or view depends on them, so the
+ * database stays readable by any SQLite tool.
+ */
+function registerMigrationFunctions(db: AppDatabase): void {
+  const text = (fn: (value: string) => string) => (value: unknown) =>
+    value === null || value === undefined ? null : fn(String(value));
+  db.function(
+    'bengkelin_normalize_phone',
+    { deterministic: true },
+    text(normalizePhone),
+  );
+  db.function(
+    'bengkelin_normalize_plate',
+    { deterministic: true },
+    text(normalizePlate),
+  );
+}
+
 function orderAndValidate(migrations: readonly Migration[]): Migration[] {
   const ordered = [...migrations].sort((a, b) => a.version - b.version);
   ordered.forEach((m, index) => {
@@ -62,6 +87,7 @@ export function migrateDatabase(
   const ordered = orderAndValidate(migrations);
   assertOwnDatabase(db);
   assertSupportedSchema(db, ordered.length);
+  registerMigrationFunctions(db);
 
   for (const migration of ordered) {
     if (migration.version <= readSchemaVersion(db)) continue;

@@ -1696,7 +1696,7 @@ describe('no side effects and the status guard', () => {
     h.db
       .prepare(
         `UPDATE invoices SET status = 'VOID', voided_at = ?, voided_by_cashier_id = ?, void_reason = 'Salah input',
-         version = version + 1, updated_at = ? WHERE id = ?`,
+         voided_by_name_snapshot = 'Siti', version = version + 1, updated_at = ? WHERE id = ?`,
       )
       .run(at(T0 + HOUR), cashierId, at(T0 + HOUR), draft.id);
     expect(() =>

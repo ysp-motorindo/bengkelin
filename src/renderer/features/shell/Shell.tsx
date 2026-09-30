@@ -9,13 +9,22 @@ import { cn } from '@/renderer/lib/utils';
 import { CatalogScreen } from '@/renderer/features/catalog/CatalogScreen';
 import { InventoryScreen } from '@/renderer/features/inventory/InventoryScreen';
 import { CustomersScreen } from '@/renderer/features/customers/CustomersScreen';
+import { HistoryScreen } from '@/renderer/features/history/HistoryScreen';
+import { ReceivablesScreen } from '@/renderer/features/history/ReceivablesScreen';
 import { ReferencesScreen } from '@/renderer/features/references/ReferencesScreen';
 import { CashierWorkspace } from '@/renderer/features/workspace/CashierWorkspace';
 import type { FinalizeClient } from '@/renderer/features/workspace/checkout/finalize-client';
 import type { CashierSession, PublicSettings } from '@/shared/contracts';
 import { PreferencesControls } from './PreferencesControls';
 
-type View = 'workspace' | 'customers' | 'catalog' | 'inventory' | 'references';
+type View =
+  | 'workspace'
+  | 'history'
+  | 'receivables'
+  | 'customers'
+  | 'catalog'
+  | 'inventory'
+  | 'references';
 
 interface ShellProps {
   session: CashierSession;
@@ -59,8 +68,23 @@ export function Shell({
 
   const views: View[] =
     session.role === 'ADMIN'
-      ? ['workspace', 'customers', 'catalog', 'inventory', 'references']
-      : ['workspace', 'customers', 'catalog', 'inventory'];
+      ? [
+          'workspace',
+          'history',
+          'receivables',
+          'customers',
+          'catalog',
+          'inventory',
+          'references',
+        ]
+      : [
+          'workspace',
+          'history',
+          'receivables',
+          'customers',
+          'catalog',
+          'inventory',
+        ];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -120,6 +144,8 @@ export function Shell({
         <div hidden={view !== 'workspace'}>
           <CashierWorkspace finalizer={finalizer} />
         </div>
+        {view === 'history' ? <HistoryScreen session={session} /> : null}
+        {view === 'receivables' ? <ReceivablesScreen /> : null}
         {view === 'customers' ? <CustomersScreen /> : null}
         {view === 'catalog' ? <CatalogScreen role={session.role} /> : null}
         {view === 'inventory' ? <InventoryScreen role={session.role} /> : null}

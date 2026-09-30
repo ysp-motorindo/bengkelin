@@ -83,5 +83,9 @@ export const CHANNELS = {
     previewFinalize: 'bengkelin:invoices:previewFinalize',
     finalize: 'bengkelin:invoices:finalize',
     get: 'bengkelin:invoices:get',
+    recordPayment: 'bengkelin:invoices:recordPayment',
+    void: 'bengkelin:invoices:void',
+    search: 'bengkelin:invoices:search',
+    receivables: 'bengkelin:invoices:receivables',
   },
 } as const;

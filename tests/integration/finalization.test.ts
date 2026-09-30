@@ -1269,8 +1269,9 @@ describe('database guards', () => {
     ).toThrow(/finalized/);
 
     const insert = h.db.prepare(
-      `INSERT INTO payments (id, invoice_id, method, amount, paid_at, received_by_cashier_id, source, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'LATER', ?)`,
+      `INSERT INTO payments (id, invoice_id, method, amount, paid_at, received_by_cashier_id,
+         received_by_name_snapshot, source, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'Siti', 'LATER', ?)`,
     );
     // Overpayment: 40000 paid + 60001 > 100000.
     expect(() =>
@@ -1291,8 +1292,9 @@ describe('database guards', () => {
     const item = await pricedItem('100000');
     const draft = await draftWith([{ itemId: item.id }]);
     const insert = h.db.prepare(
-      `INSERT INTO payments (id, invoice_id, method, amount, paid_at, received_by_cashier_id, source, created_at)
-       VALUES (?, ?, 'CASH', 1000, ?, ?, 'LATER', ?)`,
+      `INSERT INTO payments (id, invoice_id, method, amount, paid_at, received_by_cashier_id,
+         received_by_name_snapshot, source, created_at)
+       VALUES (?, ?, 'CASH', 1000, ?, ?, 'Siti', 'LATER', ?)`,
     );
     expect(() =>
       insert.run(uuid(), draft.id, at(T0), cashierId, at(T0)),
@@ -1301,7 +1303,7 @@ describe('database guards', () => {
     h.db
       .prepare(
         `UPDATE invoices SET status = 'VOID', voided_at = ?, voided_by_cashier_id = ?, void_reason = 'x',
-           version = version + 1, updated_at = ? WHERE id = ?`,
+           voided_by_name_snapshot = 'Siti', version = version + 1, updated_at = ? WHERE id = ?`,
       )
       .run(at(T0), cashierId, at(T0), draft.id);
     expect(() =>

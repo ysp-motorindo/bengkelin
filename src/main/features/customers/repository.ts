@@ -50,9 +50,19 @@ export type CustomerFields = Omit<
 const COLUMNS =
   'id, name, phone_number, email, birthdate, address, rt, rw, kelurahan, kecamatan, city_or_regency, province, postal_code, created_at, updated_at';
 
+/** Escapes LIKE wildcards (use with `ESCAPE '\\'`). */
+export function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
 /** Escapes LIKE wildcards so user input is always matched literally. */
 export function likePattern(value: string): string {
-  return `%${value.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  return `%${escapeLike(value)}%`;
+}
+
+/** Literal prefix match (`value%`), wildcards in the input escaped. */
+export function likePrefix(value: string): string {
+  return `${escapeLike(value)}%`;
 }
 
 export class CustomerRepository {
