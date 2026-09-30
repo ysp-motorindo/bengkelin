@@ -43,7 +43,7 @@ export function CheckoutPanel({
   onError,
 }: CheckoutPanelProps) {
   const { t, i18n } = useTranslation();
-  const { view, send, edit, isDirty, flush } = commands;
+  const { view, send, edit, isDirty, markInvalid, flush } = commands;
   const separator = i18n.language === 'en' ? '.' : ',';
   const { totals } = view;
 
@@ -83,6 +83,8 @@ export function CheckoutPanel({
             ? 'workspace.validation.discountGap'
             : 'workspace.validation.percentage',
       });
+      // Never "Saved" while the typed value is invalid (and unsent).
+      markInvalid('invoiceDiscounts', true);
       return;
     }
     setDiscountError(null);
@@ -112,7 +114,12 @@ export function CheckoutPanel({
       });
     });
     setRowErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      // Never "Saved" while a typed amount is invalid (and unsent): the
+      // review must not open on the older server allocations.
+      markInvalid('allocations', true);
+      return;
+    }
     edit('allocations', { kind: 'setCheckoutAllocations', allocations });
   }
 

@@ -10,15 +10,16 @@ interface SaveIndicatorProps {
 }
 
 /**
- * Saving / Saved / Failed. "Saved" is only shown when every command has been
- * acknowledged by main and no debounced input is waiting.
+ * Saving / Saved / Failed / Not saved. "Saved" is only shown when every
+ * command has been acknowledged by main, no debounced input is waiting and
+ * no field holds invalid (unsent) input ("Not saved").
  */
 export function SaveIndicator({ state, onRetry }: SaveIndicatorProps) {
   const { t } = useTranslation();
   const Icon =
     state === 'saving'
       ? LoaderCircle
-      : state === 'failed'
+      : state === 'failed' || state === 'unsaved'
         ? CloudAlert
         : CloudCheck;
   return (
@@ -29,7 +30,7 @@ export function SaveIndicator({ state, onRetry }: SaveIndicatorProps) {
           'size-4',
           state === 'saving' && 'animate-spin text-muted-foreground',
           state === 'saved' && 'text-success',
-          state === 'failed' && 'text-destructive',
+          (state === 'failed' || state === 'unsaved') && 'text-destructive',
         )}
       />
       <p
@@ -38,7 +39,9 @@ export function SaveIndicator({ state, onRetry }: SaveIndicatorProps) {
         data-state={state}
         className={cn(
           'text-sm',
-          state === 'failed' ? 'text-destructive' : 'text-muted-foreground',
+          state === 'failed' || state === 'unsaved'
+            ? 'text-destructive'
+            : 'text-muted-foreground',
         )}
       >
         {t(`workspace.save.${state}`)}

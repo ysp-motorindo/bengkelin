@@ -58,7 +58,7 @@ export function DraftHeader({
   onError,
 }: DraftHeaderProps) {
   const { t } = useTranslation();
-  const { view, send, edit, isDirty } = commands;
+  const { view, send, edit, isDirty, markInvalid } = commands;
   const [pending, setPending] = useState<Pending>(null);
   const [date, setDate] = useState(view.invoiceDate);
   const [dateKey, setDateKey] = useState(view.invoiceDate);
@@ -133,6 +133,8 @@ export function DraftHeader({
         ...current,
         [key]: 'workspace.validation.wholeNumber',
       }));
+      // Never "Saved" while the typed value is invalid (and unsent).
+      markInvalid(key, true);
       return;
     }
     setFieldErrors((current) => {
