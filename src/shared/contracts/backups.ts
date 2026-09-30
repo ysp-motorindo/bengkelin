@@ -1,4 +1,6 @@
+import { z } from 'zod';
 import type { Instant } from '../primitives';
+import { uuidSchema, type UUID } from './common';
 
 /**
  * Validated local backups (spec 42, 43, 46; Part A `backups.create`).
@@ -83,4 +85,61 @@ export interface BackupStatusDto {
 export interface BackupDestinationChoiceDto {
   outcome: 'UPDATED' | 'CANCELLED';
   status: BackupStatusDto;
+}
+
+// ---- restore (spec 43; Part A backups.inspectRestore / backups.restore) ----
+
+/**
+ * The phrase an ADMIN types before the Restore button is enabled
+ * (deliberate confirmation). The service itself requires `confirmed: true`.
+ */
+export const RESTORE_CONFIRMATION_PHRASES = {
+  id: 'PULIHKAN',
+  en: 'RESTORE',
+} as const;
+
+export const restoreInputSchema = z.strictObject({
+  token: uuidSchema,
+  confirmed: z.literal(true, 'validation.invalid'),
+});
+export type RestoreInput = z.infer<typeof restoreInputSchema>;
+
+export const cancelRestoreInputSchema = z.strictObject({ token: uuidSchema });
+export type CancelRestoreInput = z.infer<typeof cancelRestoreInputSchema>;
+
+export interface RestoreCountsDto {
+  /** Discarded drafts are not counted. */
+  invoices: { draft: number; finalized: number; void: number };
+  catalogItems: number;
+  customers: number;
+  cashiers: number;
+}
+
+/** What the staged (validated, migrated) copy of the selected file holds. */
+export interface RestorePreviewDto {
+  /** Opaque, single use; expires at `expiresAt`. */
+  token: UUID;
+  expiresAt: Instant;
+  sourceFileName: string;
+  /** Bytes. */
+  sourceSize: number;
+  /** Schema version of the selected file ... */
+  originalSchemaVersion: number;
+  /** ... and after migration (the application's current version). */
+  schemaVersion: number;
+  shopName: string;
+  counts: RestoreCountsDto;
+  latestFinalizedAt: Instant | null;
+  /** Always at least 1 (otherwise RESTORE_NO_ACTIVE_ADMIN). */
+  activeAdmins: number;
+}
+
+export type RestoreInspectionDto =
+  | { outcome: 'CANCELLED' }
+  | { outcome: 'READY'; preview: RestorePreviewDto };
+
+/** The database was replaced; the application restarts to the login screen. */
+export interface RestoreStartedDto {
+  restarting: true;
+  safetyBackupFileName: string;
 }

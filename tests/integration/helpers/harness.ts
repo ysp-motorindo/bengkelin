@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { openDatabase, type AppDatabase } from '@/main/database/connection';
 import { migrateDatabase } from '@/main/database/migrate';
-import { createApplicationServices } from '@/main/compose';
+import {
+  createApplicationServices,
+  type RestoreCompositionDeps,
+} from '@/main/compose';
 import type { FileDialogs, PrintDriver } from '@/main/features/printing/driver';
 import { executeCommand } from '@/main/platform/command';
 import { buildCommands } from '@/main/platform/commands';
@@ -36,6 +39,8 @@ export function createHarness(
     clock?: Clock;
     printDriver?: PrintDriver;
     dialogs?: FileDialogs;
+    /** Restore seams (relaunch stub, hooks, fs layer, token TTL). */
+    restore?: RestoreCompositionDeps;
   } = {},
 ) {
   const dir = mkdtempSync(path.join(tmpdir(), 'bengkelin-auth-'));
@@ -59,6 +64,10 @@ export function createHarness(
       assetsDir,
       ...(options.printDriver ? { printDriver: options.printDriver } : {}),
       ...(options.dialogs ? { dialogs: options.dialogs } : {}),
+      // userData = the temp dir; the live database is `db.sqlite` in it.
+      dataDir: dir,
+      databasePath: file,
+      restore: options.restore ?? {},
       openPath: async (target) => {
         opened.push(target);
         return '';
@@ -107,7 +116,8 @@ export function createHarness(
      * services (an app restart: every session is gone).
      */
     reopen() {
-      current.db.close();
+      // A restore closes the connection itself before replacing the file.
+      if (current.db.open) current.db.close();
       current = build();
     },
     close() {

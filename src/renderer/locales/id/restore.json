@@ -1,0 +1,27 @@
+{
+  "title": "Pulihkan Data",
+  "description": "Ganti seluruh database aplikasi dengan isi file cadangan. Hanya ADMIN yang dapat memulihkan data.",
+  "chooseFile": "Pilih file cadangan...",
+  "confirmLabel": "Ketik {{phrase}} untuk mengonfirmasi",
+  "restore": "Pulihkan",
+  "working": "Memulihkan...",
+  "cancel": "Batal",
+  "restarting": "Database telah dipulihkan. Aplikasi dimulai ulang; silakan masuk kembali.",
+  "flushFailed": "Perubahan draf belum tersimpan, jadi pemulihan tidak dimulai. Periksa draf yang gagal disimpan lalu coba lagi.",
+  "preview": {
+    "title": "Pratinjau cadangan: {{fileName}}",
+    "shop": "Nama bengkel",
+    "schema": "Versi skema",
+    "schemaMigrated": "{{from}} (akan diperbarui ke {{to}})",
+    "invoices": "Faktur",
+    "invoiceCounts": "{{finalized}} final, {{void}} batal, {{draft}} draf",
+    "latestFinalized": "Faktur terakhir",
+    "none": "Belum ada",
+    "catalogItems": "Item katalog",
+    "customers": "Pelanggan",
+    "cashiers": "Kasir",
+    "cashierCounts": "{{total}} (ADMIN aktif: {{admins}})",
+    "warning": "Semua data saat ini akan diganti dengan isi cadangan ini. Transaksi yang dibuat setelah cadangan ini tidak akan ada lagi di aplikasi.",
+    "safetyNote": "Cadangan pengaman data saat ini dibuat otomatis sebelum pemulihan. Nomor faktur yang sudah pernah dipakai tidak akan dipakai ulang."
+  }
+}

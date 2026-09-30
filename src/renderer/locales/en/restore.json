@@ -1,0 +1,27 @@
+{
+  "title": "Restore",
+  "description": "Replace the whole application database with the contents of a backup file. Only an ADMIN can restore data.",
+  "chooseFile": "Choose backup file...",
+  "confirmLabel": "Type {{phrase}} to confirm",
+  "restore": "Restore",
+  "working": "Restoring...",
+  "cancel": "Cancel",
+  "restarting": "The database was restored. The application is restarting; please sign in again.",
+  "flushFailed": "Draft changes are not saved yet, so the restore did not start. Check the draft that failed to save and try again.",
+  "preview": {
+    "title": "Backup preview: {{fileName}}",
+    "shop": "Shop name",
+    "schema": "Schema version",
+    "schemaMigrated": "{{from}} (will be upgraded to {{to}})",
+    "invoices": "Invoices",
+    "invoiceCounts": "{{finalized}} finalized, {{void}} void, {{draft}} draft",
+    "latestFinalized": "Latest invoice",
+    "none": "None yet",
+    "catalogItems": "Catalog items",
+    "customers": "Customers",
+    "cashiers": "Cashiers",
+    "cashierCounts": "{{total}} (active ADMINs: {{admins}})",
+    "warning": "All current data will be replaced with the contents of this backup. Transactions made after this backup will no longer be in the application.",
+    "safetyNote": "A safety backup of the current data is made automatically before restoring. Invoice numbers already used are never reused."
+  }
+}

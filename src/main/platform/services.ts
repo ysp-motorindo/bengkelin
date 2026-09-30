@@ -14,9 +14,11 @@ import type { LogoService } from '@/main/features/settings/logo-service';
 import type { PrintingService } from '@/main/features/printing/service';
 import type { ReportService } from '@/main/features/reports/service';
 import type { BackupService } from '@/main/features/backups/service';
+import type { RestoreService } from '@/main/features/backups/restore';
 import type { CatalogTransferService } from '@/main/features/catalog-transfer/service';
 import type { AppService } from './app-service';
 import type { Logger } from './logger';
+import type { MaintenanceGate } from './maintenance';
 
 /**
  * Application services handed to the command table. Feature tasks add their
@@ -26,6 +28,8 @@ import type { Logger } from './logger';
 export interface ApplicationServices {
   logger: Logger;
   sessions: SessionStore;
+  /** Restore's maintenance flag (checked by the command table). */
+  maintenance: MaintenanceGate;
   auth: AuthService;
   settings: SettingsService;
   cashiers: CashierService;
@@ -41,6 +45,7 @@ export interface ApplicationServices {
   reports: ReportService;
   logo: LogoService;
   backups: BackupService;
+  restore: RestoreService;
   catalogTransfer: CatalogTransferService;
   app: AppService;
 }

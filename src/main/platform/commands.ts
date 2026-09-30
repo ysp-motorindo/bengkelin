@@ -21,6 +21,8 @@ import {
   searchAdHocReferencesInputSchema,
   catalogIdInputSchema,
   commitImportInputSchema,
+  cancelRestoreInputSchema,
+  restoreInputSchema,
   changeRoleInputSchema,
   createCashierInputSchema,
   customerIdInputSchema,
@@ -54,7 +56,80 @@ import {
   vehicleIdInputSchema,
 } from '@/shared/contracts';
 import { command, type Command } from './command';
+import type { MaintenanceGate } from './maintenance';
 import type { ApplicationServices } from './services';
+
+const C = CHANNELS;
+
+/**
+ * Commands that only read the database (or nothing at all). They keep
+ * working while a restore blocks writes. Every other command is treated as
+ * mutating: a new channel is blocked during a restore unless listed here.
+ */
+const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
+  C.app.ping,
+  C.app.openLogFolder,
+  C.auth.currentSession,
+  C.settings.getPublic,
+  C.settings.getShop,
+  C.settings.getLogo,
+  C.cashiers.list,
+  C.references.listActive,
+  C.references.list,
+  C.customers.search,
+  C.customers.get,
+  C.vehicles.searchByPlate,
+  C.vehicles.get,
+  C.catalog.search,
+  C.catalog.get,
+  C.catalog.lookupBarcode,
+  C.catalog.listPrices,
+  C.inventory.getStock,
+  C.inventory.listStock,
+  C.inventory.history,
+  C.drafts.list,
+  C.drafts.get,
+  C.adHocReferences.search,
+  C.invoices.previewFinalize,
+  C.invoices.get,
+  C.invoices.search,
+  C.invoices.receivables,
+  C.printing.preview,
+  C.printing.getOptions,
+  C.printing.listPrinters,
+  C.printing.getSettings,
+  C.reports.daily,
+  C.reports.preview,
+  C.backups.status,
+]);
+
+/** Guards itself: it is the command that sets the maintenance flag. */
+const SELF_GUARDED_CHANNELS: ReadonlySet<string> = new Set([C.backups.restore]);
+
+/**
+ * The maintenance gate (T16 restore): reads are refused only once the live
+ * connection is closed; mutating commands are refused as soon as a restore
+ * starts, and running ones are tracked so the restore can wait for them.
+ */
+function guarded(cmd: Command, maintenance: MaintenanceGate): Command {
+  if (
+    READ_ONLY_CHANNELS.has(cmd.channel) ||
+    SELF_GUARDED_CHANNELS.has(cmd.channel)
+  ) {
+    return {
+      ...cmd,
+      handler: (context, input) => {
+        maintenance.assertReadable();
+        return cmd.handler(context, input);
+      },
+    };
+  }
+  return {
+    ...cmd,
+    handler: (context, input) =>
+      maintenance.runWrite(() => cmd.handler(context, input)),
+  };
+}
 
 /**
  * The application's whole command surface: channel + Zod schema + handler.
@@ -79,14 +154,15 @@ export function buildCommands(services: ApplicationServices): Command[] {
     reports,
     logo,
     backups,
+    restore,
     catalogTransfer,
     app,
     sessions,
+    maintenance,
   } = services;
-  const C = CHANNELS;
   const session = (windowId: number) => sessions.get(windowId);
 
-  return [
+  const commands: Command[] = [
     command(C.app.ping, noInput, () => 'pong'),
     command(C.app.openLogFolder, noInput, ({ windowId }) =>
       app.openLogFolder(session(windowId)),
@@ -406,5 +482,17 @@ export function buildCommands(services: ApplicationServices): Command[] {
     command(C.backups.chooseDestination, noInput, ({ windowId }) =>
       backups.chooseDestination(session(windowId)),
     ),
+    command(C.backups.inspectRestore, noInput, ({ windowId }) =>
+      restore.inspect(session(windowId)),
+    ),
+    command(C.backups.restore, restoreInputSchema, ({ windowId }, input) =>
+      restore.restore(session(windowId), input),
+    ),
+    command(
+      C.backups.cancelRestore,
+      cancelRestoreInputSchema,
+      ({ windowId }, input) => restore.cancel(session(windowId), input),
+    ),
   ];
+  return commands.map((cmd) => guarded(cmd, maintenance));
 }

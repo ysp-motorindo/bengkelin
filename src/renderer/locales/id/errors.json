@@ -122,5 +122,15 @@
   "UNIT_REQUIRED": "Satuan wajib diisi untuk SKU baru.",
   "SERVICE_WITH_OPENING_STOCK": "Jasa tidak memiliki stok; kosongkan opening_stock.",
   "OPENING_STOCK_IGNORED": "SKU sudah ada: stok awal diabaikan. Ubah stok lewat menu Persediaan.",
-  "PRICE_UNCHANGED": "Harga sama dengan harga yang berlaku; tidak ada titik harga baru."
+  "PRICE_UNCHANGED": "Harga sama dengan harga yang berlaku; tidak ada titik harga baru.",
+  "RESTORE_IN_PROGRESS": "Pemulihan database sedang berjalan. Perubahan tidak dapat disimpan sampai aplikasi dimulai ulang.",
+  "RESTORE_SAFETY_BACKUP_FAILED": "Cadangan pengaman gagal dibuat, jadi pemulihan dibatalkan dan tidak ada yang berubah. Periksa folder cadangan lalu coba lagi.",
+  "RESTORE_MIGRATION_FAILED": "Cadangan ini tidak dapat diperbarui ke versi aplikasi saat ini. Tidak ada yang berubah.",
+  "RESTORE_NO_ACTIVE_ADMIN": "Cadangan ini tidak memiliki ADMIN aktif, sehingga tidak ada yang dapat masuk setelah pemulihan. Pilih cadangan lain.",
+  "RESTORE_TOKEN_EXPIRED": "Pratinjau pemulihan sudah kedaluwarsa. Pilih file cadangan lagi.",
+  "RESTORE_NOT_CONFIRMED": "Pemulihan harus dikonfirmasi terlebih dahulu.",
+  "RESTORE_VALIDATION_FAILED": "Salinan cadangan gagal diperiksa sebelum pemulihan. Tidak ada yang berubah.",
+  "RESTORE_FAILED": "Pemulihan tidak dapat diselesaikan. Data tetap utuh; jika aplikasi dimulai ulang, periksa data setelah masuk.",
+  "RESTORE_STAGING_FAILED": "File cadangan tidak dapat disalin untuk diperiksa (disk mungkin penuh). Tidak ada yang berubah.",
+  "RESTORE_BUSY": "Masih ada penyimpanan yang berjalan, jadi pemulihan dibatalkan. Coba lagi sebentar lagi."
 }

@@ -49,7 +49,9 @@ export class FakeDialogs implements FileDialogs {
   csvAnswers: (string | null)[] = [];
   backupDirAnswers: (string | null)[] = [];
   csvOpenAnswers: (string | null)[] = [];
+  restoreAnswers: (string | null)[] = [];
   openCalls = 0;
+  restoreCalls = 0;
   csvOpenCalls = 0;
   backupDirCalls = 0;
   saveCalls: string[] = [];
@@ -78,5 +80,10 @@ export class FakeDialogs implements FileDialogs {
   async chooseBackupDirectory(): Promise<string | null> {
     this.backupDirCalls += 1;
     return this.backupDirAnswers.shift() ?? null;
+  }
+
+  async chooseRestoreFile(): Promise<string | null> {
+    this.restoreCalls += 1;
+    return this.restoreAnswers.shift() ?? null;
   }
 }
