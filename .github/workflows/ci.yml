@@ -1,0 +1,124 @@
+# Bengkelin CI: the plan §4 verification gates on every trial platform
+# (Windows 11 x64, macOS 14+ Apple Silicon and Intel, Ubuntu 24.04 x64),
+# then packaging, release checks, installers and the packaged smoke test.
+# No signing and no publishing (plan §5); installers are uploaded as
+# workflow artifacts for the manual client-trial checks
+# (docs/testing/client-trial-checklist.md).
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64 (Ubuntu 24.04)
+            os: ubuntu-24.04
+          - name: Windows x64
+            os: windows-latest
+          - name: macOS arm64 (Apple Silicon)
+            os: macos-14
+          - name: macOS x64 (Intel)
+            os: macos-13
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # package.json `allowScripts` (better-sqlite3, electron) is an npm 12
+      # feature; use the same npm major as development.
+      - name: Use npm 12
+        run: npm install -g npm@12
+
+      - name: Linux system packages (Xvfb, rpmbuild)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb rpm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint (oxlint + oxfmt)
+        run: npm run lint
+
+      - name: Domain tests
+        run: npm run test:domain
+
+      # Runs Vitest under Electron's Node (ELECTRON_RUN_AS_NODE, see README).
+      - name: SQLite integration tests
+        run: npm run test:integration
+
+      - name: Renderer tests
+        run: npm run test:renderer
+
+      # Playwright drives the UNPACKAGED automation build (npm run build:app);
+      # the hardened package cannot be driven (inspector fuse off).
+      - name: End-to-end tests (Linux, Xvfb)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:e2e
+      - name: End-to-end tests
+        if: runner.os != 'Linux'
+        run: npm run test:e2e
+
+      - name: Package
+        run: npm run package
+
+      - name: Release checks on the packaged app
+        run: npm run release:check
+
+      - name: Make installers
+        run: npm run make
+
+      - name: Packaged smoke test (Linux, Xvfb)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run smoke:packaged
+
+      # macOS/Windows: launches the hardened binary with a throwaway
+      # --user-data-dir. Not yet proven on those runners (developed on
+      # Linux; on Windows there is no graceful SIGTERM), so a failure is
+      # reported but does not fail the job. Tracked as PENDING in the
+      # client-trial checklist until a green run is recorded there.
+      - name: Packaged smoke test (macOS/Windows, not yet a gate)
+        if: runner.os != 'Linux'
+        continue-on-error: true
+        run: npm run smoke:packaged
+
+      - name: Upload installers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bengkelin-${{ runner.os }}-${{ runner.arch }}
+          path: out/make/**
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload e2e results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-${{ runner.os }}-${{ runner.arch }}
+          path: test-results/**
+          if-no-files-found: ignore
+          retention-days: 7

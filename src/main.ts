@@ -9,6 +9,7 @@ import { createLogger, type Logger } from './main/platform/logger';
 import type { ApplicationServices } from './main/platform/services';
 import { toInstant } from './shared/time';
 import { applyDataDirOverride } from './main/platform/paths';
+import { disableRemoteDebugging } from './main/platform/debugging';
 import { createMainWindow } from './main/platform/window';
 import { installCloseGuard } from './main/platform/close-guard';
 import { createFileDialogs } from './main/platform/dialogs';
@@ -29,6 +30,9 @@ import {
 
 // Must run before the single-instance lock and before anything reads userData.
 applyDataDirOverride(app);
+// Packaged builds: no Chromium DevTools protocol endpoint (the fuses only
+// cover Node's inspector). Before `ready`, when Chromium starts that server.
+disableRemoteDebugging(app);
 
 let mainWindow: BrowserWindow | null = null;
 let database: AppDatabase | null = null;
@@ -162,6 +166,12 @@ function showMainWindow(): void {
   // Sessions are bound to the window: end them when it closes or crashes.
   const { webContents } = mainWindow;
   const windowId = webContents.id;
+  // Spec 48: whether the app document loaded (the packaged smoke test and
+  // support read this; no URL or path is logged).
+  webContents.once('did-finish-load', () => log().info('window.loaded'));
+  webContents.on('did-fail-load', (_event, code, description, _url, main) => {
+    if (main) log().error('window.load_failed', { code, description });
+  });
   const endSession = () => services?.sessions.endWindow(windowId);
   mainWindow.once('closed', () => {
     applicationMenu?.dispose();
