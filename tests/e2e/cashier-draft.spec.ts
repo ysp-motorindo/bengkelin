@@ -351,6 +351,39 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   await expect(page.getByTestId('indicator-missing-price')).toBeVisible();
   await expect(searchBox(page)).toBeFocused();
   await expect(feedback).toHaveCount(0);
+
+  // A highlighted search result is never picked by a scan's Enter.
+  const results = page.getByRole('listbox', {
+    name: t('workspace.search.results'),
+  });
+  await page.keyboard.type('servis');
+  await expect(results.getByRole('option').first()).toContainText(
+    'Jasa Servis Ringan',
+  );
+  await page.keyboard.press('ArrowDown');
+  await expect(results.getByRole('option').first()).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.keyboard.press('Control+A');
+  await scan(BARCODE);
+  await expect(page.getByTestId('line-row')).toHaveCount(2);
+  await expect(page.getByTestId('line-row').nth(1)).toContainText(
+    'Oli MPX2 0.8L',
+  );
+
+  // Non-barcode text offers the results; the next scan still adds its item.
+  await scan('servis');
+  await expect(results.getByRole('option').first()).toContainText(
+    'Jasa Servis Ringan',
+  );
+  await expect(searchBox(page)).toHaveValue('');
+  await scan(BARCODE);
+  await expect(page.getByTestId('line-quantity').nth(1)).toHaveText('2');
+  await expect(page.getByTestId('line-row')).toHaveCount(2);
+  await expect(
+    page.getByTestId('line-title').filter({ hasText: 'Jasa Servis Ringan' }),
+  ).toHaveCount(0);
 });
 
 test('keyboard only: add, edit a discount, close, focus back in search; digits in other fields are not scans', async () => {
