@@ -110,9 +110,6 @@
     "voidBlockedVoid": "This invoice is already void.",
     "paymentBlockedPaid": "This invoice is fully paid.",
     "paymentBlockedVoid": "A void invoice does not accept payments.",
-    "printThermal": "Print Thermal",
-    "printA4": "Print A4",
-    "printLater": "Printing will be available in a later version.",
     "paymentRecorded": "Payment of {{amount}} recorded.",
     "voided": "Invoice {{number}} voided."
   },

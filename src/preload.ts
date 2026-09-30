@@ -24,6 +24,9 @@ const api: BengkelinApi = Object.freeze({
     completeSetup: call(c.settings.completeSetup),
     updateShop: call(c.settings.updateShop),
     updatePreferences: call(c.settings.updatePreferences),
+    chooseLogo: call(c.settings.chooseLogo),
+    removeLogo: call(c.settings.removeLogo),
+    getLogo: call(c.settings.getLogo),
   }),
   cashiers: Object.freeze({
     list: call(c.cashiers.list),
@@ -89,6 +92,15 @@ const api: BengkelinApi = Object.freeze({
     void: call(c.invoices.void),
     search: call(c.invoices.search),
     receivables: call(c.invoices.receivables),
+  }),
+  printing: Object.freeze({
+    preview: call(c.printing.preview),
+    print: call(c.printing.print),
+    exportPdf: call(c.printing.exportPdf),
+    getOptions: call(c.printing.getOptions),
+    listPrinters: call(c.printing.listPrinters),
+    getSettings: call(c.printing.getSettings),
+    updateSettings: call(c.printing.updateSettings),
   }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),

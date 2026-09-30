@@ -19,6 +19,7 @@
     "postinstall": "electron-rebuild -f -w better-sqlite3",
     "rebuild:native": "electron-rebuild -f -w better-sqlite3",
     "build:app": "node scripts/build-app.mts",
+    "print:samples": "node scripts/print-samples.mts",
     "test:domain": "vitest run --project domain",
     "test:integration": "node scripts/run-under-electron.mjs node_modules/vitest/vitest.mjs run --project integration",
     "test:renderer": "vitest run --project renderer",

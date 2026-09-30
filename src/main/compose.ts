@@ -11,6 +11,15 @@ import { CustomerService } from '@/main/features/customers/service';
 import { ReferenceService } from '@/main/features/references/service';
 import { VehicleService } from '@/main/features/vehicles/service';
 import { SettingsService } from '@/main/features/settings/service';
+import { LogoService } from '@/main/features/settings/logo-service';
+import {
+  noFileDialogs,
+  unavailablePrintDriver,
+  type FileDialogs,
+  type PrintDriver,
+} from '@/main/features/printing/driver';
+import { PrintingService } from '@/main/features/printing/service';
+import path from 'node:path';
 import { AppService } from '@/main/platform/app-service';
 import { createLogger, type Logger } from '@/main/platform/logger';
 import type { ApplicationServices } from '@/main/platform/services';
@@ -22,6 +31,12 @@ export interface CompositionDeps {
   logDir: string;
   openPath: (target: string) => Promise<string>;
   logger?: Logger;
+  /** Real Electron driver in the app; a fake in tests. */
+  printDriver?: PrintDriver;
+  /** Native open/save dialogs shown by main. */
+  dialogs?: FileDialogs;
+  /** Content-addressed assets (logo); default: `<logDir>/../assets`. */
+  assetsDir?: string;
 }
 
 /** The one place services are constructed and wired (app and tests alike). */
@@ -35,6 +50,9 @@ export function createApplicationServices(
   const inventory = new InventoryService({ db, clock });
   // Once stock has moved, whether an item tracks inventory is locked.
   catalog.setTrackingChangeGuard(inventory.trackingChangeGuard);
+  const dialogs = deps.dialogs ?? noFileDialogs;
+  const assetsDir =
+    deps.assetsDir ?? path.join(path.dirname(deps.logDir), 'assets');
   return {
     logger,
     sessions,
@@ -50,6 +68,15 @@ export function createApplicationServices(
     adHocReferences: new AdHocReferenceService({ db }),
     // Production composition never passes the test-only `onStep` hook.
     invoices: new InvoiceService({ db, clock }),
+    printing: new PrintingService({
+      db,
+      clock,
+      driver: deps.printDriver ?? unavailablePrintDriver,
+      dialogs,
+      assetsDir,
+      logger,
+    }),
+    logo: new LogoService({ db, clock, dialogs, assetsDir, logger }),
     app: new AppService({ logDir: deps.logDir, openPath: deps.openPath }),
   };
 }

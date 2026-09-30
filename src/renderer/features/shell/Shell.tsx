@@ -12,6 +12,7 @@ import { CustomersScreen } from '@/renderer/features/customers/CustomersScreen';
 import { HistoryScreen } from '@/renderer/features/history/HistoryScreen';
 import { ReceivablesScreen } from '@/renderer/features/history/ReceivablesScreen';
 import { ReferencesScreen } from '@/renderer/features/references/ReferencesScreen';
+import { SettingsScreen } from '@/renderer/features/settings/SettingsScreen';
 import { CashierWorkspace } from '@/renderer/features/workspace/CashierWorkspace';
 import type { FinalizeClient } from '@/renderer/features/workspace/checkout/finalize-client';
 import type { CashierSession, PublicSettings } from '@/shared/contracts';
@@ -24,7 +25,8 @@ type View =
   | 'customers'
   | 'catalog'
   | 'inventory'
-  | 'references';
+  | 'references'
+  | 'settings';
 
 interface ShellProps {
   session: CashierSession;
@@ -76,6 +78,7 @@ export function Shell({
           'catalog',
           'inventory',
           'references',
+          'settings',
         ]
       : [
           'workspace',
@@ -151,6 +154,9 @@ export function Shell({
         {view === 'inventory' ? <InventoryScreen role={session.role} /> : null}
         {view === 'references' && session.role === 'ADMIN' ? (
           <ReferencesScreen />
+        ) : null}
+        {view === 'settings' && session.role === 'ADMIN' ? (
+          <SettingsScreen />
         ) : null}
       </main>
     </div>

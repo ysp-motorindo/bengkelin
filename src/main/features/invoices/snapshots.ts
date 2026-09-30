@@ -47,7 +47,8 @@ export function captureHeaderSnapshots(
     phoneNumber: shop.phoneNumber,
     email: shop.email,
     invoiceFooter: shop.invoiceFooter,
-    logo: null,
+    // The logo asset key (content hash) at finalization; T12.
+    logo: deps.settings.logoAsset(),
   };
   const customerPhone = customer?.phoneNumber ?? null;
   const plateNumber = vehicle?.plateNumber ?? null;

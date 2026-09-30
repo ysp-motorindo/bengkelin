@@ -76,5 +76,7 @@
   "INVOICE_NOT_FINALIZED": "Faktur ini belum final. Selesaikan transaksinya terlebih dahulu.",
   "INVOICE_ALREADY_VOID": "Faktur ini sudah dibatalkan (VOID).",
   "PAID_INVOICE_CANNOT_BE_VOIDED": "Faktur yang sudah menerima pembayaran tidak bisa dibatalkan.",
-  "VOID_REASON_REQUIRED": "Isi alasan pembatalan."
+  "VOID_REASON_REQUIRED": "Isi alasan pembatalan.",
+  "LOGO_TOO_LARGE": "Logo lebih besar dari 512 KB. Pilih gambar yang lebih kecil.",
+  "LOGO_INVALID_TYPE": "Logo harus berupa gambar PNG atau JPEG."
 }

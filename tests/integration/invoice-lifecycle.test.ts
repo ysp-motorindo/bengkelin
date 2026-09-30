@@ -1539,7 +1539,11 @@ describe('migration 008 on a populated version-7 database', () => {
 
       // ---- upgrade ----
       db = openDatabase(file);
-      migrateDatabase(db);
+      // Exactly the 008 upgrade (later migrations have their own tests).
+      migrateDatabase(
+        db,
+        bundledMigrations.filter((m) => m.version <= 8),
+      );
       expect(readSchemaVersion(db)).toBe(8);
 
       // Pre-existing columns are unchanged; only the new ones were filled.

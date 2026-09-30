@@ -1,0 +1,59 @@
+{
+  "format": {
+    "A4": "A4",
+    "THERMAL_58": "Thermal 58 mm",
+    "THERMAL_80": "Thermal 80 mm"
+  },
+  "actions": {
+    "printThermal": "Print Thermal",
+    "printA4": "Print A4",
+    "preview": "Preview",
+    "exportPdf": "Export PDF"
+  },
+  "preview": {
+    "title": "Print preview",
+    "format": "Format",
+    "print": "Print",
+    "close": "Close",
+    "loading": "Preparing the preview...",
+    "documentLabel": "Invoice preview ({{format}})"
+  },
+  "outcome": {
+    "working": "Working...",
+    "printed": "Invoice printed ({{format}}).",
+    "reprinted": "Invoice reprinted ({{format}}).",
+    "pdfSaved": "PDF saved: {{fileName}}",
+    "cancelled": "Cancelled.",
+    "PRINTER_NOT_FOUND": "Printer “{{printerName}}” was not found. The invoice is saved; check the printer or the print settings.",
+    "PRINT_FAILED": "Printing failed. The invoice is saved; try again.",
+    "PDF_FAILED": "The PDF could not be created or saved. The invoice is saved; try again."
+  },
+  "settings": {
+    "title": "Print settings",
+    "description": "Printers are optional. Without a default printer the system print dialog opens.",
+    "defaultFormat": "Default invoice format",
+    "formatA4": "A4",
+    "formatThermal": "Thermal",
+    "thermalWidth": "Thermal paper width",
+    "width58": "58 mm",
+    "width80": "80 mm",
+    "a4Printer": "Default A4 printer",
+    "thermalPrinter": "Default thermal printer",
+    "noPrinter": "None (show the print dialog)",
+    "missingPrinter": "{{name}} (not found)",
+    "refreshPrinters": "Reload printers",
+    "autoPrint": "Print automatically after finalizing",
+    "save": "Save print settings",
+    "saved": "Print settings saved."
+  },
+  "logo": {
+    "title": "Shop logo",
+    "description": "PNG or JPEG, at most 512 KB. Finalized invoices keep the logo they were finalized with.",
+    "none": "No logo yet.",
+    "choose": "Choose logo...",
+    "remove": "Remove logo",
+    "alt": "Shop logo",
+    "updated": "Logo saved.",
+    "removed": "Logo removed."
+  }
+}

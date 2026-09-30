@@ -6,6 +6,9 @@ import {
   receivablesInputSchema,
   recordPaymentInputSchema,
   voidInvoiceInputSchema,
+  exportPdfInputSchema,
+  printInputSchema,
+  printSettingsInputSchema,
   previewFinalizeInputSchema,
   adjustStockInputSchema,
   applyPriceChangeInputSchema,
@@ -70,6 +73,8 @@ export function buildCommands(services: ApplicationServices): Command[] {
     drafts,
     adHocReferences,
     invoices,
+    printing,
+    logo,
     app,
     sessions,
   } = services;
@@ -107,6 +112,16 @@ export function buildCommands(services: ApplicationServices): Command[] {
       preferencesInputSchema,
       ({ windowId }, input) =>
         settings.updatePreferences(session(windowId), input),
+    ),
+
+    command(C.settings.chooseLogo, noInput, ({ windowId }) =>
+      logo.chooseLogo(session(windowId)),
+    ),
+    command(C.settings.removeLogo, noInput, ({ windowId }) =>
+      logo.removeLogo(session(windowId)),
+    ),
+    command(C.settings.getLogo, noInput, ({ windowId }) =>
+      logo.getLogo(session(windowId)),
     ),
 
     command(C.cashiers.list, noInput, ({ windowId }) =>
@@ -320,6 +335,31 @@ export function buildCommands(services: ApplicationServices): Command[] {
       C.invoices.receivables,
       receivablesInputSchema,
       ({ windowId }, input) => invoices.receivables(session(windowId), input),
+    ),
+
+    command(C.printing.preview, printInputSchema, ({ windowId }, input) =>
+      printing.preview(session(windowId), input),
+    ),
+    command(C.printing.print, printInputSchema, ({ windowId }, input) =>
+      printing.print(session(windowId), input),
+    ),
+    command(C.printing.exportPdf, exportPdfInputSchema, ({ windowId }, input) =>
+      printing.exportPdf(session(windowId), input),
+    ),
+    command(C.printing.getOptions, noInput, ({ windowId }) =>
+      printing.getOptions(session(windowId)),
+    ),
+    command(C.printing.listPrinters, noInput, ({ windowId }) =>
+      printing.listPrinters(session(windowId)),
+    ),
+    command(C.printing.getSettings, noInput, ({ windowId }) =>
+      printing.getSettings(session(windowId)),
+    ),
+    command(
+      C.printing.updateSettings,
+      printSettingsInputSchema,
+      ({ windowId }, input) =>
+        printing.updateSettings(session(windowId), input),
     ),
   ];
 }

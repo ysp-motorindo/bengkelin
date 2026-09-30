@@ -1,16 +1,6 @@
 import type { Rupiah } from '@/shared/primitives';
 
-/**
- * `Rp 65.000` from a Rupiah decimal string, via BigInt (never Number).
- * IDR grouping (`.`) is used in both languages.
- */
-export function formatIdr(value: Rupiah): string {
-  const amount = BigInt(value);
-  const negative = amount < 0n;
-  const digits = (negative ? -amount : amount).toString();
-  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return negative ? `-Rp ${grouped}` : `Rp ${grouped}`;
-}
+export { formatIdr } from '@/shared/idr';
 
 /**
  * Parses what a cashier types as a whole-rupiah amount: digits with optional

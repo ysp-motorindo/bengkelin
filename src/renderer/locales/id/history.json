@@ -110,9 +110,6 @@
     "voidBlockedVoid": "Faktur ini sudah dibatalkan.",
     "paymentBlockedPaid": "Faktur ini sudah lunas.",
     "paymentBlockedVoid": "Faktur yang dibatalkan tidak menerima pembayaran.",
-    "printThermal": "Cetak Thermal",
-    "printA4": "Cetak A4",
-    "printLater": "Pencetakan akan tersedia di versi berikutnya.",
     "paymentRecorded": "Pembayaran {{amount}} dicatat.",
     "voided": "Faktur {{number}} dibatalkan."
   },

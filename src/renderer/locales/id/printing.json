@@ -1,0 +1,59 @@
+{
+  "format": {
+    "A4": "A4",
+    "THERMAL_58": "Thermal 58 mm",
+    "THERMAL_80": "Thermal 80 mm"
+  },
+  "actions": {
+    "printThermal": "Cetak Thermal",
+    "printA4": "Cetak A4",
+    "preview": "Pratinjau",
+    "exportPdf": "Ekspor PDF"
+  },
+  "preview": {
+    "title": "Pratinjau cetak",
+    "format": "Format",
+    "print": "Cetak",
+    "close": "Tutup",
+    "loading": "Menyiapkan pratinjau...",
+    "documentLabel": "Pratinjau faktur ({{format}})"
+  },
+  "outcome": {
+    "working": "Memproses...",
+    "printed": "Faktur dicetak ({{format}}).",
+    "reprinted": "Faktur dicetak ulang ({{format}}).",
+    "pdfSaved": "PDF disimpan: {{fileName}}",
+    "cancelled": "Dibatalkan.",
+    "PRINTER_NOT_FOUND": "Printer “{{printerName}}” tidak ditemukan. Faktur tetap tersimpan; periksa printer atau pengaturan cetak.",
+    "PRINT_FAILED": "Gagal mencetak. Faktur tetap tersimpan; coba lagi.",
+    "PDF_FAILED": "PDF gagal dibuat atau disimpan. Faktur tetap tersimpan; coba lagi."
+  },
+  "settings": {
+    "title": "Pengaturan cetak",
+    "description": "Printer bersifat opsional. Tanpa printer default, dialog cetak sistem akan muncul.",
+    "defaultFormat": "Format faktur default",
+    "formatA4": "A4",
+    "formatThermal": "Thermal",
+    "thermalWidth": "Lebar kertas thermal",
+    "width58": "58 mm",
+    "width80": "80 mm",
+    "a4Printer": "Printer A4 default",
+    "thermalPrinter": "Printer thermal default",
+    "noPrinter": "Tidak ada (tampilkan dialog cetak)",
+    "missingPrinter": "{{name}} (tidak ditemukan)",
+    "refreshPrinters": "Muat ulang daftar printer",
+    "autoPrint": "Cetak otomatis setelah faktur final",
+    "save": "Simpan pengaturan cetak",
+    "saved": "Pengaturan cetak disimpan."
+  },
+  "logo": {
+    "title": "Logo toko",
+    "description": "PNG atau JPEG, maksimal 512 KB. Faktur yang sudah final tetap memakai logo saat difinalisasi.",
+    "none": "Belum ada logo.",
+    "choose": "Pilih logo...",
+    "remove": "Hapus logo",
+    "alt": "Logo toko",
+    "updated": "Logo disimpan.",
+    "removed": "Logo dihapus."
+  }
+}

@@ -11,6 +11,8 @@ import { toInstant } from './shared/time';
 import { applyDataDirOverride } from './main/platform/paths';
 import { createMainWindow } from './main/platform/window';
 import { installCloseGuard } from './main/platform/close-guard';
+import { createFileDialogs } from './main/platform/dialogs';
+import { createElectronPrintDriver } from './main/features/printing/electron-driver';
 
 // Must run before the single-instance lock and before anything reads userData.
 applyDataDirOverride(app);
@@ -85,6 +87,9 @@ if (started || !app.requestSingleInstanceLock()) {
       logDir: logDirectory(),
       logger: log(),
       openPath: (target) => shell.openPath(target),
+      printDriver: createElectronPrintDriver(),
+      dialogs: createFileDialogs(app),
+      assetsDir: path.join(app.getPath('userData'), 'assets'),
     });
     registerApplicationIpc(services);
     showMainWindow();

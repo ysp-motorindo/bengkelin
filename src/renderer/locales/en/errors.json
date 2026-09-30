@@ -76,5 +76,7 @@
   "INVOICE_NOT_FINALIZED": "This invoice is not finalized yet. Finish the transaction first.",
   "INVOICE_ALREADY_VOID": "This invoice is already void.",
   "PAID_INVOICE_CANNOT_BE_VOIDED": "An invoice that has received a payment cannot be voided.",
-  "VOID_REASON_REQUIRED": "Enter a reason for the void."
+  "VOID_REASON_REQUIRED": "Enter a reason for the void.",
+  "LOGO_TOO_LARGE": "The logo is larger than 512 KB. Choose a smaller image.",
+  "LOGO_INVALID_TYPE": "The logo must be a PNG or JPEG image."
 }

@@ -1,4 +1,14 @@
 import type {
+  ExportPdfInput,
+  LogoChoiceDto,
+  LogoDto,
+  PrintInput,
+  PrintOptionsDto,
+  PrintOutcomeDto,
+  PrintPreviewDto,
+  PrintSettingsDto,
+  PrintSettingsInput,
+  PrinterDto,
   FinalizeInput,
   FinalizePreviewDto,
   InvoiceIdInput,
@@ -90,6 +100,12 @@ export interface BengkelinApi {
     completeSetup(input: SetupInput): Promise<Result<PublicSettings>>;
     updateShop(input: ShopSettingsInput): Promise<Result<void>>;
     updatePreferences(input: PreferencesInput): Promise<Result<PublicSettings>>;
+    /** ADMIN: a native open dialog in main picks a PNG/JPEG (<= 512 KB). */
+    chooseLogo(): Promise<Result<LogoChoiceDto>>;
+    /** ADMIN. */
+    removeLogo(): Promise<Result<void>>;
+    /** ADMIN: the current logo for display, or null. */
+    getLogo(): Promise<Result<LogoDto | null>>;
   };
   readonly cashiers: {
     list(): Promise<Result<CashierDto[]>>;
@@ -203,6 +219,27 @@ export interface BengkelinApi {
     search(input: InvoiceSearchInput): Promise<Result<InvoicePage>>;
     /** Outstanding or overdue FINALIZED invoices. */
     receivables(input: ReceivablesInput): Promise<Result<ReceivablesPage>>;
+  };
+  /**
+   * Invoice printing (any signed-in cashier), always of a committed
+   * invoice. A printer failure, cancellation or missing printer is an
+   * outcome and never changes the invoice.
+   */
+  readonly printing: {
+    /** The same HTML document print and PDF use, for an in-app preview. */
+    preview(input: PrintInput): Promise<Result<PrintPreviewDto>>;
+    print(input: PrintInput): Promise<Result<PrintOutcomeDto>>;
+    /** A4 PDF via a native save dialog in main. */
+    exportPdf(input: ExportPdfInput): Promise<Result<PrintOutcomeDto>>;
+    getOptions(): Promise<Result<PrintOptionsDto>>;
+    /** ADMIN. */
+    listPrinters(): Promise<Result<PrinterDto[]>>;
+    /** ADMIN. */
+    getSettings(): Promise<Result<PrintSettingsDto>>;
+    /** ADMIN. */
+    updateSettings(
+      input: PrintSettingsInput,
+    ): Promise<Result<PrintSettingsDto>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;

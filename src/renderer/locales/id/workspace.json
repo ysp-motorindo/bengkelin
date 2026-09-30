@@ -248,9 +248,6 @@
     "statusAfter": "Status pembayaran setelah checkout:",
     "doneTitle": "Faktur final",
     "numberLabel": "Nomor faktur",
-    "printThermal": "Cetak Thermal",
-    "printA4": "Cetak A4",
-    "printLater": "Pencetakan akan tersedia di versi berikutnya.",
     "newTransaction": "Transaksi Baru",
     "issues": {
       "CATALOG_ITEM_INACTIVE": "“{{title}}” tidak aktif dan tidak dapat dijual. Hapus barisnya atau aktifkan kembali barangnya."

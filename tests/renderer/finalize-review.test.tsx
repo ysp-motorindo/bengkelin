@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { CheckoutReviewDialog } from '@/renderer/features/workspace/checkout/CheckoutReviewDialog';
 import type { FinalizeClient } from '@/renderer/features/workspace/checkout/finalize-client';
+import type { PrintClient } from '@/renderer/features/printing/print-client';
 import type {
+  PrintOptionsDto,
   FinalizeInput,
   FinalizePreviewDto,
   InvoiceView,
@@ -69,13 +71,39 @@ function client(
   return { previewFinalize, finalize } satisfies FinalizeClient;
 }
 
-function renderReview(finalizer: FinalizeClient) {
+function printer(options: Partial<PrintOptionsDto> = {}) {
+  return {
+    getOptions: vi.fn(async () =>
+      ok({
+        defaultInvoiceFormat: 'THERMAL' as const,
+        thermalFormat: 'THERMAL_80' as const,
+        autoPrintAfterFinalize: false,
+        ...options,
+      }),
+    ),
+    preview: vi.fn(),
+    print: vi.fn(async (input: { format: string }) =>
+      ok({
+        outcome: 'PRINTED' as const,
+        format: input.format as 'THERMAL_80',
+        isReprint: false,
+      }),
+    ),
+    exportPdf: vi.fn(),
+  } satisfies PrintClient;
+}
+
+function renderReview(
+  finalizer: FinalizeClient,
+  print: PrintClient = printer(),
+) {
   const onNewTransaction = vi.fn();
   const onClose = vi.fn();
   render(
     <CheckoutReviewDialog
       view={draftView({ version: 3 })}
       finalizer={finalizer}
+      printer={print}
       onClose={onClose}
       onNewTransaction={onNewTransaction}
     />,
@@ -102,10 +130,15 @@ describe('checkout review and finalization', () => {
     expect(screen.getByTestId('finalized-invoice-number')).toHaveTextContent(
       'INV-20260930-0001',
     );
-    expect(
-      screen.getByRole('button', { name: 'Cetak Thermal' }),
-    ).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cetak A4' })).toBeDisabled();
+    // Printing is offered once the invoice is committed.
+    for (const name of [
+      'Cetak Thermal',
+      'Cetak A4',
+      'Pratinjau',
+      'Ekspor PDF',
+    ]) {
+      expect(screen.getByRole('button', { name })).toBeEnabled();
+    }
     const next = screen.getByRole('button', { name: 'Transaksi Baru' });
     await waitFor(() => expect(next).toHaveFocus());
     await user.click(next);
@@ -227,5 +260,51 @@ describe('checkout review and finalization', () => {
     await screen.findByTestId('finalized-invoice-number');
     const [first, retry] = finalizer.finalize.mock.calls.map((c) => c[0]);
     expect(retry!.requestId).toBe(first!.requestId);
+  });
+
+  test('auto-print prints the default format once, only after the finalize result', async () => {
+    let finish!: (result: Result<InvoiceView>) => void;
+    const finalizer = {
+      previewFinalize: vi.fn(async () => ok(preview())),
+      finalize: vi.fn(
+        () => new Promise<Result<InvoiceView>>((resolve) => (finish = resolve)),
+      ),
+    } satisfies FinalizeClient;
+    const print = printer({ autoPrintAfterFinalize: true });
+    renderReview(finalizer, print);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Finalisasi' }));
+    expect(finalizer.finalize).toHaveBeenCalledOnce();
+    // Nothing prints while the finalize result is pending.
+    expect(print.print).not.toHaveBeenCalled();
+    expect(print.getOptions).not.toHaveBeenCalled();
+    finish(ok(invoice));
+    await waitFor(() => expect(print.print).toHaveBeenCalledOnce());
+    expect(print.print).toHaveBeenCalledWith({
+      invoiceId: DRAFT_ID,
+      format: 'THERMAL_80',
+    });
+    expect(await screen.findByTestId('print-notice')).toHaveTextContent(
+      'Faktur dicetak (Thermal 80 mm).',
+    );
+    // Focus stays on the next action.
+    expect(
+      screen.getByRole('button', { name: 'Transaksi Baru' }),
+    ).toHaveFocus();
+  });
+
+  test('auto-print off: nothing prints until the cashier asks', async () => {
+    const print = printer({ defaultInvoiceFormat: 'A4' });
+    renderReview(client([preview()], [ok(invoice)]), print);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Finalisasi' }));
+    await screen.findByRole('dialog', { name: 'Faktur final' });
+    await waitFor(() => expect(print.getOptions).toHaveBeenCalled());
+    expect(print.print).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Cetak A4' }));
+    expect(print.print).toHaveBeenCalledWith({
+      invoiceId: DRAFT_ID,
+      format: 'A4',
+    });
   });
 });

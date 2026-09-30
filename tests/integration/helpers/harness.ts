@@ -4,6 +4,7 @@ import path from 'node:path';
 import { openDatabase, type AppDatabase } from '@/main/database/connection';
 import { migrateDatabase } from '@/main/database/migrate';
 import { createApplicationServices } from '@/main/compose';
+import type { FileDialogs, PrintDriver } from '@/main/features/printing/driver';
 import { executeCommand } from '@/main/platform/command';
 import { buildCommands } from '@/main/platform/commands';
 import type { Result } from '@/shared/primitives';
@@ -30,13 +31,20 @@ export function validSetup(overrides: Record<string, unknown> = {}) {
 }
 
 /** A migrated temp database plus the full command table, without Electron. */
-export function createHarness(options: { clock?: Clock } = {}) {
+export function createHarness(
+  options: {
+    clock?: Clock;
+    printDriver?: PrintDriver;
+    dialogs?: FileDialogs;
+  } = {},
+) {
   const dir = mkdtempSync(path.join(tmpdir(), 'bengkelin-auth-'));
   const file = path.join(dir, 'db.sqlite');
   const clock: Clock = options.clock ?? {
     now: () => toInstant(Date.UTC(2026, 8, 30, 3, 0, 0)),
   };
   const logDir = path.join(dir, 'logs');
+  const assetsDir = path.join(dir, 'assets');
   const opened: string[] = [];
 
   function build() {
@@ -46,6 +54,9 @@ export function createHarness(options: { clock?: Clock } = {}) {
       db,
       clock,
       logDir,
+      assetsDir,
+      ...(options.printDriver ? { printDriver: options.printDriver } : {}),
+      ...(options.dialogs ? { dialogs: options.dialogs } : {}),
       openPath: async (target) => {
         opened.push(target);
         return '';
@@ -85,6 +96,7 @@ export function createHarness(options: { clock?: Clock } = {}) {
     dir,
     file,
     logDir,
+    assetsDir,
     opened,
     call,
     /**
