@@ -1,0 +1,13 @@
+{
+  "VALIDATION_FAILED": "Please check the highlighted fields.",
+  "INTERNAL_ERROR": "An unexpected error occurred. Your data is safe. Try again; if it keeps happening, open the log folder from the Help menu.",
+  "UNAUTHENTICATED": "Please sign in first.",
+  "FORBIDDEN": "You do not have permission for this action.",
+  "INVALID_CREDENTIALS": "Wrong username or password, or the account is disabled.",
+  "SETUP_ALREADY_COMPLETED": "First-run setup is already complete.",
+  "USERNAME_TAKEN": "That username is already in use.",
+  "LAST_ACTIVE_ADMIN": "The last active administrator cannot be deactivated or demoted.",
+  "CASHIER_NOT_FOUND": "Cashier not found.",
+  "LOG_FOLDER_UNAVAILABLE": "The log folder could not be opened.",
+  "LOAD_FAILED": "The application could not load its settings. Close and reopen the application."
+}

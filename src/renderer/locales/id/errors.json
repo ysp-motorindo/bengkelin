@@ -1,0 +1,13 @@
+{
+  "VALIDATION_FAILED": "Periksa kembali isian yang ditandai.",
+  "INTERNAL_ERROR": "Terjadi kesalahan tak terduga. Data Anda aman. Coba lagi; jika berulang, buka folder log dari menu Bantuan.",
+  "UNAUTHENTICATED": "Silakan masuk terlebih dahulu.",
+  "FORBIDDEN": "Anda tidak memiliki izin untuk tindakan ini.",
+  "INVALID_CREDENTIALS": "Nama pengguna atau kata sandi salah, atau akun dinonaktifkan.",
+  "SETUP_ALREADY_COMPLETED": "Pengaturan awal sudah selesai.",
+  "USERNAME_TAKEN": "Nama pengguna sudah dipakai.",
+  "LAST_ACTIVE_ADMIN": "Admin aktif terakhir tidak dapat dinonaktifkan atau diubah perannya.",
+  "CASHIER_NOT_FOUND": "Kasir tidak ditemukan.",
+  "LOG_FOLDER_UNAVAILABLE": "Folder log tidak dapat dibuka.",
+  "LOAD_FAILED": "Aplikasi gagal memuat pengaturan. Tutup lalu buka kembali aplikasi."
+}

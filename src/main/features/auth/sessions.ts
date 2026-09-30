@@ -1,0 +1,57 @@
+import type { CashierSession, Role, UUID } from '@/shared/contracts';
+
+/** An authenticated cashier bound to one renderer window (webContents id). */
+export interface Session {
+  windowId: number;
+  cashierId: UUID;
+  username: string;
+  displayName: string;
+  role: Role;
+}
+
+export function toSessionDto(session: Session): CashierSession {
+  return {
+    cashierId: session.cashierId,
+    username: session.username,
+    displayName: session.displayName,
+    role: session.role,
+  };
+}
+
+/**
+ * In-memory, window-bound sessions. Nothing is persisted or handed to the
+ * renderer as a token: the sender's webContents id IS the credential, so a
+ * renderer cannot present someone else's session.
+ */
+export class SessionStore {
+  private readonly sessions = new Map<number, Session>();
+
+  /** Starts (replacing any previous) session for the window. */
+  start(session: Session): Session {
+    this.sessions.set(session.windowId, session);
+    return session;
+  }
+
+  get(windowId: number): Session | undefined {
+    return this.sessions.get(windowId);
+  }
+
+  /** Logout / window closed / renderer gone. Returns the ended session. */
+  endWindow(windowId: number): Session | undefined {
+    const session = this.sessions.get(windowId);
+    this.sessions.delete(windowId);
+    return session;
+  }
+
+  /** Deactivation, role change, password reset: end every session of a cashier. */
+  invalidateCashier(cashierId: UUID): number {
+    let ended = 0;
+    for (const [windowId, session] of this.sessions) {
+      if (session.cashierId === cashierId) {
+        this.sessions.delete(windowId);
+        ended += 1;
+      }
+    }
+    return ended;
+  }
+}

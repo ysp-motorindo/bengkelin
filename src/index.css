@@ -1,36 +1,64 @@
 @import 'tailwindcss';
 
+/* Dark mode is driven by a `dark` class on <html> (see renderer/lib/theme.ts). */
 @custom-variant dark (&:is(.dark *));
 
 /* Neutral surfaces, blue primary actions; system fonts only (no CDN). */
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0.002 260);
   --foreground: oklch(0.21 0.01 260);
-  --primary: oklch(0.55 0.2 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.01 260);
+  --muted: oklch(0.96 0.004 260);
+  --muted-foreground: oklch(0.48 0.01 260);
+  --primary: oklch(0.5 0.2 260);
   --primary-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0.005 260);
+  --destructive: oklch(0.5 0.2 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.9 0.005 260);
+  --input: oklch(0.86 0.006 260);
+  --ring: oklch(0.55 0.2 260);
 }
 
 .dark {
-  --background: oklch(0.18 0.01 260);
+  --background: oklch(0.17 0.01 260);
   --foreground: oklch(0.96 0.005 260);
+  --card: oklch(0.21 0.01 260);
+  --card-foreground: oklch(0.96 0.005 260);
+  --muted: oklch(0.26 0.01 260);
+  --muted-foreground: oklch(0.72 0.01 260);
   --primary: oklch(0.65 0.18 260);
   --primary-foreground: oklch(0.15 0.01 260);
-  --border: oklch(0.3 0.01 260);
+  --destructive: oklch(0.7 0.17 25);
+  --destructive-foreground: oklch(0.15 0.01 260);
+  --border: oklch(0.32 0.01 260);
+  --input: oklch(0.38 0.01 260);
+  --ring: oklch(0.7 0.15 260);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
     sans-serif;
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }

@@ -1,0 +1,11 @@
+{
+  "required": "Wajib diisi.",
+  "tooLong": "Terlalu panjang.",
+  "invalid": "Isian tidak valid.",
+  "passwordTooShort": "Kata sandi minimal 8 karakter.",
+  "passwordMismatch": "Konfirmasi kata sandi tidak sama.",
+  "usernameTooShort": "Nama pengguna minimal 3 karakter.",
+  "usernameFormat": "Hanya huruf, angka, titik, garis bawah, dan tanda hubung.",
+  "invalidTimezone": "Zona waktu tidak dikenal.",
+  "invalidEmail": "Format email tidak valid."
+}

@@ -1,0 +1,65 @@
+{
+  "progress": "Step {{current}} of {{total}}",
+  "steps": {
+    "shop": "Shop",
+    "admin": "Admin",
+    "preferences": "Appearance",
+    "printer": "Printer",
+    "finish": "Start"
+  },
+  "shop": {
+    "title": "Shop information",
+    "description": "These details appear on invoices.",
+    "name": "Workshop name",
+    "address": "Address",
+    "phone": "Phone number",
+    "email": "Email",
+    "footer": "Invoice footer"
+  },
+  "admin": {
+    "title": "Administrator account",
+    "description": "The administrator manages cashiers, prices, stock and settings.",
+    "username": "Username",
+    "displayName": "Display name",
+    "password": "Password",
+    "passwordHint": "At least 8 characters.",
+    "confirmPassword": "Repeat password"
+  },
+  "preferences": {
+    "title": "Language and appearance",
+    "description": "An administrator can change these later.",
+    "language": "Language",
+    "appearance": "Appearance",
+    "timezone": "Timezone",
+    "languages": { "id": "Bahasa Indonesia", "en": "English" },
+    "appearances": {
+      "LIGHT": "Light",
+      "DARK": "Dark",
+      "SYSTEM": "Follow system"
+    },
+    "timezones": {
+      "Asia/Jakarta": "WIB (Asia/Jakarta)",
+      "Asia/Makassar": "WITA (Asia/Makassar)",
+      "Asia/Jayapura": "WIT (Asia/Jayapura)"
+    }
+  },
+  "printer": {
+    "title": "Printer (optional)",
+    "description": "You can skip this step and set it up later. Nothing is saved if you skip.",
+    "thermal": "Receipt (thermal) printer name",
+    "a4": "A4 printer name",
+    "width": "Thermal paper width",
+    "width58": "58 mm",
+    "width80": "80 mm"
+  },
+  "finish": {
+    "title": "Ready to start",
+    "description": "Review the summary, then start using Bengkelin.",
+    "summaryShop": "Workshop",
+    "summaryAdmin": "Administrator",
+    "summaryPrinter": "Printer",
+    "printerSkipped": "Skipped",
+    "start": "Start",
+    "starting": "Setting up..."
+  }
+}
