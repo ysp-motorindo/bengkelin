@@ -57,6 +57,7 @@ import type {
   SearchVehiclesInput,
   SearchVehiclesResult,
   SetupInput,
+  ShopSettingsDto,
   ShopSettingsInput,
   UpdateDisplayNameInput,
   VehicleDetailDto,
@@ -73,6 +74,8 @@ export interface BengkelinApi {
   };
   readonly settings: {
     getPublic(): Promise<Result<PublicSettings>>;
+    /** Any signed-in cashier. */
+    getShop(): Promise<Result<ShopSettingsDto>>;
     completeSetup(input: SetupInput): Promise<Result<PublicSettings>>;
     updateShop(input: ShopSettingsInput): Promise<Result<void>>;
     updatePreferences(input: PreferencesInput): Promise<Result<PublicSettings>>;
@@ -166,5 +169,12 @@ export interface BengkelinApi {
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;
+    /**
+     * Normal exit: main announces the close; the renderer flushes pending
+     * draft input and then calls `readyToClose()`. Main closes on ready or
+     * after a short timeout. Returns an unsubscribe function.
+     */
+    onBeforeClose(callback: () => void): () => void;
+    readyToClose(): void;
   };
 }

@@ -35,16 +35,22 @@ export function LoginScreen({ shopName, onLoggedIn }: LoginScreenProps) {
     setBusy(true);
     setError(null);
     setFieldErrors({});
-    const result = await window.bengkelin.auth.login({ username, password });
-    setBusy(false);
-    if (result.ok) {
+    try {
+      const result = await window.bengkelin.auth.login({ username, password });
       setPassword('');
-      onLoggedIn(result.value);
-      return;
+      if (result.ok) {
+        onLoggedIn(result.value);
+        return;
+      }
+      setFieldErrors(result.error.fieldErrors ?? {});
+      setError(errorMessage(t, result.error));
+    } catch {
+      setPassword('');
+      setError(t('errors.INTERNAL_ERROR'));
+    } finally {
+      // Never leave the form stuck busy, even when the IPC call rejects.
+      setBusy(false);
     }
-    setPassword('');
-    setFieldErrors(result.error.fieldErrors ?? {});
-    setError(errorMessage(t, result.error));
   }
 
   return (

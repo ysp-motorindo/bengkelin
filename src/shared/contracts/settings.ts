@@ -67,6 +67,19 @@ export interface PublicSettings {
   shopName: string;
 }
 
+/**
+ * Shop identity for signed-in screens (spec 32). The workspace needs the
+ * timezone for "today" and local pricing times.
+ */
+export interface ShopSettingsDto {
+  name: string;
+  address: string;
+  phoneNumber: string | null;
+  email: string | null;
+  invoiceFooter: string | null;
+  timezone: string;
+}
+
 /** Parsed (post-transform) shapes handed to main-process services. */
 export type ShopSettingsData = z.output<typeof shopSettingsInputSchema>;
 export type SetupData = z.output<typeof setupInputSchema>;

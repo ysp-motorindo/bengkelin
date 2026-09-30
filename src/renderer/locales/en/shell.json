@@ -1,14 +1,25 @@
 {
   "signedInAs": "Signed in as",
   "logout": "Sign out",
-  "welcome": "Welcome, {{name}}",
-  "placeholder": "Cashier features will appear here.",
   "nav": {
     "label": "Main navigation",
-    "home": "Home",
+    "workspace": "New Transaction",
     "customers": "Customers & Vehicles",
     "catalog": "Catalog & Prices",
     "inventory": "Inventory",
     "references": "Reference Data"
+  },
+  "preferences": {
+    "language": "Language",
+    "appearance": "Appearance",
+    "languages": {
+      "id": "Bahasa Indonesia",
+      "en": "English"
+    },
+    "appearances": {
+      "LIGHT": "Light",
+      "DARK": "Dark",
+      "SYSTEM": "System"
+    }
   }
 }

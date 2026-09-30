@@ -83,6 +83,9 @@ export function buildCommands(services: ApplicationServices): Command[] {
     ),
 
     command(C.settings.getPublic, noInput, () => settings.getPublic()),
+    command(C.settings.getShop, noInput, ({ windowId }) =>
+      settings.getShop(session(windowId)),
+    ),
     command(C.settings.completeSetup, setupInputSchema, (_ctx, input) =>
       settings.completeSetup(input),
     ),
