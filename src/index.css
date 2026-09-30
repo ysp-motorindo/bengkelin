@@ -1,8 +1,37 @@
-body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Neutral surfaces, blue primary actions; system fonts only (no CDN). */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.01 260);
+  --primary: oklch(0.55 0.2 260);
+  --primary-foreground: oklch(0.99 0 0);
+  --border: oklch(0.92 0.005 260);
+}
+
+.dark {
+  --background: oklch(0.18 0.01 260);
+  --foreground: oklch(0.96 0.005 260);
+  --primary: oklch(0.65 0.18 260);
+  --primary-foreground: oklch(0.15 0.01 260);
+  --border: oklch(0.3 0.01 260);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
     sans-serif;
-  margin: auto;
-  max-width: 38rem;
-  padding: 2rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
 }
