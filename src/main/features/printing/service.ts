@@ -58,7 +58,12 @@ export interface RenderedInvoice {
   pageInfo: PrintPageInfo;
 }
 
-type Outcome = Pick<PrintOutcomeDto, 'outcome' | 'code' | 'params'>;
+/** A print attempt's result; failures are outcomes, never thrown. */
+export type PrintAttemptOutcome = Pick<
+  PrintOutcomeDto,
+  'outcome' | 'code' | 'params'
+>;
+type Outcome = PrintAttemptOutcome;
 
 /**
  * Invoice printing (spec 30, 31). Reads committed invoices only and never
@@ -134,7 +139,7 @@ export class PrintingService {
     const actor = requireSession(session);
     const requestedAt = this.deps.clock.now();
     const { model, html } = this.renderInvoice(input.invoiceId, input.format);
-    const outcome = await this.send(html, input.format);
+    const outcome = await this.sendDocument(html, input.format);
     this.record(actor.cashierId, model, {
       format: input.format,
       action: 'PRINT',
@@ -240,8 +245,14 @@ export class PrintingService {
       : settings.defaultThermalPrinterName;
   }
 
-  /** Chooses the device and prints. Never throws: failures are outcomes. */
-  private async send(html: string, format: PrintFormat): Promise<Outcome> {
+  /**
+   * Chooses the device for `format` and prints a finished document (also
+   * used by the daily report, T13). A configured printer that is present
+   * prints silently; none configured shows the OS dialog; configured but
+   * missing is PRINTER_NOT_FOUND with nothing sent anywhere. Never throws:
+   * failures are outcomes. Writes nothing.
+   */
+  async sendDocument(html: string, format: PrintFormat): Promise<Outcome> {
     const printerName = this.configuredPrinter(format);
     if (printerName === null) {
       return this.drive(html, { format, silent: false });

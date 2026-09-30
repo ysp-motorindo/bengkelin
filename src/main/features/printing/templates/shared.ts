@@ -223,16 +223,30 @@ export function documentHtml(
   body: SafeHtml,
 ): string {
   const title = `${labelsFor(model).invoice} ${model.invoiceNumber}`;
+  return documentShell({ language: model.language, title, css, body });
+}
+
+/**
+ * The document every print template produces (invoices, reports): doctype,
+ * a meta CSP that forbids scripts and remote loads, static CSS, and the
+ * escaped body. `css` must be developer-written, never data.
+ */
+export function documentShell(document: {
+  language: string;
+  title: string;
+  css: string;
+  body: SafeHtml;
+}): string {
   return html`<!doctype html>
-<html lang="${model.language}">
+<html lang="${document.language}">
 <head>
 <meta charset="utf-8" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'" />
-<title>${title}</title>
-<style>${trusted(BASE_CSS + css)}</style>
+<title>${document.title}</title>
+<style>${trusted(BASE_CSS + document.css)}</style>
 </head>
 <body>
-${body}
+${document.body}
 </body>
 </html>
 `.value;

@@ -13,3 +13,4 @@ export * from './drafts';
 export * from './invoices';
 export * from './invoice-history';
 export * from './printing';
+export * from './reports';

@@ -1,0 +1,76 @@
+{
+  "title": "Daily Report",
+  "subtitle": "Activity for one calendar date in the shop time zone ({{timezone}}), not a cashier shift report.",
+  "loading": "Loading report...",
+  "heading": "Date {{date}} · time zone {{timezone}} · generated at {{time}}",
+  "empty": "None",
+  "filters": {
+    "label": "Report filters",
+    "date": "Date",
+    "cashier": "Cashier",
+    "channel": "Channel",
+    "any": "All",
+    "submit": "Show"
+  },
+  "sales": {
+    "title": "Sales activity",
+    "basis": "Invoices finalized on this date, including ones voided later. Cashier filter = the finalizing cashier.",
+    "invoiceCount": "Invoices",
+    "grossSubtotal": "Gross subtotal",
+    "itemDiscounts": "Item discounts",
+    "invoiceDiscounts": "Invoice discounts",
+    "netBeforeVoids": "Net sales before voids",
+    "byChannel": "Sales by channel",
+    "byCashier": "Sales by cashier",
+    "channel": "Channel",
+    "cashier": "Cashier",
+    "net": "Net sales"
+  },
+  "voids": {
+    "title": "Voids",
+    "basis": "Invoices voided on this date, whenever they were sold; their amount is deducted on the void day. Cashier filter = the voiding cashier.",
+    "list": "Voided invoices",
+    "count": "Voids",
+    "deduction": "Void deductions",
+    "netAfterVoids": "Net sales after voids",
+    "invoiceNumber": "Invoice no.",
+    "finalizedDate": "Sale date",
+    "voidedAt": "Voided at",
+    "voidedBy": "Voided by",
+    "channel": "Channel",
+    "reason": "Reason",
+    "amount": "Amount"
+  },
+  "payments": {
+    "title": "Payment activity",
+    "basis": "Money received on this date, including payments on earlier invoices. Cashier filter = the receiving cashier.",
+    "received": "Total money received",
+    "count": "Payments",
+    "sameDay": "On today's invoices",
+    "older": "On earlier invoices",
+    "byMethod": "Payments by method",
+    "method": "Method",
+    "amount": "Amount"
+  },
+  "actions": {
+    "preview": "Preview & print",
+    "exportCsv": "Export CSV"
+  },
+  "preview": {
+    "title": "Daily report preview",
+    "print": "Print A4",
+    "close": "Close",
+    "loading": "Preparing preview...",
+    "documentLabel": "Daily report preview (A4)"
+  },
+  "outcome": {
+    "working": "Working...",
+    "printed": "Report printed.",
+    "csvSaved": "CSV saved: {{fileName}}",
+    "cancelled": "Cancelled.",
+    "PRINTER_NOT_FOUND": "Printer “{{printerName}}” was not found. Check the printer or the print settings.",
+    "PRINT_FAILED": "The report could not be printed. Try again.",
+    "PDF_FAILED": "The report could not be printed. Try again.",
+    "EXPORT_FAILED": "The CSV could not be saved. Try again or choose another location."
+  }
+}

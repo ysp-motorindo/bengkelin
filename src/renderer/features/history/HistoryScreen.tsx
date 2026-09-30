@@ -10,10 +10,10 @@ import type {
   CashierSession,
   InvoicePage,
   InvoiceSearchFilters,
-  ReferenceDto,
 } from '@/shared/contracts';
 import { InvoiceDetail } from './InvoiceDetail';
 import { Pager, SummaryTable } from './SummaryTable';
+import { useFilterOptions } from './use-filter-options';
 import { useShopTimezone } from './use-shop-timezone';
 
 const EMPTY = {
@@ -41,11 +41,6 @@ function toFilters(form: FilterForm): InvoiceSearchFilters {
   return filters as InvoiceSearchFilters;
 }
 
-interface Option {
-  id: string;
-  label: string;
-}
-
 /**
  * Transaction history (spec 34): issued invoices only, filtered on their
  * frozen snapshots, newest first, paginated. Opening a row shows the
@@ -59,11 +54,9 @@ export function HistoryScreen({ session }: { session: CashierSession }) {
   const [applied, setApplied] = useState<InvoiceSearchFilters>({});
   const [page, setPage] = useState<InvoicePage | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [channels, setChannels] = useState<Option[]>([]);
-  const [cashiers, setCashiers] = useState<Option[]>([]);
+  const { channels, cashiers } = useFilterOptions(session);
   const list = useAction();
   const { run, check } = list;
-  const admin = session.role === 'ADMIN';
 
   const load = useCallback(
     (filters: InvoiceSearchFilters, number: number) =>
@@ -80,46 +73,6 @@ export function HistoryScreen({ session }: { session: CashierSession }) {
   useEffect(() => {
     void load({}, 1);
   }, [load]);
-
-  useEffect(() => {
-    let live = true;
-    const b = window.bengkelin;
-    void (async () => {
-      const channelResult = admin
-        ? await b.references.list({ entity: 'channel' })
-        : await b.references.listActive({ entity: 'channel' });
-      if (live && channelResult.ok) {
-        setChannels(
-          (channelResult.value as ReferenceDto[]).map((c) => ({
-            id: c.id,
-            label: c.label,
-          })),
-        );
-      }
-      // Only ADMIN may list cashiers; a CASHIER can filter on themselves.
-      if (admin) {
-        const cashierResult = await b.cashiers.list();
-        if (live && cashierResult.ok) {
-          setCashiers(
-            cashierResult.value.map((c) => ({
-              id: c.id,
-              label: c.displayName,
-            })),
-          );
-        }
-      } else if (live) {
-        setCashiers([
-          {
-            id: session.cashierId,
-            label: t('history.filters.me', { name: session.displayName }),
-          },
-        ]);
-      }
-    })().catch(() => undefined);
-    return () => {
-      live = false;
-    };
-  }, [admin, session.cashierId, session.displayName, t]);
 
   function set(key: keyof FilterForm, text: string) {
     setForm((current) => ({ ...current, [key]: text }));

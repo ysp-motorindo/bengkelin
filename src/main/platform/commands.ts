@@ -1,6 +1,7 @@
 import { CHANNELS } from '@/shared/channels';
 import {
   finalizeInputSchema,
+  dailyReportInputSchema,
   invoiceIdInputSchema,
   invoiceSearchInputSchema,
   receivablesInputSchema,
@@ -74,6 +75,7 @@ export function buildCommands(services: ApplicationServices): Command[] {
     adHocReferences,
     invoices,
     printing,
+    reports,
     logo,
     app,
     sessions,
@@ -360,6 +362,21 @@ export function buildCommands(services: ApplicationServices): Command[] {
       printSettingsInputSchema,
       ({ windowId }, input) =>
         printing.updateSettings(session(windowId), input),
+    ),
+
+    command(C.reports.daily, dailyReportInputSchema, ({ windowId }, input) =>
+      reports.daily(session(windowId), input),
+    ),
+    command(C.reports.preview, dailyReportInputSchema, ({ windowId }, input) =>
+      reports.preview(session(windowId), input),
+    ),
+    command(C.reports.print, dailyReportInputSchema, ({ windowId }, input) =>
+      reports.print(session(windowId), input),
+    ),
+    command(
+      C.reports.exportCsv,
+      dailyReportInputSchema,
+      ({ windowId }, input) => reports.exportCsv(session(windowId), input),
     ),
   ];
 }
