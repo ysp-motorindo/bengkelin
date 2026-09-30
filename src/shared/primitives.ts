@@ -17,16 +17,21 @@ export type Result<T> =
         code: string;
         messageKey: string;
         fieldErrors?: Record<string, string>;
+        /** Interpolation values for the translated message (e.g. an owner title). */
+        params?: Record<string, string>;
       };
     };
 
 /** Typed domain failure with a stable machine-readable code. */
 export class DomainError extends Error {
   readonly code: string;
-  constructor(code: string, message?: string) {
+  /** Values for the translated message; shown to the cashier, so no secrets. */
+  readonly params: Record<string, string> | undefined;
+  constructor(code: string, message?: string, params?: Record<string, string>) {
     super(message ?? code);
     this.name = 'DomainError';
     this.code = code;
+    this.params = params;
   }
 }
 

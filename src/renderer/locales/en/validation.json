@@ -11,5 +11,9 @@
   "invalidPhone": "Phone number must contain digits.",
   "invalidDate": "Invalid date (YYYY-MM-DD).",
   "invalidPlate": "Invalid plate number.",
-  "codeFormat": "Letters, numbers, underscores and hyphens only."
+  "codeFormat": "Letters, numbers, underscores and hyphens only.",
+  "invalidInstant": "Invalid date and time.",
+  "invalidMoney": "Enter whole rupiah, digits only (for example 65000).",
+  "duplicate": "Duplicate entry.",
+  "serviceNotTracked": "Services do not track inventory."
 }

@@ -51,6 +51,16 @@ const api: BengkelinApi = Object.freeze({
     save: call(c.vehicles.save),
     transferOwnership: call(c.vehicles.transferOwnership),
   }),
+  catalog: Object.freeze({
+    search: call(c.catalog.search),
+    get: call(c.catalog.get),
+    save: call(c.catalog.save),
+    saveBarcodes: call(c.catalog.saveBarcodes),
+    lookupBarcode: call(c.catalog.lookupBarcode),
+    listPrices: call(c.catalog.listPrices),
+    previewPriceChange: call(c.catalog.previewPriceChange),
+    applyPriceChange: call(c.catalog.applyPriceChange),
+  }),
   app: Object.freeze({
     openLogFolder: call(c.app.openLogFolder),
   }),

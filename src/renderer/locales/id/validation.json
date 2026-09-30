@@ -11,5 +11,9 @@
   "invalidPhone": "Nomor telepon harus berisi angka.",
   "invalidDate": "Tanggal tidak valid (YYYY-MM-DD).",
   "invalidPlate": "Nomor plat tidak valid.",
-  "codeFormat": "Huruf, angka, garis bawah dan tanda hubung saja."
+  "codeFormat": "Huruf, angka, garis bawah dan tanda hubung saja.",
+  "invalidInstant": "Tanggal dan jam tidak valid.",
+  "invalidMoney": "Isi rupiah bulat, hanya angka (contoh 65000).",
+  "duplicate": "Isian ganda.",
+  "serviceNotTracked": "Jasa tidak melacak stok."
 }

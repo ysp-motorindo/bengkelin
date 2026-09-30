@@ -2,6 +2,7 @@ import type { AppDatabase } from '@/main/database/connection';
 import { CashierService } from '@/main/features/auth/cashier-service';
 import { AuthService } from '@/main/features/auth/service';
 import { SessionStore } from '@/main/features/auth/sessions';
+import { CatalogService } from '@/main/features/catalog/service';
 import { CustomerService } from '@/main/features/customers/service';
 import { ReferenceService } from '@/main/features/references/service';
 import { VehicleService } from '@/main/features/vehicles/service';
@@ -34,6 +35,7 @@ export function createApplicationServices(
     cashiers: new CashierService({ db, clock, sessions }),
     references: new ReferenceService({ db, clock }),
     customers: new CustomerService({ db, clock }),
+    catalog: new CatalogService({ db, clock }),
     vehicles: new VehicleService({ db, clock }),
     app: new AppService({ logDir: deps.logDir, openPath: deps.openPath }),
   };

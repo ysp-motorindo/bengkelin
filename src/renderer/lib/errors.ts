@@ -4,6 +4,7 @@ export interface ResultError {
   code: string;
   messageKey: string;
   fieldErrors?: Record<string, string> | undefined;
+  params?: Record<string, string> | undefined;
 }
 
 /**
@@ -11,5 +12,8 @@ export interface ResultError {
  * generic internal-error message rather than showing a raw key or code.
  */
 export function errorMessage(t: TFunction, error: ResultError): string {
-  return t(error.messageKey, { defaultValue: t('errors.INTERNAL_ERROR') });
+  return t(error.messageKey, {
+    ...error.params,
+    defaultValue: t('errors.INTERNAL_ERROR'),
+  });
 }

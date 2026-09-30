@@ -20,5 +20,22 @@
   "REFERENCE_DUPLICATE": "Nama atau kode itu sudah dipakai.",
   "REFERENCE_CODE_IMMUTABLE": "Kode tidak dapat diubah setelah dibuat.",
   "ALREADY_OWNER": "Pelanggan ini sudah menjadi pemilik kendaraan.",
-  "OWNERSHIP_TRANSFER_TOO_SOON": "Kepemilikan baru saja dicatat. Tunggu sebentar lalu coba lagi."
+  "OWNERSHIP_TRANSFER_TOO_SOON": "Kepemilikan baru saja dicatat. Tunggu sebentar lalu coba lagi.",
+  "DUPLICATE_SKU": "SKU tersebut sudah dipakai barang lain.",
+  "DUPLICATE_BARCODE": "Barcode {{barcode}} sudah dimiliki \"{{owner}}\".",
+  "UNKNOWN_BARCODE": "Barcode tidak dikenal. Tidak ada barang yang dibuat.",
+  "BARCODE_INACTIVE": "Barcode ini tidak aktif.",
+  "CATALOG_ITEM_INACTIVE": "Barang ini tidak aktif dan tidak dapat dijual.",
+  "CATALOG_ITEM_NOT_FOUND": "Barang tidak ditemukan.",
+  "UNIT_NOT_FOUND": "Satuan tidak ditemukan.",
+  "UNIT_INACTIVE": "Satuan yang dipilih tidak aktif.",
+  "CHANNEL_NOT_FOUND": "Kanal tidak ditemukan.",
+  "CHANNEL_INACTIVE": "Kanal yang dipilih tidak aktif.",
+  "PRICE_START_CONFLICT": "Sudah ada harga yang mulai tepat pada waktu itu untuk kanal ini. Pilih waktu lain, atau koreksi harga tersebut.",
+  "CORRECTION_REASON_REQUIRED": "Isi alasan koreksi.",
+  "PRICE_CORRECTION_TARGET_INVALID": "Harga itu tidak dapat dikoreksi lagi. Muat ulang lalu coba lagi.",
+  "PRICE_PREVIEW_STALE": "Harga berubah sejak pratinjau. Periksa pratinjau baru sebelum menerapkan.",
+  "PRICE_PREVIEW_EXPIRED": "Pratinjau kedaluwarsa. Lihat pratinjau perubahan lagi.",
+  "INVALID_INSTANT": "Tanggal dan jam tidak valid.",
+  "NEGATIVE_MONEY": "Harga tidak boleh negatif."
 }

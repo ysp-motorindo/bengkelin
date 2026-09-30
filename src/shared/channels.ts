@@ -45,4 +45,14 @@ export const CHANNELS = {
     save: 'bengkelin:vehicles:save',
     transferOwnership: 'bengkelin:vehicles:transferOwnership',
   },
+  catalog: {
+    search: 'bengkelin:catalog:search',
+    get: 'bengkelin:catalog:get',
+    save: 'bengkelin:catalog:save',
+    saveBarcodes: 'bengkelin:catalog:saveBarcodes',
+    lookupBarcode: 'bengkelin:catalog:lookupBarcode',
+    listPrices: 'bengkelin:catalog:listPrices',
+    previewPriceChange: 'bengkelin:catalog:previewPriceChange',
+    applyPriceChange: 'bengkelin:catalog:applyPriceChange',
+  },
 } as const;

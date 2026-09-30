@@ -1,0 +1,116 @@
+{
+  "title": "Catalog & Prices",
+  "readOnlyNote": "You can search and view items and prices. Only an administrator can change them.",
+  "new": "New item",
+  "search": {
+    "label": "Search items (title, SKU or barcode)",
+    "submit": "Search",
+    "includeInactive": "Include inactive items",
+    "empty": "No items found.",
+    "limit": "Showing at most {{count}} items. Refine the search to narrow down."
+  },
+  "lookup": {
+    "label": "Barcode lookup",
+    "submit": "Look up",
+    "found": "Found: {{title}}"
+  },
+  "list": {
+    "title": "Title",
+    "sku": "SKU",
+    "unit": "Unit",
+    "type": "Type",
+    "status": "Status",
+    "open": "Open"
+  },
+  "type": {
+    "STOCK_ITEM": "Stock item",
+    "SERVICE": "Service"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "detail": {
+    "title": "Item details",
+    "noSku": "(no SKU)",
+    "weight": "{{grams}} g",
+    "tracked": "Tracks inventory",
+    "notTracked": "Does not track inventory"
+  },
+  "form": {
+    "createTitle": "New item",
+    "editTitle": "Edit item",
+    "type": "Type",
+    "title": "Title",
+    "description": "Description",
+    "sku": "SKU (optional)",
+    "unit": "Unit",
+    "weight": "Weight (grams, optional)",
+    "trackInventory": "Track inventory",
+    "trackInventoryHintService": "Services never track inventory.",
+    "active": "Active",
+    "save": "Save item",
+    "saved": "Item saved.",
+    "cancel": "Cancel",
+    "selectUnit": "Choose a unit"
+  },
+  "barcodes": {
+    "title": "Barcodes",
+    "add": "Add barcode",
+    "new": "New barcode",
+    "none": "No barcodes yet.",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "hint": "Leading zeros are kept. A barcode cannot belong to two items and is never deleted, only deactivated."
+  },
+  "pricing": {
+    "title": "Prices by channel",
+    "note": "A price is effective from its start time until the next price starts. There is no end time.",
+    "noPrice": "No price configured for this channel.",
+    "start": "Effective from",
+    "price": "Price",
+    "state": "State",
+    "reason": "Correction reason",
+    "actions": "Actions",
+    "state_CURRENT": "Effective now",
+    "state_SCHEDULED": "Scheduled",
+    "state_PREVIOUS": "Replaced by a later start",
+    "state_SUPERSEDED": "Superseded revision",
+    "supersededReason": "Corrected: {{reason}}",
+    "correctionOf": "Corrects an earlier revision: {{reason}}",
+    "add": "Add price point",
+    "correct": "Correct this revision",
+    "addFor": "Add price point for {{channel}}",
+    "correctFor": "Correct revision from {{start}} ({{channel}})",
+    "restore": "Schedule restore to {{price}}",
+    "timezone": "Times shown in {{zone}}"
+  },
+  "dialog": {
+    "addTitle": "Add price point",
+    "correctTitle": "Correct revision",
+    "channel": "Channel: {{channel}}",
+    "start": "Effective from (shop time, {{zone}})",
+    "price": "Price (IDR, whole rupiah)",
+    "reason": "Reason for correction",
+    "preview": "Preview",
+    "apply": "Apply",
+    "back": "Back",
+    "cancel": "Cancel",
+    "close": "Close",
+    "ambiguous": "That local time happens twice. Choose which one:",
+    "earlier": "Earlier ({{time}} UTC)",
+    "later": "Later ({{time}} UTC)",
+    "nonexistent": "That local time does not exist (clock change). Choose a different time.",
+    "invalidStart": "Enter a valid date and time.",
+    "previewTitle": "Review before applying",
+    "currentToNew": "Price at that start: {{current}} → {{next}}",
+    "noCurrent": "none",
+    "corrects": "Replaces the revision: {{price}} from {{start}}",
+    "successor": "Next scheduled price: {{price}} from {{start}}",
+    "noSuccessor": "No later price is scheduled. This price stays effective indefinitely.",
+    "timingPast": "This start is in the past. Only new documents that resolve prices at or after it are affected; kept draft and invoice prices do not change.",
+    "timingFuture": "This start is in the future. Current prices do not change until then.",
+    "conflict": "A price already starts at this exact time. Go back and change the time, or correct that price instead.",
+    "applied": "Price point saved."
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "title": "Katalog & Harga",
+  "readOnlyNote": "Anda dapat mencari dan melihat barang serta harga. Hanya admin yang dapat mengubahnya.",
+  "new": "Barang baru",
+  "search": {
+    "label": "Cari barang (nama, SKU, atau barcode)",
+    "submit": "Cari",
+    "includeInactive": "Sertakan barang tidak aktif",
+    "empty": "Barang tidak ditemukan.",
+    "limit": "Menampilkan paling banyak {{count}} barang. Persempit pencarian."
+  },
+  "lookup": {
+    "label": "Cari barcode",
+    "submit": "Cari barcode",
+    "found": "Ditemukan: {{title}}"
+  },
+  "list": {
+    "title": "Nama",
+    "sku": "SKU",
+    "unit": "Satuan",
+    "type": "Jenis",
+    "status": "Status",
+    "open": "Buka"
+  },
+  "type": {
+    "STOCK_ITEM": "Barang stok",
+    "SERVICE": "Jasa"
+  },
+  "status": {
+    "active": "Aktif",
+    "inactive": "Tidak aktif"
+  },
+  "detail": {
+    "title": "Rincian barang",
+    "noSku": "(tanpa SKU)",
+    "weight": "{{grams}} g",
+    "tracked": "Melacak stok",
+    "notTracked": "Tidak melacak stok"
+  },
+  "form": {
+    "createTitle": "Barang baru",
+    "editTitle": "Ubah barang",
+    "type": "Jenis",
+    "title": "Nama",
+    "description": "Deskripsi",
+    "sku": "SKU (opsional)",
+    "unit": "Satuan",
+    "weight": "Berat (gram, opsional)",
+    "trackInventory": "Lacak stok",
+    "trackInventoryHintService": "Jasa tidak pernah melacak stok.",
+    "active": "Aktif",
+    "save": "Simpan barang",
+    "saved": "Barang disimpan.",
+    "cancel": "Batal",
+    "selectUnit": "Pilih satuan"
+  },
+  "barcodes": {
+    "title": "Barcode",
+    "add": "Tambah barcode",
+    "new": "Barcode baru",
+    "none": "Belum ada barcode.",
+    "deactivate": "Nonaktifkan",
+    "activate": "Aktifkan",
+    "hint": "Angka nol di depan dipertahankan. Barcode tidak boleh dimiliki dua barang dan tidak pernah dihapus, hanya dinonaktifkan."
+  },
+  "pricing": {
+    "title": "Harga per kanal",
+    "note": "Harga berlaku sejak waktu mulainya sampai harga berikutnya mulai. Tidak ada waktu berakhir.",
+    "noPrice": "Belum ada harga untuk kanal ini.",
+    "start": "Berlaku sejak",
+    "price": "Harga",
+    "state": "Status",
+    "reason": "Alasan koreksi",
+    "actions": "Aksi",
+    "state_CURRENT": "Berlaku sekarang",
+    "state_SCHEDULED": "Terjadwal",
+    "state_PREVIOUS": "Digantikan harga yang mulai lebih baru",
+    "state_SUPERSEDED": "Revisi yang digantikan",
+    "supersededReason": "Dikoreksi: {{reason}}",
+    "correctionOf": "Mengoreksi revisi sebelumnya: {{reason}}",
+    "add": "Tambah titik harga",
+    "correct": "Koreksi revisi ini",
+    "addFor": "Tambah titik harga untuk {{channel}}",
+    "correctFor": "Koreksi revisi mulai {{start}} ({{channel}})",
+    "restore": "Jadwalkan pemulihan ke {{price}}",
+    "timezone": "Waktu ditampilkan dalam {{zone}}"
+  },
+  "dialog": {
+    "addTitle": "Tambah titik harga",
+    "correctTitle": "Koreksi revisi",
+    "channel": "Kanal: {{channel}}",
+    "start": "Berlaku sejak (waktu toko, {{zone}})",
+    "price": "Harga (IDR, rupiah bulat)",
+    "reason": "Alasan koreksi",
+    "preview": "Pratinjau",
+    "apply": "Terapkan",
+    "back": "Kembali",
+    "cancel": "Batal",
+    "close": "Tutup",
+    "ambiguous": "Jam lokal itu terjadi dua kali. Pilih salah satu:",
+    "earlier": "Lebih awal ({{time}} UTC)",
+    "later": "Lebih akhir ({{time}} UTC)",
+    "nonexistent": "Jam lokal itu tidak ada (perubahan jam). Pilih waktu lain.",
+    "invalidStart": "Isi tanggal dan jam yang valid.",
+    "previewTitle": "Periksa sebelum menerapkan",
+    "currentToNew": "Harga pada waktu mulai itu: {{current}} → {{next}}",
+    "noCurrent": "belum ada",
+    "corrects": "Menggantikan revisi: {{price}} mulai {{start}}",
+    "successor": "Harga terjadwal berikutnya: {{price}} mulai {{start}}",
+    "noSuccessor": "Tidak ada harga lain yang dijadwalkan. Harga ini berlaku terus tanpa batas.",
+    "timingPast": "Waktu mulai ini sudah lewat. Hanya dokumen baru yang memakai harga pada atau setelah waktu itu yang terpengaruh; harga draf dan faktur yang sudah tersimpan tidak berubah.",
+    "timingFuture": "Waktu mulai ini di masa depan. Harga saat ini tidak berubah sampai waktu itu.",
+    "conflict": "Sudah ada harga yang mulai tepat pada waktu ini. Kembali dan ubah waktunya, atau koreksi harga tersebut.",
+    "applied": "Titik harga disimpan."
+  }
+}
