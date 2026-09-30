@@ -109,6 +109,26 @@ export class InvoiceRepository {
       .all(invoiceId) as TrackedDemandRow[];
   }
 
+  /** Inactive catalog items on live lines (any type), in first-line order. */
+  inactiveCatalogItems(
+    invoiceId: string,
+  ): { catalog_item_id: string; title: string }[] {
+    return this.db
+      .prepare(
+        `SELECT l.catalog_item_id, MIN(l.position) AS first_position,
+           (SELECT f.title_snapshot FROM invoice_items f
+             WHERE f.invoice_id = l.invoice_id AND f.catalog_item_id = l.catalog_item_id
+               AND f.removed_at IS NULL
+             ORDER BY f.position LIMIT 1) AS title
+         FROM invoice_items l
+         JOIN catalog_items c ON c.id = l.catalog_item_id
+         WHERE l.invoice_id = ? AND l.removed_at IS NULL AND c.is_active = 0
+         GROUP BY l.catalog_item_id
+         ORDER BY first_position`,
+      )
+      .all(invoiceId) as { catalog_item_id: string; title: string }[];
+  }
+
   /** Highest odometer on this vehicle's issued (FINALIZED or VOID) invoices. */
   previousOdometer(vehicleId: string, excludeInvoiceId: string): bigint | null {
     const row = this.db

@@ -78,6 +78,14 @@ export function checkFinalization(
       params: { channel: channel?.label ?? '' },
     });
   }
+  // Inactive items cannot be sold (spec 11), even if deactivated after the
+  // line was added. Ad-hoc references, mechanics and units do not block.
+  for (const item of deps.invoices.inactiveCatalogItems(invoice.id)) {
+    errors.push({
+      code: 'CATALOG_ITEM_INACTIVE',
+      params: { catalogItemId: item.catalog_item_id, title: item.title },
+    });
+  }
   if (amount === 0n && allocations.length > 0) {
     errors.push({
       code: 'ZERO_TOTAL_WITH_ALLOCATIONS',

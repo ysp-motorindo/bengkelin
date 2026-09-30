@@ -573,6 +573,107 @@ describe('numbering', () => {
   });
 });
 
+describe('inactive references', () => {
+  const deactivate = (itemId: string, isActive = false) =>
+    h.call(
+      C.catalog.save,
+      {
+        id: itemId,
+        type: 'STOCK_ITEM',
+        title: 'Oli MPX2',
+        unitId: pcs,
+        isActive,
+      },
+      ADMIN,
+    );
+
+  test('a catalog item deactivated after it was added blocks preview and finalize', async () => {
+    const { item, draft } = await stockedDraft(2);
+    const planned = await applyOk(draft, {
+      kind: 'setCheckoutAllocations',
+      allocations: [{ method: 'CASH', amount: '50000' }],
+    });
+    // Previewed while still active...
+    const earlier = value(await preview(planned.id));
+    expect(earlier.errors).toEqual([]);
+    // ...then deactivated before Finalize: the in-transaction check refuses.
+    value(await deactivate(item.id));
+    const before = dump();
+    const error = failure(
+      await finalize(planned, { acknowledgedWarnings: earlier.warnings }),
+    );
+    expect(error).toMatchObject({
+      code: 'CATALOG_ITEM_INACTIVE',
+      messageKey: 'errors.CATALOG_ITEM_INACTIVE',
+      params: { catalogItemId: item.id, title: 'Oli MPX2' },
+    });
+    expect(dump()).toEqual(before);
+    expect(invoiceRow(planned.id)).toMatchObject({
+      status: 'DRAFT',
+      invoice_number: null,
+      version: BigInt(planned.version),
+    });
+    expect(readSaleEntriesForInvoice(h.db, planned.id)).toEqual([]);
+    expect(paymentRows(planned.id)).toHaveLength(0);
+    expect(count('SELECT COUNT(*) AS n FROM invoice_daily_counters')).toBe(0);
+    expect(
+      count(
+        'SELECT COUNT(*) AS n FROM draft_checkout_allocations WHERE invoice_id = ?',
+        planned.id,
+      ),
+    ).toBe(1);
+
+    const shown = value(await preview(planned.id));
+    expect(shown.errors).toEqual([
+      {
+        code: 'CATALOG_ITEM_INACTIVE',
+        params: { catalogItemId: item.id, title: 'Oli MPX2' },
+      },
+    ]);
+    expect(shown.paymentStatusAfterCheckout).toBeNull();
+
+    // Reactivated: it finalizes normally.
+    value(await deactivate(item.id, true));
+    expect((await finalizeOk(planned)).invoiceNumber).toBe('INV-20260930-0001');
+  });
+
+  test('inactive ad-hoc references, mechanics and units do not block', async () => {
+    const mechanic = value(
+      await h.call<ReferenceDto>(
+        C.references.save,
+        { entity: 'mechanic', name: 'Joko' },
+        ADMIN,
+      ),
+    );
+    const { draft } = await stockedDraft(1);
+    let next = await applyOk(draft, {
+      kind: 'addCustomLine',
+      type: 'SERVICE',
+      title: 'Las bracket',
+      unitPrice: '35000',
+      unitId: serviceUnit,
+    });
+    next = await applyOk(next, {
+      kind: 'updateLine',
+      lineId: next.lines[1]!.id,
+      mechanicId: mechanic.id,
+    });
+    h.db.prepare('UPDATE ad_hoc_item_references SET is_active = 0').run();
+    h.db
+      .prepare('UPDATE mechanics SET is_active = 0 WHERE id = ?')
+      .run(mechanic.id);
+    h.db
+      .prepare('UPDATE units SET is_active = 0 WHERE id IN (?, ?)')
+      .run(pcs, serviceUnit);
+    expect(value(await preview(next.id)).errors).toEqual([]);
+    const view = await finalizeOk(next);
+    expect(view.lines.map((l) => [l.title, l.mechanicName])).toEqual([
+      ['Oli MPX2', null],
+      ['Las bracket', 'Joko'],
+    ]);
+  });
+});
+
 describe('stock', () => {
   test('demand is aggregated per item across lines: one SALE of the sum', async () => {
     const item = await pricedItem('65000');

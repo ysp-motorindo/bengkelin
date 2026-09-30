@@ -233,9 +233,16 @@ function ReviewBody({
         >
           <p className="font-medium">{t('workspace.finalize.errorsTitle')}</p>
           <ul className="list-disc pl-5">
-            {preview.errors.map((issue) => (
-              <li key={issue.code}>
-                {t(`errors.${issue.code}`, { ...issue.params })}
+            {preview.errors.map((issue, index) => (
+              <li key={`${issue.code}-${index}`}>
+                {/* A finalize-specific text (naming the item) when there is one. */}
+                {t(
+                  [
+                    `workspace.finalize.issues.${issue.code}`,
+                    `errors.${issue.code}`,
+                  ],
+                  { ...issue.params },
+                )}
               </li>
             ))}
           </ul>

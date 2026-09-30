@@ -69,7 +69,9 @@ export type FinalizeErrorCode =
   | 'INVOICE_DATE_IN_FUTURE'
   | 'ALLOCATION_EXCEEDS_AMOUNT'
   | 'ZERO_TOTAL_WITH_ALLOCATIONS'
-  | 'CHANNEL_INACTIVE';
+  | 'CHANNEL_INACTIVE'
+  /** A live line's catalog item was deactivated after it was added. */
+  | 'CATALOG_ITEM_INACTIVE';
 
 export interface FinalizeIssue {
   code: FinalizeErrorCode;
