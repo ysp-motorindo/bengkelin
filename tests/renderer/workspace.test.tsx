@@ -119,6 +119,32 @@ describe('invalid unsent input is never labelled saved (C1)', () => {
   });
 });
 
+describe('Pay Full replaces invalid allocation input (C1)', () => {
+  test('an invalid amount, then "Bayar Penuh Tunai": the rows follow the server and the state is Saved', async () => {
+    install();
+    render(<CashierWorkspace />);
+    const user = userEvent.setup();
+    await screen.findByRole('combobox', { name: 'Cari barang' });
+    await user.click(screen.getByRole('button', { name: 'Tambah pembayaran' }));
+    await user.type(screen.getByRole('textbox', { name: 'Nominal 1' }), '1x');
+    expect(screen.getByTestId('save-state')).toHaveAttribute(
+      'data-state',
+      'unsaved',
+    );
+    await user.click(screen.getByRole('button', { name: 'Bayar Penuh Tunai' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('save-state')).toHaveAttribute(
+        'data-state',
+        'saved',
+      ),
+    );
+    // The draft total is 0, so Pay Full plans no allocation: the invalid
+    // row is gone with it.
+    expect(screen.queryAllByTestId('allocation-row')).toHaveLength(0);
+    expect(await getWorkspaceActions()!.saveDraft()).toBe(true);
+  });
+});
+
 describe('scanner Enter after new input is a scan, never a highlighted pick', () => {
   const SERVICE: CatalogItemDto = {
     id: '3c9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11',

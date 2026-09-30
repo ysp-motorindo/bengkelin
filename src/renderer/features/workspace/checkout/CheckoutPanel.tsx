@@ -124,14 +124,26 @@ export function CheckoutPanel({
   }
 
   async function payFull(method: PaymentMethod) {
+    // Pay Full replaces the typed rows, so invalid row input no longer
+    // matters (and must not keep the draft "Not saved").
+    markInvalid('allocations', false);
     await flush();
     const result = await send({
       kind: 'setCheckoutAllocations',
       allocations:
         BigInt(totals.amount) > 0n ? [{ method, amount: totals.amount }] : [],
     });
-    if (result.ok) onError(null);
-    else if (result.error.code !== 'QUEUE_CLOSED') {
+    if (result.ok) {
+      onError(null);
+      setRowErrors({});
+      setRows(
+        result.value.checkoutAllocations.map((a) => ({
+          method: a.method,
+          amount: a.amount,
+          reference: a.reference ?? '',
+        })),
+      );
+    } else if (result.error.code !== 'QUEUE_CLOSED') {
       onError(errorMessage(t, result.error));
     }
   }
