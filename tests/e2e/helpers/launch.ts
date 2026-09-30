@@ -22,7 +22,12 @@ const projectRoot = path.resolve(__dirname, '../../..');
  * Pass `dataDir` to reuse a directory that was seeded before launch.
  */
 export async function launchApp(
-  options: { dataDir?: string; env?: Record<string, string> } = {},
+  options: {
+    dataDir?: string;
+    env?: Record<string, string>;
+    /** Extra Chromium/Electron switches (before the app path). */
+    args?: string[];
+  } = {},
 ): Promise<LaunchedApp> {
   const ownsDataDir = options.dataDir === undefined;
   const dataDir =
@@ -48,7 +53,7 @@ export async function launchApp(
         ]
       : [];
   const app = await electron.launch({
-    args: [...linuxArgs, projectRoot],
+    args: [...linuxArgs, ...(options.args ?? []), projectRoot],
     env: { ...env, ...options.env, BENGKELIN_DATA_DIR: dataDir },
   });
   const page = await app.firstWindow();
