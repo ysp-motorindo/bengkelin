@@ -55,4 +55,13 @@ export const CHANNELS = {
     previewPriceChange: 'bengkelin:catalog:previewPriceChange',
     applyPriceChange: 'bengkelin:catalog:applyPriceChange',
   },
+  inventory: {
+    getStock: 'bengkelin:inventory:getStock',
+    listStock: 'bengkelin:inventory:listStock',
+    history: 'bengkelin:inventory:history',
+    openBalance: 'bengkelin:inventory:openBalance',
+    receive: 'bengkelin:inventory:receive',
+    adjust: 'bengkelin:inventory:adjust',
+    setStock: 'bengkelin:inventory:setStock',
+  },
 } as const;

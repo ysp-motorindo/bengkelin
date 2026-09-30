@@ -37,5 +37,14 @@
   "PRICE_PREVIEW_STALE": "Prices changed since the preview. Review the new preview before applying.",
   "PRICE_PREVIEW_EXPIRED": "The preview expired. Preview the change again.",
   "INVALID_INSTANT": "Invalid date and time.",
-  "NEGATIVE_MONEY": "The price cannot be negative."
+  "NEGATIVE_MONEY": "The price cannot be negative.",
+  "REASON_REQUIRED": "Enter the reason for this stock change.",
+  "OPENING_BALANCE_EXISTS": "This item already has stock history, so an opening balance cannot be set. Use receive, adjust or set stock instead.",
+  "ITEM_NOT_INVENTORY_TRACKED": "This item does not track inventory (services never move stock).",
+  "TRACKING_LOCKED_BY_LEDGER": "Inventory tracking cannot be changed because this item already has stock movements.",
+  "IDEMPOTENCY_KEY_REUSED": "This request was already used for a different action. Reload and try again.",
+  "SALE_ALREADY_RECORDED": "Stock for this invoice and item was already recorded.",
+  "SALE_ENTRY_NOT_FOUND": "The stock sale entry was not found.",
+  "SALE_ALREADY_REVERSED": "This sale's stock was already returned.",
+  "INVALID_QUANTITY": "Enter a whole quantity of at least 1."
 }

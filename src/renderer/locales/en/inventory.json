@@ -1,0 +1,67 @@
+{
+  "title": "Inventory",
+  "readOnlyNote": "You can view stock and history. Only an administrator can change stock.",
+  "search": {
+    "label": "Search items (title or SKU)",
+    "submit": "Search",
+    "empty": "No inventory items found."
+  },
+  "filter": {
+    "negativeOnly": "Show only negative stock"
+  },
+  "negativeBanner": "{{count}} item(s) currently have negative stock. Check them and correct the stock.",
+  "negative": "Negative stock",
+  "list": {
+    "title": "Item",
+    "sku": "SKU",
+    "unit": "Unit",
+    "stock": "Stock",
+    "open": "Open"
+  },
+  "detail": {
+    "current": "Current stock: {{quantity}} {{unit}}",
+    "history": "Stock history",
+    "noHistory": "No stock movements yet."
+  },
+  "history": {
+    "time": "Time ({{zone}})",
+    "movement": "Movement",
+    "change": "Change",
+    "cashier": "By",
+    "note": "Note / reason"
+  },
+  "movement": {
+    "OPENING_BALANCE": "Opening balance",
+    "STOCK_IN": "Stock received",
+    "SALE": "Sale",
+    "VOID_REVERSAL": "Void reversal",
+    "ADJUSTMENT": "Adjustment"
+  },
+  "actions": {
+    "label": "Stock actions",
+    "openBalance": "Opening balance",
+    "receive": "Receive stock",
+    "adjust": "Adjust",
+    "setStock": "Set stock to..."
+  },
+  "form": {
+    "quantity": "Quantity",
+    "note": "Note (optional)",
+    "delta": "Change (use a minus sign to reduce)",
+    "target": "New stock quantity",
+    "reason": "Reason (required)",
+    "reasonRequired": "Enter a reason.",
+    "submit": "Save",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "setStock": {
+    "preview": "Change: {{delta}} ({{current}} to {{target}})",
+    "noChange": "No change: the stock already equals this quantity.",
+    "note": "The final change is calculated again when you confirm, from the latest stock."
+  },
+  "result": {
+    "changed": "Saved. Change: {{delta}}. Stock is now {{quantity}}.",
+    "unchanged": "Nothing changed. Stock is {{quantity}}."
+  }
+}

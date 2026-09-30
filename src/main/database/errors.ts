@@ -3,7 +3,8 @@ export type DatabaseErrorCode =
   | 'UNSUPPORTED_SCHEMA'
   | 'MIGRATION_FAILED'
   | 'ASYNC_TRANSACTION'
-  | 'IDEMPOTENCY_KEY_REUSED'
+  | 'NON_SERIALIZABLE_RESULT'
+  | 'NON_SERIALIZABLE_PAYLOAD'
   | 'NOT_IN_TRANSACTION';
 
 export class DatabaseError extends Error {

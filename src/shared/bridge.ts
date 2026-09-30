@@ -1,4 +1,15 @@
 import type {
+  AdjustStockInput,
+  LedgerDto,
+  ListStockInput,
+  OpenBalanceInput,
+  ReceiveStockInput,
+  SetStockInput,
+  StockChangeDto,
+  StockDto,
+  StockHistoryInput,
+  StockItemInput,
+  StockListDto,
   AppliedPriceChangeDto,
   CashierDto,
   CatalogIdInput,
@@ -109,6 +120,20 @@ export interface BengkelinApi {
     applyPriceChange(
       input: ApplyPriceChangeInput,
     ): Promise<Result<AppliedPriceChangeDto>>;
+  };
+  readonly inventory: {
+    /** Any signed-in cashier (read-only). */
+    getStock(input: StockItemInput): Promise<Result<StockDto>>;
+    listStock(input: ListStockInput): Promise<Result<StockListDto>>;
+    history(input: StockHistoryInput): Promise<Result<LedgerDto>>;
+    /** ADMIN. Every write takes a `requestId`: generate once per submission. */
+    openBalance(input: OpenBalanceInput): Promise<Result<StockChangeDto>>;
+    /** ADMIN. */
+    receive(input: ReceiveStockInput): Promise<Result<StockChangeDto>>;
+    /** ADMIN. A reason is required. */
+    adjust(input: AdjustStockInput): Promise<Result<StockChangeDto>>;
+    /** ADMIN. A reason is required; the delta is computed in main. */
+    setStock(input: SetStockInput): Promise<Result<StockChangeDto>>;
   };
   readonly app: {
     openLogFolder(): Promise<Result<void>>;

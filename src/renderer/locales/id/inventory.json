@@ -1,0 +1,67 @@
+{
+  "title": "Persediaan",
+  "readOnlyNote": "Anda dapat melihat stok dan riwayatnya. Hanya administrator yang dapat mengubah stok.",
+  "search": {
+    "label": "Cari barang (nama atau SKU)",
+    "submit": "Cari",
+    "empty": "Tidak ada barang persediaan."
+  },
+  "filter": {
+    "negativeOnly": "Tampilkan hanya stok minus"
+  },
+  "negativeBanner": "{{count}} barang saat ini bersetok minus. Periksa dan koreksi stoknya.",
+  "negative": "Stok minus",
+  "list": {
+    "title": "Barang",
+    "sku": "SKU",
+    "unit": "Satuan",
+    "stock": "Stok",
+    "open": "Buka"
+  },
+  "detail": {
+    "current": "Stok saat ini: {{quantity}} {{unit}}",
+    "history": "Riwayat stok",
+    "noHistory": "Belum ada mutasi stok."
+  },
+  "history": {
+    "time": "Waktu ({{zone}})",
+    "movement": "Mutasi",
+    "change": "Perubahan",
+    "cashier": "Oleh",
+    "note": "Catatan / alasan"
+  },
+  "movement": {
+    "OPENING_BALANCE": "Saldo awal",
+    "STOCK_IN": "Barang masuk",
+    "SALE": "Penjualan",
+    "VOID_REVERSAL": "Pembatalan faktur",
+    "ADJUSTMENT": "Penyesuaian"
+  },
+  "actions": {
+    "label": "Tindakan stok",
+    "openBalance": "Saldo awal",
+    "receive": "Terima barang",
+    "adjust": "Penyesuaian",
+    "setStock": "Atur stok menjadi..."
+  },
+  "form": {
+    "quantity": "Jumlah",
+    "note": "Catatan (opsional)",
+    "delta": "Perubahan (beri tanda minus untuk mengurangi)",
+    "target": "Jumlah stok baru",
+    "reason": "Alasan (wajib)",
+    "reasonRequired": "Isi alasan.",
+    "submit": "Simpan",
+    "confirm": "Konfirmasi",
+    "cancel": "Batal"
+  },
+  "setStock": {
+    "preview": "Perubahan: {{delta}} ({{current}} menjadi {{target}})",
+    "noChange": "Tidak ada perubahan: stok sudah sama dengan jumlah ini.",
+    "note": "Perubahan akhir dihitung ulang saat Anda konfirmasi, dari stok terbaru."
+  },
+  "result": {
+    "changed": "Tersimpan. Perubahan: {{delta}}. Stok sekarang {{quantity}}.",
+    "unchanged": "Tidak ada yang berubah. Stok {{quantity}}."
+  }
+}
