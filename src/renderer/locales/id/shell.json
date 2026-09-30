@@ -11,7 +11,8 @@
     "history": "Riwayat",
     "receivables": "Piutang",
     "reports": "Laporan Harian",
-    "settings": "Pengaturan"
+    "settings": "Pengaturan",
+    "catalogTransfer": "Impor/Ekspor Katalog"
   },
   "preferences": {
     "language": "Bahasa",

@@ -21,6 +21,7 @@ import {
 import { PrintingService } from '@/main/features/printing/service';
 import { ReportService } from '@/main/features/reports/service';
 import { BackupService } from '@/main/features/backups/service';
+import { CatalogTransferService } from '@/main/features/catalog-transfer/service';
 import path from 'node:path';
 import { AppService } from '@/main/platform/app-service';
 import { createLogger, type Logger } from '@/main/platform/logger';
@@ -65,6 +66,14 @@ export function createApplicationServices(
     assetsDir,
     logger,
   });
+  const backups = new BackupService({
+    db,
+    clock,
+    logger,
+    dialogs,
+    defaultDir:
+      deps.backupsDir ?? path.join(path.dirname(deps.logDir), 'backups'),
+  });
   return {
     logger,
     sessions,
@@ -83,13 +92,14 @@ export function createApplicationServices(
     printing,
     reports: new ReportService({ db, clock, printing, dialogs, logger }),
     logo: new LogoService({ db, clock, dialogs, assetsDir, logger }),
-    backups: new BackupService({
+    backups,
+    catalogTransfer: new CatalogTransferService({
       db,
       clock,
-      logger,
       dialogs,
-      defaultDir:
-        deps.backupsDir ?? path.join(path.dirname(deps.logDir), 'backups'),
+      backups,
+      trackingChangeGuard: inventory.trackingChangeGuard,
+      logger,
     }),
     app: new AppService({ logDir: deps.logDir, openPath: deps.openPath }),
   };

@@ -20,6 +20,7 @@ import {
   previewPriceRefreshInputSchema,
   searchAdHocReferencesInputSchema,
   catalogIdInputSchema,
+  commitImportInputSchema,
   changeRoleInputSchema,
   createCashierInputSchema,
   customerIdInputSchema,
@@ -78,6 +79,7 @@ export function buildCommands(services: ApplicationServices): Command[] {
     reports,
     logo,
     backups,
+    catalogTransfer,
     app,
     sessions,
   } = services;
@@ -380,6 +382,21 @@ export function buildCommands(services: ApplicationServices): Command[] {
       ({ windowId }, input) => reports.exportCsv(session(windowId), input),
     ),
 
+    command(C.catalogTransfer.previewImport, noInput, ({ windowId }) =>
+      catalogTransfer.previewImport(session(windowId)),
+    ),
+    command(
+      C.catalogTransfer.commitImport,
+      commitImportInputSchema,
+      ({ windowId }, input) =>
+        catalogTransfer.commitImport(session(windowId), input),
+    ),
+    command(C.catalogTransfer.exportCatalog, noInput, ({ windowId }) =>
+      catalogTransfer.exportCatalog(session(windowId)),
+    ),
+    command(C.catalogTransfer.downloadTemplate, noInput, ({ windowId }) =>
+      catalogTransfer.downloadTemplate(session(windowId)),
+    ),
     command(C.backups.create, noInput, ({ windowId }) =>
       backups.create(session(windowId)),
     ),

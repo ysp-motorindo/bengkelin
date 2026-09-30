@@ -106,6 +106,12 @@ export const CHANNELS = {
     print: 'bengkelin:reports:print',
     exportCsv: 'bengkelin:reports:exportCsv',
   },
+  catalogTransfer: {
+    previewImport: 'bengkelin:catalogTransfer:previewImport',
+    commitImport: 'bengkelin:catalogTransfer:commitImport',
+    exportCatalog: 'bengkelin:catalogTransfer:exportCatalog',
+    downloadTemplate: 'bengkelin:catalogTransfer:downloadTemplate',
+  },
   backups: {
     create: 'bengkelin:backups:create',
     status: 'bengkelin:backups:status',

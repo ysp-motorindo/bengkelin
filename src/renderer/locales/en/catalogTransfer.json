@@ -1,0 +1,61 @@
+{
+  "title": "Catalog Import/Export",
+  "description": "Download the template, export the current catalog, or import a catalog from a CSV file. The SKU is the import key.",
+  "downloadTemplate": "Download template",
+  "export": "Export catalog",
+  "import": "Import CSV...",
+  "working": "Working...",
+  "saved": "File saved: {{fileName}} ({{count}} rows).",
+  "skuMissing": "{{count}} items have no SKU. Give them a SKU before importing this file again.",
+  "exportFailed": "The file could not be saved. Choose another location.",
+  "preview": {
+    "title": "Import preview: {{fileName}}",
+    "summary": "Summary",
+    "creates": "New items",
+    "updates": "Changed items",
+    "unchanged": "Unchanged",
+    "priceChanges": "New price points",
+    "openingBalances": "Opening stock",
+    "barcodeChanges": "Barcodes added/activated",
+    "errors": "Errors ({{count}})",
+    "warnings": "Warnings ({{count}})",
+    "noErrors": "No errors.",
+    "fileLevel": "File",
+    "row": "Row {{row}}",
+    "rows": "Data rows ({{count}})",
+    "truncated": "Only the first {{shown}} rows are shown.",
+    "moreIssues": "And {{count}} more.",
+    "backupNote": "Before importing, the application creates a safety backup of the database. If the backup fails, the import is cancelled and nothing changes. All changes are saved together, or none at all.",
+    "commit": "Import now",
+    "cancel": "Cancel",
+    "blocked": "Fix the errors in the file, then import it again."
+  },
+  "columns": {
+    "row": "Row",
+    "sku": "SKU",
+    "title": "Title",
+    "action": "Action",
+    "details": "Details"
+  },
+  "action": {
+    "CREATE": "New",
+    "UPDATE": "Changed",
+    "UNCHANGED": "Unchanged",
+    "INVALID": "Invalid"
+  },
+  "field": {
+    "title": "title",
+    "description": "description",
+    "type": "type",
+    "unit": "unit",
+    "trackInventory": "stock tracking",
+    "isActive": "active status"
+  },
+  "details": {
+    "fields": "Changes: {{fields}}",
+    "price": "{{channel}}: {{from}} -> {{to}}",
+    "barcodes": "Barcodes: {{barcodes}}",
+    "openingStock": "Opening stock: {{count}}"
+  },
+  "result": "Import complete: {{creates}} new, {{updates}} changed, {{priceChanges}} new price points, {{openingBalances}} opening stock. Backup: {{backupFileName}}"
+}

@@ -40,6 +40,8 @@ export interface FileDialogs {
   choosePdfDestination(defaultFileName: string): Promise<string | null>;
   /** Where to save a CSV export; null when cancelled. */
   chooseCsvDestination(defaultFileName: string): Promise<string | null>;
+  /** A CSV file to import; null when cancelled. */
+  chooseCsvFile(): Promise<string | null>;
   /** A folder for backups; null when cancelled. */
   chooseBackupDirectory(): Promise<string | null>;
 }
@@ -57,5 +59,6 @@ export const noFileDialogs: FileDialogs = {
   chooseImage: async () => null,
   choosePdfDestination: async () => null,
   chooseCsvDestination: async () => null,
+  chooseCsvFile: async () => null,
   chooseBackupDirectory: async () => null,
 };
