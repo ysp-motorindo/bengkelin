@@ -1,12 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { CashierWorkspace } from '@/renderer/features/workspace/CashierWorkspace';
 import { cashChange } from '@/renderer/features/workspace/checkout/tender';
 import { getWorkspaceActions } from '@/renderer/features/workspace/workspace-actions';
 import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
-import type { DraftCommand } from '@/shared/contracts';
-import { workspaceBridge } from './helpers/workspace-bridge';
+import type { CatalogItemDto, DraftCommand } from '@/shared/contracts';
+import { ok, workspaceBridge } from './helpers/workspace-bridge';
 
 function install() {
   const bridge = workspaceBridge();
@@ -62,6 +62,109 @@ describe('cashier workspace', () => {
     await getWorkspaceActions()!.saveDraft();
     expect(ops(bridge)).not.toContain('addCatalogLine');
     expect(ops(bridge)).toContain('updateHeader');
+  });
+});
+
+describe('scanner Enter after new input is a scan, never a highlighted pick', () => {
+  const SERVICE: CatalogItemDto = {
+    id: '3c9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11',
+    type: 'SERVICE',
+    title: 'Jasa Servis Ringan',
+    description: null,
+    sku: null,
+    unitId: 'u',
+    unitCode: 'SERVICE',
+    unitLabel: 'Service',
+    weight: null,
+    trackInventory: false,
+    isActive: true,
+    barcodes: [],
+    createdAt: '2026-09-30T03:00:00.000Z',
+    updatedAt: '2026-09-30T03:00:00.000Z',
+  };
+
+  function installWithSearch() {
+    const bridge = install();
+    bridge.catalog.search = vi.fn(async () => ok({ results: [SERVICE] }));
+    const apply = bridge.drafts.apply;
+    bridge.drafts.apply = vi.fn(async (command: DraftCommand) => {
+      const op = command.op as { kind: string; barcode?: string };
+      if (op.kind === 'addCatalogLine' && op.barcode === 'servis') {
+        return {
+          ok: false as const,
+          error: {
+            code: 'UNKNOWN_BARCODE',
+            messageKey: 'errors.UNKNOWN_BARCODE',
+          },
+        };
+      }
+      return apply(command);
+    });
+    return bridge;
+  }
+
+  const addOps = (bridge: ReturnType<typeof workspaceBridge>) =>
+    bridge.drafts.apply.mock.calls
+      .map((call) => (call[0] as DraftCommand).op)
+      .filter((op) => op.kind === 'addCatalogLine');
+
+  test('a result highlighted with ArrowDown, then a scan: the scanned barcode is added', async () => {
+    const bridge = installWithSearch();
+    render(<CashierWorkspace />);
+    const user = userEvent.setup();
+    const search = await screen.findByRole('combobox', { name: 'Cari barang' });
+    await user.click(search);
+    await user.keyboard('servis');
+    await screen.findByRole('option', { name: /Jasa Servis Ringan/ });
+    await user.keyboard('{ArrowDown}');
+    expect(
+      screen.getByRole('option', { name: /Jasa Servis Ringan/ }),
+    ).toHaveAttribute('aria-selected', 'true');
+    // The scanner types into the same field, then Enter.
+    await user.keyboard('{Control>}a{/Control}8991234567890{Enter}');
+    await waitFor(() => expect(addOps(bridge)).toHaveLength(1));
+    expect(addOps(bridge)[0]).toEqual({
+      kind: 'addCatalogLine',
+      barcode: '8991234567890',
+    });
+  });
+
+  test('fallback results shown after non-barcode text, then a scan: the scanned barcode is added', async () => {
+    const bridge = installWithSearch();
+    render(<CashierWorkspace />);
+    const user = userEvent.setup();
+    const search = await screen.findByRole('combobox', { name: 'Cari barang' });
+    await user.click(search);
+    await user.keyboard('servis{Enter}');
+    // Not a barcode: the results are offered, with nothing picked yet.
+    await screen.findByText(/Bukan barcode/);
+    expect(search).toHaveValue('');
+    expect(
+      screen.getByRole('option', { name: /Jasa Servis Ringan/ }),
+    ).toHaveAttribute('aria-selected', 'false');
+    await user.keyboard('8991234567890{Enter}');
+    await waitFor(() => expect(addOps(bridge)).toHaveLength(2));
+    expect(addOps(bridge)[1]).toEqual({
+      kind: 'addCatalogLine',
+      barcode: '8991234567890',
+    });
+    expect(addOps(bridge).some((op) => 'catalogItemId' in op)).toBe(false);
+  });
+
+  test('Enter without new input still picks a result reached with the arrows', async () => {
+    const bridge = installWithSearch();
+    render(<CashierWorkspace />);
+    const user = userEvent.setup();
+    const search = await screen.findByRole('combobox', { name: 'Cari barang' });
+    await user.click(search);
+    await user.keyboard('servis');
+    await screen.findByRole('option', { name: /Jasa Servis Ringan/ });
+    await user.keyboard('{ArrowDown}{Enter}');
+    await waitFor(() => expect(addOps(bridge)).toHaveLength(1));
+    expect(addOps(bridge)[0]).toEqual({
+      kind: 'addCatalogLine',
+      catalogItemId: SERVICE.id,
+    });
   });
 });
 

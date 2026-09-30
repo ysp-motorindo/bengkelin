@@ -50,6 +50,10 @@ export function ScannerCombobox({
   const [active, setActive] = useState(-1);
   const [hint, setHint] = useState<string | null>(null);
   const searchSeq = useRef(0);
+  // True only after arrow-key navigation since the last input change: Enter
+  // then picks the highlighted result. Any new input (a scanner typing its
+  // digits) clears it, so Enter after new input is always a scan/submit.
+  const navigated = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -98,6 +102,7 @@ export function ScannerCombobox({
     setResults([]);
     setOpen(false);
     setActive(-1);
+    navigated.current = false;
   }
 
   async function submitText(code: string) {
@@ -107,10 +112,12 @@ export function ScannerCombobox({
     const found = await search(code);
     if (found.length === 0 || inputRef.current?.value !== '') return;
     onClearFeedback();
-    setText(code);
+    // The field stays empty so the next scan starts clean; the results
+    // stay reachable with the arrow keys.
     setResults(found);
     setOpen(true);
-    setActive(0);
+    setActive(-1); // nothing is picked until the cashier uses the arrows
+    navigated.current = false;
     setHint(t('workspace.search.chooseResult'));
   }
 
@@ -119,6 +126,7 @@ export function ScannerCombobox({
       if (results.length === 0) return;
       event.preventDefault();
       setOpen(true);
+      navigated.current = true;
       setActive((index) => {
         const step = event.key === 'ArrowDown' ? 1 : -1;
         if (index < 0) return step > 0 ? 0 : results.length - 1;
@@ -136,7 +144,8 @@ export function ScannerCombobox({
     }
     if (event.key !== 'Enter') return;
     event.preventDefault();
-    const picked = open && active >= 0 ? results[active] : undefined;
+    const picked =
+      navigated.current && open && active >= 0 ? results[active] : undefined;
     const code = text.trim();
     reset();
     setHint(null);
@@ -174,6 +183,9 @@ export function ScannerCombobox({
           value={text}
           onChange={(event) => {
             setText(event.target.value);
+            // New input: forget any highlighted result (see `navigated`).
+            navigated.current = false;
+            setActive(-1);
             setHint(null);
             if (feedback) onClearFeedback();
             scheduleSearch(event.target.value);

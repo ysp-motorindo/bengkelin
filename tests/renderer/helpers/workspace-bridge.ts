@@ -4,6 +4,7 @@ import type {
   DraftCommand,
   DraftView,
   ReferenceDto,
+  SearchCatalogResult,
 } from '@/shared/contracts';
 import type { Result } from '@/shared/primitives';
 
@@ -88,7 +89,7 @@ export function workspaceBridge() {
       ),
     },
     catalog: {
-      search: vi.fn(async () => ok({ results: [] })),
+      search: vi.fn(async () => ok<SearchCatalogResult>({ results: [] })),
       lookupBarcode: vi.fn(),
     },
     drafts: {
