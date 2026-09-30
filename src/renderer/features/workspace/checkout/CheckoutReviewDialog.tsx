@@ -26,6 +26,7 @@ import type {
   InvoiceView,
 } from '@/shared/contracts';
 import type { FinalizeClient } from './finalize-client';
+import { trackFinalize } from './finalize-pending';
 
 interface CheckoutReviewDialogProps {
   /** The flushed, acknowledged draft view. */
@@ -110,10 +111,12 @@ export function CheckoutReviewDialog({
       submission.current = { key, requestId: crypto.randomUUID() };
     }
     try {
-      const result = await finalizer.finalize({
-        requestId: submission.current.requestId,
-        ...payload,
-      });
+      const result = await trackFinalize(
+        finalizer.finalize({
+          requestId: submission.current.requestId,
+          ...payload,
+        }),
+      );
       if (result.ok) {
         setPhase({ kind: 'done', invoice: result.value });
         return;
@@ -140,6 +143,8 @@ export function CheckoutReviewDialog({
       <Dialog
         title={t('workspace.finalize.doneTitle')}
         onClose={onNewTransaction}
+        // Ctrl+N from the finalized view starts the next transaction.
+        allowNewTransaction
         closeLabel={t('workspace.common.close')}
         className="max-w-xl"
       >
