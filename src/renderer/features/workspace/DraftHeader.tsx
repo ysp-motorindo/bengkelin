@@ -150,6 +150,14 @@ export function DraftHeader({
 
   const channelMissing =
     channels.length > 0 && !channels.some((c) => c.id === view.channelId);
+  const customer = view.customer
+    ? customerLabel(t, view.customer)
+    : t('workspace.header.anonymous');
+  const vehicle = view.vehicle
+    ? [view.vehicle.plateNumber, view.vehicle.description]
+        .filter(Boolean)
+        .join(' · ')
+    : t('workspace.header.noVehicle');
 
   return (
     <section
@@ -276,32 +284,39 @@ export function DraftHeader({
       </div>
 
       <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-3 xl:col-span-3">
-        <span className="text-sm font-medium">
+        <Label htmlFor="header-customer-vehicle">
           {t('workspace.header.customerVehicle')}
-        </span>
-        <div className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1">
-          <UserRound
-            aria-hidden="true"
-            className="size-4 text-muted-foreground"
+        </Label>
+        <div className="relative">
+          <Input
+            id="header-customer-vehicle"
+            className="pr-12"
+            readOnly
+            value={`${customer} · ${vehicle}`}
+            title={`${customer} · ${vehicle}`}
           />
-          <span data-testid="header-customer" className="font-medium">
-            {view.customer
-              ? customerLabel(t, view.customer)
-              : t('workspace.header.anonymous')}
+          <span
+            data-testid="header-customer"
+            className="sr-only"
+            aria-hidden="true"
+          >
+            {customer}
           </span>
-          <span data-testid="header-vehicle" className="text-sm">
-            {view.vehicle
-              ? [view.vehicle.plateNumber, view.vehicle.description]
-                  .filter(Boolean)
-                  .join(' · ')
-              : t('workspace.header.noVehicle')}
+          <span
+            data-testid="header-vehicle"
+            className="sr-only"
+            aria-hidden="true"
+          >
+            {vehicle}
           </span>
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            className="absolute right-0 top-0 size-10 bg-transparent px-0 hover:bg-transparent active:bg-transparent"
+            aria-label={t('workspace.header.chooseParty')}
+            title={t('workspace.header.chooseParty')}
             onClick={() => setPending({ kind: 'party' })}
           >
-            {t('workspace.header.chooseParty')}
+            <UserRound aria-hidden="true" />
           </Button>
         </div>
       </div>
