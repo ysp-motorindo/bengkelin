@@ -163,23 +163,23 @@ export function CheckoutPanel({
       aria-label={t('workspace.checkout.label')}
       className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3"
     >
-      <dl className="tabular grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
+      <dl className="tabular grid grid-cols-[1fr_auto] gap-y-1 text-sm">
         <dt className="text-muted-foreground">
           {t('workspace.checkout.subtotal')}
         </dt>
-        <dd className="text-right" data-testid="subtotal-amount">
+        <dd className="pl-3 text-right" data-testid="subtotal-amount">
           {formatIdr(totals.subtotal)}
         </dd>
         <dt className="text-muted-foreground">
           {t('workspace.checkout.itemDiscounts')}
         </dt>
-        <dd className="text-right" data-testid="item-discount-amount">
+        <dd className="pl-3 text-right" data-testid="item-discount-amount">
           {formatIdr(totals.itemDiscountAmount)}
         </dd>
         <dt className="text-muted-foreground">
           {t('workspace.checkout.invoiceDiscounts')}
         </dt>
-        <dd className="text-right" data-testid="invoice-discount-amount">
+        <dd className="pl-3 text-right" data-testid="invoice-discount-amount">
           {formatIdr(totals.invoiceDiscountAmount)}
         </dd>
         <dt className="self-end border-t border-border pt-2 text-base font-semibold">
