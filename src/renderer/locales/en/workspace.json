@@ -105,6 +105,9 @@
     "noVehicle": "No vehicle",
     "chooseParty": "Choose customer/vehicle",
     "note": "Note",
+    "addNote": "Add note",
+    "updateNote": "Update note",
+    "saveNote": "Save note",
     "ownerMismatch": "This vehicle's active owner is not the selected customer. Ownership is never changed automatically.",
     "reviewOwnership": "Review ownership"
   },

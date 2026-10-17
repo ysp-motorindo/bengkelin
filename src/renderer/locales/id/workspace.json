@@ -105,6 +105,9 @@
     "noVehicle": "Tanpa kendaraan",
     "chooseParty": "Pilih pelanggan/kendaraan",
     "note": "Catatan",
+    "addNote": "Tambah catatan",
+    "updateNote": "Ubah catatan",
+    "saveNote": "Simpan catatan",
     "ownerMismatch": "Pemilik aktif kendaraan ini bukan pelanggan yang dipilih. Kepemilikan tidak berubah otomatis.",
     "reviewOwnership": "Tinjau kepemilikan"
   },

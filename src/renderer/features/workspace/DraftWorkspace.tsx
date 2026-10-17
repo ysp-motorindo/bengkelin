@@ -1,7 +1,17 @@
-import { FilePlus, FolderOpen, ListPlus, RefreshCcw } from 'lucide-react';
+import {
+  Check,
+  FilePlus,
+  FolderOpen,
+  ListPlus,
+  PencilLine,
+  RefreshCcw,
+  X,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
+import { Dialog } from '@/renderer/components/ui/dialog';
+import { controlClass } from '@/renderer/components/ui/input';
 import { errorMessage } from '@/renderer/lib/errors';
 import type {
   CatalogItemDto,
@@ -61,6 +71,7 @@ type Dialog =
     }
   | { kind: 'custom' }
   | { kind: 'repricing' }
+  | { kind: 'note' }
   | { kind: 'switcher' }
   | { kind: 'review' }
   | null;
@@ -265,6 +276,16 @@ export function DraftWorkspace({
               </span>
             ) : null}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDialog({ kind: 'note' })}
+          >
+            <PencilLine aria-hidden="true" />
+            {view.note?.trim()
+              ? t('workspace.header.updateNote')
+              : t('workspace.header.addNote')}
+          </Button>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <span>
@@ -377,6 +398,19 @@ export function DraftWorkspace({
           onClose={closeDialog}
         />
       ) : null}
+      {dialog?.kind === 'note' ? (
+        <DraftNoteDialog
+          value={view.note ?? ''}
+          onSave={(note) => {
+            commands.edit('note', {
+              kind: 'updateHeader',
+              changes: { note },
+            });
+            setDialog(null);
+          }}
+          onClose={closeDialog}
+        />
+      ) : null}
       {dialog?.kind === 'switcher' ? (
         <DraftSwitcher
           currentId={view.id}
@@ -401,5 +435,58 @@ export function DraftWorkspace({
         />
       ) : null}
     </div>
+  );
+}
+
+function DraftNoteDialog({
+  value,
+  onSave,
+  onClose,
+}: {
+  value: string;
+  onSave(note: string): void;
+  onClose(): void;
+}) {
+  const { t } = useTranslation();
+  const [note, setNote] = useState(value);
+
+  return (
+    <Dialog
+      title={t('workspace.header.note')}
+      onClose={onClose}
+      closeLabel={t('workspace.common.close')}
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.cancel')}
+          </Button>
+          <Button type="submit" form="draft-note-form">
+            <Check aria-hidden="true" />
+            {t('workspace.header.saveNote')}
+          </Button>
+        </div>
+      }
+    >
+      <form
+        id="draft-note-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSave(note);
+        }}
+      >
+        <label htmlFor="draft-note" className="sr-only">
+          {t('workspace.header.note')}
+        </label>
+        <textarea
+          id="draft-note"
+          rows={5}
+          maxLength={1000}
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          className={`${controlClass} h-auto min-h-32 resize-y`}
+        />
+      </form>
+    </Dialog>
   );
 }

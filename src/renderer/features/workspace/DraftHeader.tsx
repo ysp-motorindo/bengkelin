@@ -3,12 +3,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Button } from '@/renderer/components/ui/button';
-import { Input, controlClass } from '@/renderer/components/ui/input';
+import { Input } from '@/renderer/components/ui/input';
 import { Label } from '@/renderer/components/ui/label';
 import { Select } from '@/renderer/components/ui/select';
 import { customerLabel } from '@/renderer/features/customers/labels';
 import { errorMessage } from '@/renderer/lib/errors';
-import { cn } from '@/renderer/lib/utils';
 import {
   MAX_TOP_DAYS,
   isLocalDate,
@@ -76,9 +75,6 @@ export function DraftHeader({
   );
   const [topDays, setTopDays] = useSyncedValue(String(view.topDays), () =>
     isDirty('topDays'),
-  );
-  const [note, setNote] = useSyncedValue(view.note ?? '', () =>
-    isDirty('note'),
   );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -319,26 +315,6 @@ export function DraftHeader({
             <UserRound aria-hidden="true" />
           </Button>
         </div>
-      </div>
-
-      <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-3 xl:col-span-3">
-        <label htmlFor="draft-note" className="text-sm font-medium">
-          {t('workspace.header.note')}
-        </label>
-        <textarea
-          id="draft-note"
-          rows={1}
-          maxLength={1000}
-          value={note}
-          onChange={(event) => {
-            setNote(event.target.value);
-            edit('note', {
-              kind: 'updateHeader',
-              changes: { note: event.target.value },
-            });
-          }}
-          className={cn(controlClass, 'h-auto min-h-10 resize-y')}
-        />
       </div>
 
       {view.ownerMismatch ? (
