@@ -317,7 +317,7 @@ export function CustomLineDialog({
             error={errors.unitPrice}
           >
             <Input
-              inputMode="numeric"
+              type="number"
               autoComplete="off"
               className="tabular"
               value={price}
@@ -329,7 +329,7 @@ export function CustomLineDialog({
             error={errors.quantity}
           >
             <Input
-              inputMode="numeric"
+              type="number"
               autoComplete="off"
               className="tabular"
               value={quantity}

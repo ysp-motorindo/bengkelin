@@ -208,7 +208,7 @@ export function CheckoutPanel({
             }
           >
             <Input
-              inputMode="decimal"
+              type="number" step="any"
               autoComplete="off"
               className="tabular h-9"
               value={value}
@@ -278,7 +278,7 @@ export function CheckoutPanel({
             <Input
               aria-label={`${t('workspace.checkout.amount')} ${index + 1}`}
               aria-invalid={rowErrors[index] ? true : undefined}
-              inputMode="numeric"
+              type="number"
               autoComplete="off"
               className="tabular h-9"
               value={row.amount}
@@ -371,7 +371,7 @@ export function CheckoutPanel({
       >
         <FormField label={t('workspace.checkout.tendered')}>
           <Input
-            inputMode="numeric"
+            type="number"
             autoComplete="off"
             className="tabular h-9"
             value={tendered}

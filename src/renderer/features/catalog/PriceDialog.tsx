@@ -237,7 +237,7 @@ export function PriceDialog({
             error={fieldErrors.price}
           >
             <Input
-              inputMode="numeric"
+              type="number"
               autoComplete="off"
               value={price}
               onChange={(event) => setPrice(event.target.value.trim())}

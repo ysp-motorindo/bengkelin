@@ -131,7 +131,7 @@ export function PaymentDialog({
           error={amountError ?? action.fieldErrors.amount}
         >
           <Input
-            inputMode="numeric"
+            type="number"
             autoComplete="off"
             value={amountText}
             onChange={(event) => setAmountText(event.target.value)}

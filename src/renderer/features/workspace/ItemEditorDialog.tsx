@@ -181,7 +181,7 @@ export function ItemEditorDialog({
           >
             <Input
               ref={quantityRef}
-              inputMode="numeric"
+              type="number"
               autoComplete="off"
               className="tabular"
               value={quantity}
@@ -211,7 +211,7 @@ export function ItemEditorDialog({
             }
           >
             <Input
-              inputMode="numeric"
+              type="number"
               autoComplete="off"
               className="tabular"
               value={unitPrice}
@@ -244,7 +244,7 @@ export function ItemEditorDialog({
               }
             >
               <Input
-                inputMode="decimal"
+                type="number" step="any"
                 autoComplete="off"
                 className="tabular"
                 value={value}

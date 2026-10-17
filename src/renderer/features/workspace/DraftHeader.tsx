@@ -283,7 +283,7 @@ export function DraftHeader({
                 })}
               >
                 <Input
-                  inputMode="numeric"
+                  type="number"
                   autoComplete="off"
                   className="tabular text-right"
                   value={topDays}
@@ -309,7 +309,7 @@ export function DraftHeader({
                 error={fieldErrors.odometer}
               >
                 <Input
-                  inputMode="numeric"
+                  type="number"
                   autoComplete="off"
                   className="tabular text-right"
                   value={odometer}

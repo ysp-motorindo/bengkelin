@@ -158,7 +158,7 @@ export function ItemForm({ item, onSaved, onCancel }: ItemFormProps) {
       </FormField>
       <FormField label={t('catalog.form.weight')} error={fieldErrors.weight}>
         <Input
-          inputMode="numeric"
+          type="number"
           autoComplete="off"
           value={weight}
           onChange={(event) => setWeight(event.target.value)}

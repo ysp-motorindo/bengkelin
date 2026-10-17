@@ -87,7 +87,7 @@ export function ManualPriceDialog({
         <FormField label={t('workspace.manualPrice.price')} error={fieldError}>
           <Input
             ref={priceRef}
-            inputMode="numeric"
+            type="number"
             autoComplete="off"
             className="tabular"
             value={price}

@@ -273,7 +273,7 @@ function ActionForm({
         }
       >
         <Input
-          inputMode="numeric"
+          type="number"
           autoComplete="off"
           value={value}
           onChange={(event) => edit(setValue)(event.target.value)}
