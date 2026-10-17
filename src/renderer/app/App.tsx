@@ -167,6 +167,11 @@ export function App() {
               : current,
           )
         }
+        onShopSettingsChanged={(next) =>
+          setPhase((current) =>
+            current.kind === 'ready' ? { ...current, settings: next } : current,
+          )
+        }
       />
     );
   }

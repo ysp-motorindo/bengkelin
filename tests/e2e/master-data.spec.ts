@@ -213,6 +213,7 @@ test('reference management is ADMIN-only in the UI and in main', async () => {
   );
   expect(denied).toMatchObject({ ok: false, error: { code: 'FORBIDDEN' } });
 
+  await page.getByTestId('session-name').click();
   await page.getByRole('button', { name: t('shell.logout') }).click();
   await page.getByLabel(t('auth.login.username'), exact).fill('admin');
   await page.getByLabel(t('auth.login.password'), exact).fill(ADMIN_PASSWORD);

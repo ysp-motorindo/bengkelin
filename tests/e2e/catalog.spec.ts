@@ -146,6 +146,7 @@ test('ADMIN creates an item with a barcode and two price points, sees the timeli
   );
 
   // Sign out and sign in as the cashier.
+  await page.getByTestId('session-name').click();
   await page.getByRole('button', { name: t('shell.logout') }).click();
   await page.getByLabel(t('auth.login.username'), exact).fill('siti');
   await page.getByLabel(t('auth.login.password'), exact).fill(CASHIER_PASSWORD);

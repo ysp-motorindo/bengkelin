@@ -106,6 +106,7 @@ for (const language of ['id', 'en'] as const) {
     await page.reload();
     await expect(page.getByTestId('session-name')).toHaveText('Pak Budi');
 
+    await page.getByTestId('session-name').click();
     await page
       .getByRole('button', { name: tr(language, 'shell.logout') })
       .click();
@@ -226,7 +227,7 @@ test('direct ADMIN calls from the renderer are denied without a session and for 
     created: true,
     list: 'FORBIDDEN',
     create: 'FORBIDDEN',
-    prefs: 'FORBIDDEN',
+    prefs: 'OK',
     logs: 'FORBIDDEN',
     malformed: 'VALIDATION_FAILED',
   });

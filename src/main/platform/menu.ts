@@ -67,15 +67,16 @@ export function installApplicationMenu(deps: {
 
   function refresh(): void {
     if (disposed || window.isDestroyed()) return;
+    const session = services.sessions.get(windowId);
     try {
-      language = services.settings.getPublic().language;
+      language = session?.language ?? services.settings.getPublic().language;
     } catch {
       // Database closed (restore in progress): keep the last language.
     }
     const template = buildMenuTemplate({
       platform: deps.platform ?? process.platform,
       language,
-      role: services.sessions.get(windowId)?.role ?? null,
+      role: session?.role ?? null,
       printable: services.menu.get(windowId).printable,
       appName: deps.appName,
       dispatch: send,

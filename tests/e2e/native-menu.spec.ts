@@ -119,6 +119,7 @@ test('ADMIN menu in both languages: rebuilt on language change; About, Backup an
   await expect(searchBox(page, 'en')).toBeFocused();
 
   // Logout: the menu drops back to the safe items.
+  await page.getByTestId('session-name').click();
   await page
     .getByRole('button', { name: tr('en', 'shell.logout'), ...exact })
     .click();

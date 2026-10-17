@@ -30,6 +30,7 @@ describe('shell', () => {
     expect(
       await screen.findByRole('combobox', { name: 'Cari barang' }),
     ).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId('session-name'));
     const button = screen.getByRole('button', { name: 'Keluar' });
     await userEvent.click(button);
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());

@@ -137,6 +137,7 @@ describe('login screen', () => {
     expect(await screen.findByTestId('session-role')).toHaveTextContent(
       'Admin',
     );
+    await userEvent.click(screen.getByTestId('session-name'));
     expect(screen.getByRole('button', { name: 'Keluar' })).toBeInTheDocument();
   });
 });

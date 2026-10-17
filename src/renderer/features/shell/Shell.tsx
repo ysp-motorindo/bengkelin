@@ -48,6 +48,7 @@ interface ShellProps {
   settings?: PublicSettings | undefined;
   onLoggedOut(): void;
   onPreferencesChanged?: ((settings: PreferencesInput) => void) | undefined;
+  onShopSettingsChanged?: ((settings: PublicSettings) => void) | undefined;
   /** Finalization client for the checkout review (default: the bridge). */
   finalizer?: FinalizeClient | undefined;
 }
@@ -64,6 +65,7 @@ export function Shell({
   settings,
   onLoggedOut,
   onPreferencesChanged,
+  onShopSettingsChanged,
   finalizer,
 }: ShellProps) {
   const { t } = useTranslation();
@@ -218,7 +220,7 @@ export function Shell({
           <CashiersScreen defaultPreferences={session} />
         ) : null}
         {view === 'settings' && session.role === 'ADMIN' ? (
-          <SettingsScreen onShopSaved={onPreferencesChanged} />
+          <SettingsScreen onShopSaved={onShopSettingsChanged} />
         ) : null}
       </main>
     </div>
