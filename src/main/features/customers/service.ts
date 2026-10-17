@@ -43,6 +43,7 @@ const EDITABLE: (keyof CustomerFields)[] = [
   'cityOrRegency',
   'province',
   'postalCode',
+  'isActive',
 ];
 
 /**
@@ -68,10 +69,14 @@ export class CustomerService {
   ): SearchCustomersResult {
     requireSession(session);
     const query = input.query.trim();
-    if (query === '') return { results: [] };
     const phoneKey = PHONE_LIKE.test(query) ? normalizePhone(query) : '';
     return {
-      results: this.repo.search(query, phoneKey, input.limit ?? DEFAULT_LIMIT),
+      results: this.repo.search(
+        query,
+        phoneKey,
+        input.limit ?? DEFAULT_LIMIT,
+        input.includeInactive,
+      ),
     };
   }
 
@@ -98,7 +103,9 @@ export class CustomerService {
     input: SaveCustomerData,
   ): SaveCustomerResult {
     const now = this.deps.clock.now();
+    const existing = input.id ? this.mustFind(input.id) : undefined;
     const fields: CustomerFields = {
+      isActive: input.isActive ?? existing?.isActive ?? true,
       name: input.name,
       phoneNumber: input.phoneNumber,
       email: input.email,
@@ -122,7 +129,6 @@ export class CustomerService {
       ? normalizePhone(fields.phoneNumber)
       : '';
 
-    const existing = input.id ? this.mustFind(input.id) : undefined;
     const phoneChanged =
       !existing || this.repo.normalizedPhoneOf(existing.id) !== normalizedPhone;
     const matches = phoneChanged

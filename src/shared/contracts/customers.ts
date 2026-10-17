@@ -34,6 +34,7 @@ export const saveCustomerInputSchema = z.strictObject({
   province: optionalText(100),
   postalCode: optionalText(10),
   /** Save even though another customer has the same normalized phone. */
+  isActive: z.boolean('validation.invalid').optional(),
   acknowledgeDuplicates: z.boolean('validation.invalid').optional(),
 });
 export type SaveCustomerInput = z.input<typeof saveCustomerInputSchema>;
@@ -41,6 +42,7 @@ export type SaveCustomerData = z.output<typeof saveCustomerInputSchema>;
 
 export const searchCustomersInputSchema = z.strictObject({
   query: z.string('validation.required').trim().max(100, 'validation.tooLong'),
+  includeInactive: z.boolean('validation.invalid').optional(),
   limit: z.number('validation.invalid').int().min(1).max(50).optional(),
 });
 export type SearchCustomersInput = z.input<typeof searchCustomersInputSchema>;
@@ -49,6 +51,8 @@ export const customerIdInputSchema = z.strictObject({ id: uuidSchema });
 export type CustomerIdInput = z.infer<typeof customerIdInputSchema>;
 
 export interface CustomerDto {
+  isActive: boolean;
+  externalId: string | null;
   id: UUID;
   name: string | null;
   phoneNumber: string | null;

@@ -140,7 +140,8 @@
     "owner": "Pemilik",
     "noOwner": "Belum ada pemilik",
     "noVehicle": "Tanpa kendaraan",
-    "done": "Selesai"
+    "done": "Selesai",
+    "showInactive": "Tampilkan Pelanggan Nonaktif"
   },
   "ownership": {
     "title": "Kepemilikan kendaraan"

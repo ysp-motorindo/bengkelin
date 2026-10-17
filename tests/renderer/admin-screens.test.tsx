@@ -260,6 +260,8 @@ describe('ad-hoc references (spec 12)', () => {
 describe('customer and vehicle master data (T5 carry)', () => {
   test('the full customer form edits every spec 6 field', async () => {
     const customer: CustomerDto = {
+      isActive: true,
+      externalId: null,
       id: '55555555-5555-4555-8555-555555555555',
       name: 'Budi',
       phoneNumber: '0812',
@@ -308,6 +310,7 @@ describe('customer and vehicle master data (T5 carry)', () => {
     await waitFor(() => expect(save).toHaveBeenCalled());
     expect(save).toHaveBeenCalledWith({
       id: customer.id,
+      isActive: true,
       name: 'Budi',
       phoneNumber: '0812',
       email: 'budi@example.com',

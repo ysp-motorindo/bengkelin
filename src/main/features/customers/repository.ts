@@ -1,9 +1,11 @@
 import type { AppDatabase } from '@/main/database/connection';
-import { textOrNull } from '@/main/database/rows';
+import { bool, flag, textOrNull } from '@/main/database/rows';
 import type { CustomerDto } from '@/shared/contracts';
 import type { Instant } from '@/shared/primitives';
 
 interface CustomerRow {
+  is_active: bigint;
+  external_id: string | null;
   id: string;
   name: string | null;
   phone_number: string | null;
@@ -24,6 +26,8 @@ interface CustomerRow {
 export function toCustomerDto(row: CustomerRow): CustomerDto {
   return {
     id: row.id,
+    isActive: bool(row.is_active),
+    externalId: row.external_id,
     name: textOrNull(row.name),
     phoneNumber: textOrNull(row.phone_number),
     email: textOrNull(row.email),
@@ -44,11 +48,11 @@ export function toCustomerDto(row: CustomerRow): CustomerDto {
 /** Editable customer fields (everything except identity and timestamps). */
 export type CustomerFields = Omit<
   CustomerDto,
-  'id' | 'createdAt' | 'updatedAt'
+  'id' | 'externalId' | 'createdAt' | 'updatedAt'
 >;
 
 const COLUMNS =
-  'id, name, phone_number, email, birthdate, address, rt, rw, kelurahan, kecamatan, city_or_regency, province, postal_code, created_at, updated_at';
+  'id, name, phone_number, email, birthdate, address, rt, rw, kelurahan, kecamatan, city_or_regency, province, postal_code, created_at, updated_at, is_active, external_id';
 
 /** Escapes LIKE wildcards (use with `ESCAPE '\\'`). */
 export function escapeLike(value: string): string {
@@ -67,6 +71,14 @@ export function likePrefix(value: string): string {
 
 export class CustomerRepository {
   constructor(private readonly db: AppDatabase) {}
+
+  all(): CustomerDto[] {
+    return (
+      this.db
+        .prepare(`SELECT ${COLUMNS} FROM customers ORDER BY id`)
+        .all() as CustomerRow[]
+    ).map(toCustomerDto);
+  }
 
   find(id: string): CustomerDto | undefined {
     const row = this.db
@@ -104,6 +116,7 @@ export class CustomerRepository {
     query: string,
     normalizedPhoneQuery: string,
     limit: number,
+    includeInactive = false,
   ): CustomerDto[] {
     const clauses: string[] = ["name LIKE ? ESCAPE '\\'"];
     const params: unknown[] = [likePattern(query)];
@@ -115,11 +128,16 @@ export class CustomerRepository {
       this.db
         .prepare(
           `SELECT ${COLUMNS} FROM customers
-           WHERE ${clauses.join(' OR ')}
+           WHERE (? = 1 OR is_active = 1) AND (? = '' OR (${clauses.join(' OR ')}))
            ORDER BY name COLLATE NOCASE, created_at, id
            LIMIT ?`,
         )
-        .all(...params, BigInt(limit)) as CustomerRow[]
+        .all(
+          flag(includeInactive),
+          query,
+          ...params,
+          BigInt(limit),
+        ) as CustomerRow[]
     ).map(toCustomerDto);
   }
 
@@ -128,11 +146,12 @@ export class CustomerRepository {
     fields: CustomerFields,
     normalizedPhone: string,
     now: Instant,
+    externalId: string | null = null,
   ): void {
     this.db
       .prepare(
         `INSERT INTO customers (${COLUMNS}, normalized_phone)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         id,
@@ -150,6 +169,8 @@ export class CustomerRepository {
         fields.postalCode,
         now,
         now,
+        flag(fields.isActive),
+        externalId,
         normalizedPhone,
       );
   }
@@ -164,7 +185,7 @@ export class CustomerRepository {
       .prepare(
         `UPDATE customers SET name = ?, phone_number = ?, normalized_phone = ?, email = ?,
            birthdate = ?, address = ?, rt = ?, rw = ?, kelurahan = ?, kecamatan = ?,
-           city_or_regency = ?, province = ?, postal_code = ?, updated_at = ?
+           city_or_regency = ?, province = ?, postal_code = ?, is_active = ?, updated_at = ?
          WHERE id = ?`,
       )
       .run(
@@ -181,6 +202,7 @@ export class CustomerRepository {
         fields.cityOrRegency,
         fields.province,
         fields.postalCode,
+        flag(fields.isActive),
         now,
         id,
       );

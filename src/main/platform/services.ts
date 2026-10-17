@@ -1,3 +1,4 @@
+import type { CustomerTransferService } from '@/main/features/customer-transfer/service';
 import type { CashierService } from '@/main/features/auth/cashier-service';
 import type { AuthService } from '@/main/features/auth/service';
 import type { SessionStore } from '@/main/features/auth/sessions';
@@ -49,6 +50,7 @@ export interface ApplicationServices {
   backups: BackupService;
   restore: RestoreService;
   catalogTransfer: CatalogTransferService;
+  customerTransfer: CustomerTransferService;
   restoreNotice: RestoreNoticeService;
   app: AppService;
   /** Renderer-reported menu context (printable), per window. */

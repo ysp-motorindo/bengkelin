@@ -21,6 +21,7 @@ import {
   searchAdHocReferencesInputSchema,
   catalogIdInputSchema,
   commitImportInputSchema,
+  commitCustomerImportInputSchema,
   cancelRestoreInputSchema,
   restoreInputSchema,
   changeRoleInputSchema,
@@ -165,6 +166,7 @@ export function buildCommands(services: ApplicationServices): Command[] {
     backups,
     restore,
     catalogTransfer,
+    customerTransfer,
     app,
     menu,
     restoreNotice,
@@ -510,6 +512,15 @@ export function buildCommands(services: ApplicationServices): Command[] {
       ({ windowId }, input) => reports.exportCsv(session(windowId), input),
     ),
 
+    command(C.customerTransfer.previewImport, noInput, ({ windowId }) =>
+      customerTransfer.previewImport(session(windowId)),
+    ),
+    command(
+      C.customerTransfer.commitImport,
+      commitCustomerImportInputSchema,
+      ({ windowId }, input) =>
+        customerTransfer.commitImport(session(windowId), input),
+    ),
     command(C.catalogTransfer.previewImport, noInput, ({ windowId }) =>
       catalogTransfer.previewImport(session(windowId)),
     ),

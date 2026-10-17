@@ -87,6 +87,20 @@
     "province": "Provinsi",
     "postalCode": "Kode pos",
     "submit": "Simpan pelanggan",
-    "cancel": "Batal"
+    "cancel": "Batal",
+    "active": "Pelanggan aktif"
+  },
+  "inactive": "Nonaktif",
+  "import": {
+    "title": "Impor pelanggan",
+    "open": "Impor CSV...",
+    "choose": "Pilih CSV...",
+    "description": "Tinjau CSV sebelum mengimpor. Pelanggan dicocokkan berdasarkan ID eksternal; kolom opsional kosong mempertahankan data lama.",
+    "total": "{{count}} baris",
+    "acknowledge": "Saya memahami nomor telepon dipakai beberapa pelanggan",
+    "truncated": "Menampilkan 500 baris atau masalah pertama; jumlah mencakup seluruh baris.",
+    "externalId": "ID eksternal",
+    "action": "Tindakan",
+    "done": "{{count}} pelanggan diimpor."
   }
 }

@@ -1,3 +1,4 @@
+import { withCurrentCustomerColumns } from './helpers/legacy-customers';
 import {
   copyFileSync,
   existsSync,
@@ -256,6 +257,8 @@ const FIXTURE_ROWS: Record<number, Record<string, number>> = {
     vehicles: 2,
   },
 };
+
+FIXTURE_ROWS[12] = FIXTURE_ROWS[11]!;
 
 const fixtures = readdirSync(FIXTURE_DIR)
   .map((file) => /^schema-v(\d{3})-populated\.sqlite$/.exec(file))
@@ -775,7 +778,13 @@ describe('progressive upgrade from an empty database', () => {
         expect(outcome.applied).toEqual([v]);
         expectHealthy(db);
         expectPreserved(before, roots, db, `migration ${v}`);
-        await steps[v]?.();
+        if (v >= 3 && v < 12) {
+          await withCurrentCustomerColumns(db, async () => {
+            await steps[v]?.();
+          });
+        } else {
+          await steps[v]?.();
+        }
         expectHealthy(db);
       }
       // Then "run to latest" through the default path (a no-op today; any

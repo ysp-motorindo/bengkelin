@@ -76,6 +76,7 @@ export function CustomerEditForm({
         FIELDS.map((field) => [field, customer[field] ?? '']),
       ) as Values,
   );
+  const [isActive, setIsActive] = useState(customer.isActive);
   const [duplicates, setDuplicates] = useState<CustomerDto[] | null>(null);
   const { busy, error, fieldErrors, run, check } = useAction();
 
@@ -84,6 +85,7 @@ export function CustomerEditForm({
       const result = await window.bengkelin.customers.save({
         id: customer.id,
         ...values,
+        isActive,
         ...(acknowledgeDuplicates ? { acknowledgeDuplicates: true } : {}),
       });
       if (!check(result)) return;
@@ -135,6 +137,14 @@ export function CustomerEditForm({
               </div>
             ))}
           </div>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+            />
+            {t('customers.edit.active')}
+          </label>
           {duplicates ? (
             <div
               role="group"

@@ -1,3 +1,4 @@
+import { withCurrentCustomerColumns } from './helpers/legacy-customers';
 import { createHash } from 'node:crypto';
 import {
   chmodSync,
@@ -1343,8 +1344,10 @@ describe('migration 011 on a populated version-10 database', () => {
           input,
           services.logger,
         )) as Result<T>;
-      const v10shop = await seedPrintShop(call, now);
-      await criticalInvoice(v10shop, priceStart());
+      await withCurrentCustomerColumns(db, async () => {
+        const v10shop = await seedPrintShop(call, now);
+        await criticalInvoice(v10shop, priceStart());
+      });
 
       const tables = (
         db

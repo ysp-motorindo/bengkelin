@@ -1,3 +1,7 @@
+import {
+  addCurrentCustomerColumns,
+  removeCurrentCustomerColumns,
+} from './helpers/legacy-customers';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -1404,6 +1408,7 @@ describe('migration 008 on a populated version-7 database', () => {
       let db = openDatabase(file);
       migrateDatabase(db, v7);
       expect(readSchemaVersion(db)).toBe(7);
+      addCurrentCustomerColumns(db);
       const services = createApplicationServices({
         db,
         clock,
@@ -1516,6 +1521,7 @@ describe('migration 008 on a populated version-7 database', () => {
            void_reason = 'Salah', version = version + 1 WHERE id = ?`,
       ).run(at(nowMs + HOUR), admin, drafts[2]!.id);
 
+      removeCurrentCustomerColumns(db);
       const invoicesV7 = db
         .prepare('SELECT * FROM invoices ORDER BY id')
         .all() as Record<string, unknown>[];

@@ -116,6 +116,10 @@ const api: BengkelinApi = Object.freeze({
     print: call(c.reports.print),
     exportCsv: call(c.reports.exportCsv),
   }),
+  customerTransfer: Object.freeze({
+    previewImport: call(c.customerTransfer.previewImport),
+    commitImport: call(c.customerTransfer.commitImport),
+  }),
   catalogTransfer: Object.freeze({
     previewImport: call(c.catalogTransfer.previewImport),
     commitImport: call(c.catalogTransfer.commitImport),

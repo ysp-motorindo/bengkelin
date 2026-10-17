@@ -1,3 +1,4 @@
+import { withCurrentCustomerColumns } from './helpers/legacy-customers';
 import { createHash } from 'node:crypto';
 import {
   copyFileSync,
@@ -727,8 +728,11 @@ describe('restore', () => {
           input,
           services.logger,
         )) as Result<T>;
-      v10shop = await seedPrintShop(call, now);
-      await criticalInvoice(v10shop, priceStart());
+      v10shop = await withCurrentCustomerColumns(db, async () => {
+        const seeded = await seedPrintShop(call, now);
+        await criticalInvoice(seeded, priceStart());
+        return seeded;
+      });
       v10Data = businessData(db);
       db.close();
     }
@@ -750,7 +754,15 @@ describe('restore', () => {
     const restored = businessData(h.db);
     for (const [table, data] of Object.entries(v10Data)) {
       if (table === 'settings') continue;
-      expect(restored[table], table).toEqual(data);
+      if (table === 'customers') {
+        expect(restored[table], table).toEqual(
+          data.map((row) => ({
+            ...(row as object),
+            is_active: 1n,
+            external_id: null,
+          })),
+        );
+      } else expect(restored[table], table).toEqual(data);
     }
     expect(shopName(h.db)).toBe(SHOP_NAME);
     expect(issuedNumbers(h.db)).toEqual(['INV-20260930-0001']);

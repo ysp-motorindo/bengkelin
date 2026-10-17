@@ -1,0 +1,3 @@
+﻿external_id,name,phone_number,address,city_or_regency,is_active
+UI-ACTIVE,Active Fixture,0812-001,,,true
+UI-INACTIVE,Dormant Fixture,0812-001,,,false

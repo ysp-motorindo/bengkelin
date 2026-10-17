@@ -91,7 +91,7 @@
   "UNSUPPORTED_SCHEMA": "This database version is not supported by this version of the application.",
   "MISSING_TABLES": "The backup file is incomplete (core tables are missing).",
   "IMPORT_PREVIEW_EXPIRED": "The import preview has expired. Choose and check the file again.",
-  "IMPORT_PREVIEW_STALE": "The catalog changed after the preview. Check the file again before importing.",
+  "IMPORT_PREVIEW_STALE": "Data changed after the preview. Check the file again before importing.",
   "IMPORT_HAS_ERRORS": "The file still has errors. Fix them and check it again.",
   "IMPORT_BACKUP_FAILED": "The safety backup could not be created, so the import was cancelled and nothing changed. Check the backup folder and try again.",
   "INVALID_ENCODING": "The file is not valid UTF-8 text. Save it again as \"CSV UTF-8\".",
@@ -137,5 +137,10 @@
   "RESTORE_FAILED": "The restore could not be completed. Your data is intact; if the application restarts, check your data after signing in.",
   "RESTORE_STAGING_FAILED": "The backup file could not be copied for checking (the disk may be full). Nothing changed.",
   "RESTORE_BUSY": "A save was still running, so the restore was cancelled. Try again in a moment.",
-  "VEHICLE_INACTIVE": "This vehicle is inactive and cannot be selected. An admin can reactivate it."
+  "VEHICLE_INACTIVE": "This vehicle is inactive and cannot be selected. An admin can reactivate it.",
+  "CUSTOMER_IMPORT_HEADER": "Use the six supported customer CSV columns, without duplicates.",
+  "CUSTOMER_IMPORT_INVALID_ROW": "Invalid customer row. Check the columns, external ID, field lengths and true/false status.",
+  "CUSTOMER_IMPORT_DUPLICATE_ID": "External IDs must be unique within the CSV.",
+  "CUSTOMER_IMPORT_DUPLICATE_PHONES": "Acknowledge duplicate phone numbers before importing.",
+  "DUPLICATE_PHONE": "This phone number is shared by multiple customers."
 }

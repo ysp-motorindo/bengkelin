@@ -1,5 +1,11 @@
 import { Search } from 'lucide-react';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
@@ -42,6 +48,8 @@ export function CustomerVehicleDialog({
 }: CustomerVehicleDialogProps) {
   const { t } = useTranslation();
   const searchRef = useRef<HTMLInputElement>(null);
+  const [includeInactive, setIncludeInactive] = useState(false);
+  const searchVersion = useRef(0);
   const [customerQuery, setCustomerQuery] = useState('');
   const [customers, setCustomers] = useState<CustomerDto[] | null>(null);
   const [plateQuery, setPlateQuery] = useState('');
@@ -76,14 +84,34 @@ export function CustomerVehicleDialog({
     };
   }, [customerId, setError, t]);
 
+  const loadCustomers = useCallback(
+    async (query: string, include: boolean) => {
+      const version = ++searchVersion.current;
+      try {
+        const result = await window.bengkelin.customers.search({
+          query,
+          includeInactive: include,
+        });
+        if (version === searchVersion.current && check(result))
+          setCustomers(result.value.results);
+      } catch {
+        if (version === searchVersion.current)
+          setError(t('errors.INTERNAL_ERROR'));
+      }
+    },
+    [check, setError, t],
+  );
+
+  useEffect(() => {
+    void loadCustomers('', false);
+    return () => {
+      ++searchVersion.current;
+    };
+  }, [loadCustomers]);
+
   function searchCustomers(event: FormEvent) {
     event.preventDefault();
-    void run(async () => {
-      const result = await window.bengkelin.customers.search({
-        query: customerQuery,
-      });
-      if (check(result)) setCustomers(result.value.results);
-    });
+    void loadCustomers(customerQuery, includeInactive);
   }
 
   function searchPlates(event: FormEvent) {
@@ -151,6 +179,18 @@ export function CustomerVehicleDialog({
               <span className="sr-only">{t('workspace.party.search')}</span>
             </Button>
           </form>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={includeInactive}
+              onChange={(e) => {
+                const include = e.target.checked;
+                setIncludeInactive(include);
+                void loadCustomers(customerQuery, include);
+              }}
+            />
+            {t('workspace.party.showInactive')}
+          </label>
           <Button
             variant="ghost"
             size="sm"
@@ -171,7 +211,12 @@ export function CustomerVehicleDialog({
                     key={customer.id}
                     className="flex items-center justify-between gap-2 text-sm"
                   >
-                    <span>{customerLabel(t, customer)}</span>
+                    <span>
+                      {customerLabel(t, customer)}
+                      {!customer.isActive
+                        ? ` · ${t('customers.inactive')}`
+                        : ''}
+                    </span>
                     <Button
                       size="sm"
                       variant="outline"

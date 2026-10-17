@@ -1,3 +1,4 @@
+import { CustomerImportDialog } from './CustomerImportDialog';
 import { X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +32,7 @@ interface Results {
  */
 export function CustomersScreen({ role = 'CASHIER' }: { role?: Role } = {}) {
   const { t } = useTranslation();
+  const [importing, setImporting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Results | null>(null);
@@ -41,16 +43,18 @@ export function CustomersScreen({ role = 'CASHIER' }: { role?: Role } = {}) {
 
   function search(event: FormEvent) {
     event.preventDefault();
-    void run(async () => {
-      const [customers, vehicles] = await Promise.all([
-        window.bengkelin.customers.search({ query }),
-        window.bengkelin.vehicles.searchByPlate({ query }),
-      ]);
-      if (!check(customers) || !check(vehicles)) return;
-      setResults({
-        customers: customers.value.results,
-        vehicles: vehicles.value.results,
-      });
+    void run(refresh);
+  }
+
+  async function refresh() {
+    const [customers, vehicles] = await Promise.all([
+      window.bengkelin.customers.search({ query, includeInactive: true }),
+      window.bengkelin.vehicles.searchByPlate({ query }),
+    ]);
+    if (!check(customers) || !check(vehicles)) return;
+    setResults({
+      customers: customers.value.results,
+      vehicles: vehicles.value.results,
     });
   }
 
@@ -80,8 +84,25 @@ export function CustomersScreen({ role = 'CASHIER' }: { role?: Role } = {}) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      {importing ? (
+        <CustomerImportDialog
+          onClose={() => setImporting(false)}
+          onImported={() => {
+            void run(refresh);
+          }}
+        />
+      ) : null}
       <div className="flex flex-col gap-4">
         <h1 className="text-xl font-semibold">{t('customers.title')}</h1>
+        {role === 'ADMIN' ? (
+          <Button
+            variant="outline"
+            className="self-start"
+            onClick={() => setImporting(true)}
+          >
+            {t('customers.import.open')}
+          </Button>
+        ) : null}
         {error ? <Alert>{error}</Alert> : null}
 
         <form onSubmit={search} className="flex items-end gap-2" role="search">
@@ -183,7 +204,10 @@ export function CustomersScreen({ role = 'CASHIER' }: { role?: Role } = {}) {
                       data-testid="customer-result"
                       className="flex items-center justify-between gap-2 rounded-md border border-border bg-card p-2 text-sm"
                     >
-                      <span>{customerLabel(t, row)}</span>
+                      <span>
+                        {customerLabel(t, row)}
+                        {!row.isActive ? ` · ${t('customers.inactive')}` : ''}
+                      </span>
                       <Button
                         variant="outline"
                         size="sm"

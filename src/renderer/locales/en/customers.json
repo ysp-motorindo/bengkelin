@@ -87,6 +87,20 @@
     "province": "Province",
     "postalCode": "Postal code",
     "submit": "Save customer",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "active": "Active customer"
+  },
+  "inactive": "Inactive",
+  "import": {
+    "title": "Import customers",
+    "open": "Import CSV...",
+    "choose": "Choose CSV...",
+    "description": "Preview the CSV before importing. Customers match by external ID; blank optional fields preserve existing data.",
+    "total": "{{count}} rows",
+    "acknowledge": "I understand these phone numbers belong to multiple customers",
+    "truncated": "Showing the first 500 rows or issues; counts include all rows.",
+    "externalId": "External ID",
+    "action": "Action",
+    "done": "Imported {{count}} customers."
   }
 }

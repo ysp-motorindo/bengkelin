@@ -1,3 +1,8 @@
+import type {
+  CustomerImportPreviewDto,
+  CustomerImportSummaryDto,
+  CommitCustomerImportInput,
+} from './contracts';
 import type { MenuAction } from './menu';
 import type {
   AboutDto,
@@ -303,6 +308,12 @@ export interface BengkelinApi {
    * main; the renderer never passes a path. An import is previewed first and
    * committed with the preview token (a SAFETY backup is taken first).
    */
+  readonly customerTransfer: {
+    previewImport(): Promise<Result<CustomerImportPreviewDto>>;
+    commitImport(
+      input: CommitCustomerImportInput,
+    ): Promise<Result<CustomerImportSummaryDto>>;
+  };
   readonly catalogTransfer: {
     previewImport(): Promise<Result<ImportPreviewDto>>;
     commitImport(input: CommitImportInput): Promise<Result<ImportSummaryDto>>;

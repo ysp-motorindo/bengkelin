@@ -140,7 +140,8 @@
     "owner": "Owner",
     "noOwner": "No owner yet",
     "noVehicle": "No vehicle",
-    "done": "Done"
+    "done": "Done",
+    "showInactive": "Show Inactive Customers"
   },
   "ownership": {
     "title": "Vehicle ownership"
