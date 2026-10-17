@@ -6,6 +6,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
+import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -213,8 +214,25 @@ export function CustomLineDialog({
       initialFocus={typeRef}
       returnFocus={returnFocus}
       closeLabel={t('workspace.common.close')}
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" disabled={busy} onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.cancel')}
+          </Button>
+          <Button type="submit" form="custom-line-form" disabled={busy}>
+            <Check aria-hidden="true" />
+            {t('workspace.custom.add')}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+      <form
+        id="custom-line-form"
+        onSubmit={submit}
+        noValidate
+        className="flex flex-col gap-3"
+      >
         {formError ? <Alert>{formError}</Alert> : null}
         <FormField label={t('workspace.custom.type')}>
           <Select
@@ -348,15 +366,6 @@ export function CustomLineDialog({
             </Select>
           </FormField>
         ) : null}
-
-        <div className="flex flex-wrap gap-2 pt-1">
-          <Button type="submit" disabled={busy}>
-            {t('workspace.custom.add')}
-          </Button>
-          <Button variant="outline" disabled={busy} onClick={onClose}>
-            {t('workspace.common.cancel')}
-          </Button>
-        </div>
       </form>
     </Dialog>
   );

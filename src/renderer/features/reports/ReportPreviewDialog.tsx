@@ -1,4 +1,4 @@
-import { Printer } from 'lucide-react';
+import { Printer, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -54,16 +54,19 @@ export function ReportPreviewDialog({
       onClose={onClose}
       closeLabel={t('reports.preview.close')}
       className="max-w-[min(96vw,64rem)]"
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('reports.preview.close')}
+          </Button>
+          <Button onClick={onPrint} disabled={busy || !preview}>
+            <Printer aria-hidden="true" />
+            {t('reports.preview.print')}
+          </Button>
+        </div>
+      }
     >
-      <div className="flex flex-wrap items-end gap-3">
-        <Button onClick={onPrint} disabled={busy || !preview}>
-          <Printer aria-hidden="true" />
-          {t('reports.preview.print')}
-        </Button>
-        <Button variant="outline" onClick={onClose}>
-          {t('reports.preview.close')}
-        </Button>
-      </div>
       {notice ? (
         <p className="text-sm" data-testid="report-preview-notice">
           {notice}

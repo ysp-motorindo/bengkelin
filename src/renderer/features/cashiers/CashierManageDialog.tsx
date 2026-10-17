@@ -1,3 +1,11 @@
+import {
+  KeyRound,
+  Save,
+  Shield,
+  UserRoundCheck,
+  UserRoundX,
+  X,
+} from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
@@ -62,6 +70,57 @@ export function CashierManageDialog({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       className="max-w-lg"
+      footer={
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.close')}
+          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              type="submit"
+              form="cashier-name-form"
+              variant="outline"
+              disabled={busy}
+            >
+              <Save aria-hidden="true" />
+              {t('cashiers.manage.saveName')}
+            </Button>
+            <Button
+              type="submit"
+              form="cashier-role-form"
+              variant="outline"
+              disabled={busy}
+            >
+              <Shield aria-hidden="true" />
+              {t('cashiers.manage.saveRole')}
+            </Button>
+            {cashier.isActive ? (
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => apply(() => b.deactivate(id))}
+              >
+                <UserRoundX aria-hidden="true" />
+                {t('cashiers.manage.deactivate')}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => apply(() => b.reactivate(id))}
+              >
+                <UserRoundCheck aria-hidden="true" />
+                {t('cashiers.manage.reactivate')}
+              </Button>
+            )}
+            <Button type="submit" form="cashier-password-form" disabled={busy}>
+              <KeyRound aria-hidden="true" />
+              {t('cashiers.manage.resetPassword')}
+            </Button>
+          </div>
+        </div>
+      }
     >
       <div className="flex flex-col gap-4">
         {error ? <Alert>{error}</Alert> : null}
@@ -70,6 +129,7 @@ export function CashierManageDialog({
         </p>
 
         <form
+          id="cashier-name-form"
           noValidate
           className="flex items-end gap-2"
           onSubmit={submit(() =>
@@ -88,12 +148,10 @@ export function CashierManageDialog({
               />
             </FormField>
           </div>
-          <Button type="submit" variant="outline" disabled={busy}>
-            {t('cashiers.manage.saveName')}
-          </Button>
         </form>
 
         <form
+          id="cashier-role-form"
           noValidate
           className="flex items-end gap-2"
           onSubmit={submit(() => apply(() => b.changeRole({ ...id, role })))}
@@ -112,12 +170,10 @@ export function CashierManageDialog({
               </Select>
             </FormField>
           </div>
-          <Button type="submit" variant="outline" disabled={busy}>
-            {t('cashiers.manage.saveRole')}
-          </Button>
         </form>
 
         <form
+          id="cashier-password-form"
           noValidate
           className="flex items-end gap-2"
           onSubmit={submit(() => {
@@ -141,31 +197,7 @@ export function CashierManageDialog({
               />
             </FormField>
           </div>
-          <Button type="submit" variant="outline" disabled={busy}>
-            {t('cashiers.manage.resetPassword')}
-          </Button>
         </form>
-
-        <div className="flex justify-between gap-2 border-t border-border pt-4">
-          {cashier.isActive ? (
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => apply(() => b.deactivate(id))}
-            >
-              {t('cashiers.manage.deactivate')}
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => apply(() => b.reactivate(id))}
-            >
-              {t('cashiers.manage.reactivate')}
-            </Button>
-          )}
-          <Button onClick={onClose}>{t('workspace.common.close')}</Button>
-        </div>
       </div>
     </Dialog>
   );

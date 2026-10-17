@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PencilLine, Trash2 } from 'lucide-react';
+import { PencilLine, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
@@ -74,6 +74,14 @@ export function DraftSwitcher({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       className="max-w-4xl"
+      footer={
+        <div className="flex justify-start border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.close')}
+          </Button>
+        </div>
+      }
     >
       {error ? <Alert>{error}</Alert> : null}
       {drafts === null ? (
@@ -195,24 +203,25 @@ export function DraftSwitcher({
           })}
           initialFocus={cancelRef}
           onClose={() => setConfirming(null)}
+          footer={
+            <div className="flex justify-between border-t border-border pt-3">
+              <Button
+                ref={cancelRef}
+                variant="outline"
+                disabled={busy}
+                onClick={() => setConfirming(null)}
+              >
+                <X aria-hidden="true" />
+                {t('workspace.common.cancel')}
+              </Button>
+              <Button disabled={busy} onClick={() => void discard(confirming)}>
+                <Trash2 aria-hidden="true" />
+                {t('workspace.drafts.confirmDiscard')}
+              </Button>
+            </div>
+          }
         >
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={busy}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => void discard(confirming)}
-            >
-              {t('workspace.drafts.confirmDiscard')}
-            </Button>
-            <Button
-              ref={cancelRef}
-              variant="outline"
-              disabled={busy}
-              onClick={() => setConfirming(null)}
-            >
-              {t('workspace.common.cancel')}
-            </Button>
-          </div>
+          {null}
         </Dialog>
       ) : null}
     </Dialog>

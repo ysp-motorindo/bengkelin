@@ -1,3 +1,4 @@
+import { FileUp, Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/renderer/components/ui/dialog';
@@ -53,12 +54,37 @@ export function CustomerImportDialog({
       }}
       closeLabel={t('customers.edit.cancel')}
       className="max-w-4xl"
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" disabled={busy} onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('customers.edit.cancel')}
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={busy} onClick={choose}>
+              <FileUp aria-hidden="true" />
+              {t('customers.import.choose')}
+            </Button>
+            {preview ? (
+              <Button
+                disabled={
+                  busy ||
+                  !preview.canCommit ||
+                  (preview.requiresDuplicatePhoneAcknowledgement &&
+                    !acknowledged)
+                }
+                onClick={commit}
+              >
+                <Upload aria-hidden="true" />
+                {t('catalogTransfer.preview.commit')}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      }
     >
       {error ? <Alert>{error}</Alert> : null}
       <p>{t('customers.import.description')}</p>
-      <Button disabled={busy} variant="outline" onClick={choose}>
-        {t('customers.import.choose')}
-      </Button>
       {preview ? (
         <section
           data-testid="customer-import-preview"
@@ -131,16 +157,6 @@ export function CustomerImportDialog({
             </label>
           ) : null}
           <p>{t('catalogTransfer.preview.backupNote')}</p>
-          <Button
-            disabled={
-              busy ||
-              !preview.canCommit ||
-              (preview.requiresDuplicatePhoneAcknowledgement && !acknowledged)
-            }
-            onClick={commit}
-          >
-            {t('catalogTransfer.preview.commit')}
-          </Button>
         </section>
       ) : null}
       {summary ? (

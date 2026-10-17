@@ -1,4 +1,4 @@
-import { Printer } from 'lucide-react';
+import { Printer, X } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -64,6 +64,18 @@ export function PrintPreviewDialog({
       onClose={onClose}
       closeLabel={t('printing.preview.close')}
       className="max-w-[min(96vw,64rem)]"
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('printing.preview.close')}
+          </Button>
+          <Button onClick={() => onPrint(format)} disabled={busy}>
+            <Printer aria-hidden="true" />
+            {t('printing.preview.print')}
+          </Button>
+        </div>
+      }
     >
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1">
@@ -80,13 +92,6 @@ export function PrintPreviewDialog({
             ))}
           </Select>
         </div>
-        <Button onClick={() => onPrint(format)} disabled={busy}>
-          <Printer aria-hidden="true" />
-          {t('printing.preview.print')}
-        </Button>
-        <Button variant="outline" onClick={onClose}>
-          {t('printing.preview.close')}
-        </Button>
       </div>
       {notice ? (
         <p className="text-sm" data-testid="preview-print-notice">

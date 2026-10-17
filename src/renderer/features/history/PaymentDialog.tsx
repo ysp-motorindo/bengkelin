@@ -1,3 +1,4 @@
+import { Check, X } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
@@ -92,8 +93,27 @@ export function PaymentDialog({
       })}
       onClose={onClose}
       closeLabel={t('history.payment.cancel')}
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button type="button" variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('history.payment.cancel')}
+          </Button>
+          <Button type="submit" form="payment-form" disabled={action.busy}>
+            <Check aria-hidden="true" />
+            {action.busy
+              ? t('history.payment.saving')
+              : t('history.payment.submit')}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+      <form
+        id="payment-form"
+        onSubmit={submit}
+        noValidate
+        className="flex flex-col gap-3"
+      >
         <FormField label={t('history.payment.method')}>
           <Select
             value={method}
@@ -143,16 +163,6 @@ export function PaymentDialog({
           {t('history.payment.paidAtNote')}
         </p>
         {action.error ? <Alert>{action.error}</Alert> : null}
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            {t('history.payment.cancel')}
-          </Button>
-          <Button type="submit" disabled={action.busy}>
-            {action.busy
-              ? t('history.payment.saving')
-              : t('history.payment.submit')}
-          </Button>
-        </div>
       </form>
     </Dialog>
   );

@@ -1,3 +1,4 @@
+import { Ban, Check, UserRound, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -179,11 +180,21 @@ export function CustomerVehicleDialog({
       className="max-h-[70vh] max-w-3xl"
       scrollBody
       footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={walkIn}>
-            {t('workspace.party.anonymous')}
+        <div className="flex justify-between gap-2 border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.cancel')}
           </Button>
-          <Button onClick={onClose}>{t('workspace.party.done')}</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={walkIn}>
+              <UserRound aria-hidden="true" />
+              {t('workspace.party.anonymous')}
+            </Button>
+            <Button onClick={onClose}>
+              <Check aria-hidden="true" />
+              {t('workspace.party.done')}
+            </Button>
+          </div>
         </div>
       }
     >
@@ -248,6 +259,7 @@ export function CustomerVehicleDialog({
                         aria-label={`${t('workspace.party.select')}: ${customerLabel(t, customer)}`}
                         onClick={() => chooseCustomer(customer)}
                       >
+                        <Check aria-hidden="true" />
                         {t('workspace.party.select')}
                       </Button>
                     </li>
@@ -301,6 +313,7 @@ export function CustomerVehicleDialog({
                         aria-label={`${t('workspace.party.select')}: ${vehicle.plateNumber}`}
                         onClick={() => chooseVehicle(vehicle)}
                       >
+                        <Check aria-hidden="true" />
                         {t('workspace.party.select')}
                       </Button>
                     </li>
@@ -335,6 +348,7 @@ export function CustomerVehicleDialog({
                         aria-label={`${t('workspace.party.select')}: ${vehicle.plateNumber}`}
                         onClick={() => chooseVehicle(vehicle)}
                       >
+                        <Check aria-hidden="true" />
                         {t('workspace.party.select')}
                       </Button>
                     </li>
@@ -349,6 +363,7 @@ export function CustomerVehicleDialog({
                 className="self-start"
                 onClick={() => chooseVehicle(null)}
               >
+                <Ban aria-hidden="true" />
                 {t('workspace.party.noVehicle')}
               </Button>
             ) : null}

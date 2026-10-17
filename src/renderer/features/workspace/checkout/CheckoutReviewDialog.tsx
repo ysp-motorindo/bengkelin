@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, FilePlus2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FilePlus2, X } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -147,12 +147,19 @@ export function CheckoutReviewDialog({
         allowNewTransaction
         closeLabel={t('workspace.common.close')}
         className="max-w-xl"
+        footer={
+          <div className="flex justify-end border-t border-border pt-3">
+            <Button ref={newTransactionRef} onClick={onNewTransaction}>
+              <FilePlus2 aria-hidden="true" />
+              {t('workspace.finalize.newTransaction')}
+            </Button>
+          </div>
+        }
       >
         <FinalizedContent
           invoice={phase.invoice}
           printer={printer}
           newTransactionRef={newTransactionRef}
-          onNewTransaction={onNewTransaction}
         />
       </Dialog>
     );
@@ -164,6 +171,31 @@ export function CheckoutReviewDialog({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       className="max-w-xl"
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.review.back')}
+          </Button>
+          <Button
+            data-testid="finalize-button"
+            disabled={
+              busy ||
+              phase.kind !== 'ready' ||
+              phase.preview.errors.length > 0 ||
+              (hasNegativeStock(phase.preview.warnings) && !stockAcknowledged)
+            }
+            onClick={() => {
+              if (phase.kind === 'ready') void finalize(phase.preview);
+            }}
+          >
+            <CheckCircle2 aria-hidden="true" />
+            {busy
+              ? t('workspace.finalize.finalizing')
+              : t('workspace.review.finalize')}
+          </Button>
+        </div>
+      }
     >
       {notice ? (
         <p
@@ -189,29 +221,6 @@ export function CheckoutReviewDialog({
           onStockAcknowledged={setStockAcknowledged}
         />
       ) : null}
-
-      <div className="flex flex-wrap items-center gap-2 pt-1">
-        <Button
-          data-testid="finalize-button"
-          disabled={
-            busy ||
-            phase.kind !== 'ready' ||
-            phase.preview.errors.length > 0 ||
-            (hasNegativeStock(phase.preview.warnings) && !stockAcknowledged)
-          }
-          onClick={() => {
-            if (phase.kind === 'ready') void finalize(phase.preview);
-          }}
-        >
-          <CheckCircle2 aria-hidden="true" />
-          {busy
-            ? t('workspace.finalize.finalizing')
-            : t('workspace.review.finalize')}
-        </Button>
-        <Button variant="outline" onClick={onClose}>
-          {t('workspace.review.back')}
-        </Button>
-      </div>
     </Dialog>
   );
 }
@@ -395,12 +404,10 @@ function FinalizedContent({
   invoice,
   printer,
   newTransactionRef,
-  onNewTransaction,
 }: {
   invoice: InvoiceView;
   printer: PrintClient;
   newTransactionRef: RefObject<HTMLButtonElement | null>;
-  onNewTransaction(): void;
 }) {
   const { t } = useTranslation();
   // The Finalize button that had focus is gone: focus the next action.
@@ -429,12 +436,6 @@ function FinalizedContent({
       </div>
       {/* Mounted only after the finalize result: printing follows commit. */}
       <PrintActions invoiceId={invoice.id} client={printer} autoPrint />
-      <div className="flex flex-wrap items-center gap-2">
-        <Button ref={newTransactionRef} onClick={onNewTransaction}>
-          <FilePlus2 aria-hidden="true" />
-          {t('workspace.finalize.newTransaction')}
-        </Button>
-      </div>
     </>
   );
 }

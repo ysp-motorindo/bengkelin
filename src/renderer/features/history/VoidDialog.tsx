@@ -1,3 +1,4 @@
+import { Ban, X } from 'lucide-react';
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -59,8 +60,29 @@ export function VoidDialog({ invoice, onClose, onVoided }: VoidDialogProps) {
       description={t('history.void.description')}
       onClose={onClose}
       closeLabel={t('history.void.cancel')}
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button type="button" variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('history.void.cancel')}
+          </Button>
+          <Button
+            type="submit"
+            form="void-form"
+            disabled={!ready || action.busy}
+          >
+            <Ban aria-hidden="true" />
+            {action.busy ? t('history.void.saving') : t('history.void.submit')}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+      <form
+        id="void-form"
+        onSubmit={submit}
+        noValidate
+        className="flex flex-col gap-3"
+      >
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={reasonId}>{t('history.void.reason')}</Label>
           <textarea
@@ -89,18 +111,6 @@ export function VoidDialog({ invoice, onClose, onVoided }: VoidDialogProps) {
           {t('history.void.confirm', { number: invoice.invoiceNumber })}
         </label>
         {action.error ? <Alert>{action.error}</Alert> : null}
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            {t('history.void.cancel')}
-          </Button>
-          <Button
-            type="submit"
-            disabled={!ready || action.busy}
-            className="bg-destructive text-white hover:bg-destructive/90"
-          >
-            {action.busy ? t('history.void.saving') : t('history.void.submit')}
-          </Button>
-        </div>
       </form>
     </Dialog>
   );

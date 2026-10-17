@@ -1,3 +1,4 @@
+import { Check, RefreshCw, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -112,6 +113,31 @@ export function RepricingDialog({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       className="max-w-2xl"
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.close')}
+          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => void load()}
+            >
+              <RefreshCw aria-hidden="true" />
+              {t('workspace.repricing.refresh')}
+            </Button>
+            <Button
+              disabled={busy || selected.size === 0}
+              onClick={() => void apply()}
+            >
+              <Check aria-hidden="true" />
+              {t('workspace.repricing.apply', { count: selected.size })}
+            </Button>
+          </div>
+        </div>
+      }
     >
       {notice ? (
         <p role="status" className="text-sm text-warning">
@@ -193,20 +219,6 @@ export function RepricingDialog({
           </table>
         </div>
       ) : null}
-      <div className="flex flex-wrap gap-2 pt-1">
-        <Button
-          disabled={busy || selected.size === 0}
-          onClick={() => void apply()}
-        >
-          {t('workspace.repricing.apply', { count: selected.size })}
-        </Button>
-        <Button variant="outline" disabled={busy} onClick={() => void load()}>
-          {t('workspace.repricing.refresh')}
-        </Button>
-        <Button variant="outline" onClick={onClose}>
-          {t('workspace.common.close')}
-        </Button>
-      </div>
     </Dialog>
   );
 }

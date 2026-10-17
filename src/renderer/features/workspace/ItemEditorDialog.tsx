@@ -1,3 +1,4 @@
+import { Check, X } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
@@ -154,8 +155,25 @@ export function ItemEditorDialog({
       returnFocus={returnFocus}
       closeLabel={t('workspace.common.close')}
       className="max-w-xl"
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" disabled={busy} onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.cancel')}
+          </Button>
+          <Button type="submit" form="item-editor-form" disabled={busy}>
+            <Check aria-hidden="true" />
+            {t('workspace.editor.save')}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+      <form
+        id="item-editor-form"
+        onSubmit={submit}
+        noValidate
+        className="flex flex-col gap-3"
+      >
         {formError ? <Alert>{formError}</Alert> : null}
         <div className="grid gap-3 sm:grid-cols-2">
           <FormField
@@ -279,15 +297,6 @@ export function ItemEditorDialog({
             </ul>
           </section>
         ) : null}
-
-        <div className="flex flex-wrap gap-2 pt-1">
-          <Button type="submit" disabled={busy}>
-            {t('workspace.editor.save')}
-          </Button>
-          <Button variant="outline" disabled={busy} onClick={onClose}>
-            {t('workspace.common.cancel')}
-          </Button>
-        </div>
       </form>
     </Dialog>
   );

@@ -1,3 +1,4 @@
+import { Check, X } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
@@ -63,8 +64,25 @@ export function ManualPriceDialog({
       initialFocus={priceRef}
       returnFocus={returnFocus}
       closeLabel={t('workspace.common.close')}
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" disabled={busy} onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.cancel')}
+          </Button>
+          <Button type="submit" form="manual-price-form" disabled={busy}>
+            <Check aria-hidden="true" />
+            {t('workspace.manualPrice.submit')}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+      <form
+        id="manual-price-form"
+        onSubmit={submit}
+        noValidate
+        className="flex flex-col gap-3"
+      >
         {error ? <Alert>{error}</Alert> : null}
         <FormField label={t('workspace.manualPrice.price')} error={fieldError}>
           <Input
@@ -84,14 +102,6 @@ export function ManualPriceDialog({
             onChange={(event) => setReason(event.target.value)}
           />
         </FormField>
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={busy}>
-            {t('workspace.manualPrice.submit')}
-          </Button>
-          <Button variant="outline" disabled={busy} onClick={onClose}>
-            {t('workspace.common.cancel')}
-          </Button>
-        </div>
       </form>
     </Dialog>
   );

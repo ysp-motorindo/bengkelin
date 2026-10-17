@@ -1,3 +1,4 @@
+import { Check, Clock3, X } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
@@ -143,8 +144,25 @@ export function PricingTimeDialog({
       onClose={onClose}
       initialFocus={backdatedTo ? undefined : firstRef}
       closeLabel={t('workspace.common.close')}
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.cancel')}
+          </Button>
+          <Button type="submit" form="pricing-time-form">
+            <Check aria-hidden="true" />
+            {t('workspace.pricing.apply')}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+      <form
+        id="pricing-time-form"
+        onSubmit={submit}
+        noValidate
+        className="flex flex-col gap-3"
+      >
         <p className="text-sm">
           {t('workspace.pricing.current')}:{' '}
           <span className="tabular font-medium">
@@ -192,6 +210,7 @@ export function PricingTimeDialog({
                 setCandidates(null);
               }}
             >
+              <Clock3 aria-hidden="true" />
               {t('workspace.pricing.now')}
             </Button>
           </div>
@@ -222,12 +241,6 @@ export function PricingTimeDialog({
         <p className="text-xs text-muted-foreground">
           {t('workspace.pricing.retainNote')}
         </p>
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit">{t('workspace.pricing.apply')}</Button>
-          <Button variant="outline" onClick={onClose}>
-            {t('workspace.common.cancel')}
-          </Button>
-        </div>
       </form>
     </Dialog>
   );

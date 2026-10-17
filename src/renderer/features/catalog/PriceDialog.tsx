@@ -1,3 +1,4 @@
+import { ArrowLeft, Check, Eye, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
@@ -63,6 +64,10 @@ export function PriceDialog({
   const [preview, setPreview] = useState<PricePreviewDto | null>(null);
   const { busy, error, fieldErrors, run, check } = useAction();
   const firstField = useRef<HTMLInputElement>(null);
+  const applyRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (preview) applyRef.current?.focus();
+  }, [preview]);
 
   function resolveStart(): string | null {
     setProblem(null);
@@ -130,6 +135,47 @@ export function PriceDialog({
       onClose={onClose}
       initialFocus={firstField}
       className="max-h-[calc(100dvh-2rem)] overflow-auto p-5"
+      footer={
+        <div className="flex justify-between border-t border-border pt-3">
+          {preview === null ? (
+            <>
+              <Button variant="outline" disabled={busy} onClick={onClose}>
+                <X aria-hidden="true" />
+                {t('catalog.dialog.cancel')}
+              </Button>
+              <Button type="submit" form="price-form" disabled={busy}>
+                <Eye aria-hidden="true" />
+                {t('catalog.dialog.preview')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" disabled={busy} onClick={onClose}>
+                <X aria-hidden="true" />
+                {t('catalog.dialog.cancel')}
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => setPreview(null)}
+                >
+                  <ArrowLeft aria-hidden="true" />
+                  {t('catalog.dialog.back')}
+                </Button>
+                <Button
+                  ref={applyRef}
+                  disabled={busy || preview.conflicts.length > 0}
+                  onClick={apply}
+                >
+                  <Check aria-hidden="true" />
+                  {t('catalog.dialog.apply')}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      }
     >
       <p className="text-sm text-muted-foreground">
         {t('catalog.dialog.channel', { channel: channel.label })}
@@ -137,7 +183,12 @@ export function PriceDialog({
       {error ? <Alert>{error}</Alert> : null}
 
       {preview === null ? (
-        <form onSubmit={submitForm} noValidate className="flex flex-col gap-3">
+        <form
+          id="price-form"
+          onSubmit={submitForm}
+          noValidate
+          className="flex flex-col gap-3"
+        >
           <FormField
             label={t('catalog.dialog.start', { zone: timezone })}
             error={
@@ -204,24 +255,9 @@ export function PriceDialog({
               />
             </FormField>
           ) : null}
-          <div className="flex gap-2">
-            <Button type="submit" disabled={busy}>
-              {t('catalog.dialog.preview')}
-            </Button>
-            <Button variant="outline" disabled={busy} onClick={onClose}>
-              {t('catalog.dialog.cancel')}
-            </Button>
-          </div>
         </form>
       ) : (
-        <PreviewStep
-          preview={preview}
-          timezone={timezone}
-          busy={busy}
-          onApply={apply}
-          onBack={() => setPreview(null)}
-          onCancel={onClose}
-        />
+        <PreviewStep preview={preview} timezone={timezone} />
       )}
     </Dialog>
   );
@@ -230,23 +266,11 @@ export function PriceDialog({
 function PreviewStep({
   preview,
   timezone,
-  busy,
-  onApply,
-  onBack,
-  onCancel,
 }: {
   preview: PricePreviewDto;
   timezone: string;
-  busy: boolean;
-  onApply(): void;
-  onBack(): void;
-  onCancel(): void;
 }) {
   const { t } = useTranslation();
-  const applyRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    applyRef.current?.focus();
-  }, []);
   const conflict = preview.conflicts.length > 0;
   return (
     <section
@@ -293,17 +317,6 @@ function PreviewStep({
           {t('catalog.dialog.conflict')}
         </Alert>
       ) : null}
-      <div className="flex gap-2 pt-1">
-        <Button ref={applyRef} disabled={busy || conflict} onClick={onApply}>
-          {t('catalog.dialog.apply')}
-        </Button>
-        <Button variant="outline" disabled={busy} onClick={onBack}>
-          {t('catalog.dialog.back')}
-        </Button>
-        <Button variant="outline" disabled={busy} onClick={onCancel}>
-          {t('catalog.dialog.cancel')}
-        </Button>
-      </div>
     </section>
   );
 }
