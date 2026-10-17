@@ -21,6 +21,7 @@ const FOCUSABLE = [
 
 /** Open dialogs, innermost last (only the innermost reacts to keys). */
 const openDialogs: HTMLElement[] = [];
+let previousDocumentOverflow: string | null = null;
 /** Open dialogs that opted in to New Transaction (Ctrl+N). */
 const allowingNewTransaction = new Set<HTMLElement>();
 
@@ -99,6 +100,10 @@ export function Dialog({
         ? document.activeElement
         : null;
     const root = panel.current;
+    if (openDialogs.length === 0) {
+      previousDocumentOverflow = document.documentElement.style.overflow;
+      document.documentElement.style.overflow = 'hidden';
+    }
     const target =
       initialFocus?.current ?? (root ? focusables(root)[0] : undefined);
     (target ?? root)?.focus({ preventScroll: true });
@@ -124,6 +129,10 @@ export function Dialog({
       document.removeEventListener('keydown', onDocumentKeyDown);
       const index = root ? openDialogs.lastIndexOf(root) : -1;
       if (index >= 0) openDialogs.splice(index, 1);
+      if (openDialogs.length === 0 && previousDocumentOverflow !== null) {
+        document.documentElement.style.overflow = previousDocumentOverflow;
+        previousDocumentOverflow = null;
+      }
       // After React commits the removal, so the target is focusable again.
       const restore = returnRef.current;
       queueMicrotask(() => {

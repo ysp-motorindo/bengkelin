@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
+import { Dialog } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
 import { useAction } from '@/renderer/lib/use-action';
 import type {
@@ -62,11 +63,6 @@ export function PriceDialog({
   const [preview, setPreview] = useState<PricePreviewDto | null>(null);
   const { busy, error, fieldErrors, run, check } = useAction();
   const firstField = useRef<HTMLInputElement>(null);
-  const titleId = 'price-dialog-title';
-
-  useEffect(() => {
-    firstField.current?.focus();
-  }, []);
 
   function resolveStart(): string | null {
     setProblem(null);
@@ -125,119 +121,109 @@ export function PriceDialog({
       : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') onClose();
-        }}
-        className="flex max-h-full w-full max-w-lg flex-col gap-3 overflow-auto rounded-lg border border-border bg-card p-5 shadow-lg"
-      >
-        <h2 id={titleId} className="text-lg font-semibold">
-          {correcting
-            ? t('catalog.dialog.correctTitle')
-            : t('catalog.dialog.addTitle')}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {t('catalog.dialog.channel', { channel: channel.label })}
-        </p>
-        {error ? <Alert>{error}</Alert> : null}
+    <Dialog
+      title={
+        correcting
+          ? t('catalog.dialog.correctTitle')
+          : t('catalog.dialog.addTitle')
+      }
+      onClose={onClose}
+      initialFocus={firstField}
+      className="max-h-[calc(100dvh-2rem)] overflow-auto p-5"
+    >
+      <p className="text-sm text-muted-foreground">
+        {t('catalog.dialog.channel', { channel: channel.label })}
+      </p>
+      {error ? <Alert>{error}</Alert> : null}
 
-        {preview === null ? (
-          <form
-            onSubmit={submitForm}
-            noValidate
-            className="flex flex-col gap-3"
+      {preview === null ? (
+        <form onSubmit={submitForm} noValidate className="flex flex-col gap-3">
+          <FormField
+            label={t('catalog.dialog.start', { zone: timezone })}
+            error={
+              startProblem
+                ? undefined
+                : (fieldErrors.effectiveStartAt ?? undefined)
+            }
+            hint={startProblem ?? undefined}
           >
+            <Input
+              ref={firstField}
+              type="datetime-local"
+              step={1}
+              value={start}
+              onChange={(event) => {
+                setStart(event.target.value);
+                setChoice('');
+                setProblem(null);
+              }}
+            />
+          </FormField>
+          {problem === 'ambiguous' ? (
+            <fieldset className="flex flex-col gap-1 text-sm">
+              <legend>{t('catalog.dialog.ambiguous')}</legend>
+              {(['earlier', 'later'] as const).map((which, index) => (
+                <label key={which} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="offset-choice"
+                    checked={choice === which}
+                    onChange={() => {
+                      setChoice(which);
+                      setProblem(null);
+                    }}
+                  />
+                  {t(`catalog.dialog.${which}`, {
+                    time: (candidates[index] ?? '')
+                      .replace('T', ' ')
+                      .slice(0, 19),
+                  })}
+                </label>
+              ))}
+            </fieldset>
+          ) : null}
+          <FormField
+            label={t('catalog.dialog.price')}
+            error={fieldErrors.price}
+          >
+            <Input
+              inputMode="numeric"
+              autoComplete="off"
+              value={price}
+              onChange={(event) => setPrice(event.target.value.trim())}
+            />
+          </FormField>
+          {correcting ? (
             <FormField
-              label={t('catalog.dialog.start', { zone: timezone })}
-              error={
-                startProblem
-                  ? undefined
-                  : (fieldErrors.effectiveStartAt ?? undefined)
-              }
-              hint={startProblem ?? undefined}
+              label={t('catalog.dialog.reason')}
+              error={fieldErrors.reason}
             >
               <Input
-                ref={firstField}
-                type="datetime-local"
-                step={1}
-                value={start}
-                onChange={(event) => {
-                  setStart(event.target.value);
-                  setChoice('');
-                  setProblem(null);
-                }}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
               />
             </FormField>
-            {problem === 'ambiguous' ? (
-              <fieldset className="flex flex-col gap-1 text-sm">
-                <legend>{t('catalog.dialog.ambiguous')}</legend>
-                {(['earlier', 'later'] as const).map((which, index) => (
-                  <label key={which} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="offset-choice"
-                      checked={choice === which}
-                      onChange={() => {
-                        setChoice(which);
-                        setProblem(null);
-                      }}
-                    />
-                    {t(`catalog.dialog.${which}`, {
-                      time: (candidates[index] ?? '')
-                        .replace('T', ' ')
-                        .slice(0, 19),
-                    })}
-                  </label>
-                ))}
-              </fieldset>
-            ) : null}
-            <FormField
-              label={t('catalog.dialog.price')}
-              error={fieldErrors.price}
-            >
-              <Input
-                inputMode="numeric"
-                autoComplete="off"
-                value={price}
-                onChange={(event) => setPrice(event.target.value.trim())}
-              />
-            </FormField>
-            {correcting ? (
-              <FormField
-                label={t('catalog.dialog.reason')}
-                error={fieldErrors.reason}
-              >
-                <Input
-                  value={reason}
-                  onChange={(event) => setReason(event.target.value)}
-                />
-              </FormField>
-            ) : null}
-            <div className="flex gap-2">
-              <Button type="submit" disabled={busy}>
-                {t('catalog.dialog.preview')}
-              </Button>
-              <Button variant="outline" disabled={busy} onClick={onClose}>
-                {t('catalog.dialog.cancel')}
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <PreviewStep
-            preview={preview}
-            timezone={timezone}
-            busy={busy}
-            onApply={apply}
-            onBack={() => setPreview(null)}
-            onCancel={onClose}
-          />
-        )}
-      </div>
-    </div>
+          ) : null}
+          <div className="flex gap-2">
+            <Button type="submit" disabled={busy}>
+              {t('catalog.dialog.preview')}
+            </Button>
+            <Button variant="outline" disabled={busy} onClick={onClose}>
+              {t('catalog.dialog.cancel')}
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <PreviewStep
+          preview={preview}
+          timezone={timezone}
+          busy={busy}
+          onApply={apply}
+          onBack={() => setPreview(null)}
+          onCancel={onClose}
+        />
+      )}
+    </Dialog>
   );
 }
 
