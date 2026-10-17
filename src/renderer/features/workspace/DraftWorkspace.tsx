@@ -309,7 +309,7 @@ export function DraftWorkspace({
           aria-label={t('workspace.lines.label')}
           className="flex min-w-0 flex-col gap-3"
         >
-          <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-wrap items-start gap-2">
             <div className="min-w-0 flex-1 basis-64">
               <ScannerCombobox
                 inputRef={searchRef}
@@ -321,7 +321,7 @@ export function DraftWorkspace({
             </div>
             <Button
               variant="outline"
-              className="h-12"
+              className="mt-6 h-12"
               onClick={() => setDialog({ kind: 'custom' })}
             >
               <ListPlus aria-hidden="true" />

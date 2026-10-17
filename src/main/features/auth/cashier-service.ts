@@ -79,6 +79,8 @@ export class CashierService {
         isActive: true,
         createdAt: now,
         updatedAt: now,
+        language: input.language ?? actor.language,
+        appearance: input.appearance ?? actor.appearance,
       };
       this.repo.insert(record);
       this.audit(actor, 'CASHIER_CREATED', record.id, {

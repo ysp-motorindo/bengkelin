@@ -129,7 +129,9 @@ export interface BengkelinApi {
     getShop(): Promise<Result<ShopSettingsDto>>;
     completeSetup(input: SetupInput): Promise<Result<PublicSettings>>;
     updateShop(input: ShopSettingsInput): Promise<Result<void>>;
-    updatePreferences(input: PreferencesInput): Promise<Result<PublicSettings>>;
+    updatePreferences(
+      input: PreferencesInput,
+    ): Promise<Result<PreferencesInput>>;
     /** ADMIN: a native open dialog in main picks a PNG/JPEG (<= 512 KB). */
     chooseLogo(): Promise<Result<LogoChoiceDto>>;
     /** ADMIN. */

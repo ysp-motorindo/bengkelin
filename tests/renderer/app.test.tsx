@@ -19,6 +19,8 @@ const adminSession: CashierSession = {
   username: 'admin',
   displayName: 'Pak Budi',
   role: 'ADMIN',
+  language: 'id',
+  appearance: 'SYSTEM',
 };
 
 function installBridge(
@@ -121,7 +123,8 @@ describe('login screen', () => {
       'Pak Budi',
     );
     expect(screen.getByTestId('session-role')).toHaveTextContent('Admin');
-    await user.click(screen.getByRole('button', { name: 'Sign out' }));
+    await user.click(screen.getByTestId('session-name'));
+    await user.click(screen.getByRole('button', { name: /Sign out|Keluar/ }));
     expect(
       await screen.findByRole('heading', { name: 'Sign in' }),
     ).toBeInTheDocument();

@@ -30,6 +30,8 @@ const cashier: CashierSession = {
   username: 'siti',
   displayName: 'Siti',
   role: 'CASHIER',
+  language: 'id',
+  appearance: 'SYSTEM',
 };
 const admin: CashierSession = {
   ...cashier,

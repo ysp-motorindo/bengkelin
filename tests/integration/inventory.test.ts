@@ -155,6 +155,8 @@ const admin = (): Session => ({
   username: 'admin',
   displayName: 'Pak Budi',
   role: 'ADMIN',
+  language: 'id',
+  appearance: 'SYSTEM',
 });
 const actor = () => ({ cashierId: adminId });
 const at = () => toInstant(nowMs);

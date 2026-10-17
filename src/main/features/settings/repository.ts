@@ -146,12 +146,6 @@ export class SettingsRepository {
       );
   }
 
-  updatePreferences(preferences: PreferencesInput): void {
-    this.db
-      .prepare('UPDATE settings SET language = ?, appearance = ? WHERE id = 1')
-      .run(preferences.language, preferences.appearance);
-  }
-
   insertChannel(row: SeedRow): void {
     this.db
       .prepare(

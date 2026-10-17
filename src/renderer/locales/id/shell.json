@@ -1,6 +1,7 @@
 {
   "signedInAs": "Masuk sebagai",
   "logout": "Keluar",
+  "profileMenuLabel": "Menu akun pengguna",
   "nav": {
     "label": "Navigasi utama",
     "workspace": "Transaksi Baru",

@@ -1,6 +1,7 @@
 {
   "signedInAs": "Signed in as",
   "logout": "Sign out",
+  "profileMenuLabel": "User account menu",
   "nav": {
     "label": "Main navigation",
     "workspace": "New Transaction",

@@ -234,6 +234,8 @@ describe('login and sessions', () => {
       username: 'Admin',
       displayName: 'Pak Budi',
       role: 'ADMIN',
+      language: 'id',
+      appearance: 'SYSTEM',
     });
     expect(JSON.stringify(session)).not.toMatch(/hash|password/i);
     expect(
@@ -333,6 +335,22 @@ describe('login and sessions', () => {
       await h.call(C.cashiers.list, undefined, CASHIER_WINDOW),
     );
     expect(cashierAdminOperation.code).toBe('FORBIDDEN');
+    value(
+      await h.call(
+        C.settings.updatePreferences,
+        { language: 'en', appearance: 'DARK' },
+        CASHIER_WINDOW,
+      ),
+    );
+    expect(
+      rows(
+        "SELECT language, appearance FROM cashiers WHERE username='Admin'",
+      )[0],
+    ).toEqual({ language: 'id', appearance: 'SYSTEM' });
+    expect(rows('SELECT language, appearance FROM settings')[0]).toEqual({
+      language: 'id',
+      appearance: 'SYSTEM',
+    });
     for (const [channel, input] of [
       [
         C.cashiers.create,
@@ -343,7 +361,6 @@ describe('login and sessions', () => {
           role: 'CASHIER',
         },
       ],
-      [C.settings.updatePreferences, { language: 'en', appearance: 'DARK' }],
       [
         C.settings.updateShop,
         { name: 'N', address: 'A', timezone: 'Asia/Jakarta' },
@@ -630,6 +647,17 @@ describe('cashier management', () => {
 });
 
 describe('settings updates', () => {
+  test('preference updates require an authenticated session', async () => {
+    const result = failure(
+      await h.call(
+        C.settings.updatePreferences,
+        { language: 'en', appearance: 'DARK' },
+        88,
+      ),
+    );
+    expect(result.code).toBe('UNAUTHENTICATED');
+  });
+
   test('updateShop and updatePreferences persist, validate and audit', async () => {
     await setupAndLoginAdmin();
     value(
@@ -656,13 +684,21 @@ describe('settings updates', () => {
     expect(settings).toMatchObject({
       shop_name: 'Bengkel Baru',
       timezone: 'Asia/Makassar',
-      language: 'en',
-      appearance: 'LIGHT',
+      language: 'id',
+      appearance: 'SYSTEM',
       invoice_footer: 'Terima kasih',
       phone_number: null,
     });
+    expect(
+      rows(
+        "SELECT language, appearance FROM cashiers WHERE username='Admin'",
+      )[0],
+    ).toEqual({ language: 'en', appearance: 'LIGHT' });
+    expect(
+      value(await h.call(C.auth.currentSession, undefined, ADMIN_WINDOW)),
+    ).toMatchObject({ language: 'en', appearance: 'LIGHT' });
     expect(value(await h.call(C.settings.getPublic))).toMatchObject({
-      language: 'en',
+      language: 'id',
       shopName: 'Bengkel Baru',
     });
     const actions = rows('SELECT action FROM audit_log ORDER BY id').map(
@@ -671,6 +707,49 @@ describe('settings updates', () => {
     expect(actions).toEqual(
       expect.arrayContaining(['SHOP_SETTINGS_UPDATED', 'PREFERENCES_UPDATED']),
     );
+    expect(
+      JSON.parse(
+        String(
+          rows(
+            "SELECT metadata FROM audit_log WHERE action='PREFERENCES_UPDATED'",
+          )[0]!.metadata,
+        ),
+      ),
+    ).toEqual({
+      language: { from: 'id', to: 'en' },
+      appearance: { from: 'SYSTEM', to: 'LIGHT' },
+    });
+    value(
+      await h.call(
+        C.settings.updatePreferences,
+        { language: 'en', appearance: 'DARK' },
+        ADMIN_WINDOW,
+      ),
+    );
+    expect(
+      JSON.parse(
+        String(
+          rows(
+            "SELECT metadata FROM audit_log WHERE action='PREFERENCES_UPDATED' ORDER BY id DESC LIMIT 1",
+          )[0]!.metadata,
+        ),
+      ),
+    ).toEqual({ appearance: { from: 'LIGHT', to: 'DARK' } });
+
+    h.db
+      .exec(`CREATE TRIGGER reject_preference_write BEFORE UPDATE OF language ON cashiers
+      BEGIN SELECT RAISE(ABORT, 'injected'); END`);
+    const failedSave = failure(
+      await h.call(
+        C.settings.updatePreferences,
+        { language: 'id', appearance: 'LIGHT' },
+        ADMIN_WINDOW,
+      ),
+    );
+    expect(failedSave.code).toBe('INTERNAL_ERROR');
+    expect(
+      value(await h.call(C.auth.currentSession, undefined, ADMIN_WINDOW)),
+    ).toMatchObject({ language: 'en', appearance: 'DARK' });
 
     const invalid = failure(
       await h.call(

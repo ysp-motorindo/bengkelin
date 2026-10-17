@@ -890,6 +890,8 @@ describe('payment / void race (two connections, BEGIN IMMEDIATE)', () => {
     username: 'admin',
     displayName: 'Pak Budi',
     role: 'ADMIN',
+    language: 'id',
+    appearance: 'SYSTEM',
   });
 
   beforeEach(() => {
@@ -1739,6 +1741,8 @@ describe('migration 008 on a populated version-7 database', () => {
         username: 'admin',
         displayName: 'Pak Budi',
         role: 'ADMIN',
+        language: 'id',
+        appearance: 'SYSTEM',
       };
       const found = upgraded.search(session, {
         filters: { phone: '0812 3456 7890' },

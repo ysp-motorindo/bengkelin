@@ -88,6 +88,8 @@ export class SettingsService {
         isActive: true,
         createdAt: now,
         updatedAt: now,
+        language: input.preferences.language,
+        appearance: input.preferences.appearance,
       });
       for (const channel of SEED_CHANNELS) {
         this.repo.insertChannel(this.seed(channel));
@@ -128,23 +130,31 @@ export class SettingsService {
   updatePreferences(
     session: Session | undefined,
     input: PreferencesInput,
-  ): PublicSettings {
-    const actor = requireAdmin(session);
+  ): PreferencesInput {
+    const actor = requireSession(session);
+    const changed: Record<string, unknown> = {};
+    if (actor.language !== input.language)
+      changed.language = { from: actor.language, to: input.language };
+    if (actor.appearance !== input.appearance)
+      changed.appearance = { from: actor.appearance, to: input.appearance };
     withWriteTransaction(this.deps.db, () => {
-      const before = this.repo.getPublic();
-      this.repo.updatePreferences(input);
+      this.cashiers.updatePreferences(
+        actor.cashierId,
+        input.language,
+        input.appearance,
+        this.deps.clock.now(),
+      );
       appendAudit(this.deps.db, this.deps.clock, {
         cashierId: actor.cashierId,
         action: 'PREFERENCES_UPDATED',
-        entityType: 'settings',
-        entityId: '1',
-        metadata: {
-          language: { from: before.language, to: input.language },
-          appearance: { from: before.appearance, to: input.appearance },
-        },
+        entityType: 'cashier',
+        entityId: actor.cashierId,
+        metadata: changed,
       });
     });
-    return this.repo.getPublic();
+    actor.language = input.language;
+    actor.appearance = input.appearance;
+    return input;
   }
 
   private seed(row: { code: string; label: string }): SeedRow {

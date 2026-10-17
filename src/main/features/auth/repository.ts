@@ -1,6 +1,11 @@
 import type { AppDatabase } from '@/main/database/connection';
 import { bool, flag, toNumber } from '@/main/database/rows';
-import type { CashierDto, Role } from '@/shared/contracts';
+import type {
+  Appearance,
+  CashierDto,
+  Language,
+  Role,
+} from '@/shared/contracts';
 import type { Instant } from '@/shared/primitives';
 
 interface CashierRow {
@@ -12,6 +17,8 @@ interface CashierRow {
   is_active: bigint;
   created_at: string;
   updated_at: string;
+  language?: string;
+  appearance?: string;
 }
 
 /** Internal record: includes the hash, never crosses IPC. */
@@ -24,6 +31,8 @@ export interface CashierRecord {
   isActive: boolean;
   createdAt: Instant;
   updatedAt: Instant;
+  language: Language;
+  appearance: Appearance;
 }
 
 function toRecord(row: CashierRow): CashierRecord {
@@ -36,6 +45,8 @@ function toRecord(row: CashierRow): CashierRecord {
     isActive: bool(row.is_active),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    language: (row.language ?? 'id') as Language,
+    appearance: (row.appearance ?? 'SYSTEM') as Appearance,
   };
 }
 
@@ -51,15 +62,26 @@ export function toCashierDto(record: CashierRecord): CashierDto {
   };
 }
 
-const COLUMNS =
-  'id, username, display_name, password_hash, role, is_active, created_at, updated_at';
-
 export class CashierRepository {
-  constructor(private readonly db: AppDatabase) {}
+  private readonly hasPreferences: boolean;
+
+  constructor(private readonly db: AppDatabase) {
+    const columns = db.prepare('PRAGMA table_info(cashiers)').all() as {
+      name: string;
+    }[];
+    this.hasPreferences = columns.some((column) => column.name === 'language');
+  }
+
+  private columns(): string {
+    return (
+      'id, username, display_name, password_hash, role, is_active, created_at, updated_at' +
+      (this.hasPreferences ? ', language, appearance' : '')
+    );
+  }
 
   findById(id: string): CashierRecord | undefined {
     const row = this.db
-      .prepare(`SELECT ${COLUMNS} FROM cashiers WHERE id = ?`)
+      .prepare(`SELECT ${this.columns()} FROM cashiers WHERE id = ?`)
       .get(id) as CashierRow | undefined;
     return row && toRecord(row);
   }
@@ -67,7 +89,7 @@ export class CashierRepository {
   /** Case-insensitive: the column is COLLATE NOCASE. */
   findByUsername(username: string): CashierRecord | undefined {
     const row = this.db
-      .prepare(`SELECT ${COLUMNS} FROM cashiers WHERE username = ?`)
+      .prepare(`SELECT ${this.columns()} FROM cashiers WHERE username = ?`)
       .get(username) as CashierRow | undefined;
     return row && toRecord(row);
   }
@@ -75,15 +97,32 @@ export class CashierRepository {
   list(): CashierRecord[] {
     return (
       this.db
-        .prepare(`SELECT ${COLUMNS} FROM cashiers ORDER BY username`)
+        .prepare(`SELECT ${this.columns()} FROM cashiers ORDER BY username`)
         .all() as CashierRow[]
     ).map(toRecord);
   }
 
   insert(record: CashierRecord): void {
+    if (!this.hasPreferences) {
+      this.db
+        .prepare(
+          'INSERT INTO cashiers (id, username, display_name, password_hash, role, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        )
+        .run(
+          record.id,
+          record.username,
+          record.displayName,
+          record.passwordHash,
+          record.role,
+          flag(record.isActive),
+          record.createdAt,
+          record.updatedAt,
+        );
+      return;
+    }
     this.db
       .prepare(
-        `INSERT INTO cashiers (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO cashiers (${this.columns()}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         record.id,
@@ -94,6 +133,8 @@ export class CashierRepository {
         flag(record.isActive),
         record.createdAt,
         record.updatedAt,
+        record.language,
+        record.appearance,
       );
   }
 
@@ -120,6 +161,19 @@ export class CashierRepository {
         updatedAt,
         id,
       );
+  }
+
+  updatePreferences(
+    id: string,
+    language: Language,
+    appearance: Appearance,
+    updatedAt: Instant,
+  ): void {
+    this.db
+      .prepare(
+        'UPDATE cashiers SET language = ?, appearance = ?, updated_at = ? WHERE id = ?',
+      )
+      .run(language, appearance, updatedAt, id);
   }
 
   /** Active ADMINs other than `excludingId` (for last-admin protection). */

@@ -91,6 +91,62 @@ describe('migrations', () => {
     expect(readSchemaVersion(db)).toBe(latest);
   });
 
+  test('backfills existing cashier preferences from current shop values', () => {
+    const db = track(openDatabase(file));
+    const beforePreferences = bundledMigrations.filter((m) => m.version <= 12);
+    migrateDatabase(db, beforePreferences);
+    db.prepare("UPDATE settings SET language='en', appearance='DARK'").run();
+    db.prepare(insertCashier).run(
+      'c1',
+      'admin',
+      'Admin',
+      'h',
+      'ADMIN',
+      now,
+      now,
+    );
+    db.prepare(insertCashier).run(
+      'c2',
+      'siti',
+      'Siti',
+      'h',
+      'CASHIER',
+      now,
+      now,
+    );
+    migrateDatabase(db);
+    db.close();
+
+    const reopened = track(openDatabase(file));
+    expect(
+      reopened
+        .prepare(
+          'SELECT id, username, display_name, role, language, appearance FROM cashiers ORDER BY id',
+        )
+        .all(),
+    ).toEqual([
+      {
+        id: 'c1',
+        username: 'admin',
+        display_name: 'Admin',
+        role: 'ADMIN',
+        language: 'en',
+        appearance: 'DARK',
+      },
+      {
+        id: 'c2',
+        username: 'siti',
+        display_name: 'Siti',
+        role: 'CASHIER',
+        language: 'en',
+        appearance: 'DARK',
+      },
+    ]);
+    expect(
+      reopened.prepare('SELECT language, appearance FROM settings').get(),
+    ).toEqual({ language: 'en', appearance: 'DARK' });
+  });
+
   test('is idempotent when repeated', () => {
     const db = track(openDatabase(file));
     migrateDatabase(db, only001);

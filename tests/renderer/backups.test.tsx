@@ -168,6 +168,8 @@ describe('ADMIN failure banner', () => {
       username: 'siti',
       displayName: 'Siti',
       role: 'CASHIER',
+      language: 'id',
+      appearance: 'SYSTEM',
     };
     const { unmount } = render(
       <Shell session={cashier} shopName="Bengkel" onLoggedOut={vi.fn()} />,

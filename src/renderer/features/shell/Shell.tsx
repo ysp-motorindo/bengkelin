@@ -21,7 +21,11 @@ import { ReferencesScreen } from '@/renderer/features/references/ReferencesScree
 import { SettingsScreen } from '@/renderer/features/settings/SettingsScreen';
 import { CashierWorkspace } from '@/renderer/features/workspace/CashierWorkspace';
 import type { FinalizeClient } from '@/renderer/features/workspace/checkout/finalize-client';
-import type { CashierSession, PublicSettings } from '@/shared/contracts';
+import type {
+  CashierSession,
+  PreferencesInput,
+  PublicSettings,
+} from '@/shared/contracts';
 import { PreferencesControls } from './PreferencesControls';
 import { useShellMenu } from './use-shell-menu';
 
@@ -43,7 +47,7 @@ interface ShellProps {
   shopName: string;
   settings?: PublicSettings | undefined;
   onLoggedOut(): void;
-  onPreferencesChanged?: ((settings: PublicSettings) => void) | undefined;
+  onPreferencesChanged?: ((settings: PreferencesInput) => void) | undefined;
   /** Finalization client for the checkout review (default: the bridge). */
   finalizer?: FinalizeClient | undefined;
 }
@@ -109,57 +113,66 @@ export function Shell({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card px-4 py-2 sm:px-6">
-        <div className="flex items-center gap-2 font-semibold">
-          <Wrench aria-hidden="true" className="size-5 text-primary" />
-          <span>{shopName || t('common.appName')}</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          {session.role === 'ADMIN' && settings && onPreferencesChanged ? (
-            <PreferencesControls
-              settings={settings}
-              onChanged={onPreferencesChanged}
-            />
-          ) : null}
-          <p className="text-sm text-muted-foreground">
-            {t('shell.signedInAs')}{' '}
-            <span
-              data-testid="session-name"
-              className="font-medium text-foreground"
+      <div className="sticky top-0 z-40 bg-card">
+        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card px-4 py-2 sm:px-6">
+          <div className="flex items-center gap-2 font-semibold">
+            <Wrench aria-hidden="true" className="size-5 text-primary" />
+            <span>{shopName || t('common.appName')}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {settings && onPreferencesChanged ? (
+              <PreferencesControls
+                preferences={session}
+                onChanged={onPreferencesChanged}
+              />
+            ) : null}
+            <details className="relative text-sm">
+              <summary
+                aria-label={t('shell.profileMenuLabel')}
+                className="cursor-pointer list-none rounded-md border border-input px-3 py-2 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span data-testid="session-name">{session.displayName}</span>{' '}
+                <span data-testid="session-role">
+                  ({t(`common.role.${session.role}`)})
+                </span>{' '}
+                ▾
+              </summary>
+              <div className="absolute right-0 z-50 mt-1 min-w-40 rounded-md border border-border bg-card p-2 shadow-lg">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={logout}
+                >
+                  <LogOut aria-hidden="true" />
+                  {t('shell.logout')}
+                </Button>
+              </div>
+            </details>
+          </div>
+        </header>
+        <nav
+          aria-label={t('shell.nav.label')}
+          className="flex flex-nowrap gap-1 overflow-x-auto border-b border-border bg-card px-4 sm:px-6"
+        >
+          {views.map((name) => (
+            <button
+              key={name}
+              type="button"
+              aria-current={view === name ? 'page' : undefined}
+              onClick={() => setView(name)}
+              className={cn(
+                'px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                view === name
+                  ? 'border-b-2 border-primary text-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
             >
-              {session.displayName}
-            </span>{' '}
-            <span data-testid="session-role">
-              ({t(`common.role.${session.role}`)})
-            </span>
-          </p>
-          <Button variant="outline" size="sm" disabled={busy} onClick={logout}>
-            <LogOut aria-hidden="true" />
-            {t('shell.logout')}
-          </Button>
-        </div>
-      </header>
-      <nav
-        aria-label={t('shell.nav.label')}
-        className="flex flex-wrap gap-1 border-b border-border bg-card px-4 sm:px-6"
-      >
-        {views.map((name) => (
-          <button
-            key={name}
-            type="button"
-            aria-current={view === name ? 'page' : undefined}
-            onClick={() => setView(name)}
-            className={cn(
-              'px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              view === name
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {t(`shell.nav.${name}`)}
-          </button>
-        ))}
-      </nav>
+              {t(`shell.nav.${name}`)}
+            </button>
+          ))}
+        </nav>
+      </div>
       {session.role === 'ADMIN' ? <BackupNoticeBanner /> : null}
       {session.role === 'ADMIN' ? <RestoreOutcomeNotice /> : null}
       <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
@@ -202,7 +215,7 @@ export function Shell({
           <ReferencesScreen />
         ) : null}
         {view === 'cashiers' && session.role === 'ADMIN' ? (
-          <CashiersScreen />
+          <CashiersScreen defaultPreferences={session} />
         ) : null}
         {view === 'settings' && session.role === 'ADMIN' ? (
           <SettingsScreen onShopSaved={onPreferencesChanged} />

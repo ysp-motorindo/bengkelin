@@ -143,6 +143,12 @@ export function CustomerVehicleDialog({
       initialFocus={searchRef}
       closeLabel={t('workspace.common.close')}
       className="max-w-3xl"
+      scrollBody
+      footer={
+        <div className="flex justify-end border-t border-border pt-3">
+          <Button onClick={onClose}>{t('workspace.party.done')}</Button>
+        </div>
+      }
     >
       {error ? <Alert>{error}</Alert> : null}
       <p className="text-sm" data-testid="party-current">
@@ -333,10 +339,6 @@ export function CustomerVehicleDialog({
             onSelected={(vehicle) => chooseVehicle(vehicle)}
           />
         </section>
-      </div>
-
-      <div className="flex justify-end pt-1">
-        <Button onClick={onClose}>{t('workspace.party.done')}</Button>
       </div>
     </Dialog>
   );

@@ -1838,6 +1838,8 @@ describe('forced-process recovery', () => {
         username: 'siti',
         displayName: 'Siti',
         role: 'CASHIER' as const,
+        language: 'id' as const,
+        appearance: 'SYSTEM' as const,
       };
       const recovered = services.drafts.get(session, draft.id);
       const last = acks[acks.length - 1]!;

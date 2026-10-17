@@ -47,8 +47,17 @@ export function App() {
   });
 
   const settings = phase.kind === 'ready' ? phase.settings : null;
-  const language = preview?.language ?? settings?.language ?? DEFAULT_LANGUAGE;
-  const appearance = preview?.appearance ?? settings?.appearance ?? 'SYSTEM';
+  const session = phase.kind === 'ready' ? phase.session : null;
+  const language =
+    preview?.language ??
+    session?.language ??
+    settings?.language ??
+    DEFAULT_LANGUAGE;
+  const appearance =
+    preview?.appearance ??
+    session?.appearance ??
+    settings?.appearance ??
+    'SYSTEM';
 
   useEffect(() => setLanguage(language), [language]);
   useEffect(() => applyAppearance(appearance), [appearance]);
@@ -152,7 +161,11 @@ export function App() {
           setPhase({ kind: 'ready', settings: phase.settings, session: null })
         }
         onPreferencesChanged={(next) =>
-          setPhase({ kind: 'ready', settings: next, session })
+          setPhase((current) =>
+            current.kind === 'ready' && current.session
+              ? { ...current, session: { ...current.session, ...next } }
+              : current,
+          )
         }
       />
     );

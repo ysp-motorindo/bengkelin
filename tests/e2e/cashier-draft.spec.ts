@@ -325,6 +325,21 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   await scan('0000000000000');
   await expect(feedback).toContainText(t('errors.UNKNOWN_BARCODE'));
   await expect(feedback).toContainText('0000000000000');
+  const custom = page.getByRole('button', {
+    name: t('workspace.custom.open'),
+    ...exact,
+  });
+  const scanBox = searchBox(page);
+  const aligned = async () => {
+    const [scanBounds, customBounds] = await Promise.all([
+      scanBox.boundingBox(),
+      custom.boundingBox(),
+    ]);
+    expect(scanBounds).not.toBeNull();
+    expect(customBounds?.y).toBe(scanBounds?.y);
+    expect(customBounds?.height).toBe(scanBounds?.height);
+  };
+  await aligned();
   await expect(page.getByTestId('line-row')).toHaveCount(0);
   await expect(searchBox(page)).toBeFocused();
 
@@ -332,6 +347,7 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   await expect(feedback).toContainText(t('errors.BARCODE_INACTIVE'));
   await scan(INACTIVE_ITEM_BARCODE);
   await expect(feedback).toContainText(t('errors.CATALOG_ITEM_INACTIVE'));
+  await aligned();
   await expect(page.getByTestId('line-row')).toHaveCount(0);
 
   // No configured price: manual entry, then the line is added.
@@ -365,7 +381,10 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
     'aria-selected',
     'true',
   );
-  await page.keyboard.press('Control+A');
+  await page.keyboard.press(
+    process.platform === 'darwin' ? 'Meta+A' : 'Control+A',
+  );
+  await searchBox(page).focus();
   await scan(BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(2);
   await expect(page.getByTestId('line-row').nth(1)).toContainText(
@@ -384,6 +403,105 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   await expect(
     page.getByTestId('line-title').filter({ hasText: 'Jasa Servis Ringan' }),
   ).toHaveCount(0);
+});
+
+test('Customer & Vehicle dialog keeps its title and Done action visible while content scrolls', async () => {
+  const page = await startAsCashier();
+  await page.setViewportSize({ width: 390, height: 560 });
+  await page.evaluate(async () => {
+    for (let i = 0; i < 24; i++) {
+      const result = await window.bengkelin.customers.save({
+        name: `Customer ${i + 1}`,
+      });
+      if (!result.ok) throw new Error(JSON.stringify(result.error));
+    }
+  });
+  await page
+    .getByRole('button', { name: t('workspace.header.chooseParty'), ...exact })
+    .click();
+  const dialog = page.getByRole('dialog', { name: t('workspace.party.title') });
+  const title = dialog.getByRole('heading', {
+    name: t('workspace.party.title'),
+  });
+  const done = dialog.getByRole('button', {
+    name: t('workspace.party.done'),
+    ...exact,
+  });
+  const body = dialog.locator('.overflow-y-auto');
+  await expect(title).toBeInViewport();
+  await expect(done).toBeInViewport();
+  await expect
+    .poll(() => body.evaluate((el) => el.scrollHeight > el.clientHeight))
+    .toBe(true);
+  await body.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  await expect(title).toBeInViewport();
+  await expect(done).toBeInViewport();
+  await expect
+    .poll(() => body.evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+});
+
+test('cashier language and appearance persist without changing the admin preferences', async () => {
+  const page = await startAsCashier();
+  const language = page.getByLabel(t('shell.preferences.language'), exact);
+  const appearance = page.getByLabel(t('shell.preferences.appearance'), exact);
+  await expect(language).toHaveValue('id');
+  await expect(appearance).toHaveValue('LIGHT');
+  await language.selectOption('en');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await page
+    .getByLabel(t('shell.preferences.appearance', 'en'), exact)
+    .selectOption('DARK');
+  await expect(page.locator('html')).toHaveClass(/dark/);
+
+  await page.getByTestId('session-name').click();
+  await page.getByRole('button', { name: /Sign out|Keluar/ }).click();
+  await login(page, 'siti', CASHIER_PASSWORD);
+  await expect(
+    page.getByLabel(t('shell.preferences.language', 'en'), exact),
+  ).toHaveValue('en');
+  await expect(
+    page.getByLabel(t('shell.preferences.appearance', 'en'), exact),
+  ).toHaveValue('DARK');
+  await page.getByTestId('session-name').click();
+  await page.getByRole('button', { name: /Sign out|Keluar/ }).click();
+  await login(page, 'admin', ADMIN_PASSWORD);
+  await expect(
+    page.getByLabel(t('shell.preferences.language'), exact),
+  ).toHaveValue('id');
+  await expect(
+    page.getByLabel(t('shell.preferences.appearance'), exact),
+  ).toHaveValue('LIGHT');
+});
+
+test('shell title stays sticky and navigation scrolls horizontally in one row', async () => {
+  const page = await startAsCashier();
+  await page.setViewportSize({ width: 390, height: 560 });
+  const sticky = page.locator('div.sticky.top-0');
+  const nav = page.getByRole('navigation', { name: t('shell.nav.label') });
+  await expect(nav).toBeVisible();
+  const layout = await nav.evaluate((el) => {
+    const links = [...el.querySelectorAll('button')].map((item) =>
+      item.getBoundingClientRect(),
+    );
+    return {
+      overflow: el.scrollWidth > el.clientWidth,
+      oneRow: links.every((rect) => rect.y === links[0]?.y),
+    };
+  });
+  expect(layout).toEqual({ overflow: true, oneRow: true });
+  await nav.evaluate((el) => {
+    el.scrollLeft = el.scrollWidth;
+  });
+  await expect.poll(() => nav.evaluate((el) => el.scrollLeft > 0)).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect
+    .poll(() =>
+      sticky.evaluate((el) => Math.round(el.getBoundingClientRect().top)),
+    )
+    .toBe(0);
 });
 
 test('keyboard only: add, edit a discount, close, focus back in search; digits in other fields are not scans', async () => {

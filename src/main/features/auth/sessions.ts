@@ -1,4 +1,10 @@
-import type { CashierSession, Role, UUID } from '@/shared/contracts';
+import type {
+  Appearance,
+  CashierSession,
+  Language,
+  Role,
+  UUID,
+} from '@/shared/contracts';
 
 /** An authenticated cashier bound to one renderer window (webContents id). */
 export interface Session {
@@ -7,6 +13,8 @@ export interface Session {
   username: string;
   displayName: string;
   role: Role;
+  language: Language;
+  appearance: Appearance;
 }
 
 export function toSessionDto(session: Session): CashierSession {
@@ -15,6 +23,8 @@ export function toSessionDto(session: Session): CashierSession {
     username: session.username,
     displayName: session.displayName,
     role: session.role,
+    language: session.language,
+    appearance: session.appearance,
   };
 }
 

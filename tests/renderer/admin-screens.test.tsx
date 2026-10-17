@@ -93,6 +93,8 @@ describe('cashier management', () => {
       displayName: 'Joko',
       password: 'joko-password-1',
       role: 'CASHIER',
+      language: 'id',
+      appearance: 'SYSTEM',
     });
 
     await user.click(screen.getByRole('button', { name: 'Kelola: Pak Budi' }));
@@ -185,6 +187,8 @@ describe('cashier filters (T11 carry)', () => {
       username: 'siti',
       displayName: 'Siti',
       role: 'CASHIER',
+      language: 'id',
+      appearance: 'SYSTEM',
     };
     install({
       references: { listActive: vi.fn(async () => ok([])) },

@@ -18,7 +18,15 @@ import {
 import { Input } from '@/renderer/components/ui/input';
 import { Select } from '@/renderer/components/ui/select';
 import { useAction } from '@/renderer/lib/use-action';
-import type { CashierDto, Role } from '@/shared/contracts';
+import {
+  APPEARANCES,
+  LANGUAGES,
+  type Appearance,
+  type CashierDto,
+  type Language,
+  type PreferencesInput,
+  type Role,
+} from '@/shared/contracts';
 import { CashierManageDialog } from './CashierManageDialog';
 
 /**
@@ -27,7 +35,11 @@ import { CashierManageDialog } from './CashierManageDialog';
  * Cashiers are never deleted. Main enforces ADMIN and protects the last
  * active ADMIN (LAST_ACTIVE_ADMIN is shown as an alert).
  */
-export function CashiersScreen() {
+export function CashiersScreen({
+  defaultPreferences = { language: 'id', appearance: 'SYSTEM' },
+}: {
+  defaultPreferences?: PreferencesInput;
+}) {
   const { t } = useTranslation();
   const [cashiers, setCashiers] = useState<CashierDto[]>([]);
   const [managing, setManaging] = useState<CashierDto | null>(null);
@@ -112,7 +124,10 @@ export function CashiersScreen() {
           </table>
         </div>
       </div>
-      <CreateCashierForm onCreated={replace} />
+      <CreateCashierForm
+        onCreated={replace}
+        defaultPreferences={defaultPreferences}
+      />
       {managing ? (
         <CashierManageDialog
           cashier={managing}
@@ -126,14 +141,22 @@ export function CashiersScreen() {
 
 function CreateCashierForm({
   onCreated,
+  defaultPreferences,
 }: {
   onCreated(cashier: CashierDto): void;
+  defaultPreferences: PreferencesInput;
 }) {
   const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('CASHIER');
+  const [language, setLanguage] = useState<Language>(
+    defaultPreferences.language,
+  );
+  const [appearance, setAppearance] = useState<Appearance>(
+    defaultPreferences.appearance,
+  );
   const [created, setCreated] = useState<string | null>(null);
   const { busy, error, fieldErrors, run, check } = useAction();
   const first = useRef<HTMLInputElement>(null);
@@ -147,6 +170,8 @@ function CreateCashierForm({
         displayName,
         password,
         role,
+        language,
+        appearance,
       });
       if (!check(result)) return;
       onCreated(result.value);
@@ -157,6 +182,8 @@ function CreateCashierForm({
       setDisplayName('');
       setPassword('');
       setRole('CASHIER');
+      setLanguage(defaultPreferences.language);
+      setAppearance(defaultPreferences.appearance);
       first.current?.focus();
     });
   }
@@ -214,6 +241,30 @@ function CreateCashierForm({
             >
               <option value="CASHIER">{t('common.role.CASHIER')}</option>
               <option value="ADMIN">{t('common.role.ADMIN')}</option>
+            </Select>
+          </FormField>
+          <FormField label={t('shell.preferences.language')}>
+            <Select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as Language)}
+            >
+              {LANGUAGES.map((value) => (
+                <option key={value} value={value}>
+                  {t(`shell.preferences.languages.${value}`)}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          <FormField label={t('shell.preferences.appearance')}>
+            <Select
+              value={appearance}
+              onChange={(e) => setAppearance(e.target.value as Appearance)}
+            >
+              {APPEARANCES.map((value) => (
+                <option key={value} value={value}>
+                  {t(`shell.preferences.appearances.${value}`)}
+                </option>
+              ))}
             </Select>
           </FormField>
           <p role="status" className="text-sm text-muted-foreground">

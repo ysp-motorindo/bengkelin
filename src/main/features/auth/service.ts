@@ -45,6 +45,8 @@ export class AuthService {
       username: record.username,
       displayName: record.displayName,
       role: record.role,
+      language: record.language,
+      appearance: record.appearance,
     });
     this.audit(record.id, 'LOGIN_SUCCEEDED', {});
     return toSessionDto(session);

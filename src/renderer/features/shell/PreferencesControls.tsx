@@ -7,20 +7,16 @@ import {
   LANGUAGES,
   type Appearance,
   type Language,
-  type PublicSettings,
+  type PreferencesInput,
 } from '@/shared/contracts';
 
 interface PreferencesControlsProps {
-  settings: PublicSettings;
-  onChanged(settings: PublicSettings): void;
+  preferences: PreferencesInput;
+  onChanged(preferences: PreferencesInput): void;
 }
 
-/**
- * Shop-wide language and appearance (spec 54), ADMIN only (main enforces
- * it). Applied live once main has saved them.
- */
 export function PreferencesControls({
-  settings,
+  preferences,
   onChanged,
 }: PreferencesControlsProps) {
   const { t } = useTranslation();
@@ -39,17 +35,18 @@ export function PreferencesControls({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      <label htmlFor={languageId} className="text-muted-foreground">
+    <div className="flex items-center gap-2 text-sm">
+      <label htmlFor={languageId} className="sr-only">
         {t('shell.preferences.language')}
       </label>
       <Select
         id={languageId}
+        aria-label={t('shell.preferences.language')}
         className="h-8 w-auto py-0"
         disabled={busy}
-        value={settings.language}
+        value={preferences.language}
         onChange={(event) =>
-          save(event.target.value as Language, settings.appearance)
+          save(event.target.value as Language, preferences.appearance)
         }
       >
         {LANGUAGES.map((language) => (
@@ -58,20 +55,26 @@ export function PreferencesControls({
           </option>
         ))}
       </Select>
-      <label htmlFor={appearanceId} className="text-muted-foreground">
+      <label htmlFor={appearanceId} className="sr-only">
         {t('shell.preferences.appearance')}
       </label>
       <Select
         id={appearanceId}
+        aria-label={t('shell.preferences.appearance')}
         className="h-8 w-auto py-0"
         disabled={busy}
-        value={settings.appearance}
+        value={preferences.appearance}
         onChange={(event) =>
-          save(settings.language, event.target.value as Appearance)
+          save(preferences.language, event.target.value as Appearance)
         }
       >
         {APPEARANCES.map((appearance) => (
           <option key={appearance} value={appearance}>
+            {appearance === 'LIGHT'
+              ? '☀ '
+              : appearance === 'DARK'
+                ? '☾ '
+                : '◐ '}
             {t(`shell.preferences.appearances.${appearance}`)}
           </option>
         ))}

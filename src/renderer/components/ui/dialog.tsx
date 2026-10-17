@@ -60,6 +60,8 @@ interface DialogProps {
   /** Accessible label of the corner close button (omit to hide it). */
   closeLabel?: string;
   className?: string;
+  scrollBody?: boolean;
+  footer?: ReactNode;
   /** New Transaction (Ctrl+N) may leave this dialog (default: blocked). */
   allowNewTransaction?: boolean;
 }
@@ -80,6 +82,8 @@ export function Dialog({
   closeLabel,
   className,
   allowNewTransaction = false,
+  scrollBody = false,
+  footer,
 }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -181,6 +185,7 @@ export function Dialog({
         onKeyDown={onKeyDown}
         className={cn(
           'relative flex w-full max-w-lg flex-col gap-3 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-lg outline-none sm:p-5',
+          scrollBody && 'max-h-[calc(100dvh-1.5rem)] overflow-hidden',
           className,
         )}
       >
@@ -204,7 +209,12 @@ export function Dialog({
             {description}
           </div>
         ) : null}
-        {children}
+        {scrollBody ? (
+          <div className="min-h-0 overflow-y-auto">{children}</div>
+        ) : (
+          children
+        )}
+        {footer}
       </div>
     </div>,
     document.body,
