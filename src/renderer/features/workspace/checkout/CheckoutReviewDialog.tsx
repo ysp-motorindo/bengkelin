@@ -27,6 +27,7 @@ import type {
 } from '@/shared/contracts';
 import type { FinalizeClient } from './finalize-client';
 import { trackFinalize } from './finalize-pending';
+import { formatDueDate } from '../format-due-date';
 
 interface CheckoutReviewDialogProps {
   /** The flushed, acknowledged draft view. */
@@ -240,7 +241,7 @@ function ReviewBody({
   stockAcknowledged: boolean;
   onStockAcknowledged(value: boolean): void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { totals } = preview;
   const credit = BigInt(totals.outstandingAmount) > 0n;
   const negative = preview.warnings.filter((w) => w.code === 'NEGATIVE_STOCK');
@@ -381,7 +382,7 @@ function ReviewBody({
           <p className="mt-1 text-sm">
             {t('workspace.review.credit', {
               amount: formatIdr(totals.outstandingAmount),
-              date: view.dueDate,
+              date: formatDueDate(view.dueDate, i18n.language),
             })}
           </p>
         ) : null}

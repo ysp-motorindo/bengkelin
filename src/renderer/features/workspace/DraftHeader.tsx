@@ -22,6 +22,7 @@ import { PricingTimeDialog } from './PricingTimeDialog';
 import { formatLocal } from '@/renderer/features/catalog/local-time';
 import { todayInShop } from './shop-time';
 import { useSyncedValue } from './synced-field';
+import { formatDueDate } from './format-due-date';
 import type { DraftCommands } from './use-draft-commands';
 
 interface DraftHeaderProps {
@@ -59,7 +60,7 @@ export function DraftHeader({
   timezone,
   onError,
 }: DraftHeaderProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { view, send, edit, isDirty, markInvalid } = commands;
   const [pending, setPending] = useState<Pending>(null);
   const [date, setDate] = useState(view.invoiceDate);
@@ -228,7 +229,9 @@ export function DraftHeader({
         <FormField
           label={t('workspace.header.topDays')}
           error={fieldErrors.topDays}
-          hint={t('workspace.header.dueDate', { date: view.dueDate })}
+          hint={t('workspace.header.dueDate', {
+            date: formatDueDate(view.dueDate, i18n.language),
+          })}
         >
           <Input
             inputMode="numeric"
