@@ -1,5 +1,5 @@
-import { LogOut, Wrench, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ChevronDown, LogOut, Wrench, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
@@ -70,11 +70,22 @@ export function Shell({
 }: ShellProps) {
   const { t } = useTranslation();
   const [view, setView] = useState<View>('workspace');
+  const profileMenu = useRef<HTMLDetailsElement>(null);
   const { busy, error, setError, run, check } = useAction();
   const menu = useShellMenu({ session, showView: setView });
 
   // After a reload main may still hold the previous page's print context.
   useEffect(() => reportPrintContext(), []);
+
+  useEffect(() => {
+    function closeProfileMenu(event: MouseEvent) {
+      if (!profileMenu.current?.contains(event.target as Node)) {
+        profileMenu.current?.removeAttribute('open');
+      }
+    }
+    document.addEventListener('click', closeProfileMenu);
+    return () => document.removeEventListener('click', closeProfileMenu);
+  }, []);
 
   function logout() {
     void run(async () => {
@@ -122,7 +133,7 @@ export function Shell({
             <span>{shopName || t('common.appName')}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <details className="relative text-sm">
+            <details ref={profileMenu} className="relative text-sm">
               <summary
                 aria-label={t('shell.profileMenuLabel')}
                 className="cursor-pointer list-none rounded-md border border-input px-3 py-2 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -131,7 +142,7 @@ export function Shell({
                 <span data-testid="session-role">
                   ({t(`common.role.${session.role}`)})
                 </span>{' '}
-                ▾
+                <ChevronDown aria-hidden="true" className="inline size-4" />
               </summary>
               <div className="absolute right-0 z-50 mt-1 w-max min-w-[max(16rem,100%)] max-w-[calc(100vw-2rem)] rounded-md border border-border bg-card p-2 shadow-lg">
                 {settings && onPreferencesChanged ? (
@@ -143,7 +154,7 @@ export function Shell({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start"
+                  className="mt-2 w-full justify-start"
                   disabled={busy}
                   onClick={logout}
                 >
