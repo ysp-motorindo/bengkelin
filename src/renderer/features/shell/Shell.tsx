@@ -167,7 +167,7 @@ export function Shell({
         </header>
         <nav
           aria-label={t('shell.nav.label')}
-          className="flex flex-nowrap gap-1 overflow-x-auto border-b border-border bg-card px-4 sm:px-6"
+          className="shell-menu-bar flex flex-nowrap gap-1 overflow-x-auto border-b border-border bg-card px-4 sm:px-6"
         >
           {views.map((name) => (
             <button
