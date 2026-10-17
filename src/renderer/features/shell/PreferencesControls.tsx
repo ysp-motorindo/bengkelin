@@ -61,7 +61,7 @@ export function PreferencesControls({
                   checked={preferences.language === language}
                   disabled={busy}
                   onChange={() => save(language, preferences.appearance)}
-                  className="sr-only"
+                  className="size-4 accent-primary"
                 />
                 <Flag
                   aria-hidden="true"
@@ -99,7 +99,7 @@ export function PreferencesControls({
                 checked={preferences.appearance === appearance}
                 disabled={busy}
                 onChange={() => save(preferences.language, appearance)}
-                className="sr-only"
+                className="size-4 accent-primary"
               />
               <span aria-hidden="true">
                 {appearance === 'LIGHT'

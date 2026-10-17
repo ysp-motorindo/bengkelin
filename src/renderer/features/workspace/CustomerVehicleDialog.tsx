@@ -101,15 +101,11 @@ export function CustomerVehicleDialog({
   );
 
   useEffect(() => {
-    void loadCustomers('', false);
-    return () => {
-      ++searchVersion.current;
-    };
-  }, [loadCustomers]);
-
-  useEffect(() => {
     if (!customerQuery) {
-      return;
+      void loadCustomers('', includeInactiveRef.current);
+      return () => {
+        ++searchVersion.current;
+      };
     }
     const timer = window.setTimeout(
       () => void loadCustomers(customerQuery, includeInactiveRef.current),

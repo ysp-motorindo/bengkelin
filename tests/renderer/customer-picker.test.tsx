@@ -147,6 +147,36 @@ test('customer and plate search update after typing without search buttons', asy
   vi.useRealTimers();
 });
 
+test('clearing customer search restores the unfiltered results', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const search = vi.fn(async ({ query }: { query: string }) =>
+    ok({ results: query ? [] : [active] }),
+  );
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    customers: { search },
+    references: { listActive: vi.fn(async () => ok([])) },
+  };
+  render(
+    <CustomerVehicleDialog
+      view={draftView()}
+      selectCustomer={vi.fn(async () => true)}
+      selectVehicle={vi.fn(async () => true)}
+      clearParty={vi.fn(async () => ok(null))}
+      onClose={vi.fn()}
+    />,
+  );
+  const input = screen.getByPlaceholderText('Cari nama atau telepon');
+  expect(await screen.findByText('Active')).toBeVisible();
+  await userEvent.type(input, 'missing');
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(250);
+  });
+  expect(await screen.findByText('Tidak ditemukan.')).toBeVisible();
+  await userEvent.clear(input);
+  expect(await screen.findByText('Active')).toBeVisible();
+  vi.useRealTimers();
+});
+
 test('walk-in clears customer and vehicle together and closes only after success', async () => {
   const clearParty = vi.fn(async () => ok(null));
   (window as unknown as { bengkelin: unknown }).bengkelin = {

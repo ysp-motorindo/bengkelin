@@ -54,6 +54,9 @@ describe('shell', () => {
       'type',
       'radio',
     );
+    expect(screen.getByRole('radio', { name: /English/ })).not.toHaveClass(
+      'sr-only',
+    );
     expect(screen.getByTitle('Indonesia')).toBeInTheDocument();
     expect(screen.getByTitle('United States')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('radio', { name: 'English' }));
