@@ -53,9 +53,8 @@ export function ReportPreviewDialog({
       title={t('reports.preview.title')}
       onClose={onClose}
       closeLabel={t('reports.preview.close')}
-      className="max-w-[min(96vw,64rem)]"
       footer={
-        <div className="flex justify-between border-t border-border pt-3">
+        <div className="flex justify-between">
           <Button variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('reports.preview.close')}

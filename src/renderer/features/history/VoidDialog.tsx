@@ -61,7 +61,7 @@ export function VoidDialog({ invoice, onClose, onVoided }: VoidDialogProps) {
       onClose={onClose}
       closeLabel={t('history.void.cancel')}
       footer={
-        <div className="flex justify-between border-t border-border pt-3">
+        <div className="flex justify-between">
           <Button type="button" variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('history.void.cancel')}

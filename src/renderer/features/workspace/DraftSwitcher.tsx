@@ -73,10 +73,10 @@ export function DraftSwitcher({
       title={t('workspace.drafts.title')}
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
-      className="max-h-[70vh] max-w-4xl"
       scrollBody
+      contentPadding={false}
       footer={
-        <div className="flex justify-start border-t border-border pt-3">
+        <div className="flex justify-start">
           <Button variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('workspace.common.close')}
@@ -205,7 +205,7 @@ export function DraftSwitcher({
           initialFocus={cancelRef}
           onClose={() => setConfirming(null)}
           footer={
-            <div className="flex justify-between border-t border-border pt-3">
+            <div className="flex justify-between">
               <Button
                 ref={cancelRef}
                 variant="outline"

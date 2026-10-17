@@ -60,9 +60,8 @@ export function OwnershipDialog({
       title={t('workspace.ownership.title')}
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
-      className="max-w-xl"
       footer={
-        <div className="flex justify-start border-t border-border pt-3">
+        <div className="flex justify-start">
           <Button variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('workspace.common.close')}

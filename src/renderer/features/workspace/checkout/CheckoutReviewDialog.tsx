@@ -147,9 +147,8 @@ export function CheckoutReviewDialog({
         // Ctrl+N from the finalized view starts the next transaction.
         allowNewTransaction
         closeLabel={t('workspace.common.close')}
-        className="max-w-xl"
         footer={
-          <div className="flex justify-end border-t border-border pt-3">
+          <div className="flex justify-end">
             <Button ref={newTransactionRef} onClick={onNewTransaction}>
               <FilePlus2 aria-hidden="true" />
               {t('workspace.finalize.newTransaction')}
@@ -171,9 +170,8 @@ export function CheckoutReviewDialog({
       title={t('workspace.review.title')}
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
-      className="max-w-xl"
       footer={
-        <div className="flex justify-between border-t border-border pt-3">
+        <div className="flex justify-between">
           <Button variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('workspace.review.back')}

@@ -3,12 +3,12 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type KeyboardEvent,
   type ReactNode,
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@/renderer/lib/utils';
 
 const FOCUSABLE = [
   'a[href]',
@@ -47,6 +47,7 @@ function focusables(root: HTMLElement): HTMLElement[] {
 interface DialogProps {
   title: string;
   description?: ReactNode;
+  subtitle?: ReactNode;
   /** Escape, the close button, or the caller's Cancel. */
   onClose(): void;
   children: ReactNode;
@@ -60,8 +61,8 @@ interface DialogProps {
   returnFocus?: () => void;
   /** Accessible label of the corner close button (omit to hide it). */
   closeLabel?: string;
-  className?: string;
   scrollBody?: boolean;
+  contentPadding?: boolean;
   footer?: ReactNode;
   /** New Transaction (Ctrl+N) may leave this dialog (default: blocked). */
   allowNewTransaction?: boolean;
@@ -75,24 +76,44 @@ interface DialogProps {
 export function Dialog({
   title,
   description,
+  subtitle,
   onClose,
   children,
   role = 'dialog',
   initialFocus,
   returnFocus,
   closeLabel,
-  className,
   allowNewTransaction = false,
   scrollBody = false,
+  contentPadding = true,
   footer,
 }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descriptionId = useId();
+  const subtitleId = useId();
   const returnRef = useRef(returnFocus);
   returnRef.current = returnFocus;
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    },
+    [],
+  );
+
+  function showScrollbar() {
+    setIsScrolling(true);
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(() => {
+      setIsScrolling(false);
+      scrollTimer.current = null;
+    }, 700);
+  }
 
   useEffect(() => {
     const opener =
@@ -189,19 +210,34 @@ export function Dialog({
         role={role}
         aria-modal="true"
         aria-labelledby={titleId}
-        aria-describedby={description ? descriptionId : undefined}
+        aria-describedby={
+          [subtitle ? subtitleId : null, description ? descriptionId : null]
+            .filter(Boolean)
+            .join(' ') || undefined
+        }
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        className={cn(
-          'relative flex w-full max-w-lg flex-col gap-3 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-lg outline-none sm:p-5',
-          scrollBody && 'max-h-[calc(100dvh-1.5rem)] overflow-hidden',
-          className,
-        )}
+        className="relative flex w-full min-h-0 max-w-4xl flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-lg outline-none max-h-[70vh]"
       >
-        <div className="flex items-start justify-between gap-3">
-          <h2 id={titleId} className="text-lg font-semibold leading-tight">
-            {title}
-          </h2>
+        <div className="flex items-start justify-between gap-3 p-4 sm:p-5">
+          <div className="min-w-0">
+            <h2 id={titleId} className="text-lg font-semibold leading-tight">
+              {title}
+            </h2>
+            {subtitle ? (
+              <div
+                id={subtitleId}
+                className="mt-1 text-sm text-muted-foreground"
+              >
+                {subtitle}
+              </div>
+            ) : null}
+            {description ? (
+              <div id={descriptionId} className="text-sm text-muted-foreground">
+                {description}
+              </div>
+            ) : null}
+          </div>
           {closeLabel ? (
             <button
               type="button"
@@ -213,19 +249,20 @@ export function Dialog({
             </button>
           ) : null}
         </div>
-        {description ? (
-          <div id={descriptionId} className="text-sm text-muted-foreground">
-            {description}
+        <div
+          onScrollCapture={showScrollbar}
+          data-scrolling={isScrolling}
+          className={`dialog-scroll-area relative min-h-0 flex-1 px-4 sm:px-5 ${
+            scrollBody ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'
+          } ${contentPadding ? 'pt-1 pb-4 sm:pb-5' : ''}`}
+        >
+          {children}
+        </div>
+        {footer ? (
+          <div className="flex w-full justify-start border-t border-border pt-3 p-4 sm:p-5 [&>*]:w-full">
+            {footer}
           </div>
         ) : null}
-        {scrollBody ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {children}
-          </div>
-        ) : (
-          children
-        )}
-        {footer}
       </div>
     </div>,
     document.body,

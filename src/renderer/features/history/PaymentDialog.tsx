@@ -94,7 +94,7 @@ export function PaymentDialog({
       onClose={onClose}
       closeLabel={t('history.payment.cancel')}
       footer={
-        <div className="flex justify-between border-t border-border pt-3">
+        <div className="flex justify-between">
           <Button type="button" variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('history.payment.cancel')}

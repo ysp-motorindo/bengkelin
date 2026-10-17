@@ -53,9 +53,8 @@ export function CustomerImportDialog({
         if (!busy) onClose();
       }}
       closeLabel={t('customers.edit.cancel')}
-      className="max-w-4xl"
       footer={
-        <div className="flex justify-between border-t border-border pt-3">
+        <div className="flex justify-between">
           <Button variant="outline" disabled={busy} onClick={onClose}>
             <X aria-hidden="true" />
             {t('customers.edit.cancel')}

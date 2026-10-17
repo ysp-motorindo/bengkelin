@@ -163,8 +163,8 @@ export function CustomerVehicleDialog({
   return (
     <Dialog
       title={t('workspace.party.title')}
-      description={
-        <p className="-mt-3" data-testid="party-current">
+      subtitle={
+        <p data-testid="party-current">
           {t('workspace.party.current')}:{' '}
           <strong>
             {view.customer
@@ -177,10 +177,9 @@ export function CustomerVehicleDialog({
       onClose={onClose}
       initialFocus={searchRef}
       closeLabel={t('workspace.common.close')}
-      className="max-h-[70vh] max-w-3xl"
       scrollBody
       footer={
-        <div className="flex justify-between gap-2 border-t border-border pt-3">
+        <div className="flex justify-between gap-2">
           <Button variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('workspace.common.cancel')}

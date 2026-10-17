@@ -34,9 +34,8 @@ export function AboutDialog({ onClose }: { onClose(): void }) {
       description={t('shell.about.description')}
       onClose={onClose}
       closeLabel={t('shell.about.close')}
-      className="max-w-md"
       footer={
-        <div className="flex justify-start border-t border-border pt-3">
+        <div className="flex justify-start">
           <Button variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('shell.about.close')}

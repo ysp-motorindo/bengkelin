@@ -63,9 +63,8 @@ export function PrintPreviewDialog({
       title={t('printing.preview.title')}
       onClose={onClose}
       closeLabel={t('printing.preview.close')}
-      className="max-w-[min(96vw,64rem)]"
       footer={
-        <div className="flex justify-between border-t border-border pt-3">
+        <div className="flex justify-between">
           <Button variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('printing.preview.close')}

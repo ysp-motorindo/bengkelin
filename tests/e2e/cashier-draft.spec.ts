@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { tr, type Lang } from './helpers/i18n';
+import { clickMenuItem } from './helpers/app-probe';
 import { launchApp, type LaunchedApp } from './helpers/launch';
 
 /**
@@ -457,6 +458,10 @@ test('Customer & Vehicle dialog keeps its title and Done action visible while co
   const vehiclePane = panes.nth(1);
   await expect(title).toBeInViewport();
   await expect(done).toBeInViewport();
+  const customerSearch = dialog.getByPlaceholder(
+    t('workspace.party.customerSearch'),
+  );
+  const searchTop = (await customerSearch.boundingBox())!.y;
   await expect
     .poll(() =>
       customerPane.evaluate((el) => el.scrollHeight > el.clientHeight),
@@ -467,6 +472,7 @@ test('Customer & Vehicle dialog keeps its title and Done action visible while co
   });
   await expect(title).toBeInViewport();
   await expect(done).toBeInViewport();
+  expect((await customerSearch.boundingBox())!.y).toBe(searchTop);
   await expect
     .poll(() => customerPane.evaluate((el) => el.scrollTop))
     .toBeGreaterThan(0);
@@ -494,6 +500,131 @@ test('Customer & Vehicle dialog keeps its title and Done action visible while co
   ).toBeVisible();
   await expect(title).toBeInViewport();
   await expect(done).toBeInViewport();
+
+  // Desktop columns keep the search controls stationary while a real wheel scrolls the list.
+  await page.setViewportSize({ width: 1120, height: 800 });
+  await customerPane.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  const desktopSearchTop = (await customerSearch.boundingBox())!.y;
+  await customerPane.hover();
+  await page.mouse.wheel(0, 300);
+  await expect
+    .poll(() => customerPane.evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  expect((await customerSearch.boundingBox())!.y).toBe(desktopSearchTop);
+  await expect(dialog.locator('.dialog-scroll-area')).toHaveAttribute(
+    'data-scrolling',
+    'true',
+  );
+  await expect(dialog.locator('.dialog-scroll-area')).toHaveAttribute(
+    'data-scrolling',
+    'false',
+  );
+  await expect(title).toBeInViewport();
+  await expect(done).toBeInViewport();
+});
+
+test('dialogs fit short content and scroll long forms with fixed header and footer', async () => {
+  const page = await startAsCashier();
+  await page.setViewportSize({ width: 1120, height: 800 });
+  await clickMenuItem(launched!.app, 'about');
+  const about = page.getByRole('dialog', { name: t('shell.about.title') });
+  await expect(about.getByTestId('about-version')).toBeVisible();
+  // A short dialog uses its content height, rather than filling the 70vh ceiling.
+  expect((await about.boundingBox())!.height).toBeLessThan(350);
+  await page.keyboard.press('Escape');
+
+  await page.setViewportSize({ width: 390, height: 560 });
+  await page
+    .getByRole('button', { name: t('workspace.custom.open'), ...exact })
+    .click();
+  const dialog = page.getByRole('dialog', {
+    name: t('workspace.custom.title'),
+  });
+  const body = dialog.locator('.dialog-scroll-area');
+  const title = dialog.getByRole('heading', {
+    name: t('workspace.custom.title'),
+  });
+  const submit = dialog.getByRole('button', {
+    name: t('workspace.custom.add'),
+    ...exact,
+  });
+  const cancel = dialog.getByRole('button', {
+    name: t('workspace.common.cancel'),
+    ...exact,
+  });
+  const titleTop = (await title.boundingBox())!.y;
+  const submitTop = (await submit.boundingBox())!.y;
+  expect((await dialog.boundingBox())!.height).toBeLessThanOrEqual(393);
+  expect(
+    (await cancel.boundingBox())!.x + (await cancel.boundingBox())!.width,
+  ).toBeLessThan((await submit.boundingBox())!.x);
+  await expect
+    .poll(() => body.evaluate((el) => el.scrollHeight > el.clientHeight))
+    .toBe(true);
+  await body.hover();
+  await page.mouse.wheel(0, 300);
+  await expect
+    .poll(() => body.evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  await expect(body).toHaveAttribute('data-scrolling', 'true');
+  await expect
+    .poll(() => body.evaluate((el) => getComputedStyle(el).scrollbarColor))
+    .not.toBe('rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)');
+  expect((await title.boundingBox())!.y).toBe(titleTop);
+  expect((await submit.boundingBox())!.y).toBe(submitTop);
+  await expect(body).toHaveAttribute('data-scrolling', 'false');
+  await expect
+    .poll(() => body.evaluate((el) => getComputedStyle(el).scrollbarColor))
+    .toBe('rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)');
+});
+
+test('draft table scrolls without content padding while its footer stays visible', async () => {
+  const page = await startAsCashier();
+  await page.setViewportSize({ width: 1120, height: 800 });
+  await page.evaluate(async () => {
+    const b = window.bengkelin;
+    const channels = await b.references.listActive({ entity: 'channel' });
+    if (!channels.ok) throw new Error(JSON.stringify(channels.error));
+    for (let i = 0; i < 24; i++) {
+      const draft = await b.drafts.create({
+        requestId: crypto.randomUUID(),
+        channelId: channels.value[0]!.id,
+        invoiceDate: '2026-10-17',
+        pricingAt: new Date().toISOString(),
+      });
+      if (!draft.ok) throw new Error(JSON.stringify(draft.error));
+    }
+  });
+  await page
+    .getByRole('button', { name: t('workspace.drafts.open'), ...exact })
+    .click();
+  const dialog = page.getByRole('dialog', {
+    name: t('workspace.drafts.title'),
+  });
+  await expect(dialog.getByTestId('draft-row')).toHaveCount(25);
+  const body = dialog.locator('.dialog-scroll-area');
+  expect(
+    await body.evaluate((el) => [
+      getComputedStyle(el).paddingTop,
+      getComputedStyle(el).paddingBottom,
+    ]),
+  ).toEqual(['0px', '0px']);
+  const tableScroller = dialog.locator('.overflow-auto');
+  await tableScroller.hover();
+  await page.mouse.wheel(0, 400);
+  await expect
+    .poll(() => tableScroller.evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  await expect(
+    dialog.getByRole('heading', { name: t('workspace.drafts.title') }),
+  ).toBeInViewport();
+  await expect(
+    dialog
+      .getByRole('button', { name: t('workspace.common.close'), ...exact })
+      .filter({ hasText: t('workspace.common.close') }),
+  ).toBeInViewport();
 });
 
 test('cashier language and appearance persist without changing the admin preferences', async () => {

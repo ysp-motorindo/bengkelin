@@ -134,9 +134,8 @@ export function PriceDialog({
       }
       onClose={onClose}
       initialFocus={firstField}
-      className="max-h-[calc(100dvh-2rem)] overflow-auto p-5"
       footer={
-        <div className="flex justify-between border-t border-border pt-3">
+        <div className="flex justify-between">
           {preview === null ? (
             <>
               <Button variant="outline" disabled={busy} onClick={onClose}>

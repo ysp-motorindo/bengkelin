@@ -69,9 +69,8 @@ export function CashierManageDialog({
       description={t('cashiers.manage.sessionNote')}
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
-      className="max-w-lg"
       footer={
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Button variant="outline" onClick={onClose}>
             <X aria-hidden="true" />
             {t('workspace.common.close')}

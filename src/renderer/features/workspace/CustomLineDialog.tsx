@@ -215,7 +215,7 @@ export function CustomLineDialog({
       returnFocus={returnFocus}
       closeLabel={t('workspace.common.close')}
       footer={
-        <div className="flex justify-between border-t border-border pt-3">
+        <div className="flex justify-between">
           <Button variant="outline" disabled={busy} onClick={onClose}>
             <X aria-hidden="true" />
             {t('workspace.common.cancel')}
