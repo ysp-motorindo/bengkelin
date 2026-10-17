@@ -1,6 +1,6 @@
-import { useId } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { ID, US } from 'country-flag-icons/react/3x2';
 import { useTranslation } from 'react-i18next';
-import { Select } from '@/renderer/components/ui/select';
 import { useAction } from '@/renderer/lib/use-action';
 import {
   APPEARANCES,
@@ -20,8 +20,6 @@ export function PreferencesControls({
   onChanged,
 }: PreferencesControlsProps) {
   const { t } = useTranslation();
-  const languageId = useId();
-  const appearanceId = useId();
   const { busy, error, run, check } = useAction();
 
   function save(language: Language, appearance: Appearance) {
@@ -35,52 +33,88 @@ export function PreferencesControls({
   }
 
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <label htmlFor={languageId} className="sr-only">
-        {t('shell.preferences.language')}
-      </label>
-      <Select
-        id={languageId}
-        aria-label={t('shell.preferences.language')}
-        className="h-8 w-auto py-0"
-        disabled={busy}
-        value={preferences.language}
-        onChange={(event) =>
-          save(event.target.value as Language, preferences.appearance)
-        }
-      >
-        {LANGUAGES.map((language) => (
-          <option key={language} value={language}>
-            {t(`shell.preferences.languages.${language}`)}
-          </option>
-        ))}
-      </Select>
-      <label htmlFor={appearanceId} className="sr-only">
-        {t('shell.preferences.appearance')}
-      </label>
-      <Select
-        id={appearanceId}
-        aria-label={t('shell.preferences.appearance')}
-        className="h-8 w-auto py-0"
-        disabled={busy}
-        value={preferences.appearance}
-        onChange={(event) =>
-          save(preferences.language, event.target.value as Appearance)
-        }
-      >
-        {APPEARANCES.map((appearance) => (
-          <option key={appearance} value={appearance}>
-            {appearance === 'LIGHT'
-              ? '☀ '
-              : appearance === 'DARK'
-                ? '☾ '
-                : '◐ '}
-            {t(`shell.preferences.appearances.${appearance}`)}
-          </option>
-        ))}
-      </Select>
+    <div className="space-y-1">
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center justify-between rounded px-2 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {t('shell.preferences.language')}
+          <ChevronDown
+            aria-hidden="true"
+            className="size-4 transition-transform group-open:rotate-180"
+          />
+        </summary>
+        <div
+          role="radiogroup"
+          aria-label={t('shell.preferences.language')}
+          className="space-y-1"
+        >
+          {LANGUAGES.map((language) => {
+            const Flag = language === 'id' ? ID : US;
+            return (
+              <label
+                key={language}
+                className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-muted focus-within:ring-2 focus-within:ring-ring has-[:disabled]:opacity-50"
+              >
+                <input
+                  type="radio"
+                  name="language"
+                  value={language}
+                  checked={preferences.language === language}
+                  disabled={busy}
+                  onChange={() => save(language, preferences.appearance)}
+                  className="sr-only"
+                />
+                <Flag
+                  aria-hidden="true"
+                  title={language === 'id' ? 'Indonesia' : 'United States'}
+                  className="h-4 w-6"
+                />
+                <span>{t(`shell.preferences.languages.${language}`)}</span>
+              </label>
+            );
+          })}
+        </div>
+      </details>
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center justify-between rounded px-2 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {t('shell.preferences.appearance')}
+          <ChevronDown
+            aria-hidden="true"
+            className="size-4 transition-transform group-open:rotate-180"
+          />
+        </summary>
+        <div
+          role="radiogroup"
+          aria-label={t('shell.preferences.appearance')}
+          className="space-y-1"
+        >
+          {APPEARANCES.map((appearance) => (
+            <label
+              key={appearance}
+              className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-muted focus-within:ring-2 focus-within:ring-ring has-[:disabled]:opacity-50"
+            >
+              <input
+                type="radio"
+                name="appearance"
+                value={appearance}
+                checked={preferences.appearance === appearance}
+                disabled={busy}
+                onChange={() => save(preferences.language, appearance)}
+                className="sr-only"
+              />
+              <span aria-hidden="true">
+                {appearance === 'LIGHT'
+                  ? '☀'
+                  : appearance === 'DARK'
+                    ? '☾'
+                    : '◐'}
+              </span>
+              {t(`shell.preferences.appearances.${appearance}`)}
+            </label>
+          ))}
+        </div>
+      </details>
       {error ? (
-        <span role="alert" className="text-destructive">
+        <span role="alert" className="block px-2 py-1 text-destructive">
           {error}
         </span>
       ) : null}

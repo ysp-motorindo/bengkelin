@@ -4,6 +4,14 @@ import { describe, expect, test, vi } from 'vitest';
 import { Shell } from '@/renderer/features/shell/Shell';
 import type { CashierSession } from '@/shared/contracts';
 import { workspaceBridge } from './helpers/workspace-bridge';
+import type { PublicSettings } from '@/shared/contracts';
+
+const settings: PublicSettings = {
+  setupCompleted: true,
+  language: 'id',
+  appearance: 'SYSTEM',
+  shopName: 'Bengkel',
+};
 
 const cashier: CashierSession = {
   cashierId: '5b9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11',
@@ -15,6 +23,78 @@ const cashier: CashierSession = {
 };
 
 describe('shell', () => {
+  test('profile preferences start collapsed and expose full-width language options with flags', async () => {
+    const changed = vi.fn();
+    (window as unknown as { bengkelin: unknown }).bengkelin = {
+      ...workspaceBridge(),
+      settings: {
+        updatePreferences: vi.fn(async (value) => ({ ok: true, value })),
+      },
+    };
+    render(
+      <Shell
+        session={cashier}
+        shopName="Bengkel"
+        settings={settings}
+        onPreferencesChanged={changed}
+        onLoggedOut={vi.fn()}
+      />,
+    );
+    const profile = screen.getByText('Siti').closest('details')!;
+    expect(
+      [...profile.querySelectorAll('details')].every((item) => !item.open),
+    ).toBe(true);
+    await userEvent.click(screen.getByText('Siti'));
+    await userEvent.click(screen.getByText('Bahasa', { selector: 'summary' }));
+    expect(
+      screen.getByRole('radio', { name: /Indonesia/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /English/ })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /English/ })).toHaveAttribute(
+      'type',
+      'radio',
+    );
+    expect(screen.getByTitle('Indonesia')).toBeInTheDocument();
+    expect(screen.getByTitle('United States')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'English' }));
+    expect(changed).toHaveBeenCalledWith({
+      language: 'en',
+      appearance: 'SYSTEM',
+    });
+    expect(
+      screen.getByRole('radio', { name: 'English' }).closest('label'),
+    ).toHaveClass('w-full');
+  });
+
+  test('failed preference saves keep prior values and show the error', async () => {
+    const changed = vi.fn();
+    (window as unknown as { bengkelin: unknown }).bengkelin = {
+      ...workspaceBridge(),
+      settings: {
+        updatePreferences: vi.fn(async () => ({
+          ok: false as const,
+          error: { code: 'FAILED', messageKey: 'errors.INTERNAL_ERROR' },
+        })),
+      },
+    };
+    render(
+      <Shell
+        session={cashier}
+        shopName="Bengkel"
+        settings={settings}
+        onPreferencesChanged={changed}
+        onLoggedOut={vi.fn()}
+      />,
+    );
+    await userEvent.click(screen.getByText('Siti'));
+    await userEvent.click(screen.getByText('Bahasa', { selector: 'summary' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'English' }));
+    expect(await screen.findAllByRole('alert')).not.toHaveLength(0);
+    expect(changed).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('radio', { name: 'Bahasa Indonesia' }),
+    ).toBeChecked();
+  });
   test('a rejected IPC promise does not leave the sign-out button stuck busy', async () => {
     const logout = vi.fn(async () => {
       throw new Error('ipc down');

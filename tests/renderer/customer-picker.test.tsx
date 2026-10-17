@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 import { CustomerVehicleDialog } from '@/renderer/features/workspace/CustomerVehicleDialog';
@@ -38,6 +38,7 @@ test('initial active customers, current-query toggle, inactive selection and res
     view: draftView(),
     selectCustomer: select,
     selectVehicle: vi.fn(async () => true),
+    clearParty: vi.fn(async () => ok(null)),
     onClose: vi.fn(),
   };
   const view = render(<CustomerVehicleDialog {...props} />);
@@ -88,6 +89,7 @@ test('older search responses cannot overwrite a newer filter result', async () =
       view={draftView()}
       selectCustomer={vi.fn(async () => true)}
       selectVehicle={vi.fn(async () => true)}
+      clearParty={vi.fn(async () => ok(null))}
       onClose={vi.fn()}
     />,
   );
@@ -99,4 +101,123 @@ test('older search responses cannot overwrite a newer filter result', async () =
     resolveOld(ok({ results: [] }));
   });
   expect(screen.getByText(/Dormant.*Nonaktif/)).toBeVisible();
+});
+
+test('customer and plate search update after typing without search buttons', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const search = vi.fn(async () => ok({ results: [] }));
+  const searchByPlate = vi.fn(async () => ok({ results: [] }));
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    customers: { search },
+    vehicles: { searchByPlate },
+    references: { listActive: vi.fn(async () => ok([])) },
+  };
+  render(
+    <CustomerVehicleDialog
+      view={draftView()}
+      selectCustomer={vi.fn(async () => true)}
+      selectVehicle={vi.fn(async () => true)}
+      clearParty={vi.fn(async () => ok(null))}
+      onClose={vi.fn()}
+    />,
+  );
+  await userEvent.type(
+    screen.getByPlaceholderText('Cari nama atau telepon'),
+    'Ayu',
+  );
+  await userEvent.type(screen.getByPlaceholderText('Cari plat nomor'), 'B123');
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(250);
+  });
+  expect(search).toHaveBeenLastCalledWith({
+    query: 'Ayu',
+    includeInactive: false,
+  });
+  expect(searchByPlate).toHaveBeenLastCalledWith({ query: 'B123' });
+  expect(
+    screen.queryByRole('button', { name: 'Cari' }),
+  ).not.toBeInTheDocument();
+  vi.useRealTimers();
+});
+
+test('walk-in clears customer and vehicle together and closes only after success', async () => {
+  const clearParty = vi.fn(async () => ok(null));
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    customers: { search: vi.fn(async () => ok({ results: [] })) },
+    vehicles: { searchByPlate: vi.fn(async () => ok({ results: [] })) },
+    references: { listActive: vi.fn(async () => ok([])) },
+  };
+  const onClose = vi.fn();
+  render(
+    <CustomerVehicleDialog
+      view={draftView()}
+      selectCustomer={vi.fn(async () => true)}
+      selectVehicle={vi.fn(async () => true)}
+      clearParty={clearParty}
+      onClose={onClose}
+    />,
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Gunakan Umum (tanpa pelanggan)' }),
+  );
+  expect(clearParty).toHaveBeenCalledOnce();
+  expect(onClose).toHaveBeenCalledOnce();
+});
+
+test('failed walk-in keeps the dialog open and shows the returned error', async () => {
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    customers: { search: vi.fn(async () => ok({ results: [] })) },
+    vehicles: { searchByPlate: vi.fn(async () => ok({ results: [] })) },
+    references: { listActive: vi.fn(async () => ok([])) },
+  };
+  const onClose = vi.fn();
+  render(
+    <CustomerVehicleDialog
+      view={draftView()}
+      selectCustomer={vi.fn(async () => true)}
+      selectVehicle={vi.fn(async () => true)}
+      clearParty={vi.fn(async () => ({
+        ok: false as const,
+        error: { code: 'FAILED', messageKey: 'errors.INTERNAL_ERROR' },
+      }))}
+      onClose={onClose}
+    />,
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Gunakan Umum (tanpa pelanggan)' }),
+  );
+  expect(onClose).not.toHaveBeenCalled();
+  expect(await screen.findByRole('alert')).toBeInTheDocument();
+});
+
+test('blank plate input clears its previous no-results state immediately', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    customers: { search: vi.fn(async () => ok({ results: [] })) },
+    vehicles: { searchByPlate: vi.fn(async () => ok({ results: [] })) },
+    references: { listActive: vi.fn(async () => ok([])) },
+  };
+  render(
+    <CustomerVehicleDialog
+      view={draftView()}
+      selectCustomer={vi.fn(async () => true)}
+      selectVehicle={vi.fn(async () => true)}
+      clearParty={vi.fn(async () => ok(null))}
+      onClose={vi.fn()}
+    />,
+  );
+  const vehicles = screen.getByRole('region', { name: 'Kendaraan' });
+  const input = screen.getByPlaceholderText('Cari plat nomor');
+  await userEvent.type(input, 'B123');
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(250);
+  });
+  expect(
+    await within(vehicles).findByText('Tidak ditemukan.'),
+  ).toBeInTheDocument();
+  await userEvent.clear(input);
+  expect(
+    within(vehicles).queryByText('Tidak ditemukan.'),
+  ).not.toBeInTheDocument();
+  vi.useRealTimers();
 });

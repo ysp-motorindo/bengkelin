@@ -1,11 +1,4 @@
-import { Search } from 'lucide-react';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
@@ -20,11 +13,13 @@ import {
 } from '@/renderer/features/customers/labels';
 import { useAction } from '@/renderer/lib/use-action';
 import type { CustomerDto, DraftView, VehicleDto } from '@/shared/contracts';
+import type { Result } from '@/shared/primitives';
 
 interface CustomerVehicleDialogProps {
   view: DraftView;
   selectCustomer(customerId: string | null): Promise<boolean>;
   selectVehicle(vehicleId: string | null): Promise<boolean>;
+  clearParty(): Promise<Result<null>>;
   onClose(): void;
 }
 
@@ -44,12 +39,15 @@ export function CustomerVehicleDialog({
   view,
   selectCustomer,
   selectVehicle,
+  clearParty,
   onClose,
 }: CustomerVehicleDialogProps) {
   const { t } = useTranslation();
   const searchRef = useRef<HTMLInputElement>(null);
   const [includeInactive, setIncludeInactive] = useState(false);
+  const includeInactiveRef = useRef(false);
   const searchVersion = useRef(0);
+  const plateVersion = useRef(0);
   const [customerQuery, setCustomerQuery] = useState('');
   const [customers, setCustomers] = useState<CustomerDto[] | null>(null);
   const [plateQuery, setPlateQuery] = useState('');
@@ -109,18 +107,48 @@ export function CustomerVehicleDialog({
     };
   }, [loadCustomers]);
 
-  function searchCustomers(event: FormEvent) {
-    event.preventDefault();
-    void loadCustomers(customerQuery, includeInactive);
-  }
+  useEffect(() => {
+    if (!customerQuery) {
+      ++searchVersion.current;
+      return;
+    }
+    const timer = window.setTimeout(
+      () => void loadCustomers(customerQuery, includeInactiveRef.current),
+      250,
+    );
+    return () => {
+      window.clearTimeout(timer);
+      ++searchVersion.current;
+    };
+  }, [customerQuery, loadCustomers]);
 
-  function searchPlates(event: FormEvent) {
-    event.preventDefault();
+  useEffect(() => {
+    const version = ++plateVersion.current;
+    if (!plateQuery.trim()) {
+      setPlates(null);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void window.bengkelin.vehicles
+        .searchByPlate({ query: plateQuery })
+        .then((result) => {
+          if (version === plateVersion.current && check(result))
+            setPlates(result.value.results);
+        })
+        .catch(() => {
+          if (version === plateVersion.current)
+            setError(t('errors.INTERNAL_ERROR'));
+        });
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      ++plateVersion.current;
+    };
+  }, [plateQuery, check, setError, t]);
+
+  function walkIn() {
     void run(async () => {
-      const result = await window.bengkelin.vehicles.searchByPlate({
-        query: plateQuery,
-      });
-      if (check(result)) setPlates(result.value.results);
+      if (check(await clearParty())) onClose();
     });
   }
 
@@ -145,12 +173,15 @@ export function CustomerVehicleDialog({
       className="max-w-3xl"
       scrollBody
       footer={
-        <div className="flex justify-end border-t border-border pt-3">
+        <div className="flex justify-between border-t border-border pt-3">
+          <Button variant="outline" onClick={walkIn}>
+            {t('workspace.party.anonymous')}
+          </Button>
           <Button onClick={onClose}>{t('workspace.party.done')}</Button>
         </div>
       }
     >
-      {error ? <Alert>{error}</Alert> : null}
+      <div className="shrink-0">{error ? <Alert>{error}</Alert> : null}</div>
       <p className="text-sm" data-testid="party-current">
         {t('workspace.party.current')}:{' '}
         <strong>
@@ -161,15 +192,15 @@ export function CustomerVehicleDialog({
         {view.vehicle ? ` · ${view.vehicle.plateNumber}` : ''}
       </p>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid min-h-0 flex-1 grid-rows-2 gap-4 overflow-hidden md:grid-cols-2 md:grid-rows-1">
         <section
           aria-label={t('workspace.party.customers')}
-          className="flex flex-col gap-2"
+          className="flex min-h-0 flex-col gap-2 overflow-hidden"
         >
           <h3 className="text-sm font-semibold">
             {t('workspace.party.customers')}
           </h3>
-          <form onSubmit={searchCustomers} className="flex gap-2" role="search">
+          <div className="flex shrink-0 gap-2" role="search">
             <Label htmlFor="party-customer-search" className="sr-only">
               {t('workspace.party.customerSearch')}
             </Label>
@@ -180,102 +211,66 @@ export function CustomerVehicleDialog({
               value={customerQuery}
               onChange={(event) => setCustomerQuery(event.target.value)}
             />
-            <Button type="submit" variant="outline">
-              <Search aria-hidden="true" />
-              <span className="sr-only">{t('workspace.party.search')}</span>
-            </Button>
-          </form>
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={includeInactive}
               onChange={(e) => {
                 const include = e.target.checked;
+                includeInactiveRef.current = include;
                 setIncludeInactive(include);
                 void loadCustomers(customerQuery, include);
               }}
             />
             {t('workspace.party.showInactive')}
           </label>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="self-start"
-            onClick={() => chooseCustomer(null)}
-          >
-            {t('workspace.party.anonymous')}
-          </Button>
-          {customers ? (
-            customers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t('workspace.party.noResults')}
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-1">
-                {customers.map((customer) => (
-                  <li
-                    key={customer.id}
-                    className="flex items-center justify-between gap-2 text-sm"
-                  >
-                    <span>
-                      {customerLabel(t, customer)}
-                      {!customer.isActive
-                        ? ` · ${t('customers.inactive')}`
-                        : ''}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      aria-label={`${t('workspace.party.select')}: ${customerLabel(t, customer)}`}
-                      onClick={() => chooseCustomer(customer)}
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-1">
+            {customers ? (
+              customers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t('workspace.party.noResults')}
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1">
+                  {customers.map((customer) => (
+                    <li
+                      key={customer.id}
+                      className="flex items-center justify-between gap-2 text-sm"
                     >
-                      {t('workspace.party.select')}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )
-          ) : null}
-          <QuickCustomerForm
-            onSelected={(customer) => chooseCustomer(customer)}
-          />
+                      <span>
+                        {customerLabel(t, customer)}
+                        {!customer.isActive
+                          ? ` · ${t('customers.inactive')}`
+                          : ''}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        aria-label={`${t('workspace.party.select')}: ${customerLabel(t, customer)}`}
+                        onClick={() => chooseCustomer(customer)}
+                      >
+                        {t('workspace.party.select')}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : null}
+            <QuickCustomerForm
+              onSelected={(customer) => chooseCustomer(customer)}
+            />
+          </div>
         </section>
 
         <section
           aria-label={t('workspace.party.vehicles')}
-          className="flex flex-col gap-2"
+          className="flex min-h-0 flex-col gap-2 overflow-hidden"
         >
           <h3 className="text-sm font-semibold">
             {t('workspace.party.vehicles')}
           </h3>
-          {selected && owned.length > 0 ? (
-            <div className="flex flex-col gap-1">
-              <p className="text-xs text-muted-foreground">
-                {t('workspace.party.ownedBy', {
-                  name: customerName(t, selected),
-                })}
-              </p>
-              <ul className="flex flex-col gap-1">
-                {owned.map((vehicle) => (
-                  <li
-                    key={vehicle.id}
-                    className="flex items-center justify-between gap-2 text-sm"
-                  >
-                    <span>{vehicleText(vehicle)}</span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      aria-label={`${t('workspace.party.select')}: ${vehicle.plateNumber}`}
-                      onClick={() => chooseVehicle(vehicle)}
-                    >
-                      {t('workspace.party.select')}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          <form onSubmit={searchPlates} className="flex gap-2" role="search">
+          <div className="flex shrink-0 gap-2" role="search">
             <Label htmlFor="party-plate-search" className="sr-only">
               {t('workspace.party.plateSearch')}
             </Label>
@@ -285,59 +280,84 @@ export function CustomerVehicleDialog({
               value={plateQuery}
               onChange={(event) => setPlateQuery(event.target.value)}
             />
-            <Button type="submit" variant="outline">
-              <Search aria-hidden="true" />
-              <span className="sr-only">{t('workspace.party.search')}</span>
-            </Button>
-          </form>
-          {plates ? (
-            plates.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t('workspace.party.noResults')}
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-1">
-                {plates.map((vehicle) => (
-                  <li
-                    key={vehicle.id}
-                    className="flex items-center justify-between gap-2 text-sm"
-                  >
-                    <span>
-                      {vehicleText(vehicle)}
-                      <span className="block text-xs text-muted-foreground">
-                        {t('workspace.party.owner')}:{' '}
-                        {vehicle.activeOwner
-                          ? customerLabel(t, vehicle.activeOwner)
-                          : t('workspace.party.noOwner')}
-                      </span>
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      aria-label={`${t('workspace.party.select')}: ${vehicle.plateNumber}`}
-                      onClick={() => chooseVehicle(vehicle)}
+          </div>
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-1">
+            {selected && owned.length > 0 ? (
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-muted-foreground">
+                  {t('workspace.party.ownedBy', {
+                    name: customerName(t, selected),
+                  })}
+                </p>
+                <ul className="flex flex-col gap-1">
+                  {owned.map((vehicle) => (
+                    <li
+                      key={vehicle.id}
+                      className="flex items-center justify-between gap-2 text-sm"
                     >
-                      {t('workspace.party.select')}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )
-          ) : null}
-          {view.vehicle ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="self-start"
-              onClick={() => chooseVehicle(null)}
-            >
-              {t('workspace.party.noVehicle')}
-            </Button>
-          ) : null}
-          <QuickVehicleForm
-            customer={selected}
-            onSelected={(vehicle) => chooseVehicle(vehicle)}
-          />
+                      <span>{vehicleText(vehicle)}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        aria-label={`${t('workspace.party.select')}: ${vehicle.plateNumber}`}
+                        onClick={() => chooseVehicle(vehicle)}
+                      >
+                        {t('workspace.party.select')}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {plates ? (
+              plates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t('workspace.party.noResults')}
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1">
+                  {plates.map((vehicle) => (
+                    <li
+                      key={vehicle.id}
+                      className="flex items-center justify-between gap-2 text-sm"
+                    >
+                      <span>
+                        {vehicleText(vehicle)}
+                        <span className="block text-xs text-muted-foreground">
+                          {t('workspace.party.owner')}:{' '}
+                          {vehicle.activeOwner
+                            ? customerLabel(t, vehicle.activeOwner)
+                            : t('workspace.party.noOwner')}
+                        </span>
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        aria-label={`${t('workspace.party.select')}: ${vehicle.plateNumber}`}
+                        onClick={() => chooseVehicle(vehicle)}
+                      >
+                        {t('workspace.party.select')}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : null}
+            {view.vehicle ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="self-start"
+                onClick={() => chooseVehicle(null)}
+              >
+                {t('workspace.party.noVehicle')}
+              </Button>
+            ) : null}
+            <QuickVehicleForm
+              customer={selected}
+              onSelected={(vehicle) => chooseVehicle(vehicle)}
+            />
+          </div>
         </section>
       </div>
     </Dialog>

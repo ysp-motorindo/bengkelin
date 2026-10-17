@@ -122,12 +122,6 @@ export function Shell({
             <span>{shopName || t('common.appName')}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            {settings && onPreferencesChanged ? (
-              <PreferencesControls
-                preferences={session}
-                onChanged={onPreferencesChanged}
-              />
-            ) : null}
             <details className="relative text-sm">
               <summary
                 aria-label={t('shell.profileMenuLabel')}
@@ -139,10 +133,17 @@ export function Shell({
                 </span>{' '}
                 ▾
               </summary>
-              <div className="absolute right-0 z-50 mt-1 min-w-40 rounded-md border border-border bg-card p-2 shadow-lg">
+              <div className="absolute right-0 z-50 mt-1 w-max min-w-[max(16rem,100%)] max-w-[calc(100vw-2rem)] rounded-md border border-border bg-card p-2 shadow-lg">
+                {settings && onPreferencesChanged ? (
+                  <PreferencesControls
+                    preferences={session}
+                    onChanged={onPreferencesChanged}
+                  />
+                ) : null}
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="w-full justify-start"
                   disabled={busy}
                   onClick={logout}
                 >
@@ -164,7 +165,7 @@ export function Shell({
               aria-current={view === name ? 'page' : undefined}
               onClick={() => setView(name)}
               className={cn(
-                'px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'shrink-0 whitespace-nowrap px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 view === name
                   ? 'border-b-2 border-primary text-foreground'
                   : 'text-muted-foreground hover:text-foreground',

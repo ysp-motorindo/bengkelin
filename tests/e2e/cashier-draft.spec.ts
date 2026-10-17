@@ -203,6 +203,27 @@ function scanner(page: Page) {
   };
 }
 
+async function choosePreference(
+  page: Page,
+  key: string,
+  value: string,
+  lang: Lang,
+) {
+  const option = page.getByRole('radio', {
+    name: t(`shell.preferences.${key}.${value}`, lang),
+  });
+  const menu = page.locator('details.relative > div.absolute');
+  if (!(await menu.isVisible())) await page.getByTestId('session-name').click();
+  if (!(await option.isVisible())) {
+    const section = key === 'languages' ? 'language' : 'appearance';
+    await page
+      .locator('summary')
+      .filter({ hasText: t(`shell.preferences.${section}`, lang) })
+      .click();
+  }
+  await option.locator('..').click();
+}
+
 async function startAsCashier(): Promise<Page> {
   launched = await launchApp({ dataDir });
   const { page } = launched;
@@ -414,6 +435,10 @@ test('Customer & Vehicle dialog keeps its title and Done action visible while co
         name: `Customer ${i + 1}`,
       });
       if (!result.ok) throw new Error(JSON.stringify(result.error));
+      const vehicle = await window.bengkelin.vehicles.save({
+        plateNumber: 'TST' + String(i + 1).padStart(4, '0'),
+      });
+      if (!vehicle.ok) throw new Error(JSON.stringify(vehicle.error));
     }
   });
   await page
@@ -427,53 +452,102 @@ test('Customer & Vehicle dialog keeps its title and Done action visible while co
     name: t('workspace.party.done'),
     ...exact,
   });
-  const body = dialog.locator('.overflow-y-auto');
+  const panes = dialog.locator('.overflow-y-auto');
+  const customerPane = panes.nth(0);
+  const vehiclePane = panes.nth(1);
   await expect(title).toBeInViewport();
   await expect(done).toBeInViewport();
   await expect
-    .poll(() => body.evaluate((el) => el.scrollHeight > el.clientHeight))
+    .poll(() =>
+      customerPane.evaluate((el) => el.scrollHeight > el.clientHeight),
+    )
     .toBe(true);
-  await body.evaluate((el) => {
+  await customerPane.evaluate((el) => {
     el.scrollTop = el.scrollHeight;
   });
   await expect(title).toBeInViewport();
   await expect(done).toBeInViewport();
   await expect
-    .poll(() => body.evaluate((el) => el.scrollTop))
+    .poll(() => customerPane.evaluate((el) => el.scrollTop))
     .toBeGreaterThan(0);
+  await expect(
+    customerPane.getByRole('form', {
+      name: t('customers.quickCustomer.title'),
+    }),
+  ).toBeVisible();
+  const plateSearch = dialog.getByPlaceholder(t('workspace.party.plateSearch'));
+  await plateSearch.fill('TST');
+  await expect(
+    dialog.getByRole('button', { name: /Pilih: TST/ }).first(),
+  ).toBeVisible();
+  await expect
+    .poll(() => vehiclePane.evaluate((el) => el.scrollHeight > el.clientHeight))
+    .toBe(true);
+  await vehiclePane.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  await expect
+    .poll(() => vehiclePane.evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  await expect(
+    vehiclePane.getByRole('form', { name: t('customers.quickVehicle.title') }),
+  ).toBeVisible();
+  await expect(title).toBeInViewport();
+  await expect(done).toBeInViewport();
 });
 
 test('cashier language and appearance persist without changing the admin preferences', async () => {
   const page = await startAsCashier();
-  const language = page.getByLabel(t('shell.preferences.language'), exact);
-  const appearance = page.getByLabel(t('shell.preferences.appearance'), exact);
-  await expect(language).toHaveValue('id');
-  await expect(appearance).toHaveValue('LIGHT');
-  await language.selectOption('en');
-  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await page.getByTestId('session-name').click();
+  const language = (value: 'id' | 'en', lang: Lang = 'id') =>
+    page.getByRole('radio', {
+      name: t(`shell.preferences.languages.${value}`, lang),
+    });
+  const appearance = (value: 'LIGHT' | 'DARK' | 'SYSTEM', lang: Lang = 'id') =>
+    page.getByRole('radio', {
+      name: t(`shell.preferences.appearances.${value}`, lang),
+    });
   await page
-    .getByLabel(t('shell.preferences.appearance', 'en'), exact)
-    .selectOption('DARK');
+    .locator('summary')
+    .filter({ hasText: t('shell.preferences.language') })
+    .click();
+  await expect(language('id')).toBeChecked();
+  await page
+    .locator('summary')
+    .filter({ hasText: t('shell.preferences.appearance') })
+    .click();
+  await expect(appearance('LIGHT')).toBeChecked();
+  await language('en').locator('..').click();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await appearance('DARK', 'en').locator('..').click();
   await expect(page.locator('html')).toHaveClass(/dark/);
 
-  await page.getByTestId('session-name').click();
   await page.getByRole('button', { name: /Sign out|Keluar/ }).click();
   await login(page, 'siti', CASHIER_PASSWORD);
-  await expect(
-    page.getByLabel(t('shell.preferences.language', 'en'), exact),
-  ).toHaveValue('en');
-  await expect(
-    page.getByLabel(t('shell.preferences.appearance', 'en'), exact),
-  ).toHaveValue('DARK');
   await page.getByTestId('session-name').click();
+  await page
+    .locator('summary')
+    .filter({ hasText: t('shell.preferences.language', 'en') })
+    .click();
+  await expect(language('en', 'en')).toBeChecked();
+  await page
+    .locator('summary')
+    .filter({ hasText: t('shell.preferences.appearance', 'en') })
+    .click();
+  await expect(appearance('DARK', 'en')).toBeChecked();
   await page.getByRole('button', { name: /Sign out|Keluar/ }).click();
   await login(page, 'admin', ADMIN_PASSWORD);
-  await expect(
-    page.getByLabel(t('shell.preferences.language'), exact),
-  ).toHaveValue('id');
-  await expect(
-    page.getByLabel(t('shell.preferences.appearance'), exact),
-  ).toHaveValue('LIGHT');
+  await page.getByTestId('session-name').click();
+  await page
+    .locator('summary')
+    .filter({ hasText: t('shell.preferences.language') })
+    .click();
+  await expect(language('id')).toBeChecked();
+  await page
+    .locator('summary')
+    .filter({ hasText: t('shell.preferences.appearance') })
+    .click();
+  await expect(appearance('LIGHT')).toBeChecked();
 });
 
 test('shell title stays sticky and navigation scrolls horizontally in one row', async () => {
@@ -492,6 +566,25 @@ test('shell title stays sticky and navigation scrolls horizontally in one row', 
     };
   });
   expect(layout).toEqual({ overflow: true, oneRow: true });
+  await page.getByTestId('session-name').click();
+  const menu = page.locator('details.relative > div.absolute');
+  await expect
+    .poll(() => menu.evaluate((el) => el.getBoundingClientRect().width))
+    .toBeGreaterThanOrEqual(256);
+  await menu.locator('..').evaluate((el) => {
+    (el as HTMLElement).style.width = '360px';
+  });
+  await expect
+    .poll(() => menu.evaluate((el) => el.getBoundingClientRect().width))
+    .toBeGreaterThanOrEqual(360);
+  await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document.fonts.check('16px "Plus Jakarta Sans Variable"'),
+      ),
+    )
+    .toBe(true);
   await nav.evaluate((el) => {
     el.scrollLeft = el.scrollWidth;
   });
@@ -802,9 +895,7 @@ test('language and theme switch; 1024x768, 1366x768 and 200% zoom keep key contr
   await keyControlsUsable('id');
 
   // Language: English everywhere, persisted as the shop preference.
-  await page
-    .getByLabel(t('shell.preferences.language'), exact)
-    .selectOption('en');
+  await choosePreference(page, 'languages', 'en', 'id');
   await expect(searchBox(page, 'en')).toBeVisible();
   await expect(page.getByTestId('save-state')).toHaveText(
     t('workspace.save.saved', 'en'),
@@ -812,13 +903,9 @@ test('language and theme switch; 1024x768, 1366x768 and 200% zoom keep key contr
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 
   // Theme: dark, then light.
-  await page
-    .getByLabel(t('shell.preferences.appearance', 'en'), exact)
-    .selectOption('DARK');
+  await choosePreference(page, 'appearances', 'DARK', 'en');
   await expect(page.locator('html')).toHaveClass(/dark/);
-  await page
-    .getByLabel(t('shell.preferences.appearance', 'en'), exact)
-    .selectOption('LIGHT');
+  await choosePreference(page, 'appearances', 'LIGHT', 'en');
   await expect(page.locator('html')).not.toHaveClass(/dark/);
 
   // 200% zoom at 1024x768.

@@ -15,6 +15,7 @@ import {
   type ReferenceDto,
 } from '@/shared/contracts';
 import type { Instant, LocalDate } from '@/shared/primitives';
+import type { Result } from '@/shared/primitives';
 import { CustomerVehicleDialog } from './CustomerVehicleDialog';
 import { OwnershipDialog } from './OwnershipDialog';
 import { PricingTimeDialog } from './PricingTimeDialog';
@@ -345,6 +346,20 @@ export function DraftHeader({
       {pending?.kind === 'party' ? (
         <CustomerVehicleDialog
           view={view}
+          clearParty={async (): Promise<Result<null>> => {
+            const result = await send({
+              kind: 'updateHeader',
+              changes: { customerId: null, vehicleId: null },
+            });
+            if (result.ok) {
+              onError(null);
+              return { ok: true, value: null };
+            }
+            if (result.error.code !== 'QUEUE_CLOSED') {
+              onError(errorMessage(t, result.error));
+            }
+            return result;
+          }}
           selectCustomer={(customerId) =>
             apply({ kind: 'updateHeader', changes: { customerId } })
           }

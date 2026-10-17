@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './renderer/app/App';
 import './renderer/i18n';
+import '@fontsource-variable/plus-jakarta-sans';
 import './index.css';
 
 const container = document.getElementById('root');
