@@ -95,6 +95,7 @@
     "channel": "Channel",
     "invoiceDate": "Invoice date",
     "pricingAt": "Pricing time",
+    "timezoneTooltip": "Time zone in use: {{zone}}",
     "changePricingAt": "Change pricing time",
     "topDays": "TOP (days)",
     "dueDate": "Due {{date}}",

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Button } from '@/renderer/components/ui/button';
 import { Input, controlClass } from '@/renderer/components/ui/input';
+import { Label } from '@/renderer/components/ui/label';
 import { Select } from '@/renderer/components/ui/select';
 import { customerLabel } from '@/renderer/features/customers/labels';
 import { errorMessage } from '@/renderer/lib/errors';
@@ -19,7 +20,8 @@ import type { Result } from '@/shared/primitives';
 import { CustomerVehicleDialog } from './CustomerVehicleDialog';
 import { OwnershipDialog } from './OwnershipDialog';
 import { PricingTimeDialog } from './PricingTimeDialog';
-import { formatWithOffset, todayInShop } from './shop-time';
+import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { todayInShop } from './shop-time';
 import { useSyncedValue } from './synced-field';
 import type { DraftCommands } from './use-draft-commands';
 
@@ -190,73 +192,88 @@ export function DraftHeader({
         />
       </FormField>
 
-      <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-1 xl:col-span-2">
-        <span className="text-sm font-medium" id="pricing-at-label">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="header-pricing-at">
           {t('workspace.header.pricingAt')}
-        </span>
-        <div className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1">
-          <span
-            className="tabular text-sm"
+        </Label>
+        <div className="relative">
+          <Input
+            id="header-pricing-at"
+            className="tabular"
             data-testid="header-pricing-at"
-            aria-labelledby="pricing-at-label"
-          >
-            {formatWithOffset(view.pricingAt, timezone)}
-          </span>
+            readOnly
+            value={formatLocal(view.pricingAt, timezone).replace(
+              /^(\d{4})-(\d{2})-(\d{2})/,
+              '$3/$2/$1',
+            )}
+            title={t('workspace.header.timezoneTooltip', { zone: timezone })}
+          />
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            className="absolute right-0 top-0 size-10 bg-transparent px-0 hover:bg-transparent active:bg-transparent"
+            aria-label={t('workspace.header.changePricingAt')}
+            title={t('workspace.header.changePricingAt')}
             onClick={() => setPending({ kind: 'pricing' })}
           >
             <CalendarClock aria-hidden="true" />
-            {t('workspace.header.changePricingAt')}
           </Button>
         </div>
       </div>
 
-      <FormField
-        label={t('workspace.header.topDays')}
-        error={fieldErrors.topDays}
-        hint={t('workspace.header.dueDate', { date: view.dueDate })}
-      >
-        <Input
-          inputMode="numeric"
-          autoComplete="off"
-          className="tabular"
-          value={topDays}
-          onChange={(event) => {
-            setTopDays(event.target.value);
-            textField('topDays', event.target.value, MAX_TOP_DAYS, (days) => ({
-              kind: 'updateHeader',
-              changes: { topDays: days },
-            }));
-          }}
-        />
-      </FormField>
+      <div className="col-span-2 flex justify-end gap-3 sm:col-start-2 xl:col-start-5">
+        <FormField
+          label={t('workspace.header.topDays')}
+          error={fieldErrors.topDays}
+          hint={t('workspace.header.dueDate', { date: view.dueDate })}
+        >
+          <Input
+            inputMode="numeric"
+            autoComplete="off"
+            className="tabular text-right"
+            value={topDays}
+            onChange={(event) => {
+              setTopDays(event.target.value);
+              textField(
+                'topDays',
+                event.target.value,
+                MAX_TOP_DAYS,
+                (days) => ({
+                  kind: 'updateHeader',
+                  changes: { topDays: days },
+                }),
+              );
+            }}
+          />
+        </FormField>
 
-      <FormField
-        label={t('workspace.header.odometer')}
-        error={fieldErrors.odometer}
-      >
-        <Input
-          inputMode="numeric"
-          autoComplete="off"
-          className="tabular"
-          value={odometer}
-          onChange={(event) => {
-            setOdometer(event.target.value);
-            textField(
-              'odometer',
-              event.target.value,
-              100_000_000,
-              (km) => ({ kind: 'updateHeader', changes: { odometerKm: km } }),
-              { kind: 'updateHeader', changes: { odometerKm: null } },
-            );
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') event.preventDefault();
-          }}
-        />
-      </FormField>
+        <FormField
+          label={t('workspace.header.odometer')}
+          error={fieldErrors.odometer}
+        >
+          <Input
+            inputMode="numeric"
+            autoComplete="off"
+            className="tabular text-right"
+            value={odometer}
+            onChange={(event) => {
+              setOdometer(event.target.value);
+              textField(
+                'odometer',
+                event.target.value,
+                100_000_000,
+                (km) => ({
+                  kind: 'updateHeader',
+                  changes: { odometerKm: km },
+                }),
+                { kind: 'updateHeader', changes: { odometerKm: null } },
+              );
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') event.preventDefault();
+            }}
+          />
+        </FormField>
+      </div>
 
       <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-3 xl:col-span-3">
         <span className="text-sm font-medium">

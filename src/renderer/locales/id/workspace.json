@@ -95,6 +95,7 @@
     "channel": "Channel",
     "invoiceDate": "Tanggal transaksi",
     "pricingAt": "Waktu harga",
+    "timezoneTooltip": "Zona waktu yang digunakan: {{zone}}",
     "changePricingAt": "Ubah waktu harga",
     "topDays": "TOP (hari)",
     "dueDate": "Jatuh tempo {{date}}",
