@@ -24,10 +24,16 @@ const inactive: CustomerDto = {
   createdAt: '',
   updatedAt: '',
 };
+const active: CustomerDto = {
+  ...inactive,
+  id: 'c2',
+  name: 'Active',
+  isActive: true,
+};
 test('initial active customers, current-query toggle, inactive selection and reset', async () => {
   const search = vi.fn(
     async (input: { query: string; includeInactive?: boolean }) =>
-      ok({ results: input.includeInactive ? [inactive] : [] }),
+      ok({ results: input.includeInactive ? [inactive] : [active] }),
   );
   (window as unknown as { bengkelin: unknown }).bengkelin = {
     customers: { search },
@@ -45,6 +51,7 @@ test('initial active customers, current-query toggle, inactive selection and res
   await waitFor(() =>
     expect(search).toHaveBeenCalledWith({ query: '', includeInactive: false }),
   );
+  expect(await screen.findByText('Active')).toBeVisible();
   await userEvent.type(
     screen.getByPlaceholderText('Cari nama atau telepon'),
     'Dorm',

@@ -109,7 +109,6 @@ export function CustomerVehicleDialog({
 
   useEffect(() => {
     if (!customerQuery) {
-      ++searchVersion.current;
       return;
     }
     const timer = window.setTimeout(
