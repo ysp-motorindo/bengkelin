@@ -176,7 +176,7 @@ export function CustomerVehicleDialog({
       onClose={onClose}
       initialFocus={searchRef}
       closeLabel={t('workspace.common.close')}
-      className="max-w-3xl"
+      className="max-h-[70vh] max-w-3xl"
       scrollBody
       footer={
         <div className="flex justify-end gap-2">
