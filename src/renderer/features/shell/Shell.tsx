@@ -133,7 +133,7 @@ export function Shell({
             <span>{shopName || t('common.appName')}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <details ref={profileMenu} className="relative text-sm">
+            <details ref={profileMenu} className="relative text-sm select-none">
               <summary
                 aria-label={t('shell.profileMenuLabel')}
                 className="cursor-pointer list-none rounded-md border border-input px-3 py-2 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -144,7 +144,7 @@ export function Shell({
                 </span>{' '}
                 <ChevronDown aria-hidden="true" className="inline size-4" />
               </summary>
-              <div className="absolute right-0 z-50 mt-1 w-max min-w-[max(16rem,100%)] max-w-[calc(100vw-2rem)] rounded-md border border-border bg-card p-2 shadow-lg">
+              <div className="absolute right-0 z-50 mt-1 w-max min-w-[max(16rem,100%)] max-w-[calc(100vw-2rem)] rounded-md border border-border bg-card p-2 shadow-lg select-none">
                 {settings && onPreferencesChanged ? (
                   <PreferencesControls
                     preferences={session}
