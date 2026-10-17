@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -60,6 +61,14 @@ export function OwnershipDialog({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       className="max-w-xl"
+      footer={
+        <div className="flex justify-start border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('workspace.common.close')}
+          </Button>
+        </div>
+      }
     >
       {failed ? <Alert>{t('errors.LOAD_FAILED')}</Alert> : null}
       {detail ? (
@@ -76,11 +85,6 @@ export function OwnershipDialog({
           {t('common.loading')}
         </p>
       )}
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={onClose}>
-          {t('workspace.common.close')}
-        </Button>
-      </div>
     </Dialog>
   );
 }

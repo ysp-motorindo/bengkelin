@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -34,6 +35,14 @@ export function AboutDialog({ onClose }: { onClose(): void }) {
       onClose={onClose}
       closeLabel={t('shell.about.close')}
       className="max-w-md"
+      footer={
+        <div className="flex justify-start border-t border-border pt-3">
+          <Button variant="outline" onClick={onClose}>
+            <X aria-hidden="true" />
+            {t('shell.about.close')}
+          </Button>
+        </div>
+      }
     >
       {error ? <Alert>{error}</Alert> : null}
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
@@ -46,9 +55,6 @@ export function AboutDialog({ onClose }: { onClose(): void }) {
           {about ? String(about.schemaVersion) : ''}
         </dd>
       </dl>
-      <div className="mt-4 flex justify-end">
-        <Button onClick={onClose}>{t('shell.about.close')}</Button>
-      </div>
     </Dialog>
   );
 }
