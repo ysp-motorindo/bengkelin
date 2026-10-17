@@ -101,7 +101,7 @@ export function Dialog({
     const root = panel.current;
     const target =
       initialFocus?.current ?? (root ? focusables(root)[0] : undefined);
-    (target ?? root)?.focus();
+    (target ?? root)?.focus({ preventScroll: true });
     if (root) openDialogs.push(root);
 
     // Focus can be lost to <body> when the focused control is removed (for
