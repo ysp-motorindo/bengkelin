@@ -27,6 +27,12 @@
       "LIGHT": "Terang",
       "DARK": "Gelap",
       "SYSTEM": "Ikuti sistem"
+    },
+    "numberFormat": "Format angka",
+    "numberFormats": {
+      "ID": "Indonesia",
+      "US": "Amerika Serikat",
+      "SYSTEM": "Ikuti sistem"
     }
   },
   "menu": {

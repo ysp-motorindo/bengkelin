@@ -153,7 +153,7 @@ describe('first-run setup', () => {
     });
   });
 
-  test('getPublic works without a session and exposes only four fields', async () => {
+  test('getPublic exposes only startup presentation settings without a session', async () => {
     value(
       await h.call(
         C.settings.completeSetup,
@@ -165,6 +165,7 @@ describe('first-run setup', () => {
       language: 'en',
       appearance: 'DARK',
       shopName: 'Bengkel Maju Jaya',
+      systemNumberLocale: 'id-ID',
     });
   });
 });
@@ -230,6 +231,7 @@ describe('login and sessions', () => {
   test('login success creates a window-bound session without password data', async () => {
     const session = await setupAndLoginAdmin();
     expect(session).toEqual({
+      numberFormat: 'ID',
       cashierId: expect.any(String),
       username: 'Admin',
       displayName: 'Pak Budi',

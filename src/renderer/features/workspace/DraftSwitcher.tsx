@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PencilLine, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,6 @@ import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { formatLocal } from '@/renderer/features/catalog/local-time';
 import { errorMessage } from '@/renderer/lib/errors';
-import { formatIdr } from '@/renderer/lib/money';
 import { watchSessionError } from '@/renderer/lib/session-events';
 import type { DraftSummary } from '@/shared/contracts';
 
@@ -31,6 +31,7 @@ export function DraftSwitcher({
   onDiscard,
   onClose,
 }: DraftSwitcherProps) {
+  const { numberOptions, formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const [drafts, setDrafts] = useState<DraftSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -138,6 +139,7 @@ export function DraftSwitcher({
                           draft.plateNumber,
                           draft.channelLabel,
                           t('workspace.drafts.lineCount', {
+                            ...numberOptions,
                             count: draft.lineCount,
                           }),
                         ]

@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Check, X } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +9,7 @@ import { Dialog } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
-import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
+import { parseRupiahInput } from '@/renderer/lib/money';
 import { useAction } from '@/renderer/lib/use-action';
 import {
   PAYMENT_METHODS,
@@ -23,11 +24,6 @@ interface PaymentDialogProps {
   onRecorded(view: InvoiceView): void;
 }
 
-/** `45.000` (no currency prefix), the editable form of an amount. */
-function grouped(amount: string): string {
-  return formatIdr(amount).replace(/^Rp /, '');
-}
-
 /**
  * Later payment (spec 22). The amount defaults to the outstanding balance.
  * One requestId per submission: a retry of the same payment (for example
@@ -39,11 +35,10 @@ export function PaymentDialog({
   onClose,
   onRecorded,
 }: PaymentDialogProps) {
+  const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const [method, setMethod] = useState<PaymentMethod>('CASH');
-  const [amountText, setAmountText] = useState(
-    grouped(invoice.outstandingAmount),
-  );
+  const [amountText, setAmountText] = useState(invoice.outstandingAmount);
   const [reference, setReference] = useState('');
   const [note, setNote] = useState('');
   const [amountError, setAmountError] = useState<string | undefined>();

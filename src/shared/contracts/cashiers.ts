@@ -3,6 +3,7 @@ import type { Instant } from '../primitives';
 import {
   appearanceSchema,
   languageSchema,
+  numberFormatSchema,
   passwordSchema,
   requiredText,
   roleSchema,
@@ -19,6 +20,7 @@ export const createCashierInputSchema = z.strictObject({
   role: roleSchema,
   language: languageSchema.optional(),
   appearance: appearanceSchema.optional(),
+  numberFormat: numberFormatSchema.optional(),
 });
 export type CreateCashierInput = z.infer<typeof createCashierInputSchema>;
 

@@ -19,7 +19,7 @@ export interface PrintLabels {
   invoiceDate: string;
   finalizedAt: string;
   top: string;
-  topDays: (days: number) => string;
+  topDays: (days: number, formatted?: string) => string;
   method: string;
   dueDate: string;
   channel: string;
@@ -56,7 +56,7 @@ export interface PrintLabels {
   paymentMethod: Record<PaymentMethod, string>;
   status: Record<PaymentStatus, string>;
   locale: string;
-  decimal: ',' | '.';
+  decimal: string;
 }
 
 export const PRINT_LABELS: Record<Language, PrintLabels> = {
@@ -71,7 +71,7 @@ export const PRINT_LABELS: Record<Language, PrintLabels> = {
     invoiceDate: 'Tanggal',
     finalizedAt: 'Waktu final',
     top: 'TOP',
-    topDays: (days) => `${days} hari`,
+    topDays: (days, formatted) => `${formatted ?? days} hari`,
     method: 'Metode',
     dueDate: 'Jatuh tempo',
     channel: 'Kanal',
@@ -131,7 +131,8 @@ export const PRINT_LABELS: Record<Language, PrintLabels> = {
     invoiceDate: 'Date',
     finalizedAt: 'Finalized',
     top: 'TOP',
-    topDays: (days) => `${days} ${days === 1 ? 'day' : 'days'}`,
+    topDays: (days, formatted) =>
+      `${formatted ?? days} ${days === 1 ? 'day' : 'days'}`,
     method: 'Method',
     dueDate: 'Due date',
     channel: 'Channel',

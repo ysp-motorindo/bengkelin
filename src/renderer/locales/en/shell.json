@@ -27,6 +27,12 @@
       "LIGHT": "Light",
       "DARK": "Dark",
       "SYSTEM": "System"
+    },
+    "numberFormat": "Number format",
+    "numberFormats": {
+      "ID": "Indonesian",
+      "US": "US",
+      "SYSTEM": "Follow system"
     }
   },
   "menu": {

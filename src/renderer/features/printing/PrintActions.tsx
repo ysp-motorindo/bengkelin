@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Eye, FileDown, Printer } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +35,7 @@ export function PrintActions({
   autoPrint?: boolean;
   size?: 'default' | 'sm';
 }) {
+  const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   const [options, setOptions] = useState<PrintOptionsDto | null>(null);
   const [busy, setBusy] = useState(false);
@@ -71,6 +73,7 @@ export function PrintActions({
       return {
         tone: 'alert',
         text: t(`printing.outcome.${outcome.code ?? 'PRINT_FAILED'}`, {
+          ...numberOptions,
           ...outcome.params,
         }),
       };

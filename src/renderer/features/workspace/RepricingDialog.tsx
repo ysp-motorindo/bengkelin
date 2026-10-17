@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Check, RefreshCw, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -5,7 +6,6 @@ import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { errorMessage } from '@/renderer/lib/errors';
-import { formatIdr } from '@/renderer/lib/money';
 import { watchSessionError } from '@/renderer/lib/session-events';
 import type { PriceRefreshPreviewDto } from '@/shared/contracts';
 import type { DraftCommands } from './use-draft-commands';
@@ -29,6 +29,7 @@ export function RepricingDialog({
   timezoneLabel,
   onClose,
 }: RepricingDialogProps) {
+  const { numberOptions, formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const { view, send, flush } = commands;
   const [preview, setPreview] = useState<PriceRefreshPreviewDto | null>(null);
@@ -132,7 +133,10 @@ export function RepricingDialog({
               onClick={() => void apply()}
             >
               <Check aria-hidden="true" />
-              {t('workspace.repricing.apply', { count: selected.size })}
+              {t('workspace.repricing.apply', {
+                ...numberOptions,
+                count: selected.size,
+              })}
             </Button>
           </div>
         </div>

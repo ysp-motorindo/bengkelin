@@ -45,6 +45,7 @@ async function main(): Promise<void> {
     role: 'CASHIER',
     language: 'id',
     appearance: 'SYSTEM',
+    numberFormat: 'ID',
   });
   const apply = buildCommands(services).find(
     (c) => c.channel === CHANNELS.drafts.apply,

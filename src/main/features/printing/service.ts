@@ -1,3 +1,4 @@
+import { resolveNumberLocale } from '@/shared/number-format';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { appendAudit } from '@/main/database/audit';
@@ -50,6 +51,7 @@ export interface PrintingServiceDeps {
   /** `userData/assets`: content-addressed logo files. */
   assetsDir: string;
   logger: Logger;
+  systemNumberLocale?: string;
 }
 
 export interface RenderedInvoice {
@@ -113,10 +115,18 @@ export class PrintingService {
   }
 
   /** The one HTML document that preview, print and PDF share. */
-  renderInvoice(invoiceId: string, format: PrintFormat): RenderedInvoice {
+  renderInvoice(
+    invoiceId: string,
+    format: PrintFormat,
+    session?: Session,
+  ): RenderedInvoice {
     const model = this.buildInvoicePrintModel(invoiceId);
     const html = renderInvoiceHtml(model, format, {
       logoDataUrl: this.logoDataUrl(model),
+      numberLocale: resolveNumberLocale(
+        session?.numberFormat,
+        this.deps.systemNumberLocale,
+      ),
     });
     return { model, html, pageInfo: pageInfoFor(format) };
   }
@@ -124,10 +134,11 @@ export class PrintingService {
   // ---- commands ----
 
   preview(session: Session | undefined, input: PrintInput): PrintPreviewDto {
-    requireSession(session);
+    const actor = requireSession(session);
     const { html, pageInfo } = this.renderInvoice(
       input.invoiceId,
       input.format,
+      actor,
     );
     return { html, format: input.format, pageInfo };
   }
@@ -138,7 +149,11 @@ export class PrintingService {
   ): Promise<PrintOutcomeDto> {
     const actor = requireSession(session);
     const requestedAt = this.deps.clock.now();
-    const { model, html } = this.renderInvoice(input.invoiceId, input.format);
+    const { model, html } = this.renderInvoice(
+      input.invoiceId,
+      input.format,
+      actor,
+    );
     const outcome = await this.sendDocument(html, input.format);
     this.record(actor.cashierId, model, {
       format: input.format,
@@ -157,7 +172,7 @@ export class PrintingService {
     const actor = requireSession(session);
     const requestedAt = this.deps.clock.now();
     const format: PrintFormat = 'A4';
-    const { model, html } = this.renderInvoice(input.invoiceId, format);
+    const { model, html } = this.renderInvoice(input.invoiceId, format, actor);
     const target = await this.deps.dialogs.choosePdfDestination(
       `${model.invoiceNumber}.pdf`,
     );

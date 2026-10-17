@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { ArrowLeft, Check, Eye, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +20,7 @@ import {
   resolveLocalDateTime,
   type OffsetChoice,
 } from '@/shared/time';
-import { formatIdr, formatLocal, toLocalInputValue } from './local-time';
+import { formatLocal, toLocalInputValue } from './local-time';
 
 interface PriceDialogProps {
   catalogItemId: string;
@@ -269,6 +270,7 @@ function PreviewStep({
   preview: PricePreviewDto;
   timezone: string;
 }) {
+  const { numberOptions, formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const conflict = preview.conflicts.length > 0;
   return (
@@ -284,6 +286,7 @@ function PreviewStep({
       </p>
       <p data-testid="preview-current-to-new">
         {t('catalog.dialog.currentToNew', {
+          ...numberOptions,
           current: preview.current
             ? formatIdr(preview.current.price)
             : t('catalog.dialog.noCurrent'),

@@ -93,7 +93,7 @@ export function receiptPayments(
       ? html`<div class="muted">${labels.noPayments}</div>`
       : model.payments.map(
           (payment, i) => html`<div class="payment">
-<div class="r"><span class="l">${labels.paymentMethod[payment.method]}</span><span class="v">${money(`payment-${i + 1}`, payment.amount)}</span></div>
+<div class="r"><span class="l">${labels.paymentMethod[payment.method]}</span><span class="v">${money(`payment-${i + 1}`, payment.amount, labels.locale)}</span></div>
 <div class="muted sub">${localDateTime(payment.paidAtLocal)} · ${payment.receivedBy}${
             payment.reference
               ? html` · ${labels.reference} ${payment.reference}`

@@ -1,3 +1,4 @@
+import { resolveNumberLocale } from '@/shared/number-format';
 import { randomUUID } from 'node:crypto';
 import { appendAudit } from '@/main/database/audit';
 import {
@@ -38,6 +39,7 @@ export interface SettingsServiceDeps {
   db: AppDatabase;
   clock: Clock;
   newId?: () => string;
+  systemNumberLocale?: string;
 }
 
 export class SettingsService {
@@ -53,7 +55,13 @@ export class SettingsService {
 
   /** Public on purpose: the login screen needs language and theme. */
   getPublic(): PublicSettings {
-    return this.repo.getPublic();
+    return {
+      ...this.repo.getPublic(),
+      systemNumberLocale: resolveNumberLocale(
+        'SYSTEM',
+        this.deps.systemNumberLocale,
+      ),
+    };
   }
 
   /** Shop identity and timezone for any signed-in cashier. */
@@ -90,6 +98,7 @@ export class SettingsService {
         updatedAt: now,
         language: input.preferences.language,
         appearance: input.preferences.appearance,
+        numberFormat: input.preferences.numberFormat,
       });
       for (const channel of SEED_CHANNELS) {
         this.repo.insertChannel(this.seed(channel));
@@ -105,12 +114,13 @@ export class SettingsService {
         metadata: {
           language: input.preferences.language,
           appearance: input.preferences.appearance,
+          numberFormat: input.preferences.numberFormat,
           timezone: input.shop.timezone,
           printerConfigured: input.printer !== undefined,
         },
       });
     });
-    return this.repo.getPublic();
+    return this.getPublic();
   }
 
   updateShop(session: Session | undefined, input: ShopSettingsData): void {
@@ -137,11 +147,17 @@ export class SettingsService {
       changed.language = { from: actor.language, to: input.language };
     if (actor.appearance !== input.appearance)
       changed.appearance = { from: actor.appearance, to: input.appearance };
+    if (actor.numberFormat !== input.numberFormat)
+      changed.numberFormat = {
+        from: actor.numberFormat,
+        to: input.numberFormat,
+      };
     withWriteTransaction(this.deps.db, () => {
       this.cashiers.updatePreferences(
         actor.cashierId,
         input.language,
         input.appearance,
+        input.numberFormat,
         this.deps.clock.now(),
       );
       appendAudit(this.deps.db, this.deps.clock, {
@@ -154,6 +170,7 @@ export class SettingsService {
     });
     actor.language = input.language;
     actor.appearance = input.appearance;
+    actor.numberFormat = input.numberFormat;
     return input;
   }
 

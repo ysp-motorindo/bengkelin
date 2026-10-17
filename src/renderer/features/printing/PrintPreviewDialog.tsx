@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Printer, X } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -35,6 +36,7 @@ export function PrintPreviewDialog({
   onClose(): void;
 }) {
   const { t } = useTranslation();
+  const { locale } = useNumberFormat();
   const [format, setFormat] = useState<PrintFormat>(initialFormat);
   const [preview, setPreview] = useState<PrintPreviewDto | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export function PrintPreviewDialog({
     return () => {
       current = false;
     };
-  }, [client, invoiceId, format, t]);
+  }, [client, invoiceId, format, t, locale]);
 
   const shown = preview?.format === format ? preview : null;
 

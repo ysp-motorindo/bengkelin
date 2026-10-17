@@ -1,5 +1,6 @@
 import type {
   Appearance,
+  NumberFormat,
   CashierSession,
   Language,
   Role,
@@ -15,6 +16,7 @@ export interface Session {
   role: Role;
   language: Language;
   appearance: Appearance;
+  numberFormat: NumberFormat;
 }
 
 export function toSessionDto(session: Session): CashierSession {
@@ -25,6 +27,7 @@ export function toSessionDto(session: Session): CashierSession {
     role: session.role,
     language: session.language,
     appearance: session.appearance,
+    numberFormat: session.numberFormat,
   };
 }
 

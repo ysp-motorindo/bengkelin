@@ -1,3 +1,4 @@
+import { NumberFormatProvider } from '@/renderer/lib/number-format';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
@@ -79,6 +80,23 @@ function install(preview: ImportReadyDto) {
 }
 
 describe('Catalog import/export screen', () => {
+  test('summary counts follow the selected number format', async () => {
+    const preview = readyPreview();
+    install({
+      ...preview,
+      totalRows: 1234,
+      summary: { ...preview.summary, creates: 1234 },
+    });
+    render(
+      <NumberFormatProvider format="US">
+        <CatalogTransferScreen />
+      </NumberFormatProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Impor CSV...' }));
+    const card = await screen.findByTestId('catalog-import-preview');
+    expect(within(card).getAllByText('1,234')).toHaveLength(1);
+  });
+
   test('a clean preview commits with its token and shows the result', async () => {
     const bridge = install(readyPreview());
     render(<CatalogTransferScreen />);

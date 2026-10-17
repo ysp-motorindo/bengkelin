@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Download, FileSpreadsheet, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +27,7 @@ import { ImportPreview } from './ImportPreview';
  * the preview allows it; main takes a safety backup first.
  */
 export function CatalogTransferScreen() {
+  const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   const { busy, error, setError, run, check } = useAction();
   const [notices, setNotices] = useState<string[]>([]);
@@ -45,12 +47,14 @@ export function CatalogTransferScreen() {
       }
       setNotices([
         t('catalogTransfer.saved', {
+          ...numberOptions,
           fileName: value.fileName,
           count: value.itemCount,
         }),
         ...(value.skuMissingCount > 0
           ? [
               t('catalogTransfer.skuMissing', {
+                ...numberOptions,
                 count: value.skuMissingCount,
               }),
             ]
@@ -140,7 +144,7 @@ export function CatalogTransferScreen() {
                 data-testid="catalog-import-result"
                 className="font-medium text-foreground"
               >
-                {t('catalogTransfer.result', { ...result })}
+                {t('catalogTransfer.result', { ...numberOptions, ...result })}
               </p>
             ) : null}
           </div>

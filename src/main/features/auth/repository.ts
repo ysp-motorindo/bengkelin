@@ -2,6 +2,7 @@ import type { AppDatabase } from '@/main/database/connection';
 import { bool, flag, toNumber } from '@/main/database/rows';
 import type {
   Appearance,
+  NumberFormat,
   CashierDto,
   Language,
   Role,
@@ -19,6 +20,7 @@ interface CashierRow {
   updated_at: string;
   language?: string;
   appearance?: string;
+  number_format?: string;
 }
 
 /** Internal record: includes the hash, never crosses IPC. */
@@ -33,6 +35,7 @@ export interface CashierRecord {
   updatedAt: Instant;
   language: Language;
   appearance: Appearance;
+  numberFormat: NumberFormat;
 }
 
 function toRecord(row: CashierRow): CashierRecord {
@@ -47,6 +50,7 @@ function toRecord(row: CashierRow): CashierRecord {
     updatedAt: row.updated_at,
     language: (row.language ?? 'id') as Language,
     appearance: (row.appearance ?? 'SYSTEM') as Appearance,
+    numberFormat: (row.number_format ?? 'ID') as NumberFormat,
   };
 }
 
@@ -64,18 +68,23 @@ export function toCashierDto(record: CashierRecord): CashierDto {
 
 export class CashierRepository {
   private readonly hasPreferences: boolean;
+  private readonly hasNumberFormat: boolean;
 
   constructor(private readonly db: AppDatabase) {
     const columns = db.prepare('PRAGMA table_info(cashiers)').all() as {
       name: string;
     }[];
     this.hasPreferences = columns.some((column) => column.name === 'language');
+    this.hasNumberFormat = columns.some(
+      (column) => column.name === 'number_format',
+    );
   }
 
   private columns(): string {
     return (
       'id, username, display_name, password_hash, role, is_active, created_at, updated_at' +
-      (this.hasPreferences ? ', language, appearance' : '')
+      (this.hasPreferences ? ', language, appearance' : '') +
+      (this.hasNumberFormat ? ', number_format' : '')
     );
   }
 
@@ -122,7 +131,7 @@ export class CashierRepository {
     }
     this.db
       .prepare(
-        `INSERT INTO cashiers (${this.columns()}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO cashiers (${this.columns()}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?${this.hasNumberFormat ? ', ?' : ''})`,
       )
       .run(
         record.id,
@@ -135,6 +144,7 @@ export class CashierRepository {
         record.updatedAt,
         record.language,
         record.appearance,
+        ...(this.hasNumberFormat ? [record.numberFormat] : []),
       );
   }
 
@@ -167,13 +177,14 @@ export class CashierRepository {
     id: string,
     language: Language,
     appearance: Appearance,
+    numberFormat: NumberFormat,
     updatedAt: Instant,
   ): void {
     this.db
       .prepare(
-        'UPDATE cashiers SET language = ?, appearance = ?, updated_at = ? WHERE id = ?',
+        'UPDATE cashiers SET language = ?, appearance = ?, number_format = ?, updated_at = ? WHERE id = ?',
       )
-      .run(language, appearance, updatedAt, id);
+      .run(language, appearance, numberFormat, updatedAt, id);
   }
 
   /** Active ADMINs other than `excludingId` (for last-admin protection). */

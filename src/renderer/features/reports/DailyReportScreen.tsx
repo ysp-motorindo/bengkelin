@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Eye, FileDown } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -49,6 +50,7 @@ export function DailyReportScreen({
   session: CashierSession;
   client?: ReportClient;
 }) {
+  const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   const timezone = useShopTimezone();
   const { channels, cashiers } = useFilterOptions(session);
@@ -107,6 +109,7 @@ export function DailyReportScreen({
       return {
         tone: 'alert',
         text: t(`reports.outcome.${outcome.code ?? 'PRINT_FAILED'}`, {
+          ...numberOptions,
           ...outcome.params,
         }),
       };

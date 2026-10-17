@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
@@ -8,7 +9,6 @@ import {
   CardTitle,
 } from '@/renderer/components/ui/card';
 import { errorMessage } from '@/renderer/lib/errors';
-import { formatIdr } from '@/renderer/lib/money';
 import type {
   ImportCounts,
   ImportIssueDto,
@@ -39,6 +39,7 @@ export function ImportPreview({
   onCommit,
   onCancel,
 }: ImportPreviewProps) {
+  const { numberOptions, formatNumber } = useNumberFormat();
   const { t } = useTranslation();
   return (
     <Card data-testid="catalog-import-preview">
@@ -62,7 +63,7 @@ export function ImportPreview({
                   data-testid={`import-count-${key}`}
                   className="tabular-nums font-medium"
                 >
-                  {preview.summary[key]}
+                  {formatNumber(preview.summary[key])}
                 </dd>
               </div>
             ))}
@@ -72,6 +73,7 @@ export function ImportPreview({
         <IssueList
           testId="import-errors"
           title={t('catalogTransfer.preview.errors', {
+            ...numberOptions,
             count: preview.errorCount,
           })}
           issues={preview.errors}
@@ -83,6 +85,7 @@ export function ImportPreview({
           <IssueList
             testId="import-warnings"
             title={t('catalogTransfer.preview.warnings', {
+              ...numberOptions,
               count: preview.warningCount,
             })}
             issues={preview.warnings}
@@ -133,6 +136,7 @@ function IssueList({
   tone: string;
   empty?: string;
 }) {
+  const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   return (
     <section data-testid={testId} aria-label={title}>
@@ -161,6 +165,7 @@ function IssueList({
           {total > issues.length ? (
             <li className="text-muted-foreground">
               {t('catalogTransfer.preview.moreIssues', {
+                ...numberOptions,
                 count: total - issues.length,
               })}
             </li>
@@ -172,12 +177,16 @@ function IssueList({
 }
 
 function RowTable({ preview }: { preview: ImportReadyDto }) {
+  const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   if (preview.rows.length === 0) return null;
   return (
     <section aria-labelledby="import-rows">
       <h3 id="import-rows" className="mb-1 text-sm font-medium">
-        {t('catalogTransfer.preview.rows', { count: preview.totalRows })}
+        {t('catalogTransfer.preview.rows', {
+          ...numberOptions,
+          count: preview.totalRows,
+        })}
       </h3>
       <div className="max-h-96 overflow-auto">
         <table className="w-full text-sm" data-testid="import-rows">
@@ -228,6 +237,7 @@ function RowTable({ preview }: { preview: ImportReadyDto }) {
       {preview.rowsTruncated ? (
         <p className="mt-1 text-sm text-muted-foreground">
           {t('catalogTransfer.preview.truncated', {
+            ...numberOptions,
             shown: preview.rows.length,
           })}
         </p>
@@ -237,6 +247,7 @@ function RowTable({ preview }: { preview: ImportReadyDto }) {
 }
 
 function RowDetails({ row }: { row: ImportRowDto }) {
+  const { numberOptions, formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const lines: string[] = [];
   if (row.changedFields.length > 0) {
@@ -265,7 +276,10 @@ function RowDetails({ row }: { row: ImportRowDto }) {
   }
   if (row.openingStock !== null) {
     lines.push(
-      t('catalogTransfer.details.openingStock', { count: row.openingStock }),
+      t('catalogTransfer.details.openingStock', {
+        ...numberOptions,
+        count: row.openingStock,
+      }),
     );
   }
   return (

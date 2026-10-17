@@ -1,3 +1,4 @@
+import { numberSymbols, formatNumericText } from '@/shared/number-format';
 import type {
   InvoicePrintModel,
   PrintDiscountStage,
@@ -19,25 +20,42 @@ import { PRINT_LABELS, type PrintLabels } from './labels';
 export interface TemplateOptions {
   /** `data:image/png|jpeg;base64,...` read by main at render time. */
   logoDataUrl: string | null;
+  numberLocale?: string;
 }
 
-export function labelsFor(model: InvoicePrintModel): PrintLabels {
-  return PRINT_LABELS[model.language];
+export function labelsFor(
+  model: InvoicePrintModel,
+  options?: TemplateOptions,
+): PrintLabels {
+  const locale = options?.numberLocale ?? 'id-ID';
+  return {
+    ...PRINT_LABELS[model.language],
+    locale,
+    decimal: numberSymbols(locale).decimal,
+  };
 }
 
 /** A printed money value: `Rp 31.500`, tagged with its model field. */
-export function money(field: string, value: string): SafeHtml {
-  return html`<span class="num" data-money="${field}">${formatIdr(value)}</span>`;
+export function money(
+  field: string,
+  value: string,
+  locale = 'id-ID',
+): SafeHtml {
+  return html`<span class="num" data-money="${field}">${formatIdr(value, locale)}</span>`;
 }
 
 /** A deduction: the sign is outside the tagged value (none for zero). */
-export function deduction(field: string, value: string): SafeHtml {
+export function deduction(
+  field: string,
+  value: string,
+  locale = 'id-ID',
+): SafeHtml {
   const sign = BigInt(value) === 0n ? '' : '-';
-  return html`<span class="neg">${sign}${money(field, value)}</span>`;
+  return html`<span class="neg">${sign}${money(field, value, locale)}</span>`;
 }
 
 export function percent(bps: number, labels: PrintLabels): string {
-  return formatBpsAsPercentage(bps, labels.decimal);
+  return formatNumericText(formatBpsAsPercentage(bps), labels.locale);
 }
 
 /** `YYYY-MM-DD` -> `DD/MM/YYYY` (both languages). */
@@ -53,7 +71,7 @@ export function localDateTime(value: string): string {
 }
 
 export function count(value: number, labels: PrintLabels): string {
-  return new Intl.NumberFormat(labels.locale).format(value);
+  return formatNumericText(String(value), labels.locale);
 }
 
 export function quantity(line: PrintLine, labels: PrintLabels): string {
@@ -88,7 +106,7 @@ export function headerFacts(
     [labels.invoiceNumber, model.invoiceNumber],
     [labels.invoiceDate, localDate(model.invoiceDate)],
     [labels.finalizedAt, localDateTime(model.finalizedAtLocal)],
-    [labels.top, labels.topDays(model.topDays)],
+    [labels.top, labels.topDays(model.topDays, count(model.topDays, labels))],
     [labels.dueDate, localDate(model.dueDate)],
     [labels.channel, model.channel],
     [labels.cashier, model.cashier],
@@ -155,24 +173,43 @@ export function totalRows(
   labels: PrintLabels,
 ): { label: string; value: SafeHtml; strong?: boolean }[] {
   return [
-    { label: labels.subtotal, value: money('subtotal', model.subtotal) },
+    {
+      label: labels.subtotal,
+      value: money('subtotal', model.subtotal, labels.locale),
+    },
     {
       label: labels.itemDiscounts,
-      value: deduction('itemDiscountAmount', model.itemDiscountAmount),
+      value: deduction(
+        'itemDiscountAmount',
+        model.itemDiscountAmount,
+        labels.locale,
+      ),
     },
     ...model.invoiceDiscounts.map((stage) => ({
       label: invoiceStageLabel(stage, labels),
-      value: deduction(`invoice-stage-${stage.sequence}`, stage.amount),
+      value: deduction(
+        `invoice-stage-${stage.sequence}`,
+        stage.amount,
+        labels.locale,
+      ),
     })),
     {
       label: labels.invoiceDiscounts,
-      value: deduction('invoiceDiscountAmount', model.invoiceDiscountAmount),
+      value: deduction(
+        'invoiceDiscountAmount',
+        model.invoiceDiscountAmount,
+        labels.locale,
+      ),
     },
     {
       label: labels.discountTotal,
-      value: deduction('discountAmount', model.discountAmount),
+      value: deduction('discountAmount', model.discountAmount, labels.locale),
     },
-    { label: labels.total, value: money('amount', model.amount), strong: true },
+    {
+      label: labels.total,
+      value: money('amount', model.amount, labels.locale),
+      strong: true,
+    },
   ];
 }
 
@@ -181,10 +218,13 @@ export function settlementRows(
   labels: PrintLabels,
 ): { label: string; value: SafeHtml | string; strong?: boolean }[] {
   return [
-    { label: labels.paid, value: money('paidAmount', model.paidAmount) },
+    {
+      label: labels.paid,
+      value: money('paidAmount', model.paidAmount, labels.locale),
+    },
     {
       label: labels.outstanding,
-      value: money('outstanding', model.outstanding),
+      value: money('outstanding', model.outstanding, labels.locale),
       strong: true,
     },
     { label: labels.paymentStatus, value: labels.status[model.paymentStatus] },

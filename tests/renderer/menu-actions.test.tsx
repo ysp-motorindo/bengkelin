@@ -26,6 +26,7 @@ import { DRAFT_ID, ok, workspaceBridge } from './helpers/workspace-bridge';
  */
 
 const cashier: CashierSession = {
+  numberFormat: 'ID',
   cashierId: '5b9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11',
   username: 'siti',
   displayName: 'Siti',
@@ -307,6 +308,7 @@ describe('menu action dispatch in the shell', () => {
 describe('About and Print', () => {
   test('About works before login: app and schema version', async () => {
     const settings: PublicSettings = {
+      systemNumberLocale: 'id-ID',
       setupCompleted: true,
       language: 'id',
       appearance: 'SYSTEM',

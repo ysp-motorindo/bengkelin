@@ -164,6 +164,7 @@ describe('ADMIN failure banner', () => {
     const backups = backupBridge(FAILED_STATUS);
     install(backups);
     const cashier: CashierSession = {
+      numberFormat: 'ID',
       cashierId: '5b9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11',
       username: 'siti',
       displayName: 'Siti',

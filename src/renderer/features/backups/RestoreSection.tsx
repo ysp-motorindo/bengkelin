@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import {
   FileSearch,
   RotateCcw,
@@ -35,6 +36,7 @@ type Phase = 'idle' | 'restoring' | 'restarting';
  * first; the application then restarts to the login screen.
  */
 export function RestoreSection() {
+  const { numberOptions, formatNumber } = useNumberFormat();
   const { t, i18n } = useTranslation();
   const timezone = useShopTimezone();
   const ids = { phrase: useId() };
@@ -154,7 +156,10 @@ export function RestoreSection() {
                 label={t('restore.preview.invoices')}
                 testId="restore-invoices"
               >
-                {t('restore.preview.invoiceCounts', preview.counts.invoices)}
+                {t('restore.preview.invoiceCounts', {
+                  ...numberOptions,
+                  ...preview.counts.invoices,
+                })}
               </Row>
               <Row label={t('restore.preview.latestFinalized')}>
                 {preview.latestFinalizedAt
@@ -162,13 +167,14 @@ export function RestoreSection() {
                   : t('restore.preview.none')}
               </Row>
               <Row label={t('restore.preview.catalogItems')}>
-                {preview.counts.catalogItems}
+                {formatNumber(preview.counts.catalogItems)}
               </Row>
               <Row label={t('restore.preview.customers')}>
-                {preview.counts.customers}
+                {formatNumber(preview.counts.customers)}
               </Row>
               <Row label={t('restore.preview.cashiers')}>
                 {t('restore.preview.cashierCounts', {
+                  ...numberOptions,
                   total: preview.counts.cashiers,
                   admins: preview.activeAdmins,
                 })}

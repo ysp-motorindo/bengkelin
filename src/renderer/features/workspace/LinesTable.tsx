@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import {
   CircleAlert,
   PencilLine,
@@ -7,9 +8,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { formatIdr } from '@/renderer/lib/money';
 import type { DraftLineDto } from '@/shared/contracts';
-import { formatBpsAsPercentage } from '@/shared/percentage';
 
 interface LinesTableProps {
   lines: DraftLineDto[];
@@ -30,14 +29,9 @@ export function lineIndicators(line: DraftLineDto) {
 
 /** "10% + 5%" in the UI language's decimal style. */
 export function useDiscountSummary() {
-  const { i18n } = useTranslation();
-  const separator = i18n.language === 'en' ? '.' : ',';
+  const { formatPercent } = useNumberFormat();
   return (stages: { percentageBps: number }[]) =>
-    stages
-      .map(
-        (stage) => `${formatBpsAsPercentage(stage.percentageBps, separator)}%`,
-      )
-      .join(' + ');
+    stages.map((stage) => `${formatPercent(stage.percentageBps)}%`).join(' + ');
 }
 
 /**
@@ -45,6 +39,7 @@ export function useDiscountSummary() {
  * summary, amount and indicators. Editing happens in the item editor.
  */
 export function LinesTable({ lines, onEdit, onRemove }: LinesTableProps) {
+  const { formatNumber, formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const summary = useDiscountSummary();
 
@@ -157,7 +152,9 @@ export function LinesTable({ lines, onEdit, onRemove }: LinesTableProps) {
                   </div>
                 </td>
                 <td className="tabular whitespace-nowrap px-2 py-2 text-right">
-                  <span data-testid="line-quantity">{line.quantity}</span>
+                  <span data-testid="line-quantity">
+                    {formatNumber(line.quantity)}
+                  </span>
                   {line.unitLabel ? (
                     <span className="ml-1 text-xs text-muted-foreground">
                       {line.unitLabel}

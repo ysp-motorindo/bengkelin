@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   appearanceSchema,
   languageSchema,
+  numberFormatSchema,
   optionalText,
   passwordSchema,
   requiredText,
@@ -34,6 +35,7 @@ export type ShopSettingsInput = z.input<typeof shopSettingsInputSchema>;
 export const preferencesInputSchema = z.strictObject({
   language: languageSchema,
   appearance: appearanceSchema,
+  numberFormat: numberFormatSchema.default('ID'),
 });
 export type PreferencesInput = z.infer<typeof preferencesInputSchema>;
 
@@ -65,6 +67,7 @@ export interface PublicSettings {
   language: Language;
   appearance: Appearance;
   shopName: string;
+  systemNumberLocale: string;
 }
 
 /**

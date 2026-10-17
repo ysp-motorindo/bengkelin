@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { AlertTriangle, CheckCircle2, FilePlus2, X } from 'lucide-react';
 import {
   useCallback,
@@ -17,7 +18,6 @@ import {
   type PrintClient,
 } from '@/renderer/features/printing/print-client';
 import { errorMessage } from '@/renderer/lib/errors';
-import { formatIdr } from '@/renderer/lib/money';
 import { watchSessionError } from '@/renderer/lib/session-events';
 import type {
   DraftView,
@@ -239,6 +239,7 @@ function ReviewBody({
   stockAcknowledged: boolean;
   onStockAcknowledged(value: boolean): void;
 }) {
+  const { numberOptions, formatNumber, formatIdr } = useNumberFormat();
   const { t, i18n } = useTranslation();
   const { totals } = preview;
   const credit = BigInt(totals.outstandingAmount) > 0n;
@@ -263,7 +264,7 @@ function ReviewBody({
                     `workspace.finalize.issues.${issue.code}`,
                     `errors.${issue.code}`,
                   ],
-                  { ...issue.params },
+                  { ...numberOptions, ...issue.params },
                 )}
               </li>
             ))}
@@ -286,6 +287,7 @@ function ReviewBody({
               w.code === 'NEGATIVE_STOCK' ? (
                 <li key={w.params.catalogItemId}>
                   {t('workspace.finalize.negativeStockItem', {
+                    ...numberOptions,
                     title: w.params.title,
                     observed: w.params.observedStock,
                     demand: w.params.demand,
@@ -315,6 +317,7 @@ function ReviewBody({
             <li key={w.code}>
               {w.code === 'ODOMETER_LOWER_THAN_PREVIOUS'
                 ? t('workspace.finalize.odometerLower', {
+                    ...numberOptions,
                     previous: w.params.previousOdometer,
                   })
                 : t('workspace.finalize.ownerMismatch')}
@@ -342,7 +345,7 @@ function ReviewBody({
           {view.vehicle ? ` · ${view.vehicle.plateNumber}` : ''}
         </dd>
         <dt className="text-muted-foreground">{t('workspace.review.lines')}</dt>
-        <dd>{view.lines.length}</dd>
+        <dd>{formatNumber(view.lines.length)}</dd>
         <dt className="text-muted-foreground">
           {t('workspace.checkout.subtotal')}
         </dt>
@@ -408,6 +411,7 @@ function FinalizedContent({
   printer: PrintClient;
   newTransactionRef: RefObject<HTMLButtonElement | null>;
 }) {
+  const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   // The Finalize button that had focus is gone: focus the next action.
   useEffect(() => {

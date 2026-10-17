@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Appearance, Language, Role, UUID } from './common';
+import type { Appearance, NumberFormat, Language, Role, UUID } from './common';
 
 export const loginInputSchema = z.strictObject({
   username: z
@@ -23,4 +23,5 @@ export interface CashierSession {
   role: Role;
   language: Language;
   appearance: Appearance;
+  numberFormat: NumberFormat;
 }

@@ -885,6 +885,7 @@ describe('payment / void race (two connections, BEGIN IMMEDIATE)', () => {
   let other: AppDatabase;
   let otherService: InvoiceService;
   const session = (): Session => ({
+    numberFormat: 'ID',
     windowId: 7,
     cashierId: adminId,
     username: 'admin',
@@ -1736,6 +1737,7 @@ describe('migration 008 on a populated version-7 database', () => {
       // The upgraded database works with the new services.
       const upgraded = new InvoiceService({ db, clock });
       const session: Session = {
+        numberFormat: 'ID',
         windowId: 1,
         cashierId: admin,
         username: 'admin',

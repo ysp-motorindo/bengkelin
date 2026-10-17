@@ -727,6 +727,31 @@ describe('filters', () => {
 // ---- spec 58 in reports ----
 
 describe('critical calculation in reports', () => {
+  test('report preview and paper use cashier formatting while CSV stays numeric', async () => {
+    nowMs = wib('2026-09-30', '10:00');
+    await issue({ lines: [{ price: '100000', stages: [3000, 5000, 1000] }] });
+    value(
+      await h.call(C.settings.updatePreferences, {
+        language: 'id',
+        appearance: 'SYSTEM',
+        numberFormat: 'US',
+      }),
+    );
+    const input = { date: '2026-09-30' };
+    const preview = value(
+      await h.call<ReportPreviewDto>(C.reports.preview, input),
+    );
+    expect(preview.html).toContain('Rp 31,500');
+    value(await h.call(C.reports.print, input));
+    expect(driver.printCalls.at(-1)?.html).toBe(preview.html);
+    const target = path.join(h.dir, 'us-format.csv');
+    dialogs.csvAnswers.push(target);
+    value(await h.call(C.reports.exportCsv, input));
+    expect(
+      csvReport(readFileSync(target, 'utf8')).summary[L.netBeforeVoids],
+    ).toBe('31500');
+  });
+
   test('the 30/50/10% invoice appears as 31500 on screen, CSV and print', async () => {
     nowMs = wib('2026-09-30', '10:00');
     await issue({ lines: [{ price: '100000', stages: [3000, 5000, 1000] }] });

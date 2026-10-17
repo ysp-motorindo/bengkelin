@@ -37,6 +37,7 @@ export function validSetup(overrides: Record<string, unknown> = {}) {
 export function createHarness(
   options: {
     clock?: Clock;
+    systemNumberLocale?: string;
     printDriver?: PrintDriver;
     dialogs?: FileDialogs;
     /** Restore seams (relaunch stub, hooks, fs layer, token TTL). */
@@ -60,6 +61,7 @@ export function createHarness(
     const services = createApplicationServices({
       db,
       clock,
+      systemNumberLocale: options.systemNumberLocale ?? 'id-ID',
       logDir,
       assetsDir,
       ...(options.printDriver ? { printDriver: options.printDriver } : {}),

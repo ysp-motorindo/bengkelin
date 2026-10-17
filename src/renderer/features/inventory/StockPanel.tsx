@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import {
   useCallback,
   useEffect,
@@ -26,8 +27,8 @@ const ACTIONS: ActionKind[] = ['openBalance', 'receive', 'adjust', 'setStock'];
 const WHOLE_NUMBER = /^-?\d+$/;
 
 /** `+5` / `-5` / `0`. */
-function signed(value: number): string {
-  return value > 0 ? `+${value}` : String(value);
+function signed(value: number, format: (value: number) => string): string {
+  return value > 0 ? `+${format(value)}` : format(value);
 }
 
 /**
@@ -57,6 +58,7 @@ interface StockPanelProps {
 
 /** History (any role) and, for ADMIN, the four stock actions. */
 export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
+  const { numberOptions, formatNumber } = useNumberFormat();
   const { t } = useTranslation();
   const [ledger, setLedger] = useState<LedgerDto | null>(null);
   const [action, setAction] = useState<ActionKind | null>(null);
@@ -90,9 +92,13 @@ export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
     setQuantity(result.newQuantity);
     setNotice(
       result.quantityDelta === 0
-        ? t('inventory.result.unchanged', { quantity: result.newQuantity })
+        ? t('inventory.result.unchanged', {
+            ...numberOptions,
+            quantity: result.newQuantity,
+          })
         : t('inventory.result.changed', {
-            delta: signed(result.quantityDelta),
+            ...numberOptions,
+            delta: signed(result.quantityDelta, formatNumber),
             quantity: result.newQuantity,
           }),
     );
@@ -117,7 +123,11 @@ export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
               : 'text-muted-foreground',
           )}
         >
-          {t('inventory.detail.current', { quantity, unit: item.unitLabel })}
+          {t('inventory.detail.current', {
+            ...numberOptions,
+            quantity,
+            unit: item.unitLabel,
+          })}
           {quantity < 0 ? ` (${t('inventory.negative')})` : ''}
         </p>
       </div>
@@ -181,6 +191,7 @@ function ActionForm({
   onCancel(): void;
   onDone(result: StockChangeDto): Promise<void>;
 }) {
+  const { numberOptions, formatNumber } = useNumberFormat();
   const { t } = useTranslation();
   const [value, setValue] = useState('');
   const [text, setText] = useState('');
@@ -274,7 +285,7 @@ function ActionForm({
         }
       >
         <NumericInput
-          negative={kind === 'adjust'}
+          negative={kind === 'adjust' || kind === 'setStock'}
           autoComplete="off"
           value={value}
           onValueChange={(value) => edit(setValue)(value)}
@@ -289,7 +300,8 @@ function ActionForm({
           {delta === 0
             ? t('inventory.setStock.noChange')
             : t('inventory.setStock.preview', {
-                delta: signed(delta ?? 0),
+                ...numberOptions,
+                delta: signed(delta ?? 0, formatNumber),
                 current,
                 target: parsed,
               })}
@@ -326,6 +338,7 @@ function ActionForm({
 }
 
 function History({ ledger }: { ledger: LedgerDto | null }) {
+  const { formatNumber } = useNumberFormat();
   const { t } = useTranslation();
   if (!ledger) return null;
   return (
@@ -375,7 +388,7 @@ function History({ ledger }: { ledger: LedgerDto | null }) {
                     entry.quantityDelta < 0 && 'text-destructive',
                   )}
                 >
-                  {signed(entry.quantityDelta)}
+                  {signed(entry.quantityDelta, formatNumber)}
                 </td>
                 <td className="py-1 pr-2">{entry.cashierName}</td>
                 <td className="py-1">{entry.note ?? ''}</td>

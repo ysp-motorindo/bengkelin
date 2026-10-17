@@ -148,6 +148,7 @@ export function Shell({
                 {settings && onPreferencesChanged ? (
                   <PreferencesControls
                     preferences={session}
+                    systemNumberLocale={settings.systemNumberLocale}
                     onChanged={onPreferencesChanged}
                   />
                 ) : null}

@@ -1,3 +1,4 @@
+import { NumberFormatProvider } from '@/renderer/lib/number-format';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
@@ -112,4 +113,27 @@ test('invalid preview shows row errors and blocks commit', async () => {
     'Baris pelanggan tidak valid',
   );
   expect(b.customerTransfer.commitImport).not.toHaveBeenCalled();
+});
+
+test('customer summary counts follow the selected number format', async () => {
+  const bridge = install();
+  bridge.customerTransfer.previewImport.mockResolvedValueOnce(
+    ok({
+      ...preview,
+      totalRows: 1234,
+      summary: { ...preview.summary, creates: 1234 },
+    }),
+  );
+  render(
+    <NumberFormatProvider format="US">
+      <CustomersScreen role="ADMIN" />
+    </NumberFormatProvider>,
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Impor CSV...' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Pilih CSV...' }),
+  );
+  expect(
+    await screen.findByText('1,234', { selector: 'dd' }),
+  ).toBeInTheDocument();
 });

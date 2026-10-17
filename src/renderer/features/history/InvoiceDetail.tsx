@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { ArrowLeft, Ban, Wallet } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,10 +7,8 @@ import { Button } from '@/renderer/components/ui/button';
 import { formatLocal } from '@/renderer/features/catalog/local-time';
 import { PrintActions } from '@/renderer/features/printing/PrintActions';
 import type { PrintClient } from '@/renderer/features/printing/print-client';
-import { formatIdr } from '@/renderer/lib/money';
 import { useAction } from '@/renderer/lib/use-action';
 import type { DiscountStageDto, InvoiceView } from '@/shared/contracts';
-import { formatBpsAsPercentage } from '@/shared/percentage';
 import type { Instant } from '@/shared/primitives';
 import { PaymentDialog } from './PaymentDialog';
 import { StatusBadges } from './StatusBadges';
@@ -39,7 +38,9 @@ export function InvoiceDetail({
   onChanged,
   printer,
 }: InvoiceDetailProps) {
-  const { t, i18n } = useTranslation();
+  const { numberOptions, formatIdr, formatPercent, formatNumber } =
+    useNumberFormat();
+  const { t } = useTranslation();
   const [invoice, setInvoice] = useState<InvoiceView | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -70,12 +71,11 @@ export function InvoiceDetail({
 
   const time = (instant: Instant) =>
     formatLocal(instant, timezone).slice(0, 16);
-  const decimal = i18n.language === 'id' ? ',' : '.';
   const stages = (list: DiscountStageDto[]) =>
     list
       .map((s) =>
         t('history.detail.stage', {
-          percent: formatBpsAsPercentage(s.percentageBps, decimal),
+          percent: formatPercent(s.percentageBps),
           amount: formatIdr(s.amount),
         }),
       )
@@ -117,7 +117,7 @@ export function InvoiceDetail({
 
   const fields: [string, string][] = [
     [t('history.detail.invoiceDate'), invoice.invoiceDate],
-    [t('history.detail.topDays'), String(invoice.topDays)],
+    [t('history.detail.topDays'), formatNumber(invoice.topDays)],
     [t('history.detail.dueDate'), invoice.dueDate],
     [t('history.detail.finalizedAt'), time(invoice.finalizedAt)],
     [t('history.detail.cashier'), invoice.cashier.displayName],
@@ -131,7 +131,10 @@ export function InvoiceDetail({
       t('history.detail.odometer'),
       invoice.odometerKm === null
         ? none
-        : t('history.detail.odometerValue', { km: invoice.odometerKm }),
+        : t('history.detail.odometerValue', {
+            ...numberOptions,
+            km: invoice.odometerKm,
+          }),
     ],
     [t('history.detail.note'), invoice.note ?? none],
     [t('history.detail.shop'), invoice.shop.name],
@@ -297,7 +300,7 @@ export function InvoiceDetail({
                     ) : null}
                   </td>
                   <td className="py-1 pr-2 text-right whitespace-nowrap">
-                    {line.quantity} {line.unitLabel ?? ''}
+                    {formatNumber(line.quantity)} {line.unitLabel ?? ''}
                   </td>
                   <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">
                     {formatIdr(line.unitPrice)}

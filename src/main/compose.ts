@@ -58,6 +58,7 @@ export interface CompositionDeps {
   restore?: RestoreCompositionDeps;
   /** Help > About (the app passes `app.getVersion()`). */
   appVersion?: string;
+  systemNumberLocale?: string;
 }
 
 /** Restore wiring: the app passes relaunch/close hooks; tests add seams. */
@@ -99,6 +100,7 @@ export function createApplicationServices(
     dialogs,
     assetsDir,
     logger,
+    systemNumberLocale: deps.systemNumberLocale ?? 'id-ID',
   });
   // Restore's maintenance flag: the command table refuses writes while set.
   const maintenance = new MaintenanceGate();
@@ -136,7 +138,11 @@ export function createApplicationServices(
     sessions,
     maintenance,
     auth: new AuthService({ db, clock, sessions }),
-    settings: new SettingsService({ db, clock }),
+    settings: new SettingsService({
+      db,
+      clock,
+      systemNumberLocale: deps.systemNumberLocale ?? 'id-ID',
+    }),
     cashiers: new CashierService({ db, clock, sessions }),
     references: new ReferenceService({ db, clock }),
     customers: new CustomerService({ db, clock }),
@@ -156,7 +162,14 @@ export function createApplicationServices(
     // Production composition never passes the test-only `onStep` hook.
     invoices: new InvoiceService({ db, clock }),
     printing,
-    reports: new ReportService({ db, clock, printing, dialogs, logger }),
+    reports: new ReportService({
+      db,
+      clock,
+      printing,
+      dialogs,
+      logger,
+      systemNumberLocale: deps.systemNumberLocale ?? 'id-ID',
+    }),
     logo: new LogoService({ db, clock, dialogs, assetsDir, logger }),
     backups,
     restore,

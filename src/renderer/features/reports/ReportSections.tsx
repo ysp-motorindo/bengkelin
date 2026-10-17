@@ -1,6 +1,6 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatIdr } from '@/renderer/lib/money';
 import { cn } from '@/renderer/lib/utils';
 import type { DailyReport } from '@/shared/contracts';
 
@@ -11,6 +11,7 @@ import type { DailyReport } from '@/shared/contracts';
  */
 
 function Money({ field, value }: { field: string; value: string }) {
+  const { formatIdr } = useNumberFormat();
   return (
     <span className="whitespace-nowrap tabular-nums" data-field={field}>
       {formatIdr(value)}
@@ -19,9 +20,10 @@ function Money({ field, value }: { field: string; value: string }) {
 }
 
 function Count({ field, value }: { field: string; value: number }) {
+  const { formatNumber } = useNumberFormat();
   return (
     <span className="tabular-nums" data-field={field}>
-      {value}
+      {formatNumber(value)}
     </span>
   );
 }

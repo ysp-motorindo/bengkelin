@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Check, X } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +10,7 @@ import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
 import { errorMessage } from '@/renderer/lib/errors';
-import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
+import { parseRupiahInput } from '@/renderer/lib/money';
 import {
   MAX_LINE_QUANTITY,
   type DraftLineDto,
@@ -46,8 +47,9 @@ export function ItemEditorDialog({
   onClose,
   returnFocus,
 }: ItemEditorDialogProps) {
-  const { t, i18n } = useTranslation();
-  const separator = i18n.language === 'en' ? '.' : ',';
+  const { formatIdr } = useNumberFormat();
+  const { t } = useTranslation();
+  const separator = '.';
   const quantityRef = useRef<HTMLInputElement>(null);
   const [quantity, setQuantity] = useState(String(line.quantity));
   const [unitPrice, setUnitPrice] = useState(line.unitPrice);

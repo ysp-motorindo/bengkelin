@@ -1,3 +1,4 @@
+import { NumberFormatProvider } from '@/renderer/lib/number-format';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -16,6 +17,7 @@ import type {
   CashierSession,
   Language,
   PublicSettings,
+  NumberFormat,
 } from '@/shared/contracts';
 
 type Phase =
@@ -34,6 +36,7 @@ export function App() {
   const [preview, setPreview] = useState<{
     language: Language;
     appearance: Appearance;
+    numberFormat: NumberFormat;
   } | null>(null);
 
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -132,6 +135,7 @@ export function App() {
         <SetupWizard
           language={language}
           appearance={appearance}
+          systemNumberLocale={phase.settings.systemNumberLocale}
           onPreview={setPreview}
           onCompleted={(completed) => {
             setPreview(null);
@@ -177,9 +181,12 @@ export function App() {
   }
 
   return (
-    <>
+    <NumberFormatProvider
+      format={preview?.numberFormat ?? session?.numberFormat ?? 'ID'}
+      systemLocale={settings?.systemNumberLocale ?? 'id-ID'}
+    >
       {content()}
       {aboutOpen ? <AboutDialog onClose={closeAbout} /> : null}
-    </>
+    </NumberFormatProvider>
   );
 }

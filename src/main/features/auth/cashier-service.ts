@@ -81,6 +81,7 @@ export class CashierService {
         updatedAt: now,
         language: input.language ?? actor.language,
         appearance: input.appearance ?? actor.appearance,
+        numberFormat: input.numberFormat ?? 'ID',
       };
       this.repo.insert(record);
       this.audit(actor, 'CASHIER_CREATED', record.id, {

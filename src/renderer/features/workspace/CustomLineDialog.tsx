@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import {
   useEffect,
   useId,
@@ -12,12 +13,12 @@ import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
-import { Input, controlClass } from '@/renderer/components/ui/input';
+import { controlClass } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Label } from '@/renderer/components/ui/label';
 import { Select } from '@/renderer/components/ui/select';
 import { errorMessage } from '@/renderer/lib/errors';
-import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
+import { parseRupiahInput } from '@/renderer/lib/money';
 import { watchSessionError } from '@/renderer/lib/session-events';
 import { cn } from '@/renderer/lib/utils';
 import {
@@ -54,6 +55,7 @@ export function CustomLineDialog({
   onClose,
   returnFocus,
 }: CustomLineDialogProps) {
+  const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const listId = useId();
   const titleInputId = useId();

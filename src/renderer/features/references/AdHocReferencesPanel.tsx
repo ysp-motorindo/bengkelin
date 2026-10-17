@@ -1,10 +1,10 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
-import { formatIdr } from '@/renderer/lib/money';
 import { useAction } from '@/renderer/lib/use-action';
 import type { AdHocReferenceDto } from '@/shared/contracts';
 
@@ -15,6 +15,7 @@ import type { AdHocReferenceDto } from '@/shared/contracts';
  * used it keep their title and link.
  */
 export function AdHocReferencesPanel() {
+  const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<AdHocReferenceDto[]>([]);

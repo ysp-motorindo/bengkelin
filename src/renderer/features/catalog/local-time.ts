@@ -1,4 +1,4 @@
-import type { Instant, Rupiah } from '@/shared/primitives';
+import type { Instant } from '@/shared/primitives';
 
 const cache = new Map<string, Intl.DateTimeFormat>();
 
@@ -30,7 +30,4 @@ export function toLocalInputValue(instant: Instant, timezone: string): string {
   return formatLocal(instant, timezone).replace(' ', 'T');
 }
 
-/** `Rp 65.000`, computed from the decimal string with no Number conversion. */
-export function formatIdr(price: Rupiah): string {
-  return `Rp ${BigInt(price).toLocaleString('id-ID')}`;
-}
+export { formatIdr } from '@/shared/idr';

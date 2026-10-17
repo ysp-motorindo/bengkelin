@@ -1,6 +1,6 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
-import { formatIdr } from '@/renderer/lib/money';
 import { cn } from '@/renderer/lib/utils';
 import type { InvoicePage, InvoiceSummaryDto } from '@/shared/contracts';
 import { StatusBadges } from './StatusBadges';
@@ -23,6 +23,7 @@ export function SummaryTable({
   emptyText,
   onOpen,
 }: SummaryTableProps) {
+  const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   if (rows.length === 0) {
     return (
@@ -146,6 +147,7 @@ interface PagerProps {
 }
 
 export function Pager({ page, busy, onPage }: PagerProps) {
+  const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   const pages = Math.max(1, Math.ceil(page.total / page.pageSize));
   return (
@@ -163,6 +165,7 @@ export function Pager({ page, busy, onPage }: PagerProps) {
       </Button>
       <span data-testid="history-page-summary">
         {t('history.pagination.summary', {
+          ...numberOptions,
           page: page.pageNumber,
           pages,
           total: page.total,

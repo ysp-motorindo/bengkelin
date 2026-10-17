@@ -762,6 +762,15 @@ describe('restore', () => {
             external_id: null,
           })),
         );
+      } else if (table === 'cashiers') {
+        expect(restored[table], table).toEqual(
+          data.map((row) => ({
+            ...(row as object),
+            language: 'id',
+            appearance: 'SYSTEM',
+            number_format: 'ID',
+          })),
+        );
       } else expect(restored[table], table).toEqual(data);
     }
     expect(shopName(h.db)).toBe(SHOP_NAME);

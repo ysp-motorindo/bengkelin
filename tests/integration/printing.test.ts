@@ -185,6 +185,46 @@ function writeScratch(name: string, bytes: Buffer): string {
 // ---- the brief's required assertions ----
 
 describe('one print model, three presentations', () => {
+  test('the requesting cashier format reaches every layout without altering business values', async () => {
+    const invoice = await criticalInvoice(shop, priceStart());
+    const before = businessState();
+    value(
+      await h.call(
+        C.settings.updatePreferences,
+        { language: 'id', appearance: 'SYSTEM', numberFormat: 'US' },
+        CASHIER_WINDOW,
+      ),
+    );
+    for (const format of FORMATS) {
+      expect(
+        moneyFields(value(await preview(invoice.id, format)).html).get(
+          'amount',
+        ),
+      ).toBe('Rp 31,500');
+      expect(
+        moneyFields(
+          value(await preview(invoice.id, format, ADMIN_WINDOW)).html,
+        ).get('amount'),
+      ).toBe('Rp 31.500');
+    }
+    value(await print(invoice.id, 'THERMAL_80'));
+    expect(moneyFields(driver.printCalls.at(-1)!.html).get('amount')).toBe(
+      'Rp 31,500',
+    );
+    dialogs.saveAnswers.push(path.join(scratch, 'localized.pdf'));
+    value(
+      await h.call(
+        C.printing.exportPdf,
+        { invoiceId: invoice.id },
+        CASHIER_WINDOW,
+      ),
+    );
+    expect(moneyFields(driver.pdfCalls.at(-1)!.html).get('amount')).toBe(
+      'Rp 31,500',
+    );
+    expect(businessState()).toBe(before);
+  });
+
   test('required assertions: 31500 in every format and FINALIZED after a print failure', async () => {
     const invoice = await criticalInvoice(shop, priceStart());
     const printing = h.services.printing;

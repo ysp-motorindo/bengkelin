@@ -237,6 +237,7 @@ if (started || !app.requestSingleInstanceLock()) {
         openPath: (target) => shell.openPath(target),
         printDriver: printDriver(),
         appVersion: app.getVersion(),
+        systemNumberLocale: app.getSystemLocale(),
         dialogs: createFileDialogs(app),
         assetsDir: path.join(app.getPath('userData'), 'assets'),
         backupsDir: path.join(app.getPath('userData'), 'backups'),

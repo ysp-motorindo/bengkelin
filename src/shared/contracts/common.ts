@@ -17,6 +17,10 @@ export const LANGUAGES = ['id', 'en'] as const;
 export const languageSchema = z.enum(LANGUAGES, 'validation.invalid');
 export type Language = z.infer<typeof languageSchema>;
 
+export const NUMBER_FORMATS = ['ID', 'US', 'SYSTEM'] as const;
+export const numberFormatSchema = z.enum(NUMBER_FORMATS, 'validation.invalid');
+export type NumberFormat = z.infer<typeof numberFormatSchema>;
+
 export const APPEARANCES = ['LIGHT', 'DARK', 'SYSTEM'] as const;
 export const appearanceSchema = z.enum(APPEARANCES, 'validation.invalid');
 export type Appearance = z.infer<typeof appearanceSchema>;

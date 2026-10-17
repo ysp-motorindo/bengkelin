@@ -15,6 +15,7 @@ import { workspaceBridge } from './helpers/workspace-bridge';
 const ok = <T,>(value: T): Result<T> => ({ ok: true, value });
 
 const adminSession: CashierSession = {
+  numberFormat: 'ID',
   cashierId: '5b9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11',
   username: 'admin',
   displayName: 'Pak Budi',
@@ -52,6 +53,7 @@ function installBridge(
 }
 
 const base: PublicSettings = {
+  systemNumberLocale: 'id-ID',
   setupCompleted: true,
   language: 'id',
   appearance: 'SYSTEM',
@@ -285,6 +287,7 @@ describe('setup wizard', () => {
     expect(await screen.findByLabelText('Appearance')).toBeInTheDocument(); // now English
     await user.selectOptions(screen.getByLabelText('Appearance'), 'DARK');
     expect(document.documentElement).toHaveClass('dark');
+    await user.selectOptions(screen.getByLabelText('Number format'), 'US');
     await user.click(screen.getByRole('button', { name: /Next/ }));
 
     // Printer step: skip.
@@ -297,7 +300,11 @@ describe('setup wizard', () => {
     await waitFor(() => expect(completeSetup).toHaveBeenCalledOnce());
     const sent = completeSetup.mock.calls[0]![0];
     expect(sent).not.toHaveProperty('printer');
-    expect(sent.preferences).toEqual({ language: 'en', appearance: 'DARK' });
+    expect(sent.preferences).toEqual({
+      language: 'en',
+      appearance: 'DARK',
+      numberFormat: 'US',
+    });
     expect(sent.admin.username).toBe('admin');
     // Completed setup lands on the login screen in the chosen language.
     expect(

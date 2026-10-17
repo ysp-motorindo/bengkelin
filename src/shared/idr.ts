@@ -1,14 +1,15 @@
+import { formatNumericText } from './number-format';
 import type { Rupiah } from './primitives';
 
 /**
  * `Rp 65.000` from a Rupiah decimal string, via BigInt (never Number).
- * IDR grouping (`.`) is used in both languages. Shared by the renderer and
+ * Locale grouping is independent of interface language. Shared by the renderer and
  * the print templates so every surface shows money identically.
  */
-export function formatIdr(value: Rupiah): string {
+export function formatIdr(value: Rupiah, locale = 'id-ID'): string {
   const amount = BigInt(value);
   const negative = amount < 0n;
   const digits = (negative ? -amount : amount).toString();
-  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const grouped = formatNumericText(digits, locale);
   return negative ? `-Rp ${grouped}` : `Rp ${grouped}`;
 }

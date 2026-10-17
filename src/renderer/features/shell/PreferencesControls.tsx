@@ -1,3 +1,4 @@
+import { NumberFormatPicker } from '@/renderer/components/ui/number-format-picker';
 import { ChevronDown } from 'lucide-react';
 import { ID, US } from 'country-flag-icons/react/3x2';
 import { useTranslation } from 'react-i18next';
@@ -12,21 +13,28 @@ import {
 
 interface PreferencesControlsProps {
   preferences: PreferencesInput;
+  systemNumberLocale?: string;
   onChanged(preferences: PreferencesInput): void;
 }
 
 export function PreferencesControls({
   preferences,
+  systemNumberLocale,
   onChanged,
 }: PreferencesControlsProps) {
   const { t } = useTranslation();
   const { busy, error, run, check } = useAction();
 
-  function save(language: Language, appearance: Appearance) {
+  function save(
+    language: Language,
+    appearance: Appearance,
+    numberFormat = preferences.numberFormat,
+  ) {
     void run(async () => {
       const result = await window.bengkelin.settings.updatePreferences({
         language,
         appearance,
+        numberFormat,
       });
       if (check(result)) onChanged(result.value);
     });
@@ -113,6 +121,16 @@ export function PreferencesControls({
           ))}
         </div>
       </details>
+      <div className="px-2 py-2">
+        <NumberFormatPicker
+          value={preferences.numberFormat ?? 'ID'}
+          systemLocale={systemNumberLocale ?? 'id-ID'}
+          disabled={busy}
+          onChange={(format) =>
+            save(preferences.language, preferences.appearance, format)
+          }
+        />
+      </div>
       {error ? (
         <span role="alert" className="block px-2 py-1 text-destructive">
           {error}

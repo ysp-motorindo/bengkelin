@@ -36,7 +36,11 @@ import { CashierManageDialog } from './CashierManageDialog';
  * active ADMIN (LAST_ACTIVE_ADMIN is shown as an alert).
  */
 export function CashiersScreen({
-  defaultPreferences = { language: 'id', appearance: 'SYSTEM' },
+  defaultPreferences = {
+    language: 'id',
+    appearance: 'SYSTEM',
+    numberFormat: 'ID',
+  },
 }: {
   defaultPreferences?: PreferencesInput;
 }) {

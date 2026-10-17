@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
@@ -23,6 +24,7 @@ type Panel =
  * write is re-authorized in main; this only decides what to show.
  */
 export function CatalogScreen({ role }: { role: Role }) {
+  const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   const admin = role === 'ADMIN';
   const [query, setQuery] = useState('');
@@ -222,7 +224,7 @@ export function CatalogScreen({ role }: { role: Role }) {
       )}
       {results.length >= LIST_LIMIT ? (
         <p className="text-sm text-muted-foreground">
-          {t('catalog.search.limit', { count: LIST_LIMIT })}
+          {t('catalog.search.limit', { ...numberOptions, count: LIST_LIMIT })}
         </p>
       ) : null}
 
@@ -279,6 +281,7 @@ function ItemSummary({
   item: CatalogItemDto;
   onEdit: (() => void) | undefined;
 }) {
+  const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   return (
     <section
@@ -298,7 +301,7 @@ function ItemSummary({
         {t(`catalog.type.${item.type}`)} ·{' '}
         {item.sku ?? t('catalog.detail.noSku')} · {item.unitLabel}
         {item.weight !== null
-          ? ` · ${t('catalog.detail.weight', { grams: item.weight })}`
+          ? ` · ${t('catalog.detail.weight', { ...numberOptions, grams: item.weight })}`
           : ''}{' '}
         ·{' '}
         {item.trackInventory

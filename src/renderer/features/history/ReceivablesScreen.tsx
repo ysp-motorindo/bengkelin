@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import {
   useCallback,
   useEffect,
@@ -7,7 +8,6 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
-import { formatIdr } from '@/renderer/lib/money';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
 import {
@@ -27,6 +27,7 @@ const PAGE_SIZE = 25;
  * the shop timezone). Tabs follow the WAI-ARIA tabs pattern (arrow keys).
  */
 export function ReceivablesScreen() {
+  const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const timezone = useShopTimezone();
   const [kind, setKind] = useState<ReceivableKind>('OUTSTANDING');

@@ -100,12 +100,12 @@ function lineRow(line: PrintLine, labels: PrintLabels): SafeHtml {
       : ''
   }</td>
 <td class="c-qty">${quantity(line, labels)}</td>
-<td class="c-price">${money(`line-${n}-unitPrice`, line.unitPrice)}</td>
+<td class="c-price">${money(`line-${n}-unitPrice`, line.unitPrice, labels.locale)}</td>
 <td class="c-disc">${line.discounts.map(
     (stage) =>
-      html`<div class="stage"><span>${stageLabel(stage, labels)}</span>${deduction(`line-${n}-stage-${stage.sequence}`, stage.amount)}</div>`,
+      html`<div class="stage"><span>${stageLabel(stage, labels)}</span>${deduction(`line-${n}-stage-${stage.sequence}`, stage.amount, labels.locale)}</div>`,
   )}</td>
-<td class="c-amount">${money(`line-${n}-amount`, line.amount)}</td>
+<td class="c-amount">${money(`line-${n}-amount`, line.amount, labels.locale)}</td>
 </tr>`;
 }
 
@@ -126,7 +126,7 @@ function payments(model: InvoicePrintModel, labels: PrintLabels): SafeHtml {
 <td>${labels.paymentMethod[payment.method]}</td>
 <td class="wrap">${payment.reference ?? ''}</td>
 <td>${payment.receivedBy}</td>
-<td class="r">${money(`payment-${i + 1}`, payment.amount)}</td>
+<td class="r">${money(`payment-${i + 1}`, payment.amount, labels.locale)}</td>
 </tr>`,
   )}</tbody>
 </table>`;
@@ -136,7 +136,7 @@ export function renderA4(
   model: InvoicePrintModel,
   options: TemplateOptions,
 ): string {
-  const labels = labelsFor(model);
+  const labels = labelsFor(model, options);
   const marking = voidMarking(model, labels);
   const shop = model.shop;
   const contact = [shop.phoneNumber, shop.email].filter(Boolean).join(' · ');

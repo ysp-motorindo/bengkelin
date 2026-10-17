@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
@@ -16,6 +17,7 @@ import { StockPanel } from './StockPanel';
  * to show.
  */
 export function InventoryScreen({ role }: { role: Role }) {
+  const { numberOptions, formatNumber } = useNumberFormat();
   const { t } = useTranslation();
   const admin = role === 'ADMIN';
   const [query, setQuery] = useState('');
@@ -100,7 +102,10 @@ export function InventoryScreen({ role }: { role: Role }) {
           data-testid="negative-banner"
           className="rounded-md border border-destructive/50 px-3 py-2 text-sm text-destructive"
         >
-          {t('inventory.negativeBanner', { count: negativeCount })}
+          {t('inventory.negativeBanner', {
+            ...numberOptions,
+            count: negativeCount,
+          })}
         </p>
       ) : null}
 
@@ -141,7 +146,7 @@ export function InventoryScreen({ role }: { role: Role }) {
                 <td className="py-1 pr-2">{item.title}</td>
                 <td className="py-1 pr-2">{item.sku ?? ''}</td>
                 <td className="py-1 pr-2 text-right font-mono">
-                  {item.quantity}
+                  {formatNumber(item.quantity)}
                   {item.isNegative ? (
                     <span
                       data-testid="negative-flag"

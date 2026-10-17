@@ -3,7 +3,7 @@ import {
   documentShell,
   localDate,
   localDateTime,
-  money,
+  money as formattedMoney,
 } from '@/main/features/printing/templates/shared';
 import type { DailyReport, Language, PrintPageInfo } from '@/shared/contracts';
 import type { ReportLabels } from './labels';
@@ -31,6 +31,7 @@ export interface ReportTemplateOptions {
   language: Language;
   labels: ReportLabels;
   shopName: string;
+  numberLocale?: string;
 }
 
 function css(labels: ReportLabels): string {
@@ -77,7 +78,9 @@ html, body { margin: 0; padding: 0; background: #fff; }
 }
 
 function count(field: string, value: number, labels: ReportLabels): SafeHtml {
-  const text = new Intl.NumberFormat(labels.locale).format(value);
+  const text = new Intl.NumberFormat(labels.locale, {
+    numberingSystem: 'latn',
+  }).format(value);
   return html`<span class="num" data-count="${field}">${text}</span>`;
 }
 
@@ -109,7 +112,9 @@ export function renderDailyReportHtml(
   report: DailyReport,
   options: ReportTemplateOptions,
 ): string {
-  const { labels } = options;
+  const labels = { ...options.labels, locale: options.numberLocale ?? 'id-ID' };
+  const money = (field: string, value: string) =>
+    formattedMoney(field, value, labels.locale);
   const { sales, voids, payments } = report;
   const body = html`<div class="sheet layout-a4">
 <header class="head">

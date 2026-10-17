@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Banknote, ClipboardCheck, Plus, QrCode, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,7 @@ import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
 import { errorMessage } from '@/renderer/lib/errors';
-import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
+import { parseRupiahInput } from '@/renderer/lib/money';
 import {
   MAX_CHECKOUT_ALLOCATIONS,
   PAYMENT_METHODS,
@@ -43,9 +44,10 @@ export function CheckoutPanel({
   onReview,
   onError,
 }: CheckoutPanelProps) {
-  const { t, i18n } = useTranslation();
+  const { formatIdr } = useNumberFormat();
+  const { t } = useTranslation();
   const { view, send, edit, isDirty, markInvalid, flush } = commands;
-  const separator = i18n.language === 'en' ? '.' : ',';
+  const separator = '.';
   const { totals } = view;
 
   const serverRows: AllocationRow[] = view.checkoutAllocations.map((a) => ({

@@ -1,7 +1,7 @@
 import { copyFileSync } from 'node:fs';
 import path from 'node:path';
 import { openDatabase } from '@/main/database/connection';
-import { migrateDatabase } from '@/main/database/migrate';
+import { bundledMigrations, migrateDatabase } from '@/main/database/migrate';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { CHANNELS as C } from '@/shared/channels';
 import type {
@@ -119,7 +119,11 @@ test('schema 011 migration preserves channels, customer IDs, drafts, ownership a
     const owners = db
       .prepare('SELECT * FROM vehicle_ownerships ORDER BY id')
       .all();
-    expect(migrateDatabase(db).applied).toEqual([12]);
+    expect(migrateDatabase(db).applied).toEqual(
+      bundledMigrations
+        .filter((migration) => migration.version > 11)
+        .map((migration) => migration.version),
+    );
     expect(db.prepare('SELECT * FROM channels ORDER BY id').all()).toEqual(
       channels,
     );

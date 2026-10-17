@@ -183,6 +183,7 @@ describe('shop settings', () => {
 describe('cashier filters (T11 carry)', () => {
   test('a CASHIER gets every cashier name from the names-only listing', async () => {
     const session: CashierSession = {
+      numberFormat: 'ID',
       cashierId: '22222222-2222-4222-8222-222222222222',
       username: 'siti',
       displayName: 'Siti',

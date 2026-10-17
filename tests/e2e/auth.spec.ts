@@ -212,6 +212,7 @@ test('direct ADMIN calls from the renderer are denied without a session and for 
         ),
         prefs: code(
           await b.settings.updatePreferences({
+            numberFormat: 'ID',
             language: 'en',
             appearance: 'DARK',
           }),

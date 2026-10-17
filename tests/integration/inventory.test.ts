@@ -150,6 +150,7 @@ function rawInsert(fields: Record<string, unknown>): string | undefined {
 }
 
 const admin = (): Session => ({
+  numberFormat: 'ID',
   windowId: ADMIN,
   cashierId: adminId,
   username: 'admin',

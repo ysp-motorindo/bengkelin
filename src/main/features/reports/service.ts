@@ -1,3 +1,4 @@
+import { resolveNumberLocale } from '@/shared/number-format';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { appendAudit } from '@/main/database/audit';
@@ -33,6 +34,7 @@ export interface ReportServiceDeps {
   printing: PrintingService;
   dialogs: FileDialogs;
   logger: Logger;
+  systemNumberLocale?: string;
 }
 
 /** One report plus everything its presentations need, read together. */
@@ -41,6 +43,7 @@ interface ReportSnapshot {
   language: Language;
   labels: ReportLabels;
   shopName: string;
+  numberLocale: string;
 }
 
 /**
@@ -61,7 +64,7 @@ export class ReportService {
 
   daily(session: Session | undefined, input: DailyReportData): DailyReport {
     requireSession(session);
-    return this.snapshot(input).report;
+    return this.snapshot(input, session).report;
   }
 
   preview(
@@ -70,7 +73,7 @@ export class ReportService {
   ): ReportPreviewDto {
     requireSession(session);
     return {
-      html: this.render(this.snapshot(input)),
+      html: this.render(this.snapshot(input, session)),
       pageInfo: REPORT_PAGE_INFO,
     };
   }
@@ -81,7 +84,7 @@ export class ReportService {
     input: DailyReportData,
   ): Promise<ReportOutcomeDto> {
     const actor = requireSession(session);
-    const snapshot = this.snapshot(input);
+    const snapshot = this.snapshot(input, session);
     const outcome = await this.deps.printing.sendDocument(
       this.render(snapshot),
       'A4',
@@ -98,7 +101,7 @@ export class ReportService {
     input: DailyReportData,
   ): Promise<ReportOutcomeDto> {
     const actor = requireSession(session);
-    const snapshot = this.snapshot(input);
+    const snapshot = this.snapshot(input, session);
     const text = dailyReportCsv(snapshot.report, snapshot.labels);
     const target = await this.deps.dialogs.chooseCsvDestination(
       snapshot.labels.fileName(snapshot.report.date),
@@ -124,7 +127,7 @@ export class ReportService {
    * snapshot): the shop timezone decides the day's instants, so a timezone
    * change applies to every later query.
    */
-  private snapshot(input: DailyReportData): ReportSnapshot {
+  private snapshot(input: DailyReportData, session?: Session): ReportSnapshot {
     const generatedAt = this.deps.clock.now();
     return this.deps.db.transaction((): ReportSnapshot => {
       const shop = this.settings.getShop();
@@ -172,6 +175,10 @@ export class ReportService {
         language,
         labels: REPORT_LABELS[language],
         shopName: shop.name,
+        numberLocale: resolveNumberLocale(
+          session?.numberFormat,
+          this.deps.systemNumberLocale,
+        ),
       };
     })();
   }
@@ -186,6 +193,7 @@ export class ReportService {
       language: snapshot.language,
       labels: snapshot.labels,
       shopName: snapshot.shopName,
+      numberLocale: snapshot.numberLocale,
     });
   }
 

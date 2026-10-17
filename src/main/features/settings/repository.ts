@@ -40,7 +40,7 @@ export interface SeedRow {
 export class SettingsRepository {
   constructor(private readonly db: AppDatabase) {}
 
-  getPublic(): PublicSettings {
+  getPublic(): Omit<PublicSettings, 'systemNumberLocale'> {
     const row = this.db
       .prepare(
         'SELECT shop_name, language, appearance, setup_completed_at FROM settings WHERE id = 1',

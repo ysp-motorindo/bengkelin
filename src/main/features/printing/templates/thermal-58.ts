@@ -47,16 +47,16 @@ const CSS = `${thermalCss(58, THERMAL_58_PRINTABLE_MM)}
 function item(line: PrintLine, labels: PrintLabels): SafeHtml {
   const n = line.position;
   const hasStages = line.discounts.length > 0;
-  const amount = money(`line-${n}-amount`, line.amount);
+  const amount = money(`line-${n}-amount`, line.amount, labels.locale);
   return html`<div class="item">
 <div class="item-title">${n}. ${line.title}</div>
 ${line.mechanicName ? html`<div class="sub">${labels.mechanic}: ${line.mechanicName}</div>` : ''}
-<div class="r"><span class="l">${quantity(line, labels)} × ${money(`line-${n}-unitPrice`, line.unitPrice)}</span>${
+<div class="r"><span class="l">${quantity(line, labels)} × ${money(`line-${n}-unitPrice`, line.unitPrice, labels.locale)}</span>${
     hasStages ? '' : html`<span class="v">${amount}</span>`
   }</div>
 ${line.discounts.map(
   (stage) =>
-    html`<div class="r stage"><span class="l">${stageLabel(stage, labels)}</span><span class="v">${deduction(`line-${n}-stage-${stage.sequence}`, stage.amount)}</span></div>`,
+    html`<div class="r stage"><span class="l">${stageLabel(stage, labels)}</span><span class="v">${deduction(`line-${n}-stage-${stage.sequence}`, stage.amount, labels.locale)}</span></div>`,
 )}
 ${hasStages ? html`<div class="r"><span class="l"></span><span class="v strong">${amount}</span></div>` : ''}
 </div>`;
@@ -66,7 +66,7 @@ export function renderThermal58(
   model: InvoicePrintModel,
   options: TemplateOptions,
 ): string {
-  const labels = labelsFor(model);
+  const labels = labelsFor(model, options);
   const marking = voidMarking(model, labels);
   const body = html`<div class="sheet receipt layout-58">
 ${marking.watermark}

@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { FileUp, Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +18,7 @@ export function CustomerImportDialog({
   onClose(): void;
   onImported(): void;
 }) {
+  const { numberOptions, formatNumber } = useNumberFormat();
   const { t } = useTranslation();
   const { busy, error, run, check } = useAction();
   const [preview, setPreview] = useState<CustomerImportReadyDto | null>(null);
@@ -91,20 +93,27 @@ export function CustomerImportDialog({
         >
           <p>
             {preview.fileName} ·{' '}
-            {t('customers.import.total', { count: preview.totalRows })}
+            {t('customers.import.total', {
+              ...numberOptions,
+              count: preview.totalRows,
+            })}
           </p>
           <dl className="flex flex-wrap gap-6">
             {(['creates', 'updates', 'unchanged'] as const).map((key) => (
               <div key={key}>
                 <dt>{t(`catalogTransfer.preview.${key}`)}</dt>
-                <dd>{preview.summary[key]}</dd>
+                <dd>{formatNumber(preview.summary[key])}</dd>
               </div>
             ))}
           </dl>
           <p>
-            {t('catalogTransfer.preview.errors', { count: preview.errorCount })}{' '}
+            {t('catalogTransfer.preview.errors', {
+              ...numberOptions,
+              count: preview.errorCount,
+            })}{' '}
             ·{' '}
             {t('catalogTransfer.preview.warnings', {
+              ...numberOptions,
               count: preview.warningCount,
             })}
           </p>
@@ -162,6 +171,7 @@ export function CustomerImportDialog({
         <div role="status" data-testid="customer-import-result">
           <p>
             {t('customers.import.done', {
+              ...numberOptions,
               count: summary.creates + summary.updates,
             })}
           </p>

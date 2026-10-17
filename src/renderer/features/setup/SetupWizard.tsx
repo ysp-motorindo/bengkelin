@@ -1,3 +1,5 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
+import { NumberFormatPicker } from '@/renderer/components/ui/number-format-picker';
 import {
   Check,
   ChevronLeft,
@@ -29,6 +31,7 @@ import {
   shopSettingsInputSchema,
   type Appearance,
   type Language,
+  type NumberFormat,
   type PublicSettings,
   type SetupInput,
 } from '@/shared/contracts';
@@ -49,6 +52,7 @@ interface Draft {
   confirmPassword: string;
   language: Language;
   appearance: Appearance;
+  numberFormat: NumberFormat;
   timezone: string;
   thermalPrinterName: string;
   a4PrinterName: string;
@@ -58,8 +62,13 @@ interface Draft {
 interface SetupWizardProps {
   language: Language;
   appearance: Appearance;
+  systemNumberLocale: string;
   /** Live preview: language/appearance apply immediately as they are chosen. */
-  onPreview(preferences: { language: Language; appearance: Appearance }): void;
+  onPreview(preferences: {
+    language: Language;
+    appearance: Appearance;
+    numberFormat: NumberFormat;
+  }): void;
   onCompleted(settings: PublicSettings): void;
 }
 
@@ -92,9 +101,11 @@ function stepOfField(field: string): Step {
 export function SetupWizard({
   language,
   appearance,
+  systemNumberLocale,
   onPreview,
   onCompleted,
 }: SetupWizardProps) {
+  const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   const [step, setStep] = useState<Step>('shop');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -112,6 +123,7 @@ export function SetupWizard({
     confirmPassword: '',
     language,
     appearance,
+    numberFormat: 'ID',
     timezone: 'Asia/Jakarta',
     thermalPrinterName: '',
     a4PrinterName: '',
@@ -140,7 +152,11 @@ export function SetupWizard({
         displayName: draft.displayName,
         password: draft.password,
       },
-      preferences: { language: draft.language, appearance: draft.appearance },
+      preferences: {
+        language: draft.language,
+        appearance: draft.appearance,
+        numberFormat: draft.numberFormat,
+      },
       // Skipped (or left blank) printer setup stores nothing.
       ...(printerConfigured
         ? {
@@ -249,6 +265,7 @@ export function SetupWizard({
               <span aria-hidden="true">/</span>
               <span>
                 {t('setup.progress', {
+                  ...numberOptions,
                   current: index + 1,
                   total: STEPS.length,
                 })}
@@ -257,6 +274,7 @@ export function SetupWizard({
             <ol
               className="flex gap-1"
               aria-label={t('setup.progress', {
+                ...numberOptions,
                 current: index + 1,
                 total: STEPS.length,
               })}
@@ -387,6 +405,18 @@ export function SetupWizard({
 
             {step === 'preferences' ? (
               <>
+                <NumberFormatPicker
+                  value={draft.numberFormat}
+                  systemLocale={systemNumberLocale}
+                  onChange={(format) => {
+                    set('numberFormat', format);
+                    onPreview({
+                      language: draft.language,
+                      appearance: draft.appearance,
+                      numberFormat: format,
+                    });
+                  }}
+                />
                 <FormField
                   label={t('setup.preferences.language')}
                   error={errors['preferences.language']}
@@ -400,6 +430,7 @@ export function SetupWizard({
                       onPreview({
                         language: next,
                         appearance: draft.appearance,
+                        numberFormat: draft.numberFormat,
                       });
                     }}
                   >
@@ -419,7 +450,11 @@ export function SetupWizard({
                     onChange={(e) => {
                       const next = e.target.value as Appearance;
                       set('appearance', next);
-                      onPreview({ language: draft.language, appearance: next });
+                      onPreview({
+                        language: draft.language,
+                        appearance: next,
+                        numberFormat: draft.numberFormat,
+                      });
                     }}
                   >
                     {APPEARANCES.map((code) => (
@@ -492,6 +527,12 @@ export function SetupWizard({
 
             {step === 'finish' ? (
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+                <dt className="text-muted-foreground">
+                  {t('shell.preferences.numberFormat')}
+                </dt>
+                <dd>
+                  {t(`shell.preferences.numberFormats.${draft.numberFormat}`)}
+                </dd>
                 <dt className="text-muted-foreground">
                   {t('setup.finish.summaryShop')}
                 </dt>

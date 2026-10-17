@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -9,7 +10,7 @@ import type {
   PriceTimelineDto,
   ReferenceDto,
 } from '@/shared/contracts';
-import { formatIdr, formatLocal } from './local-time';
+import { formatLocal } from './local-time';
 import { PriceDialog } from './PriceDialog';
 
 interface PricingPanelProps {
@@ -30,6 +31,7 @@ type DialogState = {
  * history with the correction reason.
  */
 export function PricingPanel({ catalogItemId, canEdit }: PricingPanelProps) {
+  const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const [timeline, setTimeline] = useState<PriceTimelineDto | null>(null);
   const [channels, setChannels] = useState<ReferenceDto[]>([]);

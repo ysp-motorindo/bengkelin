@@ -7,6 +7,7 @@ import { workspaceBridge } from './helpers/workspace-bridge';
 import type { PublicSettings } from '@/shared/contracts';
 
 const settings: PublicSettings = {
+  systemNumberLocale: 'id-ID',
   setupCompleted: true,
   language: 'id',
   appearance: 'SYSTEM',
@@ -14,6 +15,7 @@ const settings: PublicSettings = {
 };
 
 const cashier: CashierSession = {
+  numberFormat: 'ID',
   cashierId: '5b9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11',
   username: 'siti',
   displayName: 'Siti',
@@ -61,12 +63,19 @@ describe('shell', () => {
     expect(screen.getByTitle('United States')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('radio', { name: 'English' }));
     expect(changed).toHaveBeenCalledWith({
+      numberFormat: 'ID',
       language: 'en',
       appearance: 'SYSTEM',
     });
     expect(
       screen.getByRole('radio', { name: 'English' }).closest('label'),
     ).toHaveClass('w-full');
+    await userEvent.selectOptions(screen.getByLabelText('Format angka'), 'US');
+    expect(changed).toHaveBeenLastCalledWith({
+      language: 'id',
+      appearance: 'SYSTEM',
+      numberFormat: 'US',
+    });
   });
 
   test('failed preference saves keep prior values and show the error', async () => {
