@@ -162,13 +162,24 @@ export function CustomerVehicleDialog({
   return (
     <Dialog
       title={t('workspace.party.title')}
+      description={
+        <p className="-mt-3" data-testid="party-current">
+          {t('workspace.party.current')}:{' '}
+          <strong>
+            {view.customer
+              ? customerLabel(t, view.customer)
+              : t('workspace.header.anonymous')}
+          </strong>
+          {view.vehicle ? ` · ${view.vehicle.plateNumber}` : ''}
+        </p>
+      }
       onClose={onClose}
       initialFocus={searchRef}
       closeLabel={t('workspace.common.close')}
       className="max-w-3xl"
       scrollBody
       footer={
-        <div className="flex justify-between border-t border-border pt-3">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={walkIn}>
             {t('workspace.party.anonymous')}
           </Button>
@@ -177,15 +188,6 @@ export function CustomerVehicleDialog({
       }
     >
       <div className="shrink-0">{error ? <Alert>{error}</Alert> : null}</div>
-      <p className="text-sm" data-testid="party-current">
-        {t('workspace.party.current')}:{' '}
-        <strong>
-          {view.customer
-            ? customerLabel(t, view.customer)
-            : t('workspace.header.anonymous')}
-        </strong>
-        {view.vehicle ? ` · ${view.vehicle.plateNumber}` : ''}
-      </p>
 
       <div className="grid min-h-0 flex-1 grid-rows-2 gap-4 overflow-hidden md:grid-cols-2 md:grid-rows-1">
         <section
@@ -201,6 +203,7 @@ export function CustomerVehicleDialog({
             </Label>
             <Input
               id="party-customer-search"
+              className="mx-1"
               ref={searchRef}
               placeholder={t('workspace.party.customerSearch')}
               value={customerQuery}
@@ -271,6 +274,7 @@ export function CustomerVehicleDialog({
             </Label>
             <Input
               id="party-plate-search"
+              className="mx-1"
               placeholder={t('workspace.party.plateSearch')}
               value={plateQuery}
               onChange={(event) => setPlateQuery(event.target.value)}
