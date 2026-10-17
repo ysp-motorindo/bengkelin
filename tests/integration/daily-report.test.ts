@@ -110,7 +110,7 @@ beforeEach(async () => {
     await h.call<ReferenceDto[]>(C.references.list, { entity: 'channel' }),
   );
   bengkel = channels.find((c) => c.code === 'BENGKEL')!.id;
-  shopee = channels.find((c) => c.code === 'SHOPEE')!.id;
+  shopee = channels.find((c) => c.code === 'ONLINE')!.id;
 });
 afterEach(() => h.close());
 
@@ -391,7 +391,7 @@ describe('spec 59: sales and receipts are separate', () => {
         netBeforeVoids: '165000',
       },
       {
-        channel: { id: shopee, label: 'Shopee' },
+        channel: { id: shopee, label: 'Online' },
         invoiceCount: 1,
         netBeforeVoids: '80000',
       },
@@ -627,7 +627,7 @@ describe('filters', () => {
     const onlyShopee = await daily({ date: '2026-09-30', channelId: shopee });
     expect(onlyShopee.filters).toEqual({
       cashier: null,
-      channel: { id: shopee, label: 'Shopee' },
+      channel: { id: shopee, label: 'Online' },
     });
     expect(onlyShopee.sales.invoiceCount).toBe(2);
     expect(onlyShopee.sales.netBeforeVoids).toBe('75000');

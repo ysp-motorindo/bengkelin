@@ -161,14 +161,14 @@ describe('reference management', () => {
     const channels = value(
       await h.call<ReferenceDto[]>(C.references.list, { entity: 'channel' }),
     );
-    const shopee = channels.find((c) => c.code === 'SHOPEE')!;
+    const shopee = channels.find((c) => c.code === 'ONLINE')!;
     const edited = await ref({
       entity: 'channel',
       id: shopee.id,
-      code: 'SHOPEE',
-      label: 'Shopee Mall',
+      code: 'ONLINE',
+      label: 'Online Mall',
     });
-    expect(edited).toMatchObject({ code: 'SHOPEE', label: 'Shopee Mall' });
+    expect(edited).toMatchObject({ code: 'ONLINE', label: 'Online Mall' });
     const changed = await h.call(C.references.save, {
       entity: 'channel',
       id: shopee.id,

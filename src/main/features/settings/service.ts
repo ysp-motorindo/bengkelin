@@ -22,8 +22,8 @@ import { SettingsRepository, type SeedRow } from './repository';
 /** Seed data for first-run setup (spec 9, 13, 56). `code` is the stable key. */
 export const SEED_CHANNELS = [
   { code: 'BENGKEL', label: 'Bengkel' },
-  { code: 'SHOPEE', label: 'Shopee' },
-  { code: 'RESELLER', label: 'Reseller' },
+  { code: 'ONLINE', label: 'Online' },
+  { code: 'MARKETPLACE', label: 'Marketplace' },
 ] as const;
 export const SEED_UNITS = [
   { code: 'PCS', label: 'Pcs' },

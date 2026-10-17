@@ -99,7 +99,7 @@ beforeEach(async () => {
     await h.call<ReferenceDto[]>(C.references.list, { entity: 'channel' }),
   );
   bengkel = channels.find((c) => c.code === 'BENGKEL')!.id;
-  shopee = channels.find((c) => c.code === 'SHOPEE')!.id;
+  shopee = channels.find((c) => c.code === 'ONLINE')!.id;
   const units = value(
     await h.call<ReferenceDto[]>(C.references.list, { entity: 'unit' }),
   );
@@ -713,7 +713,7 @@ describe('import validation', () => {
     );
     const p = await preview(
       csv(
-        'sku,title,type,unit,price_shopee,current_stock',
+        'sku,title,type,unit,price_online,current_stock',
         'NEW-1,Baru,STOCK_ITEM,PCS,70000,99',
       ),
     );
@@ -722,7 +722,7 @@ describe('import validation', () => {
       'CURRENT_STOCK_IGNORED',
       'INACTIVE_CHANNEL',
     ]);
-    expect(issue(p.warnings, 'INACTIVE_CHANNEL')?.column).toBe('price_shopee');
+    expect(issue(p.warnings, 'INACTIVE_CHANNEL')?.column).toBe('price_online');
     value(await commit(p.token));
     const item = itemBySku('NEW-1')!;
     expect(resolve(item.id as string, toInstant(nowMs), shopee)?.price).toBe(
@@ -1123,8 +1123,8 @@ describe('export and template', () => {
       'barcode',
       'barcode_2',
       'price_bengkel',
-      'price_shopee',
-      'price_reseller',
+      'price_online',
+      'price_marketplace',
       'opening_stock',
       'current_stock',
       'is_active',
@@ -1273,8 +1273,8 @@ describe('export and template', () => {
       'barcode',
       'barcode_2',
       'price_bengkel',
-      'price_shopee',
-      'price_reseller',
+      'price_online',
+      'price_marketplace',
       'opening_stock',
       'is_active',
       'description',

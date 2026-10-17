@@ -73,7 +73,7 @@ describe('first-run setup', () => {
 
     expect(
       rows('SELECT code, label FROM channels ORDER BY code').map((r) => r.code),
-    ).toEqual(['BENGKEL', 'RESELLER', 'SHOPEE']);
+    ).toEqual(['BENGKEL', 'MARKETPLACE', 'ONLINE']);
     expect(
       rows('SELECT code FROM units ORDER BY code').map((r) => r.code),
     ).toEqual(['BOTTLE', 'BOX', 'PAIR', 'PCS', 'SERVICE', 'SET']);

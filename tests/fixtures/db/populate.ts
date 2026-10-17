@@ -167,7 +167,7 @@ export async function populateWorkshop(
   const channels = await list('channel');
   const units = await list('unit');
   const bengkel = channels.find((c) => c.code === 'BENGKEL')!.id;
-  const shopee = channels.find((c) => c.code === 'SHOPEE')!.id;
+  const shopee = channels.find((c) => c.code === 'ONLINE')!.id;
   const pcs = units.find((u) => u.code === 'PCS')!.id;
   const serviceUnit = units.find((u) => u.code === 'SERVICE')!.id;
 

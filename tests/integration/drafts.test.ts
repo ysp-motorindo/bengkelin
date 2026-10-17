@@ -96,7 +96,7 @@ beforeEach(async () => {
     await h.call<ReferenceDto[]>(C.references.list, { entity: 'channel' }),
   );
   bengkel = channels.find((c) => c.code === 'BENGKEL')!.id;
-  shopee = channels.find((c) => c.code === 'SHOPEE')!.id;
+  shopee = channels.find((c) => c.code === 'ONLINE')!.id;
   const units = value(
     await h.call<ReferenceDto[]>(C.references.list, { entity: 'unit' }),
   );

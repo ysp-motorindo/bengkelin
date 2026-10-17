@@ -248,9 +248,9 @@ test('reference management is ADMIN-only in the UI and in main', async () => {
   await expect(
     page.getByRole('tab', { name: t('references.entities.channel') }),
   ).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('row', { name: /SHOPEE/ })).toBeVisible();
+  await expect(page.getByRole('row', { name: /ONLINE/ })).toBeVisible();
   await page
-    .getByRole('button', { name: `${t('references.actions.edit')}: Shopee` })
+    .getByRole('button', { name: `${t('references.actions.edit')}: Online` })
     .click();
   await expect(
     page.getByLabel(t('references.fields.code'), exact),
