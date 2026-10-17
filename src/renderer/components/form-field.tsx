@@ -35,7 +35,7 @@ export function FormField({ label, error, hint, children }: FormFieldProps) {
         <p
           id={messageId}
           className={
-            error ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'
+            error ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'
           }
         >
           {message}
