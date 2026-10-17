@@ -159,164 +159,180 @@ export function DraftHeader({
   return (
     <section
       aria-label={t('workspace.header.label')}
-      className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-lg border border-border bg-card p-3 sm:grid-cols-3 xl:grid-cols-6"
+      className="flex flex-col gap-4 rounded-lg border border-border bg-card p-3"
     >
-      <FormField label={t('workspace.header.channel')}>
-        <Select
-          value={view.channelId}
-          onChange={(event) =>
-            void apply({
-              kind: 'updateHeader',
-              changes: { channelId: event.target.value },
-            })
-          }
-        >
-          {channelMissing ? (
-            <option value={view.channelId}>{view.channelLabel}</option>
-          ) : null}
-          {channels.map((channel) => (
-            <option key={channel.id} value={channel.id}>
-              {channel.label}
-            </option>
-          ))}
-        </Select>
-      </FormField>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="flex max-w-144 flex-col gap-4 xl:flex-row xl:gap-3">
+            <div className="w-full">
+              <FormField label={t('workspace.header.channel')}>
+                <Select
+                  value={view.channelId}
+                  onChange={(event) =>
+                    void apply({
+                      kind: 'updateHeader',
+                      changes: { channelId: event.target.value },
+                    })
+                  }
+                >
+                  {channelMissing ? (
+                    <option value={view.channelId}>{view.channelLabel}</option>
+                  ) : null}
+                  {channels.map((channel) => (
+                    <option key={channel.id} value={channel.id}>
+                      {channel.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+            </div>
 
-      <FormField label={t('workspace.header.invoiceDate')}>
-        <Input
-          type="date"
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
-          onBlur={commitDate}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              commitDate();
-            }
-          }}
-        />
-      </FormField>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="header-pricing-at">
-          {t('workspace.header.pricingAt')}
-        </Label>
-        <div className="relative">
-          <Input
-            id="header-pricing-at"
-            className="tabular"
-            data-testid="header-pricing-at"
-            readOnly
-            value={formatLocal(view.pricingAt, timezone).replace(
-              /^(\d{4})-(\d{2})-(\d{2})/,
-              '$3/$2/$1',
-            )}
-            title={t('workspace.header.timezoneTooltip', { zone: timezone })}
-          />
-          <Button
-            variant="ghost"
-            className="absolute right-0 top-0 size-10 bg-transparent px-0 hover:bg-transparent active:bg-transparent"
-            aria-label={t('workspace.header.changePricingAt')}
-            title={t('workspace.header.changePricingAt')}
-            onClick={() => setPending({ kind: 'pricing' })}
-          >
-            <CalendarClock aria-hidden="true" />
-          </Button>
+            <div className="w-full">
+              <FormField label={t('workspace.header.invoiceDate')}>
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                  onBlur={commitDate}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      commitDate();
+                    }
+                  }}
+                />
+              </FormField>
+            </div>
+          </div>
+          <div className="flex w-full max-w-144 flex-col gap-1.5">
+            <Label htmlFor="header-customer-vehicle">
+              {t('workspace.header.customerVehicle')}
+            </Label>
+            <div className="relative">
+              <Input
+                id="header-customer-vehicle"
+                className="pr-12"
+                readOnly
+                value={`${customer} · ${vehicle}`}
+                title={`${customer} · ${vehicle}`}
+              />
+              <span
+                data-testid="header-customer"
+                className="sr-only"
+                aria-hidden="true"
+              >
+                {customer}
+              </span>
+              <span
+                data-testid="header-vehicle"
+                className="sr-only"
+                aria-hidden="true"
+              >
+                {vehicle}
+              </span>
+              <Button
+                variant="ghost"
+                className="absolute right-0 top-0 size-10 bg-transparent px-0 hover:bg-transparent active:bg-transparent"
+                aria-label={t('workspace.header.chooseParty')}
+                title={t('workspace.header.chooseParty')}
+                onClick={() => setPending({ kind: 'party' })}
+              >
+                <UserRound aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+        <div className="flex min-w-0 flex-col gap-4 max-w-72 sm:flex-none">
+          <div className="flex w-full flex-col gap-1.5">
+            <Label htmlFor="header-pricing-at">
+              {t('workspace.header.pricingAt')}
+            </Label>
+            <div className="relative">
+              <Input
+                id="header-pricing-at"
+                className="tabular"
+                data-testid="header-pricing-at"
+                readOnly
+                value={formatLocal(view.pricingAt, timezone).replace(
+                  /^(\d{4})-(\d{2})-(\d{2})/,
+                  '$3/$2/$1',
+                )}
+                title={t('workspace.header.timezoneTooltip', {
+                  zone: timezone,
+                })}
+              />
+              <Button
+                variant="ghost"
+                className="absolute right-0 top-0 size-10 bg-transparent px-0 hover:bg-transparent active:bg-transparent"
+                aria-label={t('workspace.header.changePricingAt')}
+                title={t('workspace.header.changePricingAt')}
+                onClick={() => setPending({ kind: 'pricing' })}
+              >
+                <CalendarClock aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
 
-      <div className="col-span-2 flex justify-end gap-3 sm:col-start-2 xl:col-start-5">
-        <FormField
-          label={t('workspace.header.topDays')}
-          error={fieldErrors.topDays}
-          hint={t('workspace.header.dueDate', {
-            date: formatDueDate(view.dueDate, i18n.language),
-          })}
-        >
-          <Input
-            inputMode="numeric"
-            autoComplete="off"
-            className="tabular text-right"
-            value={topDays}
-            onChange={(event) => {
-              setTopDays(event.target.value);
-              textField(
-                'topDays',
-                event.target.value,
-                MAX_TOP_DAYS,
-                (days) => ({
-                  kind: 'updateHeader',
-                  changes: { topDays: days },
-                }),
-              );
-            }}
-          />
-        </FormField>
+          <div className="flex gap-3">
+            <div className="min-w-0 w-full">
+              <FormField
+                label={t('workspace.header.topDays')}
+                error={fieldErrors.topDays}
+                hint={t('workspace.header.dueDate', {
+                  date: formatDueDate(view.dueDate, i18n.language),
+                })}
+              >
+                <Input
+                  inputMode="numeric"
+                  autoComplete="off"
+                  className="tabular text-right"
+                  value={topDays}
+                  onChange={(event) => {
+                    setTopDays(event.target.value);
+                    textField(
+                      'topDays',
+                      event.target.value,
+                      MAX_TOP_DAYS,
+                      (days) => ({
+                        kind: 'updateHeader',
+                        changes: { topDays: days },
+                      }),
+                    );
+                  }}
+                />
+              </FormField>
+            </div>
 
-        <FormField
-          label={t('workspace.header.odometer')}
-          error={fieldErrors.odometer}
-        >
-          <Input
-            inputMode="numeric"
-            autoComplete="off"
-            className="tabular text-right"
-            value={odometer}
-            onChange={(event) => {
-              setOdometer(event.target.value);
-              textField(
-                'odometer',
-                event.target.value,
-                100_000_000,
-                (km) => ({
-                  kind: 'updateHeader',
-                  changes: { odometerKm: km },
-                }),
-                { kind: 'updateHeader', changes: { odometerKm: null } },
-              );
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') event.preventDefault();
-            }}
-          />
-        </FormField>
-      </div>
-
-      <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-3 xl:col-span-3">
-        <Label htmlFor="header-customer-vehicle">
-          {t('workspace.header.customerVehicle')}
-        </Label>
-        <div className="relative">
-          <Input
-            id="header-customer-vehicle"
-            className="pr-12"
-            readOnly
-            value={`${customer} · ${vehicle}`}
-            title={`${customer} · ${vehicle}`}
-          />
-          <span
-            data-testid="header-customer"
-            className="sr-only"
-            aria-hidden="true"
-          >
-            {customer}
-          </span>
-          <span
-            data-testid="header-vehicle"
-            className="sr-only"
-            aria-hidden="true"
-          >
-            {vehicle}
-          </span>
-          <Button
-            variant="ghost"
-            className="absolute right-0 top-0 size-10 bg-transparent px-0 hover:bg-transparent active:bg-transparent"
-            aria-label={t('workspace.header.chooseParty')}
-            title={t('workspace.header.chooseParty')}
-            onClick={() => setPending({ kind: 'party' })}
-          >
-            <UserRound aria-hidden="true" />
-          </Button>
+            <div className="min-w-0 w-full">
+              <FormField
+                label={t('workspace.header.odometer')}
+                error={fieldErrors.odometer}
+              >
+                <Input
+                  inputMode="numeric"
+                  autoComplete="off"
+                  className="tabular text-right"
+                  value={odometer}
+                  onChange={(event) => {
+                    setOdometer(event.target.value);
+                    textField(
+                      'odometer',
+                      event.target.value,
+                      100_000_000,
+                      (km) => ({
+                        kind: 'updateHeader',
+                        changes: { odometerKm: km },
+                      }),
+                      { kind: 'updateHeader', changes: { odometerKm: null } },
+                    );
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') event.preventDefault();
+                  }}
+                />
+              </FormField>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -324,7 +340,7 @@ export function DraftHeader({
         <div
           role="alert"
           data-testid="owner-mismatch"
-          className="col-span-full flex flex-wrap items-center gap-2 rounded-md border border-warning/50 bg-warning-surface px-3 py-2 text-sm text-warning"
+          className="flex flex-wrap items-center gap-2 rounded-md border border-warning/50 bg-warning-surface px-3 py-2 text-sm text-warning"
         >
           <TriangleAlert aria-hidden="true" className="size-4" />
           <span className="text-foreground">
