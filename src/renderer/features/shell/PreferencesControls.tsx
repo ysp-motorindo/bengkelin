@@ -1,11 +1,12 @@
-import { NumberFormatPicker } from '@/renderer/components/ui/number-format-picker';
 import { ChevronDown } from 'lucide-react';
 import { ID, US } from 'country-flag-icons/react/3x2';
 import { useTranslation } from 'react-i18next';
 import { useAction } from '@/renderer/lib/use-action';
+import { formatNumericText, resolveNumberLocale } from '@/shared/number-format';
 import {
   APPEARANCES,
   LANGUAGES,
+  NUMBER_FORMATS,
   type Appearance,
   type Language,
   type PreferencesInput,
@@ -121,16 +122,46 @@ export function PreferencesControls({
           ))}
         </div>
       </details>
-      <div className="px-2 py-2">
-        <NumberFormatPicker
-          value={preferences.numberFormat ?? 'ID'}
-          systemLocale={systemNumberLocale ?? 'id-ID'}
-          disabled={busy}
-          onChange={(format) =>
-            save(preferences.language, preferences.appearance, format)
-          }
-        />
-      </div>
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center justify-between rounded px-2 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {t('shell.preferences.numberFormat')}
+          <ChevronDown
+            aria-hidden="true"
+            className="size-4 transition-transform group-open:rotate-180"
+          />
+        </summary>
+        <div
+          role="radiogroup"
+          aria-label={t('shell.preferences.numberFormat')}
+          className="space-y-1"
+        >
+          {NUMBER_FORMATS.map((format) => (
+            <label
+              key={format}
+              className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-muted focus-within:ring-2 focus-within:ring-ring has-[:disabled]:opacity-50"
+            >
+              <input
+                type="radio"
+                name="numberFormat"
+                value={format}
+                checked={(preferences.numberFormat ?? 'ID') === format}
+                disabled={busy}
+                onChange={() =>
+                  save(preferences.language, preferences.appearance, format)
+                }
+                className="size-4 accent-primary"
+              />
+              <span>
+                {t(`shell.preferences.numberFormats.${format}`)} —{' '}
+                {formatNumericText(
+                  '1234567.89',
+                  resolveNumberLocale(format, systemNumberLocale ?? 'id-ID'),
+                )}
+              </span>
+            </label>
+          ))}
+        </div>
+      </details>
       {error ? (
         <span role="alert" className="block px-2 py-1 text-destructive">
           {error}

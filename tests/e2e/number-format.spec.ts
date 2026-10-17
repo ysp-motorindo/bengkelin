@@ -22,7 +22,10 @@ test('numeric formatting follows the cashier preference and preserves values', a
     await page.mouse.wheel(0, 150);
     await expect(odometer).toHaveValue('12.345');
     await page.getByTestId('session-name').click();
-    await page.getByLabel('Format angka', { exact: true }).selectOption('US');
+    await page.locator('summary', { hasText: 'Format angka' }).click();
+    await page
+      .getByRole('radio', { name: 'Amerika Serikat — 1,234,567.89' })
+      .check();
     await expect(odometer).toHaveValue('12,345');
     await odometer.fill('1234567');
     await expect(odometer).toHaveValue('1,234,567');

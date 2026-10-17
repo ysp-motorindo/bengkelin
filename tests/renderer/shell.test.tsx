@@ -70,7 +70,12 @@ describe('shell', () => {
     expect(
       screen.getByRole('radio', { name: 'English' }).closest('label'),
     ).toHaveClass('w-full');
-    await userEvent.selectOptions(screen.getByLabelText('Format angka'), 'US');
+    await userEvent.click(
+      screen.getByText('Format angka', { selector: 'summary' }),
+    );
+    await userEvent.click(
+      screen.getByRole('radio', { name: 'Amerika Serikat — 1,234,567.89' }),
+    );
     expect(changed).toHaveBeenLastCalledWith({
       language: 'id',
       appearance: 'SYSTEM',
