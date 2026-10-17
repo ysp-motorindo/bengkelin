@@ -53,6 +53,7 @@ export function ReportPreviewDialog({
       title={t('reports.preview.title')}
       onClose={onClose}
       closeLabel={t('reports.preview.close')}
+      scrollBody
       footer={
         <div className="flex justify-between">
           <Button variant="outline" onClick={onClose}>
@@ -73,7 +74,7 @@ export function ReportPreviewDialog({
       ) : null}
       {error ? <Alert>{error}</Alert> : null}
       {preview ? (
-        <div className="max-h-[70vh] overflow-auto rounded-md border border-border">
+        <div className="min-h-0 flex-1 overflow-auto rounded-md border border-border">
           <ShadowDocument
             html={preview.html}
             label={t('reports.preview.documentLabel')}
