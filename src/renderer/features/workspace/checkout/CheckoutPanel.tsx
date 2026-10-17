@@ -163,34 +163,36 @@ export function CheckoutPanel({
       aria-label={t('workspace.checkout.label')}
       className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3"
     >
-      <dl className="tabular grid grid-cols-[1fr_auto] gap-y-1 text-sm">
+      <dl className="tabular grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
         <dt className="text-muted-foreground">
           {t('workspace.checkout.subtotal')}
         </dt>
-        <dd className="pl-3 text-right" data-testid="subtotal-amount">
+        <dd className="text-right" data-testid="subtotal-amount">
           {formatIdr(totals.subtotal)}
         </dd>
         <dt className="text-muted-foreground">
           {t('workspace.checkout.itemDiscounts')}
         </dt>
-        <dd className="pl-3 text-right" data-testid="item-discount-amount">
+        <dd className="text-right" data-testid="item-discount-amount">
           {formatIdr(totals.itemDiscountAmount)}
         </dd>
         <dt className="text-muted-foreground">
           {t('workspace.checkout.invoiceDiscounts')}
         </dt>
-        <dd className="pl-3 text-right" data-testid="invoice-discount-amount">
+        <dd className="text-right" data-testid="invoice-discount-amount">
           {formatIdr(totals.invoiceDiscountAmount)}
         </dd>
-        <dt className="self-end border-t border-border pt-2 text-base font-semibold">
-          {t('workspace.checkout.total')}
-        </dt>
-        <dd
-          className="border-t border-border pt-2 text-right text-2xl font-semibold"
-          data-testid="total-amount"
-        >
-          {formatIdr(totals.amount)}
-        </dd>
+        <div className="col-span-2 grid grid-cols-[1fr_auto] gap-x-3 border-t border-border pt-2">
+          <dt className="self-end text-base font-semibold">
+            {t('workspace.checkout.total')}
+          </dt>
+          <dd
+            className="text-right text-2xl font-semibold"
+            data-testid="total-amount"
+          >
+            {formatIdr(totals.amount)}
+          </dd>
+        </div>
       </dl>
 
       <fieldset className="grid grid-cols-2 gap-2">
