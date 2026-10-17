@@ -73,7 +73,8 @@ export function DraftSwitcher({
       title={t('workspace.drafts.title')}
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
-      className="max-w-4xl"
+      className="max-h-[70vh] max-w-4xl"
+      scrollBody
       footer={
         <div className="flex justify-start border-t border-border pt-3">
           <Button variant="outline" onClick={onClose}>
@@ -89,7 +90,7 @@ export function DraftSwitcher({
           {t('common.loading')}
         </p>
       ) : (
-        <div className="relative overflow-x-auto">
+        <div className="relative min-h-0 flex-1 overflow-auto">
           <table className="w-full min-w-[36rem] text-sm">
             <caption className="sr-only">{t('workspace.drafts.title')}</caption>
             <thead className="text-left text-xs text-muted-foreground">
