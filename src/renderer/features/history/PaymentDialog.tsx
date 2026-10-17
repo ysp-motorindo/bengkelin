@@ -6,6 +6,7 @@ import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
+import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
 import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
 import { useAction } from '@/renderer/lib/use-action';
@@ -130,11 +131,10 @@ export function PaymentDialog({
           label={t('history.payment.amount')}
           error={amountError ?? action.fieldErrors.amount}
         >
-          <Input
-            type="number"
+          <NumericInput
             autoComplete="off"
             value={amountText}
-            onChange={(event) => setAmountText(event.target.value)}
+            onValueChange={setAmountText}
           />
         </FormField>
         <FormField

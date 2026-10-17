@@ -6,6 +6,7 @@ import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
+import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
 import { errorMessage } from '@/renderer/lib/errors';
 import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
@@ -179,14 +180,13 @@ export function ItemEditorDialog({
             label={t('workspace.editor.quantity')}
             error={errors.quantity}
           >
-            <Input
+            <NumericInput
               ref={quantityRef}
-              type="number"
               autoComplete="off"
               className="tabular"
               value={quantity}
               onFocus={(event) => event.target.select()}
-              onChange={(event) => setQuantity(event.target.value)}
+              onValueChange={setQuantity}
             />
           </FormField>
           {isCustom ? (
@@ -210,12 +210,11 @@ export function ItemEditorDialog({
                 : undefined
             }
           >
-            <Input
-              type="number"
+            <NumericInput
               autoComplete="off"
               className="tabular"
               value={unitPrice}
-              onChange={(event) => setUnitPrice(event.target.value)}
+              onValueChange={setUnitPrice}
             />
           </FormField>
           <FormField label={t('workspace.editor.reason')}>
@@ -243,16 +242,14 @@ export function ItemEditorDialog({
                   : undefined
               }
             >
-              <Input
-                type="number" step="any"
+              <NumericInput
+                decimal
                 autoComplete="off"
                 className="tabular"
                 value={value}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setDiscounts((current) =>
-                    current.map((text, i) =>
-                      i === index ? event.target.value : text,
-                    ),
+                    current.map((text, i) => (i === index ? value : text)),
                   )
                 }
               />

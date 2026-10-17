@@ -13,6 +13,7 @@ import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { Input, controlClass } from '@/renderer/components/ui/input';
+import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Label } from '@/renderer/components/ui/label';
 import { Select } from '@/renderer/components/ui/select';
 import { errorMessage } from '@/renderer/lib/errors';
@@ -316,24 +317,22 @@ export function CustomLineDialog({
             label={t('workspace.custom.price')}
             error={errors.unitPrice}
           >
-            <Input
-              type="number"
+            <NumericInput
               autoComplete="off"
               className="tabular"
               value={price}
-              onChange={(event) => setPrice(event.target.value)}
+              onValueChange={setPrice}
             />
           </FormField>
           <FormField
             label={t('workspace.custom.quantity')}
             error={errors.quantity}
           >
-            <Input
-              type="number"
+            <NumericInput
               autoComplete="off"
               className="tabular"
               value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
+              onValueChange={setQuantity}
             />
           </FormField>
           <FormField label={t('workspace.custom.unit')}>

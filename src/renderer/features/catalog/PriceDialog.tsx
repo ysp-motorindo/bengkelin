@@ -6,6 +6,7 @@ import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
+import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { useAction } from '@/renderer/lib/use-action';
 import type {
   AppliedPriceChangeDto,
@@ -236,11 +237,10 @@ export function PriceDialog({
             label={t('catalog.dialog.price')}
             error={fieldErrors.price}
           >
-            <Input
-              type="number"
+            <NumericInput
               autoComplete="off"
               value={price}
-              onChange={(event) => setPrice(event.target.value.trim())}
+              onValueChange={(value) => setPrice(value.trim())}
             />
           </FormField>
           {correcting ? (

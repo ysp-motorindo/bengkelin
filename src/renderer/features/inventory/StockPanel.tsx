@@ -10,6 +10,7 @@ import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
+import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { formatLocal } from '@/renderer/features/catalog/local-time';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
@@ -272,11 +273,11 @@ function ActionForm({
           fieldErrors.targetQuantity
         }
       >
-        <Input
-          type="number"
+        <NumericInput
+          negative={kind === 'adjust'}
           autoComplete="off"
           value={value}
-          onChange={(event) => edit(setValue)(event.target.value)}
+          onValueChange={(value) => edit(setValue)(value)}
         />
       </FormField>
       {kind === 'setStock' && parsed !== null ? (

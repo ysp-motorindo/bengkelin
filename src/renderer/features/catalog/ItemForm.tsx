@@ -4,6 +4,7 @@ import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
+import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
 import { useAction } from '@/renderer/lib/use-action';
 import {
@@ -157,11 +158,10 @@ export function ItemForm({ item, onSaved, onCancel }: ItemFormProps) {
         </Select>
       </FormField>
       <FormField label={t('catalog.form.weight')} error={fieldErrors.weight}>
-        <Input
-          type="number"
+        <NumericInput
           autoComplete="off"
           value={weight}
-          onChange={(event) => setWeight(event.target.value)}
+          onValueChange={setWeight}
         />
       </FormField>
       <div className="flex flex-col gap-1">

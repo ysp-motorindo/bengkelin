@@ -6,6 +6,7 @@ import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
+import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { parseRupiahInput } from '@/renderer/lib/money';
 
 interface ManualPriceDialogProps {
@@ -85,13 +86,12 @@ export function ManualPriceDialog({
       >
         {error ? <Alert>{error}</Alert> : null}
         <FormField label={t('workspace.manualPrice.price')} error={fieldError}>
-          <Input
+          <NumericInput
             ref={priceRef}
-            type="number"
             autoComplete="off"
             className="tabular"
             value={price}
-            onChange={(event) => setPrice(event.target.value)}
+            onValueChange={setPrice}
           />
         </FormField>
         <FormField label={t('workspace.manualPrice.reason')}>

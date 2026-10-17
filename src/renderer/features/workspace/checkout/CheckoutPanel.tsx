@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
+import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
 import { errorMessage } from '@/renderer/lib/errors';
 import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
@@ -207,12 +208,12 @@ export function CheckoutPanel({
                 : undefined
             }
           >
-            <Input
-              type="number" step="any"
+            <NumericInput
+              decimal
               autoComplete="off"
               className="tabular h-9"
               value={value}
-              onChange={(event) => changeDiscount(index, event.target.value)}
+              onValueChange={(value) => changeDiscount(index, value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   event.preventDefault();
@@ -275,17 +276,16 @@ export function CheckoutPanel({
                 </option>
               ))}
             </Select>
-            <Input
+            <NumericInput
               aria-label={`${t('workspace.checkout.amount')} ${index + 1}`}
               aria-invalid={rowErrors[index] ? true : undefined}
-              type="number"
               autoComplete="off"
               className="tabular h-9"
               value={row.amount}
-              onChange={(event) =>
+              onValueChange={(value) =>
                 changeRows(
                   rows.map((r, i) =>
-                    i === index ? { ...r, amount: event.target.value } : r,
+                    i === index ? { ...r, amount: value } : r,
                   ),
                 )
               }
@@ -370,12 +370,11 @@ export function CheckoutPanel({
         className="grid grid-cols-2 items-end gap-2"
       >
         <FormField label={t('workspace.checkout.tendered')}>
-          <Input
-            type="number"
+          <NumericInput
             autoComplete="off"
             className="tabular h-9"
             value={tendered}
-            onChange={(event) => setTendered(event.target.value)}
+            onValueChange={setTendered}
           />
         </FormField>
         <div className="flex flex-col gap-1.5 pb-2 text-right">

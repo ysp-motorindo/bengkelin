@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
+import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Label } from '@/renderer/components/ui/label';
 import { Select } from '@/renderer/components/ui/select';
 import { customerLabel } from '@/renderer/features/customers/labels';
@@ -282,22 +283,16 @@ export function DraftHeader({
                   date: formatDueDate(view.dueDate, i18n.language),
                 })}
               >
-                <Input
-                  type="number"
+                <NumericInput
                   autoComplete="off"
                   className="tabular text-right"
                   value={topDays}
-                  onChange={(event) => {
-                    setTopDays(event.target.value);
-                    textField(
-                      'topDays',
-                      event.target.value,
-                      MAX_TOP_DAYS,
-                      (days) => ({
-                        kind: 'updateHeader',
-                        changes: { topDays: days },
-                      }),
-                    );
+                  onValueChange={(value) => {
+                    setTopDays(value);
+                    textField('topDays', value, MAX_TOP_DAYS, (days) => ({
+                      kind: 'updateHeader',
+                      changes: { topDays: days },
+                    }));
                   }}
                 />
               </FormField>
@@ -308,16 +303,15 @@ export function DraftHeader({
                 label={t('workspace.header.odometer')}
                 error={fieldErrors.odometer}
               >
-                <Input
-                  type="number"
+                <NumericInput
                   autoComplete="off"
                   className="tabular text-right"
                   value={odometer}
-                  onChange={(event) => {
-                    setOdometer(event.target.value);
+                  onValueChange={(value) => {
+                    setOdometer(value);
                     textField(
                       'odometer',
-                      event.target.value,
+                      value,
                       100_000_000,
                       (km) => ({
                         kind: 'updateHeader',
