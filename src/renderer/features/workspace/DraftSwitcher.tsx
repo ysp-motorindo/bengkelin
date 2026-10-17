@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { PencilLine, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
@@ -110,6 +111,8 @@ export function DraftSwitcher({
             <tbody>
               {drafts.map((draft) => {
                 const current = draft.id === currentId;
+                const customer =
+                  draft.customerLabel ?? t('workspace.header.anonymous');
                 return (
                   <tr
                     key={draft.id}
@@ -147,22 +150,26 @@ export function DraftSwitcher({
                       {formatLocal(draft.updatedAt, timezone).slice(0, 16)}
                     </td>
                     <td className="whitespace-nowrap py-1 text-right">
-                      <Button
-                        size="sm"
-                        variant={current ? 'ghost' : 'outline'}
+                      <button
+                        type="button"
+                        aria-label={`${t('workspace.drafts.resume')}: ${customer}`}
+                        title={t('workspace.drafts.resume')}
                         disabled={busy || current}
                         onClick={() => void onResume(draft.id)}
+                        className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                       >
-                        {t('workspace.drafts.resume')}
-                      </Button>{' '}
-                      <Button
-                        size="sm"
-                        variant="ghost"
+                        <PencilLine aria-hidden="true" className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`${t('workspace.drafts.discard')}: ${customer}`}
+                        title={t('workspace.drafts.discard')}
                         disabled={busy}
                         onClick={() => setConfirming(draft)}
+                        className="inline-flex size-9 items-center justify-center rounded-md text-destructive hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                       >
-                        {t('workspace.drafts.discard')}
-                      </Button>
+                        <Trash2 aria-hidden="true" className="size-4" />
+                      </button>
                     </td>
                   </tr>
                 );
