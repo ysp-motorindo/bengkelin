@@ -98,7 +98,7 @@
     "timezoneTooltip": "Time zone in use: {{zone}}",
     "changePricingAt": "Change pricing time",
     "topDays": "TOP (days)",
-    "dueDate": "Due {{date}}",
+    "dueDate": "Due date",
     "odometer": "Odometer (km)",
     "customerVehicle": "Customer & vehicle",
     "anonymous": "Walk-in",

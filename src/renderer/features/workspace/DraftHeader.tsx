@@ -20,10 +20,12 @@ import type { Result } from '@/shared/primitives';
 import { CustomerVehicleDialog } from './CustomerVehicleDialog';
 import { OwnershipDialog } from './OwnershipDialog';
 import { PricingTimeDialog } from './PricingTimeDialog';
-import { formatDisplayDateTime } from '@/renderer/lib/date-format';
+import {
+  formatDisplayDate,
+  formatDisplayDateTime,
+} from '@/renderer/lib/date-format';
 import { todayInShop } from './shop-time';
 import { useSyncedValue } from './synced-field';
-import { formatDueDate } from './format-due-date';
 import type { DraftCommands } from './use-draft-commands';
 
 interface DraftHeaderProps {
@@ -61,7 +63,7 @@ export function DraftHeader({
   timezone,
   onError,
 }: DraftHeaderProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { view, send, edit, isDirty, markInvalid } = commands;
   const [pending, setPending] = useState<Pending>(null);
   const [date, setDate] = useState(view.invoiceDate);
@@ -205,44 +207,81 @@ export function DraftHeader({
               </FormField>
             </div>
           </div>
-          <div className="flex w-full max-w-144 flex-col gap-1.5">
-            <Label htmlFor="header-customer-vehicle">
-              {t('workspace.header.customerVehicle')}
-            </Label>
-            <div className="relative">
-              <Input
-                id="header-customer-vehicle"
-                className="pr-12"
-                readOnly
-                value={`${customer} · ${vehicle}`}
-                title={`${customer} · ${vehicle}`}
-              />
-              <span
-                data-testid="header-customer"
-                className="sr-only"
-                aria-hidden="true"
+
+          <div className="grid max-w-144 grid-cols-1 gap-4 xl:grid-cols-4 xl:gap-3">
+            <div className="w-full xl:col-span-3">
+              <div className="flex flex-col gap-1.5">
+                <div className="flex min-h-5 items-center">
+                  <Label htmlFor="header-customer-vehicle">
+                    {t('workspace.header.customerVehicle')}
+                  </Label>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="header-customer-vehicle"
+                    className="w-full pr-12"
+                    readOnly
+                    value={`${customer} · ${vehicle}`}
+                    title={`${customer} · ${vehicle}`}
+                  />
+                  <span
+                    data-testid="header-customer"
+                    className="sr-only"
+                    aria-hidden="true"
+                  >
+                    {customer}
+                  </span>
+                  <span
+                    data-testid="header-vehicle"
+                    className="sr-only"
+                    aria-hidden="true"
+                  >
+                    {vehicle}
+                  </span>
+                  <IconButton
+                    variant="input-action"
+                    size="default"
+                    className="absolute right-0 top-0"
+                    label={t('workspace.header.chooseParty')}
+                    onClick={() => setPending({ kind: 'party' })}
+                  >
+                    <UserRound aria-hidden="true" />
+                  </IconButton>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full xl:col-span-1">
+              <FormField
+                label={t('workspace.header.odometer')}
+                error={fieldErrors.odometer}
               >
-                {customer}
-              </span>
-              <span
-                data-testid="header-vehicle"
-                className="sr-only"
-                aria-hidden="true"
-              >
-                {vehicle}
-              </span>
-              <IconButton
-                variant="input-action"
-                size="default"
-                className="absolute right-0 top-0"
-                label={t('workspace.header.chooseParty')}
-                onClick={() => setPending({ kind: 'party' })}
-              >
-                <UserRound aria-hidden="true" />
-              </IconButton>
+                <NumericInput
+                  autoComplete="off"
+                  className="tabular text-right"
+                  value={odometer}
+                  onValueChange={(value) => {
+                    setOdometer(value);
+                    textField(
+                      'odometer',
+                      value,
+                      100_000_000,
+                      (km) => ({
+                        kind: 'updateHeader',
+                        changes: { odometerKm: km },
+                      }),
+                      { kind: 'updateHeader', changes: { odometerKm: null } },
+                    );
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') event.preventDefault();
+                  }}
+                />
+              </FormField>
             </div>
           </div>
         </div>
+
         <div className="flex min-w-0 flex-col gap-4 max-w-72 sm:flex-none">
           <div className="flex w-full flex-col gap-1.5">
             <Label htmlFor="header-pricing-at">
@@ -276,9 +315,6 @@ export function DraftHeader({
               <FormField
                 label={t('workspace.header.topDays')}
                 error={fieldErrors.topDays}
-                hint={t('workspace.header.dueDate', {
-                  date: formatDueDate(view.dueDate, i18n.language),
-                })}
               >
                 <NumericInput
                   autoComplete="off"
@@ -296,30 +332,12 @@ export function DraftHeader({
             </div>
 
             <div className="min-w-0 w-full">
-              <FormField
-                label={t('workspace.header.odometer')}
-                error={fieldErrors.odometer}
-              >
-                <NumericInput
-                  autoComplete="off"
+              <FormField label={t('workspace.header.dueDate')}>
+                <Input
                   className="tabular text-right"
-                  value={odometer}
-                  onValueChange={(value) => {
-                    setOdometer(value);
-                    textField(
-                      'odometer',
-                      value,
-                      100_000_000,
-                      (km) => ({
-                        kind: 'updateHeader',
-                        changes: { odometerKm: km },
-                      }),
-                      { kind: 'updateHeader', changes: { odometerKm: null } },
-                    );
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') event.preventDefault();
-                  }}
+                  data-testid="header-due-date"
+                  readOnly
+                  value={formatDisplayDate(view.dueDate)}
                 />
               </FormField>
             </div>

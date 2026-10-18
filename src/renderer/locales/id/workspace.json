@@ -98,7 +98,7 @@
     "timezoneTooltip": "Zona waktu yang digunakan: {{zone}}",
     "changePricingAt": "Ubah waktu harga",
     "topDays": "TOP (hari)",
-    "dueDate": "Jatuh tempo {{date}}",
+    "dueDate": "Tanggal jatuh tempo",
     "odometer": "Odometer (km)",
     "customerVehicle": "Pelanggan & kendaraan",
     "anonymous": "Umum",

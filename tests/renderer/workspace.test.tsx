@@ -32,6 +32,39 @@ describe('cashier workspace', () => {
     expect(screen.getByTestId('header-customer')).toHaveTextContent('Umum');
   });
 
+  test('keeps the due date compact and places odometer after the customer field', async () => {
+    install();
+    render(<CashierWorkspace />);
+    await screen.findByRole('combobox', { name: 'Cari barang' });
+
+    const customer = screen.getByLabelText('Pelanggan & kendaraan');
+    const odometer = screen.getByLabelText('Odometer (km)');
+    const dueDate = screen.getByTestId('header-due-date');
+    const topDays = screen.getByLabelText('TOP (hari)');
+    const headerPairs = [screen.getByLabelText('Channel'), customer].map(
+      (input) => input.closest('.max-w-144'),
+    );
+    expect(dueDate).toHaveValue('30/09/2026');
+    expect(dueDate).toHaveAttribute('readonly');
+    expect(headerPairs[0]).toHaveClass('flex-col', 'xl:flex-row', 'max-w-144');
+    expect(headerPairs[1]).toHaveClass(
+      'grid-cols-1',
+      'xl:grid-cols-4',
+      'max-w-144',
+    );
+    expect(headerPairs[1]?.children[0]).toHaveClass('xl:col-span-3');
+    expect(headerPairs[1]?.children[1]).toHaveClass('xl:col-span-1');
+    expect(odometer.closest('.max-w-144')).toBe(headerPairs[1]);
+    expect(
+      customer.compareDocumentPosition(odometer) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      topDays.compareDocumentPosition(dueDate) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   test('scanner Enter in "Cari barang" adds by barcode and clears the field', async () => {
     const bridge = install();
     render(<CashierWorkspace />);
