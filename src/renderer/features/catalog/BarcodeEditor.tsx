@@ -72,7 +72,7 @@ export function BarcodeEditor({ item, onChanged }: BarcodeEditorProps) {
                   : t('catalog.status.inactive')}
               </span>
               <Button
-                variant="outline"
+                variant={entry.isActive ? 'destructive-outline' : 'outline'}
                 size="sm"
                 disabled={busy}
                 aria-label={`${entry.isActive ? t('catalog.barcodes.deactivate') : t('catalog.barcodes.activate')}: ${entry.barcode}`}

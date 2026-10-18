@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
@@ -90,18 +90,21 @@ export function PaymentDialog({
       onClose={onClose}
       closeLabel={t('history.payment.cancel')}
       footer={
-        <div className="flex justify-between">
-          <Button type="button" variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('history.payment.cancel')}
-          </Button>
+        <DialogActions
+          secondary={
+            <Button type="button" variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('history.payment.cancel')}
+            </Button>
+          }
+        >
           <Button type="submit" form="payment-form" disabled={action.busy}>
             <Check aria-hidden="true" />
             {action.busy
               ? t('history.payment.saving')
               : t('history.payment.submit')}
           </Button>
-        </div>
+        </DialogActions>
       }
     >
       <form

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
 import { Label } from '@/renderer/components/ui/label';
 import { QuickCustomerForm } from '@/renderer/features/customers/QuickCustomerForm';
@@ -179,22 +179,23 @@ export function CustomerVehicleDialog({
       closeLabel={t('workspace.common.close')}
       scrollBody
       footer={
-        <div className="flex justify-between gap-2">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.common.cancel')}
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.common.cancel')}
+            </Button>
+          }
+        >
+          <Button variant="outline" onClick={walkIn}>
+            <UserRound aria-hidden="true" />
+            {t('workspace.party.anonymous')}
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={walkIn}>
-              <UserRound aria-hidden="true" />
-              {t('workspace.party.anonymous')}
-            </Button>
-            <Button onClick={onClose}>
-              <Check aria-hidden="true" />
-              {t('workspace.party.done')}
-            </Button>
-          </div>
-        </div>
+          <Button onClick={onClose}>
+            <Check aria-hidden="true" />
+            {t('workspace.party.done')}
+          </Button>
+        </DialogActions>
       }
     >
       <div className="shrink-0">{error ? <Alert>{error}</Alert> : null}</div>

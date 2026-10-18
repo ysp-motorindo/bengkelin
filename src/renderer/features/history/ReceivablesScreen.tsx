@@ -82,8 +82,8 @@ export function ReceivablesScreen() {
 
   const panelId = 'receivables-panel';
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">
+    <div className="flex min-w-0 flex-col gap-6">
+      <h1 className="text-xl font-semibold leading-tight tracking-tight">
         {t('history.receivables.title')}
       </h1>
       <div

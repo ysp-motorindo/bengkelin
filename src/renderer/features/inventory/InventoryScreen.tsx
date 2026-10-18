@@ -21,6 +21,7 @@ export function InventoryScreen({ role }: { role: Role }) {
   const { t } = useTranslation();
   const admin = role === 'ADMIN';
   const [query, setQuery] = useState('');
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [negativeOnly, setNegativeOnly] = useState(false);
   const [items, setItems] = useState<StockListItemDto[]>([]);
   const [picked, setPicked] = useState<StockListItemDto | null>(null);
@@ -34,7 +35,10 @@ export function InventoryScreen({ role }: { role: Role }) {
           query: text,
           negativeOnly: negatives,
         });
-        if (check(result)) setItems(result.value.items);
+        if (check(result)) {
+          setItems(result.value.items);
+          setHasLoaded(true);
+        }
       }),
     [run, check],
   );
@@ -55,8 +59,10 @@ export function InventoryScreen({ role }: { role: Role }) {
     picked;
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">{t('inventory.title')}</h1>
+    <div className="flex min-w-0 flex-col gap-6">
+      <h1 className="text-xl font-semibold leading-tight tracking-tight">
+        {t('inventory.title')}
+      </h1>
       {!admin ? (
         <p className="text-sm text-muted-foreground">
           {t('inventory.readOnlyNote')}
@@ -80,6 +86,7 @@ export function InventoryScreen({ role }: { role: Role }) {
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
+            disabled={list.busy}
             checked={negativeOnly}
             onChange={(event) => {
               setNegativeOnly(event.target.checked);
@@ -109,69 +116,81 @@ export function InventoryScreen({ role }: { role: Role }) {
         </p>
       ) : null}
 
-      {items.length === 0 ? (
+      {list.busy ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t('common.loading')}
+        </p>
+      ) : null}
+      {hasLoaded && !list.busy && !list.error && items.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {t('inventory.search.empty')}
         </p>
-      ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-muted-foreground">
-              <th scope="col" className="py-1 pr-2">
-                {t('inventory.list.title')}
-              </th>
-              <th scope="col" className="py-1 pr-2">
-                {t('inventory.list.sku')}
-              </th>
-              <th scope="col" className="py-1 pr-2 text-right">
-                {t('inventory.list.stock')}
-              </th>
-              <th scope="col" className="py-1 pr-2">
-                {t('inventory.list.unit')}
-              </th>
-              <th scope="col" className="py-1" />
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr
-                key={item.catalogItemId}
-                data-testid="stock-row"
-                data-negative={item.isNegative ? 'true' : 'false'}
-                className={cn(
-                  'border-t border-border',
-                  item.isNegative && 'bg-destructive/10',
-                )}
-              >
-                <td className="py-1 pr-2">{item.title}</td>
-                <td className="py-1 pr-2">{item.sku ?? ''}</td>
-                <td className="py-1 pr-2 text-right font-mono">
-                  {formatNumber(item.quantity)}
-                  {item.isNegative ? (
-                    <span
-                      data-testid="negative-flag"
-                      className="ml-2 rounded border border-destructive px-1 font-sans text-xs text-destructive"
-                    >
-                      {t('inventory.negative')}
-                    </span>
-                  ) : null}
-                </td>
-                <td className="py-1 pr-2">{item.unitLabel}</td>
-                <td className="py-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label={`${t('inventory.list.open')}: ${item.title}`}
-                    onClick={() => setPicked(item)}
-                  >
-                    {t('inventory.list.open')}
-                  </Button>
-                </td>
+      ) : null}
+      {items.length > 0 ? (
+        <div className="min-w-0 overflow-x-auto">
+          <table className="w-full min-w-[40rem] text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th scope="col" className="px-2 py-2">
+                  {t('inventory.list.title')}
+                </th>
+                <th scope="col" className="px-2 py-2">
+                  {t('inventory.list.sku')}
+                </th>
+                <th scope="col" className="px-2 py-2 text-right">
+                  {t('inventory.list.stock')}
+                </th>
+                <th scope="col" className="px-2 py-2">
+                  {t('inventory.list.unit')}
+                </th>
+                <th scope="col" className="px-2 py-2" />
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr
+                  key={item.catalogItemId}
+                  data-testid="stock-row"
+                  data-negative={item.isNegative ? 'true' : 'false'}
+                  className={cn(
+                    'border-t border-border',
+                    item.isNegative && 'bg-destructive/10',
+                  )}
+                >
+                  <td className="max-w-80 wrap-anywhere px-2 py-2">
+                    {item.title}
+                  </td>
+                  <td className="max-w-40 wrap-anywhere px-2 py-2">
+                    {item.sku ?? ''}
+                  </td>
+                  <td className="px-2 py-2 text-right tabular">
+                    {formatNumber(item.quantity)}
+                    {item.isNegative ? (
+                      <span
+                        data-testid="negative-flag"
+                        className="ml-2 rounded border border-destructive px-1 font-sans text-xs text-destructive"
+                      >
+                        {t('inventory.negative')}
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="px-2 py-2">{item.unitLabel}</td>
+                  <td className="px-2 py-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label={`${t('inventory.list.open')}: ${item.title}`}
+                      onClick={() => setPicked(item)}
+                    >
+                      {t('inventory.list.open')}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
 
       {selected ? (
         <StockPanel

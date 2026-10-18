@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { errorMessage } from '@/renderer/lib/errors';
 import { ShadowDocument } from '@/renderer/features/printing/ShadowDocument';
 import type { DailyReportInput, ReportPreviewDto } from '@/shared/contracts';
@@ -57,16 +57,19 @@ export function ReportPreviewDialog({
       closeLabel={t('reports.preview.close')}
       scrollBody
       footer={
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('reports.preview.close')}
-          </Button>
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('reports.preview.close')}
+            </Button>
+          }
+        >
           <Button onClick={onPrint} disabled={busy || !preview}>
             <Printer aria-hidden="true" />
             {t('reports.preview.print')}
           </Button>
-        </div>
+        </DialogActions>
       }
     >
       {notice ? (

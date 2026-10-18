@@ -1,3 +1,4 @@
+import { IconButton } from '@/renderer/components/ui/button';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import {
   CircleAlert,
@@ -194,24 +195,21 @@ export function LinesTable({ lines, onEdit, onRemove }: LinesTableProps) {
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-1 py-1 text-right">
-                  <button
+                  <IconButton
                     type="button"
-                    aria-label={`${t('workspace.lines.edit')}: ${line.title}`}
-                    title={t('workspace.lines.edit')}
+                    label={`${t('workspace.lines.edit')}: ${line.title}`}
                     onClick={() => onEdit(line)}
-                    className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <SquarePen aria-hidden="true" className="size-4" />
-                  </button>
-                  <button
+                  </IconButton>
+                  <IconButton
+                    destructive
                     type="button"
-                    aria-label={`${t('workspace.lines.remove')}: ${line.title}`}
-                    title={t('workspace.lines.remove')}
+                    label={`${t('workspace.lines.remove')}: ${line.title}`}
                     onClick={() => onRemove(line)}
-                    className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Trash2 aria-hidden="true" className="size-4" />
-                  </button>
+                  </IconButton>
                 </td>
               </tr>
             );

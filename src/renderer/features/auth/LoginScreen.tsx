@@ -62,7 +62,7 @@ export function LoginScreen({ shopName, onLoggedIn }: LoginScreenProps) {
               <Wrench aria-hidden="true" className="size-4 text-primary" />
               <span>{shopName || t('common.appName')}</span>
             </div>
-            <CardTitle>{t('auth.login.title')}</CardTitle>
+            <CardTitle level={1}>{t('auth.login.title')}</CardTitle>
             <CardDescription>{t('auth.login.description')}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">

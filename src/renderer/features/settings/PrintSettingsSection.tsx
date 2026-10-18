@@ -98,16 +98,14 @@ export function PrintSettingsSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">
-          {t('printing.settings.title')}
-        </CardTitle>
+        <CardTitle>{t('printing.settings.title')}</CardTitle>
         <CardDescription>{t('printing.settings.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         {load.error ? <Alert className="mb-3">{load.error}</Alert> : null}
         {settings ? (
           <form
-            className="grid max-w-xl gap-4"
+            className="grid gap-3"
             onSubmit={submit}
             aria-label={t('printing.settings.title')}
           >

@@ -98,9 +98,7 @@ export function QuickVehicleForm({
         aria-label={t('customers.quickVehicle.title')}
       >
         <CardHeader>
-          <CardTitle className="text-base">
-            {t('customers.quickVehicle.title')}
-          </CardTitle>
+          <CardTitle>{t('customers.quickVehicle.title')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {error ? <Alert>{error}</Alert> : null}

@@ -2,7 +2,7 @@ import { CalendarClock, TriangleAlert, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
-import { Button } from '@/renderer/components/ui/button';
+import { Button, IconButton } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Label } from '@/renderer/components/ui/label';
@@ -20,7 +20,7 @@ import type { Result } from '@/shared/primitives';
 import { CustomerVehicleDialog } from './CustomerVehicleDialog';
 import { OwnershipDialog } from './OwnershipDialog';
 import { PricingTimeDialog } from './PricingTimeDialog';
-import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { todayInShop } from './shop-time';
 import { useSyncedValue } from './synced-field';
 import { formatDueDate } from './format-due-date';
@@ -231,15 +231,15 @@ export function DraftHeader({
               >
                 {vehicle}
               </span>
-              <Button
-                variant="ghost"
-                className="absolute right-0 top-0 size-10 bg-transparent px-0 hover:bg-transparent active:bg-transparent"
-                aria-label={t('workspace.header.chooseParty')}
-                title={t('workspace.header.chooseParty')}
+              <IconButton
+                variant="input-action"
+                size="default"
+                className="absolute right-0 top-0"
+                label={t('workspace.header.chooseParty')}
                 onClick={() => setPending({ kind: 'party' })}
               >
                 <UserRound aria-hidden="true" />
-              </Button>
+              </IconButton>
             </div>
           </div>
         </div>
@@ -251,26 +251,23 @@ export function DraftHeader({
             <div className="relative">
               <Input
                 id="header-pricing-at"
-                className="tabular"
+                className="tabular pr-12"
                 data-testid="header-pricing-at"
                 readOnly
-                value={formatLocal(view.pricingAt, timezone).replace(
-                  /^(\d{4})-(\d{2})-(\d{2})/,
-                  '$3/$2/$1',
-                )}
+                value={formatDisplayDateTime(view.pricingAt, timezone)}
                 title={t('workspace.header.timezoneTooltip', {
                   zone: timezone,
                 })}
               />
-              <Button
-                variant="ghost"
-                className="absolute right-0 top-0 size-10 bg-transparent px-0 hover:bg-transparent active:bg-transparent"
-                aria-label={t('workspace.header.changePricingAt')}
-                title={t('workspace.header.changePricingAt')}
+              <IconButton
+                variant="input-action"
+                size="default"
+                className="absolute right-0 top-0"
+                label={t('workspace.header.changePricingAt')}
                 onClick={() => setPending({ kind: 'pricing' })}
               >
                 <CalendarClock aria-hidden="true" />
-              </Button>
+              </IconButton>
             </div>
           </div>
 

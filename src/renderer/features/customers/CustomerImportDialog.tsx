@@ -2,7 +2,7 @@ import { useNumberFormat } from '@/renderer/lib/number-format';
 import { FileUp, Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { useAction } from '@/renderer/lib/use-action';
@@ -56,32 +56,32 @@ export function CustomerImportDialog({
       }}
       closeLabel={t('customers.edit.cancel')}
       footer={
-        <div className="flex justify-between">
-          <Button variant="outline" disabled={busy} onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('customers.edit.cancel')}
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" disabled={busy} onClick={choose}>
-              <FileUp aria-hidden="true" />
-              {t('customers.import.choose')}
+        <DialogActions
+          secondary={
+            <Button variant="outline" disabled={busy} onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('customers.edit.cancel')}
             </Button>
-            {preview ? (
-              <Button
-                disabled={
-                  busy ||
-                  !preview.canCommit ||
-                  (preview.requiresDuplicatePhoneAcknowledgement &&
-                    !acknowledged)
-                }
-                onClick={commit}
-              >
-                <Upload aria-hidden="true" />
-                {t('catalogTransfer.preview.commit')}
-              </Button>
-            ) : null}
-          </div>
-        </div>
+          }
+        >
+          <Button variant="outline" disabled={busy} onClick={choose}>
+            <FileUp aria-hidden="true" />
+            {t('customers.import.choose')}
+          </Button>
+          {preview ? (
+            <Button
+              disabled={
+                busy ||
+                !preview.canCommit ||
+                (preview.requiresDuplicatePhoneAcknowledgement && !acknowledged)
+              }
+              onClick={commit}
+            >
+              <Upload aria-hidden="true" />
+              {t('catalogTransfer.preview.commit')}
+            </Button>
+          ) : null}
+        </DialogActions>
       }
     >
       {error ? <Alert>{error}</Alert> : null}

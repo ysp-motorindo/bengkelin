@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { VehicleDetail } from '@/renderer/features/customers/VehicleDetail';
 import { watchSessionError } from '@/renderer/lib/session-events';
 import type { CustomerDto, VehicleDetailDto } from '@/shared/contracts';
@@ -61,12 +61,14 @@ export function OwnershipDialog({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       footer={
-        <div className="flex justify-start">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.common.close')}
-          </Button>
-        </div>
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.common.close')}
+            </Button>
+          }
+        />
       }
     >
       {failed ? <Alert>{t('errors.LOAD_FAILED')}</Alert> : null}

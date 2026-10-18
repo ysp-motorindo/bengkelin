@@ -1,3 +1,4 @@
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +11,7 @@ import type { RestoreNoticeDto } from '@/shared/contracts';
  * A rollback is announced as an alert, a completed restore as a status.
  */
 export function RestoreOutcomeNotice() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [notice, setNotice] = useState<RestoreNoticeDto | null>(null);
 
   useEffect(() => {
@@ -30,10 +31,10 @@ export function RestoreOutcomeNotice() {
 
   if (!notice) return null;
   const rolledBack = notice.outcome === 'ROLLED_BACK';
-  const time = new Intl.DateTimeFormat(i18n.language, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(notice.at));
+  const time = formatDisplayDateTime(
+    notice.at,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+  ).slice(0, 16);
 
   return (
     <div

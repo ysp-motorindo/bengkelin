@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { useAction } from '@/renderer/lib/use-action';
@@ -20,7 +20,10 @@ import {
   resolveLocalDateTime,
   type OffsetChoice,
 } from '@/shared/time';
-import { formatLocal, toLocalInputValue } from './local-time';
+import {
+  formatDisplayDateTime,
+  toLocalInputValue,
+} from '@/renderer/lib/date-format';
 
 interface PriceDialogProps {
   catalogItemId: string;
@@ -137,45 +140,40 @@ export function PriceDialog({
       onClose={onClose}
       initialFocus={firstField}
       footer={
-        <div className="flex justify-between">
+        <DialogActions
+          secondary={
+            <Button variant="outline" disabled={busy} onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('catalog.dialog.cancel')}
+            </Button>
+          }
+        >
           {preview === null ? (
-            <>
-              <Button variant="outline" disabled={busy} onClick={onClose}>
-                <X aria-hidden="true" />
-                {t('catalog.dialog.cancel')}
-              </Button>
-              <Button type="submit" form="price-form" disabled={busy}>
-                <Eye aria-hidden="true" />
-                {t('catalog.dialog.preview')}
-              </Button>
-            </>
+            <Button type="submit" form="price-form" disabled={busy}>
+              <Eye aria-hidden="true" />
+              {t('catalog.dialog.preview')}
+            </Button>
           ) : (
             <>
-              <Button variant="outline" disabled={busy} onClick={onClose}>
-                <X aria-hidden="true" />
-                {t('catalog.dialog.cancel')}
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => setPreview(null)}
+              >
+                <ArrowLeft aria-hidden="true" />
+                {t('catalog.dialog.back')}
               </Button>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => setPreview(null)}
-                >
-                  <ArrowLeft aria-hidden="true" />
-                  {t('catalog.dialog.back')}
-                </Button>
-                <Button
-                  ref={applyRef}
-                  disabled={busy || preview.conflicts.length > 0}
-                  onClick={apply}
-                >
-                  <Check aria-hidden="true" />
-                  {t('catalog.dialog.apply')}
-                </Button>
-              </div>
+              <Button
+                ref={applyRef}
+                disabled={busy || preview.conflicts.length > 0}
+                onClick={apply}
+              >
+                <Check aria-hidden="true" />
+                {t('catalog.dialog.apply')}
+              </Button>
             </>
           )}
-        </div>
+        </DialogActions>
       }
     >
       <p className="text-sm text-muted-foreground">
@@ -282,7 +280,9 @@ function PreviewStep({
       <h3 className="font-medium">{t('catalog.dialog.previewTitle')}</h3>
       <p>
         {t('catalog.pricing.start')}:{' '}
-        <strong>{formatLocal(preview.effectiveStartAt, timezone)}</strong>
+        <strong>
+          {formatDisplayDateTime(preview.effectiveStartAt, timezone)}
+        </strong>
       </p>
       <p data-testid="preview-current-to-new">
         {t('catalog.dialog.currentToNew', {
@@ -297,7 +297,10 @@ function PreviewStep({
         <p>
           {t('catalog.dialog.corrects', {
             price: formatIdr(preview.corrects.price),
-            start: formatLocal(preview.corrects.effectiveStartAt, timezone),
+            start: formatDisplayDateTime(
+              preview.corrects.effectiveStartAt,
+              timezone,
+            ),
           })}
         </p>
       ) : null}
@@ -305,7 +308,10 @@ function PreviewStep({
         {preview.successor
           ? t('catalog.dialog.successor', {
               price: formatIdr(preview.successor.price),
-              start: formatLocal(preview.successor.effectiveStartAt, timezone),
+              start: formatDisplayDateTime(
+                preview.successor.effectiveStartAt,
+                timezone,
+              ),
             })
           : t('catalog.dialog.noSuccessor')}
       </p>

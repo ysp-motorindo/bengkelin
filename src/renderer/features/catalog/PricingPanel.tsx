@@ -10,7 +10,7 @@ import type {
   PriceTimelineDto,
   ReferenceDto,
 } from '@/shared/contracts';
-import { formatLocal } from './local-time';
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { PriceDialog } from './PriceDialog';
 
 interface PricingPanelProps {
@@ -112,93 +112,97 @@ export function PricingPanel({ catalogItemId, canEdit }: PricingPanelProps) {
               </p>
             ) : null}
             {points.length > 0 ? (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-muted-foreground">
-                    <th scope="col" className="py-1 pr-2">
-                      {t('catalog.pricing.start')}
-                    </th>
-                    <th scope="col" className="py-1 pr-2">
-                      {t('catalog.pricing.price')}
-                    </th>
-                    <th scope="col" className="py-1 pr-2">
-                      {t('catalog.pricing.state')}
-                    </th>
-                    {canEdit ? (
-                      <th scope="col" className="py-1">
-                        {t('catalog.pricing.actions')}
+              <div className="min-w-0 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-muted-foreground">
+                      <th scope="col" className="px-2 py-2">
+                        {t('catalog.pricing.start')}
                       </th>
-                    ) : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {points.map((point) => (
-                    <tr
-                      key={point.id}
-                      data-testid="price-row"
-                      data-state={point.state}
-                      className={cn(
-                        'border-t border-border align-top',
-                        point.state === 'SUPERSEDED' &&
-                          'text-muted-foreground opacity-70',
-                        point.state === 'CURRENT' && 'font-medium',
-                      )}
-                    >
-                      <td className="py-1 pr-2">
-                        {formatLocal(point.effectiveStartAt, zone)}
-                      </td>
-                      <td
-                        className={cn(
-                          'py-1 pr-2',
-                          point.state === 'SUPERSEDED' && 'line-through',
-                        )}
-                      >
-                        {formatIdr(point.price)}
-                      </td>
-                      <td className="py-1 pr-2">
-                        <span>{t(`catalog.pricing.state_${point.state}`)}</span>
-                        {point.supersededReason ? (
-                          <span className="block text-xs">
-                            {t('catalog.pricing.supersededReason', {
-                              reason: point.supersededReason,
-                            })}
-                          </span>
-                        ) : null}
-                        {point.correctionReason ? (
-                          <span className="block text-xs">
-                            {t('catalog.pricing.correctionOf', {
-                              reason: point.correctionReason,
-                            })}
-                          </span>
-                        ) : null}
-                      </td>
+                      <th scope="col" className="px-2 py-2 text-right">
+                        {t('catalog.pricing.price')}
+                      </th>
+                      <th scope="col" className="px-2 py-2">
+                        {t('catalog.pricing.state')}
+                      </th>
                       {canEdit ? (
-                        <td className="py-1">
-                          {point.state !== 'SUPERSEDED' ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              aria-label={t('catalog.pricing.correctFor', {
-                                start: formatLocal(
-                                  point.effectiveStartAt,
-                                  zone,
-                                ),
-                                channel: channel.label,
-                              })}
-                              onClick={() => {
-                                setNotice(null);
-                                setDialog({ channel, target: point });
-                              }}
-                            >
-                              {t('catalog.pricing.correct')}
-                            </Button>
-                          ) : null}
-                        </td>
+                        <th scope="col" className="px-2 py-2">
+                          {t('catalog.pricing.actions')}
+                        </th>
                       ) : null}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {points.map((point) => (
+                      <tr
+                        key={point.id}
+                        data-testid="price-row"
+                        data-state={point.state}
+                        className={cn(
+                          'border-t border-border align-top',
+                          point.state === 'SUPERSEDED' &&
+                            'text-muted-foreground opacity-70',
+                          point.state === 'CURRENT' && 'font-medium',
+                        )}
+                      >
+                        <td className="px-2 py-2">
+                          {formatDisplayDateTime(point.effectiveStartAt, zone)}
+                        </td>
+                        <td
+                          className={cn(
+                            'px-2 py-2 text-right tabular whitespace-nowrap',
+                            point.state === 'SUPERSEDED' && 'line-through',
+                          )}
+                        >
+                          {formatIdr(point.price)}
+                        </td>
+                        <td className="px-2 py-2">
+                          <span>
+                            {t(`catalog.pricing.state_${point.state}`)}
+                          </span>
+                          {point.supersededReason ? (
+                            <span className="block text-xs">
+                              {t('catalog.pricing.supersededReason', {
+                                reason: point.supersededReason,
+                              })}
+                            </span>
+                          ) : null}
+                          {point.correctionReason ? (
+                            <span className="block text-xs">
+                              {t('catalog.pricing.correctionOf', {
+                                reason: point.correctionReason,
+                              })}
+                            </span>
+                          ) : null}
+                        </td>
+                        {canEdit ? (
+                          <td className="px-2 py-2">
+                            {point.state !== 'SUPERSEDED' ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                aria-label={t('catalog.pricing.correctFor', {
+                                  start: formatDisplayDateTime(
+                                    point.effectiveStartAt,
+                                    zone,
+                                  ),
+                                  channel: channel.label,
+                                })}
+                                onClick={() => {
+                                  setNotice(null);
+                                  setDialog({ channel, target: point });
+                                }}
+                              >
+                                {t('catalog.pricing.correct')}
+                              </Button>
+                            ) : null}
+                          </td>
+                        ) : null}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : null}
             {canEdit && restore && restore.channel.id === channel.id ? (
               <div>

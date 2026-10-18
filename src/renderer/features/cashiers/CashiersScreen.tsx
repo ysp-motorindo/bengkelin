@@ -68,9 +68,11 @@ export function CashiersScreen({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-6">
         <div>
-          <h1 className="text-xl font-semibold">{t('cashiers.title')}</h1>
+          <h1 className="text-xl font-semibold leading-tight tracking-tight">
+            {t('cashiers.title')}
+          </h1>
           <p className="text-sm text-muted-foreground">
             {t('cashiers.description')}
           </p>
@@ -79,7 +81,7 @@ export function CashiersScreen({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left">
+              <tr className="border-b border-border text-left text-muted-foreground">
                 <th scope="col" className="p-2">
                   {t('cashiers.fields.username')}
                 </th>
@@ -200,9 +202,7 @@ function CreateCashierForm({
         aria-label={t('cashiers.create.title')}
       >
         <CardHeader>
-          <CardTitle className="text-base">
-            {t('cashiers.create.title')}
-          </CardTitle>
+          <CardTitle>{t('cashiers.create.title')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {error ? <Alert>{error}</Alert> : null}

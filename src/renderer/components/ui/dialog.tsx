@@ -25,6 +25,26 @@ let previousDocumentOverflow: string | null = null;
 /** Open dialogs that opted in to New Transaction (Ctrl+N). */
 const allowingNewTransaction = new Set<HTMLElement>();
 
+/** Secondary action stays left; primary and related actions wrap on the right. */
+export function DialogActions({
+  secondary,
+  children,
+}: {
+  secondary?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      {secondary}
+      {children ? (
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
+          {children}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** True while a modal dialog is open (menu shortcuts must not reach behind it). */
 export function hasOpenDialog(): boolean {
   return openDialogs.length > 0;

@@ -120,8 +120,10 @@ export function HistoryScreen({ session }: { session: CashierSession }) {
   );
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="text-xl font-semibold">{t('history.title')}</h1>
+    <div className="flex min-w-0 flex-col gap-6">
+      <h1 className="text-xl font-semibold leading-tight tracking-tight">
+        {t('history.title')}
+      </h1>
 
       <form
         onSubmit={submit}

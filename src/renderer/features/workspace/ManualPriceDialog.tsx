@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { parseRupiahInput } from '@/renderer/lib/money';
@@ -66,16 +66,19 @@ export function ManualPriceDialog({
       returnFocus={returnFocus}
       closeLabel={t('workspace.common.close')}
       footer={
-        <div className="flex justify-between">
-          <Button variant="outline" disabled={busy} onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.common.cancel')}
-          </Button>
+        <DialogActions
+          secondary={
+            <Button variant="outline" disabled={busy} onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.common.cancel')}
+            </Button>
+          }
+        >
           <Button type="submit" form="manual-price-form" disabled={busy}>
             <Check aria-hidden="true" />
             {t('workspace.manualPrice.submit')}
           </Button>
-        </div>
+        </DialogActions>
       }
     >
       <form

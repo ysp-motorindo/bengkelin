@@ -289,7 +289,7 @@ export function SetupWizard({
                 </li>
               ))}
             </ol>
-            <CardTitle>{t(`setup.${step}.title`)}</CardTitle>
+            <CardTitle level={1}>{t(`setup.${step}.title`)}</CardTitle>
             <CardDescription>{t(`setup.${step}.description`)}</CardDescription>
           </CardHeader>
 

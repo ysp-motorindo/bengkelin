@@ -1,3 +1,4 @@
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -32,6 +33,7 @@ export function VehicleDetail({
 }: VehicleDetailProps) {
   const { t } = useTranslation();
   const { vehicle, ownerships } = detail;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
   const { busy, error, run, check } = useAction();
@@ -96,7 +98,7 @@ export function VehicleDetail({
   return (
     <Card aria-label={t('customers.vehicle.detail')} role="region">
       <CardHeader>
-        <CardTitle className="text-base">
+        <CardTitle>
           {t('customers.vehicle.detail')}:{' '}
           <span data-testid="vehicle-plate">{vehicle.plateNumber}</span>
         </CardTitle>
@@ -120,7 +122,7 @@ export function VehicleDetail({
         {role === 'ADMIN' ? (
           <div>
             <Button
-              variant="outline"
+              variant={vehicle.isActive ? 'destructive-outline' : 'outline'}
               size="sm"
               disabled={busy}
               onClick={toggleActive}
@@ -222,10 +224,13 @@ export function VehicleDetail({
                   })}{' '}
                   <span className="text-muted-foreground">
                     ({t('customers.vehicle.from')}{' '}
-                    {new Date(ownership.effectiveFrom).toLocaleString()},{' '}
+                    {formatDisplayDateTime(ownership.effectiveFrom, timezone)},{' '}
                     {t('customers.vehicle.until')}{' '}
                     {ownership.effectiveUntil
-                      ? new Date(ownership.effectiveUntil).toLocaleString()
+                      ? formatDisplayDateTime(
+                          ownership.effectiveUntil,
+                          timezone,
+                        )
                       : t('customers.vehicle.current')}
                     )
                   </span>

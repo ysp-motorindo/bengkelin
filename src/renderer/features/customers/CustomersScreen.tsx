@@ -92,17 +92,21 @@ export function CustomersScreen({ role = 'CASHIER' }: { role?: Role } = {}) {
           }}
         />
       ) : null}
-      <div className="flex flex-col gap-4">
-        <h1 className="text-xl font-semibold">{t('customers.title')}</h1>
-        {role === 'ADMIN' ? (
-          <Button
-            variant="outline"
-            className="self-start"
-            onClick={() => setImporting(true)}
-          >
-            {t('customers.import.open')}
-          </Button>
-        ) : null}
+      <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-xl font-semibold leading-tight tracking-tight">
+            {t('customers.title')}
+          </h1>
+          {role === 'ADMIN' ? (
+            <Button
+              variant="outline"
+              className="self-start"
+              onClick={() => setImporting(true)}
+            >
+              {t('customers.import.open')}
+            </Button>
+          ) : null}
+        </div>
         {error ? <Alert>{error}</Alert> : null}
 
         <form onSubmit={search} className="flex items-end gap-2" role="search">

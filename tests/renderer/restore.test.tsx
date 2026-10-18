@@ -89,7 +89,7 @@ describe('Settings restore section', () => {
     expect(screen.getByTestId('restore-invoices')).toHaveTextContent(
       '12 final, 2 batal, 1 draf',
     );
-    expect(preview).toHaveTextContent('2026-09-29 16:30:00');
+    expect(preview).toHaveTextContent('29/09/2026 16:30:00');
     expect(preview).toHaveTextContent('3 (ADMIN aktif: 1)');
     expect(screen.getByTestId('restore-warning')).toHaveTextContent(
       'Semua data saat ini akan diganti',

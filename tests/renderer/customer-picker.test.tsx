@@ -195,7 +195,7 @@ test('walk-in clears customer and vehicle together and closes only after success
     />,
   );
   await userEvent.click(
-    screen.getByRole('button', { name: 'Gunakan Umum (tanpa pelanggan)' }),
+    screen.getByRole('button', { name: 'Gunakan pelanggan umum' }),
   );
   expect(clearParty).toHaveBeenCalledOnce();
   expect(onClose).toHaveBeenCalledOnce();
@@ -221,7 +221,7 @@ test('failed walk-in keeps the dialog open and shows the returned error', async 
     />,
   );
   await userEvent.click(
-    screen.getByRole('button', { name: 'Gunakan Umum (tanpa pelanggan)' }),
+    screen.getByRole('button', { name: 'Gunakan pelanggan umum' }),
   );
   expect(onClose).not.toHaveBeenCalled();
   expect(await screen.findByRole('alert')).toBeInTheDocument();

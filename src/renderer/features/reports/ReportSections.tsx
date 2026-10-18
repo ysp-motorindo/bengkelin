@@ -1,3 +1,4 @@
+import { formatDisplayDate } from '@/renderer/lib/date-format';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -72,10 +73,10 @@ function Figures({
             key={row.label}
             className={cn(row.strong && 'border-t border-border font-semibold')}
           >
-            <th scope="row" className="py-1 pr-4 text-left font-normal">
+            <th scope="row" className="px-2 py-2 text-left font-normal">
               {row.label}
             </th>
-            <td className="py-1 text-right">{row.value}</td>
+            <td className="px-2 py-2 text-right">{row.value}</td>
           </tr>
         ))}
       </tbody>
@@ -110,7 +111,7 @@ function Table({
                 key={c.label}
                 scope="col"
                 className={cn(
-                  'py-1 pr-3',
+                  'px-2 py-2',
                   c.right ? 'text-right' : 'text-left',
                 )}
               >
@@ -124,7 +125,7 @@ function Table({
             <tr>
               <td
                 colSpan={columns.length}
-                className="py-1 text-muted-foreground"
+                className="px-2 py-2 text-muted-foreground"
               >
                 {empty}
               </td>
@@ -136,7 +137,7 @@ function Table({
                   <td
                     key={columns[i]!.label}
                     className={cn(
-                      'py-1 pr-3 align-top',
+                      'px-2 py-2 align-top',
                       columns[i]!.right && 'text-right',
                     )}
                   >
@@ -150,12 +151,6 @@ function Table({
       </table>
     </div>
   );
-}
-
-/** `YYYY-MM-DD` -> `DD/MM/YYYY`. */
-function dmy(date: string): string {
-  const [y, m, d] = date.split('-');
-  return `${d}/${m}/${y}`;
 }
 
 export function ReportSections({ report }: { report: DailyReport }) {
@@ -320,9 +315,9 @@ export function ReportSections({ report }: { report: DailyReport }) {
               <span key="no" className="whitespace-nowrap">
                 {v.invoiceNumber}
               </span>,
-              dmy(v.finalizedDate),
+              formatDisplayDate(v.finalizedDate),
               <span key="at" className="whitespace-nowrap tabular-nums">
-                {`${dmy(v.voidedAtLocal.slice(0, 10))} ${v.voidedAtLocal.slice(11)}`}
+                {`${formatDisplayDate(v.voidedAtLocal.slice(0, 10))} ${v.voidedAtLocal.slice(11)}`}
               </span>,
               v.voidedBy.displayName,
               v.channel.label,

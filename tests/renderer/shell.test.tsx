@@ -49,7 +49,7 @@ describe('shell', () => {
     await userEvent.click(screen.getByText('Siti'));
     await userEvent.click(screen.getByText('Bahasa', { selector: 'summary' }));
     expect(
-      screen.getByRole('radio', { name: /Indonesia/ }),
+      screen.getByRole('radio', { name: 'Bahasa Indonesia' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /English/ })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /English/ })).toHaveAttribute(

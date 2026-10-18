@@ -94,7 +94,7 @@ export function AdHocReferencesPanel() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left">
+              <tr className="border-b border-border text-left text-muted-foreground">
                 <th scope="col" className="p-2">
                   {t('adHocReferences.fields.title')}
                 </th>
@@ -151,7 +151,9 @@ export function AdHocReferencesPanel() {
                       {t('adHocReferences.actions.edit')}
                     </Button>
                     <Button
-                      variant="outline"
+                      variant={
+                        item.isActive ? 'destructive-outline' : 'outline'
+                      }
                       size="sm"
                       disabled={busy}
                       aria-label={`${t(item.isActive ? 'adHocReferences.actions.deactivate' : 'adHocReferences.actions.reactivate')}: ${item.title}`}

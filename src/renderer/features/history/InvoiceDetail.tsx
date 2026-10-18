@@ -4,7 +4,10 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { formatLocal } from '@/renderer/features/catalog/local-time';
+import {
+  formatDisplayDate,
+  formatDisplayDateTime,
+} from '@/renderer/lib/date-format';
 import { PrintActions } from '@/renderer/features/printing/PrintActions';
 import type { PrintClient } from '@/renderer/features/printing/print-client';
 import { useAction } from '@/renderer/lib/use-action';
@@ -70,7 +73,7 @@ export function InvoiceDetail({
   }, [shownId]);
 
   const time = (instant: Instant) =>
-    formatLocal(instant, timezone).slice(0, 16);
+    formatDisplayDateTime(instant, timezone).slice(0, 16);
   const stages = (list: DiscountStageDto[]) =>
     list
       .map((s) =>
@@ -116,9 +119,9 @@ export function InvoiceDetail({
   }
 
   const fields: [string, string][] = [
-    [t('history.detail.invoiceDate'), invoice.invoiceDate],
+    [t('history.detail.invoiceDate'), formatDisplayDate(invoice.invoiceDate)],
     [t('history.detail.topDays'), formatNumber(invoice.topDays)],
-    [t('history.detail.dueDate'), invoice.dueDate],
+    [t('history.detail.dueDate'), formatDisplayDate(invoice.dueDate)],
     [t('history.detail.finalizedAt'), time(invoice.finalizedAt)],
     [t('history.detail.cashier'), invoice.cashier.displayName],
     [t('history.detail.createdBy'), invoice.createdBy.displayName],
@@ -141,19 +144,22 @@ export function InvoiceDetail({
   ];
 
   return (
-    <article className="flex flex-col gap-5" data-testid="invoice-detail">
+    <article
+      className="flex min-w-0 flex-col gap-6"
+      data-testid="invoice-detail"
+    >
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="outline" size="sm" onClick={onBack}>
           <ArrowLeft aria-hidden="true" />
           {t('history.detail.back')}
         </Button>
-        <h2
+        <h1
           ref={heading}
           tabIndex={-1}
-          className="font-mono text-lg font-semibold outline-none"
+          className="wrap-anywhere font-mono text-xl font-semibold leading-tight tracking-tight outline-none"
         >
           {t('history.detail.title', { number: invoice.invoiceNumber })}
-        </h2>
+        </h1>
         <StatusBadges
           status={invoice.status}
           paymentStatus={invoice.paymentStatus}
@@ -206,7 +212,7 @@ export function InvoiceDetail({
             {t('history.detail.recordPayment')}
           </Button>
           <Button
-            variant="outline"
+            variant="destructive-outline"
             onClick={() => setDialog('void')}
             disabled={!canVoid}
             aria-describedby={canVoid ? undefined : voidNoteId}
@@ -254,27 +260,29 @@ export function InvoiceDetail({
       </section>
 
       <section>
-        <h3 className="mb-2 font-semibold">{t('history.detail.lines')}</h3>
+        <h2 className="mb-2 text-lg font-semibold">
+          {t('history.detail.lines')}
+        </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th scope="col" className="py-1 pr-2">
+                <th scope="col" className="px-2 py-2">
                   {t('history.detail.position')}
                 </th>
-                <th scope="col" className="py-1 pr-2">
+                <th scope="col" className="px-2 py-2">
                   {t('history.detail.item')}
                 </th>
-                <th scope="col" className="py-1 pr-2 text-right">
+                <th scope="col" className="px-2 py-2 text-right">
                   {t('history.detail.quantity')}
                 </th>
-                <th scope="col" className="py-1 pr-2 text-right">
+                <th scope="col" className="px-2 py-2 text-right">
                   {t('history.detail.unitPrice')}
                 </th>
-                <th scope="col" className="py-1 pr-2">
+                <th scope="col" className="px-2 py-2">
                   {t('history.detail.discounts')}
                 </th>
-                <th scope="col" className="py-1 text-right">
+                <th scope="col" className="px-2 py-2 text-right">
                   {t('history.detail.lineAmount')}
                 </th>
               </tr>
@@ -282,8 +290,8 @@ export function InvoiceDetail({
             <tbody>
               {invoice.lines.map((line, index) => (
                 <tr key={line.id} className="border-t border-border align-top">
-                  <td className="py-1 pr-2">{index + 1}</td>
-                  <td className="py-1 pr-2">
+                  <td className="px-2 py-2">{index + 1}</td>
+                  <td className="px-2 py-2">
                     {line.title}
                     {line.mechanicName ? (
                       <span className="block text-xs text-muted-foreground">
@@ -299,16 +307,16 @@ export function InvoiceDetail({
                       </span>
                     ) : null}
                   </td>
-                  <td className="py-1 pr-2 text-right whitespace-nowrap">
+                  <td className="tabular px-2 py-2 text-right whitespace-nowrap">
                     {formatNumber(line.quantity)} {line.unitLabel ?? ''}
                   </td>
-                  <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">
+                  <td className="px-2 py-2 text-right tabular whitespace-nowrap">
                     {formatIdr(line.unitPrice)}
                   </td>
-                  <td className="py-1 pr-2 text-xs">
+                  <td className="px-2 py-2 text-xs">
                     {line.discounts.length > 0 ? stages(line.discounts) : ''}
                   </td>
-                  <td className="py-1 text-right font-mono whitespace-nowrap">
+                  <td className="px-2 py-2 text-right tabular whitespace-nowrap">
                     {formatIdr(line.amount)}
                   </td>
                 </tr>
@@ -329,37 +337,39 @@ export function InvoiceDetail({
         ) : null}
         <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
           <dt>{t('history.detail.subtotal')}</dt>
-          <dd className="text-right font-mono">
+          <dd className="text-right tabular">
             {formatIdr(invoice.totals.subtotal)}
           </dd>
           <dt>{t('history.detail.itemDiscounts')}</dt>
-          <dd className="text-right font-mono">
+          <dd className="text-right tabular">
             {formatIdr(invoice.totals.itemDiscountAmount)}
           </dd>
           <dt>{t('history.detail.invoiceDiscountTotal')}</dt>
-          <dd className="text-right font-mono">
+          <dd className="text-right tabular">
             {formatIdr(invoice.totals.invoiceDiscountAmount)}
           </dd>
           <dt className="font-semibold">{t('history.detail.total')}</dt>
           <dd
-            className="text-right font-mono font-semibold"
+            className="text-right tabular font-semibold"
             data-testid="detail-total"
           >
             {formatIdr(invoice.totals.amount)}
           </dd>
           <dt>{t('history.detail.paid')}</dt>
-          <dd className="text-right font-mono" data-testid="detail-paid">
+          <dd className="text-right tabular" data-testid="detail-paid">
             {formatIdr(invoice.paidAmount)}
           </dd>
           <dt>{t('history.detail.outstanding')}</dt>
-          <dd className="text-right font-mono" data-testid="detail-outstanding">
+          <dd className="text-right tabular" data-testid="detail-outstanding">
             {formatIdr(invoice.outstandingAmount)}
           </dd>
         </dl>
       </section>
 
       <section>
-        <h3 className="mb-2 font-semibold">{t('history.detail.payments')}</h3>
+        <h2 className="mb-2 text-lg font-semibold">
+          {t('history.detail.payments')}
+        </h2>
         {invoice.payments.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {t('history.detail.noPayments')}
@@ -369,22 +379,22 @@ export function InvoiceDetail({
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-muted-foreground">
-                  <th scope="col" className="py-1 pr-2">
+                  <th scope="col" className="px-2 py-2">
                     {t('history.detail.paidAt')}
                   </th>
-                  <th scope="col" className="py-1 pr-2">
+                  <th scope="col" className="px-2 py-2">
                     {t('history.detail.method')}
                   </th>
-                  <th scope="col" className="py-1 pr-2 text-right">
+                  <th scope="col" className="px-2 py-2 text-right">
                     {t('history.detail.amount')}
                   </th>
-                  <th scope="col" className="py-1 pr-2">
+                  <th scope="col" className="px-2 py-2">
                     {t('history.detail.reference')}
                   </th>
-                  <th scope="col" className="py-1 pr-2">
+                  <th scope="col" className="px-2 py-2">
                     {t('history.detail.receivedBy')}
                   </th>
-                  <th scope="col" className="py-1">
+                  <th scope="col" className="px-2 py-2">
                     {t('history.detail.source')}
                   </th>
                 </tr>
@@ -396,16 +406,16 @@ export function InvoiceDetail({
                     data-testid="payment-row"
                     className="border-t border-border align-top"
                   >
-                    <td className="py-1 pr-2 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap">
                       {time(payment.paidAt)}
                     </td>
-                    <td className="py-1 pr-2">
+                    <td className="px-2 py-2">
                       {t(`workspace.paymentMethod.${payment.method}`)}
                     </td>
-                    <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">
+                    <td className="px-2 py-2 text-right tabular whitespace-nowrap">
                       {formatIdr(payment.amount)}
                     </td>
-                    <td className="py-1 pr-2">
+                    <td className="px-2 py-2">
                       {payment.reference ?? ''}
                       {payment.note ? (
                         <span className="block text-xs text-muted-foreground">
@@ -413,10 +423,10 @@ export function InvoiceDetail({
                         </span>
                       ) : null}
                     </td>
-                    <td className="py-1 pr-2">
+                    <td className="px-2 py-2">
                       {payment.receivedBy.displayName}
                     </td>
-                    <td className="py-1">
+                    <td className="px-2 py-2">
                       {t(`history.detail.sources.${payment.source}`)}
                     </td>
                   </tr>

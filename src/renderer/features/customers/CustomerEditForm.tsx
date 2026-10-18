@@ -107,7 +107,7 @@ export function CustomerEditForm({
     <Card>
       <form noValidate onSubmit={submit} aria-label={t('customers.edit.title')}>
         <CardHeader>
-          <CardTitle className="text-base">
+          <CardTitle>
             {t('customers.edit.title')}: {customerLabel(t, customer)}
           </CardTitle>
         </CardHeader>

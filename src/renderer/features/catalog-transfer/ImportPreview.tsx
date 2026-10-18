@@ -44,7 +44,7 @@ export function ImportPreview({
   return (
     <Card data-testid="catalog-import-preview">
       <CardHeader>
-        <CardTitle className="text-lg">
+        <CardTitle>
           {t('catalogTransfer.preview.title', { fileName: preview.fileName })}
         </CardTitle>
       </CardHeader>
@@ -192,19 +192,19 @@ function RowTable({ preview }: { preview: ImportReadyDto }) {
         <table className="w-full text-sm" data-testid="import-rows">
           <thead>
             <tr className="text-left text-muted-foreground">
-              <th scope="col" className="py-1 pr-2">
+              <th scope="col" className="px-2 py-2">
                 {t('catalogTransfer.columns.row')}
               </th>
-              <th scope="col" className="py-1 pr-2">
+              <th scope="col" className="px-2 py-2">
                 {t('catalogTransfer.columns.sku')}
               </th>
-              <th scope="col" className="py-1 pr-2">
+              <th scope="col" className="px-2 py-2">
                 {t('catalogTransfer.columns.title')}
               </th>
-              <th scope="col" className="py-1 pr-2">
+              <th scope="col" className="px-2 py-2">
                 {t('catalogTransfer.columns.action')}
               </th>
-              <th scope="col" className="py-1">
+              <th scope="col" className="px-2 py-2">
                 {t('catalogTransfer.columns.details')}
               </th>
             </tr>
@@ -212,21 +212,21 @@ function RowTable({ preview }: { preview: ImportReadyDto }) {
           <tbody>
             {preview.rows.map((row) => (
               <tr key={row.row} className="border-t border-border align-top">
-                <td className="py-1 pr-2 tabular-nums">{row.row}</td>
-                <td className="py-1 pr-2 font-mono text-xs leading-5">
+                <td className="px-2 py-2 tabular-nums">{row.row}</td>
+                <td className="px-2 py-2 font-mono text-xs leading-5">
                   {row.sku}
                 </td>
-                <td className="whitespace-pre-line py-1 pr-2">{row.title}</td>
+                <td className="whitespace-pre-line px-2 py-2">{row.title}</td>
                 <td
                   className={
                     row.action === 'INVALID'
-                      ? 'py-1 pr-2 text-destructive'
-                      : 'py-1 pr-2'
+                      ? 'px-2 py-2 text-destructive'
+                      : 'px-2 py-2'
                   }
                 >
                   {t(`catalogTransfer.action.${row.action}`)}
                 </td>
-                <td className="py-1 text-muted-foreground">
+                <td className="px-2 py-2 text-muted-foreground">
                   <RowDetails row={row} />
                 </td>
               </tr>

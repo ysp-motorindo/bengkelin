@@ -10,7 +10,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { controlClass } from '@/renderer/components/ui/input';
 import { errorMessage } from '@/renderer/lib/errors';
 import type {
@@ -249,7 +249,9 @@ export function DraftWorkspace({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="mr-2 text-lg font-semibold">{t('workspace.title')}</h1>
+          <h1 className="mr-2 text-xl font-semibold leading-tight tracking-tight">
+            {t('workspace.title')}
+          </h1>
           <Button
             variant="outline"
             size="sm"
@@ -456,16 +458,19 @@ function DraftNoteDialog({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       footer={
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.common.cancel')}
-          </Button>
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.common.cancel')}
+            </Button>
+          }
+        >
           <Button type="submit" form="draft-note-form">
             <Check aria-hidden="true" />
             {t('workspace.header.saveNote')}
           </Button>
-        </div>
+        </DialogActions>
       }
     >
       <form

@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { controlClass } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Label } from '@/renderer/components/ui/label';
@@ -218,16 +218,19 @@ export function CustomLineDialog({
       returnFocus={returnFocus}
       closeLabel={t('workspace.common.close')}
       footer={
-        <div className="flex justify-between">
-          <Button variant="outline" disabled={busy} onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.common.cancel')}
-          </Button>
+        <DialogActions
+          secondary={
+            <Button variant="outline" disabled={busy} onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.common.cancel')}
+            </Button>
+          }
+        >
           <Button type="submit" form="custom-line-form" disabled={busy}>
             <Check aria-hidden="true" />
             {t('workspace.custom.add')}
           </Button>
-        </div>
+        </DialogActions>
       }
     >
       <form

@@ -3,7 +3,7 @@ import { useId, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Label } from '@/renderer/components/ui/label';
 import { controlClass } from '@/renderer/components/ui/input';
 import { useAction } from '@/renderer/lib/use-action';
@@ -61,20 +61,24 @@ export function VoidDialog({ invoice, onClose, onVoided }: VoidDialogProps) {
       onClose={onClose}
       closeLabel={t('history.void.cancel')}
       footer={
-        <div className="flex justify-between">
-          <Button type="button" variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('history.void.cancel')}
-          </Button>
+        <DialogActions
+          secondary={
+            <Button type="button" variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('history.void.cancel')}
+            </Button>
+          }
+        >
           <Button
             type="submit"
             form="void-form"
+            variant="destructive"
             disabled={!ready || action.busy}
           >
             <Ban aria-hidden="true" />
             {action.busy ? t('history.void.saving') : t('history.void.submit')}
           </Button>
-        </div>
+        </DialogActions>
       }
     >
       <form

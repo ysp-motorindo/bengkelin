@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
 import { toLocalInputValue } from '@/renderer/features/catalog/local-time';
 import type { Instant, LocalDate } from '@/shared/primitives';
@@ -145,16 +145,19 @@ export function PricingTimeDialog({
       initialFocus={backdatedTo ? undefined : firstRef}
       closeLabel={t('workspace.common.close')}
       footer={
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.common.cancel')}
-          </Button>
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.common.cancel')}
+            </Button>
+          }
+        >
           <Button type="submit" form="pricing-time-form">
             <Check aria-hidden="true" />
             {t('workspace.pricing.apply')}
           </Button>
-        </div>
+        </DialogActions>
       }
     >
       <form

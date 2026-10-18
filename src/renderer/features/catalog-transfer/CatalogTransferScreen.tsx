@@ -87,12 +87,10 @@ export function CatalogTransferScreen() {
   }
 
   return (
-    <div className="flex max-w-6xl flex-col gap-4">
+    <div className="flex min-w-0 max-w-6xl flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">
-            {t('catalogTransfer.title')}
-          </CardTitle>
+          <CardTitle level={1}>{t('catalogTransfer.title')}</CardTitle>
           <CardDescription>{t('catalogTransfer.description')}</CardDescription>
           <p
             className="text-sm text-muted-foreground"

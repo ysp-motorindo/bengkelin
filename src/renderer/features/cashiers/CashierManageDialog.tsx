@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Input } from '@/renderer/components/ui/input';
 import { Select } from '@/renderer/components/ui/select';
 import { useAction } from '@/renderer/lib/use-action';
@@ -70,55 +70,61 @@ export function CashierManageDialog({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       footer={
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.common.close')}
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.common.close')}
+            </Button>
+          }
+        >
+          <Button
+            type="submit"
+            form="cashier-name-form"
+            variant="outline"
+            disabled={busy}
+          >
+            <Save aria-hidden="true" />
+            {t('cashiers.manage.saveName')}
           </Button>
-          <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            type="submit"
+            form="cashier-role-form"
+            variant="outline"
+            disabled={busy}
+          >
+            <Shield aria-hidden="true" />
+            {t('cashiers.manage.saveRole')}
+          </Button>
+          {cashier.isActive ? (
             <Button
-              type="submit"
-              form="cashier-name-form"
+              variant="destructive-outline"
+              disabled={busy}
+              onClick={() => apply(() => b.deactivate(id))}
+            >
+              <UserRoundX aria-hidden="true" />
+              {t('cashiers.manage.deactivate')}
+            </Button>
+          ) : (
+            <Button
               variant="outline"
               disabled={busy}
+              onClick={() => apply(() => b.reactivate(id))}
             >
-              <Save aria-hidden="true" />
-              {t('cashiers.manage.saveName')}
+              <UserRoundCheck aria-hidden="true" />
+              {t('cashiers.manage.reactivate')}
             </Button>
-            <Button
-              type="submit"
-              form="cashier-role-form"
-              variant="outline"
-              disabled={busy}
-            >
-              <Shield aria-hidden="true" />
-              {t('cashiers.manage.saveRole')}
-            </Button>
-            {cashier.isActive ? (
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() => apply(() => b.deactivate(id))}
-              >
-                <UserRoundX aria-hidden="true" />
-                {t('cashiers.manage.deactivate')}
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() => apply(() => b.reactivate(id))}
-              >
-                <UserRoundCheck aria-hidden="true" />
-                {t('cashiers.manage.reactivate')}
-              </Button>
-            )}
-            <Button type="submit" form="cashier-password-form" disabled={busy}>
-              <KeyRound aria-hidden="true" />
-              {t('cashiers.manage.resetPassword')}
-            </Button>
-          </div>
-        </div>
+          )}
+          <Button
+            type="submit"
+            form="cashier-password-form"
+            variant="destructive"
+            disabled={busy}
+          >
+            <KeyRound aria-hidden="true" />
+            {t('cashiers.manage.resetPassword')}
+          </Button>
+        </DialogActions>
       }
     >
       <div className="flex flex-col gap-4">

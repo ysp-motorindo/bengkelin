@@ -1,5 +1,5 @@
 import { Temporal } from 'temporal-polyfill';
-import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import type { Instant, LocalDate } from '@/shared/primitives';
 import { businessDay, toInstant } from '@/shared/time';
 
@@ -22,9 +22,9 @@ export function offsetAt(instant: Instant, timezone: string): string {
   return Temporal.Instant.from(instant).toZonedDateTimeISO(timezone).offset;
 }
 
-/** `2026-09-30 14:05 (UTC+07:00)`. */
+/** `30/09/2026 14:05 (UTC+07:00)`. */
 export function formatWithOffset(instant: Instant, timezone: string): string {
-  return `${formatLocal(instant, timezone).slice(0, 16)} (UTC${offsetAt(instant, timezone)})`;
+  return `${formatDisplayDateTime(instant, timezone).slice(0, 16)} (UTC${offsetAt(instant, timezone)})`;
 }
 
 /** First instant of the shop day (handles DST gaps at midnight). */

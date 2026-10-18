@@ -67,9 +67,9 @@ describe('Settings backup section', () => {
     expect(screen.getByText('(folder bawaan)')).toBeInTheDocument();
     // Shop-local times (WIB).
     expect(
-      await screen.findByText('2026-09-30 07:30:00 (Berhasil)'),
+      await screen.findByText('30/09/2026 07:30:00 (Berhasil)'),
     ).toBeInTheDocument();
-    expect(screen.getByText('2026-10-01 00:00:00')).toBeInTheDocument();
+    expect(screen.getByText('01/10/2026 00:00:00')).toBeInTheDocument();
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Cadangkan sekarang' }),
@@ -128,7 +128,9 @@ describe('ADMIN failure banner', () => {
     render(<BackupNoticeBanner />);
     const banner = await screen.findByTestId('backup-failure-banner');
     expect(banner).toHaveTextContent('Cadangan otomatis gagal');
-    expect(banner).toHaveTextContent('2026-09-30 10:00:00');
+    await waitFor(() =>
+      expect(banner).toHaveTextContent('30/09/2026 10:00:00'),
+    );
     expect(banner).toHaveTextContent('Folder cadangan tidak tersedia');
 
     backups.status.mockResolvedValue(ok(backupStatus()));

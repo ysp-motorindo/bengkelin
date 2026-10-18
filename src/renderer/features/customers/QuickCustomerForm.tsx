@@ -59,9 +59,7 @@ export function QuickCustomerForm({ onSelected }: QuickCustomerFormProps) {
         aria-label={t('customers.quickCustomer.title')}
       >
         <CardHeader>
-          <CardTitle className="text-base">
-            {t('customers.quickCustomer.title')}
-          </CardTitle>
+          <CardTitle>{t('customers.quickCustomer.title')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {error ? <Alert>{error}</Alert> : null}

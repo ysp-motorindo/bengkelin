@@ -54,8 +54,10 @@ describe('cashier workspace', () => {
     render(<CashierWorkspace />);
     const user = userEvent.setup();
     await screen.findByRole('combobox', { name: 'Cari barang' });
-    await user.click(screen.getByLabelText('Catatan'));
+    await user.click(screen.getByRole('button', { name: 'Tambah catatan' }));
+    await user.click(screen.getByRole('textbox', { name: 'Catatan' }));
     await user.keyboard('8991234567890{Enter}');
+    await user.click(screen.getByRole('button', { name: 'Simpan catatan' }));
     await user.click(screen.getByLabelText('Odometer (km)'));
     await user.keyboard('12345{Enter}');
     expect(getWorkspaceActions()).not.toBeNull();
@@ -66,7 +68,7 @@ describe('cashier workspace', () => {
 });
 
 describe('invalid unsent input is never labelled saved (C1)', () => {
-  test('150 is saved, then 150.00O: "Not saved", and the checkout review does not open', async () => {
+  test('clearing a saved amount marks it unsaved and blocks checkout review', async () => {
     const bridge = install();
     render(<CashierWorkspace />);
     const user = userEvent.setup();
@@ -88,7 +90,7 @@ describe('invalid unsent input is never labelled saved (C1)', () => {
       allocations: [{ method: 'CASH', amount: '150' }],
     });
 
-    await user.type(amount, '.00O');
+    await user.clear(amount);
     expect(screen.getByTestId('save-state')).toHaveAttribute(
       'data-state',
       'unsaved',
@@ -126,7 +128,9 @@ describe('Pay Full replaces invalid allocation input (C1)', () => {
     const user = userEvent.setup();
     await screen.findByRole('combobox', { name: 'Cari barang' });
     await user.click(screen.getByRole('button', { name: 'Tambah pembayaran' }));
-    await user.type(screen.getByRole('textbox', { name: 'Nominal 1' }), '1x');
+    const amount = screen.getByRole('textbox', { name: 'Nominal 1' });
+    await user.type(amount, '1');
+    await user.clear(amount);
     expect(screen.getByTestId('save-state')).toHaveAttribute(
       'data-state',
       'unsaved',

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { errorMessage } from '@/renderer/lib/errors';
 import { watchSessionError } from '@/renderer/lib/session-events';
 import type { PriceRefreshPreviewDto } from '@/shared/contracts';
@@ -114,32 +114,29 @@ export function RepricingDialog({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       footer={
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.common.close')}
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.common.close')}
+            </Button>
+          }
+        >
+          <Button variant="outline" disabled={busy} onClick={() => void load()}>
+            <RefreshCw aria-hidden="true" />
+            {t('workspace.repricing.refresh')}
           </Button>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => void load()}
-            >
-              <RefreshCw aria-hidden="true" />
-              {t('workspace.repricing.refresh')}
-            </Button>
-            <Button
-              disabled={busy || selected.size === 0}
-              onClick={() => void apply()}
-            >
-              <Check aria-hidden="true" />
-              {t('workspace.repricing.apply', {
-                ...numberOptions,
-                count: selected.size,
-              })}
-            </Button>
-          </div>
-        </div>
+          <Button
+            disabled={busy || selected.size === 0}
+            onClick={() => void apply()}
+          >
+            <Check aria-hidden="true" />
+            {t('workspace.repricing.apply', {
+              ...numberOptions,
+              count: selected.size,
+            })}
+          </Button>
+        </DialogActions>
       }
     >
       {notice ? (

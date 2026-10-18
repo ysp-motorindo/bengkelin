@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/renderer/components/ui/card';
-import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { useShopTimezone } from '@/renderer/features/history/use-shop-timezone';
 import { useAction } from '@/renderer/lib/use-action';
 import type { BackupRunDto } from '@/shared/contracts';
@@ -29,7 +29,7 @@ export function BackupSection() {
   const { busy, error, run, check } = useAction();
 
   const time = (instant: string) =>
-    timezone ? formatLocal(instant, timezone) : instant;
+    timezone ? formatDisplayDateTime(instant, timezone) : instant;
 
   function backupNow() {
     setNotice(t('backups.working'));
@@ -68,7 +68,7 @@ export function BackupSection() {
   return (
     <Card data-testid="backup-section">
       <CardHeader>
-        <CardTitle className="text-lg">{t('backups.title')}</CardTitle>
+        <CardTitle>{t('backups.title')}</CardTitle>
         <CardDescription>{t('backups.description')}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

@@ -1,3 +1,4 @@
+import { formatDisplayDate } from '@/renderer/lib/date-format';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { AlertTriangle, CheckCircle2, FilePlus2, X } from 'lucide-react';
 import {
@@ -10,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { customerLabel } from '@/renderer/features/customers/labels';
 import { PrintActions } from '@/renderer/features/printing/PrintActions';
 import {
@@ -148,12 +149,12 @@ export function CheckoutReviewDialog({
         allowNewTransaction
         closeLabel={t('workspace.common.close')}
         footer={
-          <div className="flex justify-end">
+          <DialogActions>
             <Button ref={newTransactionRef} onClick={onNewTransaction}>
               <FilePlus2 aria-hidden="true" />
               {t('workspace.finalize.newTransaction')}
             </Button>
-          </div>
+          </DialogActions>
         }
       >
         <FinalizedContent
@@ -171,11 +172,14 @@ export function CheckoutReviewDialog({
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       footer={
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.review.back')}
-          </Button>
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.review.back')}
+            </Button>
+          }
+        >
           <Button
             data-testid="finalize-button"
             disabled={
@@ -193,7 +197,7 @@ export function CheckoutReviewDialog({
               ? t('workspace.finalize.finalizing')
               : t('workspace.review.finalize')}
           </Button>
-        </div>
+        </DialogActions>
       }
     >
       {notice ? (
@@ -334,7 +338,7 @@ function ReviewBody({
         <dt className="text-muted-foreground">
           {t('workspace.header.invoiceDate')}
         </dt>
-        <dd>{view.invoiceDate}</dd>
+        <dd>{formatDisplayDate(view.invoiceDate)}</dd>
         <dt className="text-muted-foreground">
           {t('workspace.review.customer')}
         </dt>

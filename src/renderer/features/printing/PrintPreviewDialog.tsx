@@ -4,7 +4,7 @@ import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Label } from '@/renderer/components/ui/label';
 import { Select } from '@/renderer/components/ui/select';
 import { errorMessage } from '@/renderer/lib/errors';
@@ -66,16 +66,19 @@ export function PrintPreviewDialog({
       onClose={onClose}
       closeLabel={t('printing.preview.close')}
       footer={
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('printing.preview.close')}
-          </Button>
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('printing.preview.close')}
+            </Button>
+          }
+        >
           <Button onClick={() => onPrint(format)} disabled={busy}>
             <Printer aria-hidden="true" />
             {t('printing.preview.print')}
           </Button>
-        </div>
+        </DialogActions>
       }
     >
       <div className="flex flex-wrap items-end gap-3">

@@ -50,8 +50,10 @@ export function ReferencesScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">{t('references.title')}</h1>
+    <div className="flex min-w-0 flex-col gap-6">
+      <h1 className="text-xl font-semibold leading-tight tracking-tight">
+        {t('references.title')}
+      </h1>
       <div
         role="tablist"
         aria-label={t('references.title')}
@@ -167,7 +169,7 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border text-left">
+            <tr className="border-b border-border text-left text-muted-foreground">
               {entity === 'channel' || entity === 'unit' ? (
                 <th scope="col" className="p-2">
                   {t('references.fields.code')}
@@ -226,7 +228,7 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
                     {t('references.actions.edit')}
                   </Button>
                   <Button
-                    variant="outline"
+                    variant={item.isActive ? 'destructive-outline' : 'outline'}
                     size="sm"
                     disabled={busy}
                     aria-label={`${t(item.isActive ? 'references.actions.deactivate' : 'references.actions.reactivate')}: ${item.label}`}

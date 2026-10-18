@@ -116,10 +116,10 @@ test('ADMIN creates an item with a barcode and two price points, sees the timeli
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0)).toHaveAttribute('data-state', 'CURRENT');
   await expect(rows.nth(0)).toContainText('Rp 65.000');
-  await expect(rows.nth(0)).toContainText('2024-01-01 00:00');
+  await expect(rows.nth(0)).toContainText('01/01/2024 00:00');
   await expect(rows.nth(1)).toHaveAttribute('data-state', 'SCHEDULED');
   await expect(rows.nth(1)).toContainText('Rp 70.000');
-  await expect(rows.nth(1)).toContainText('2099-01-01 00:00');
+  await expect(rows.nth(1)).toContainText('01/01/2099 00:00');
 
   // Correct the current revision: the old one stays as greyed history.
   await rows

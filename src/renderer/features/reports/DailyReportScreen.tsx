@@ -1,3 +1,4 @@
+import { formatDisplayDate } from '@/renderer/lib/date-format';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Eye, FileDown } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
@@ -137,9 +138,11 @@ export function DailyReportScreen({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex min-w-0 flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold">{t('reports.title')}</h1>
+        <h1 className="text-xl font-semibold leading-tight tracking-tight">
+          {t('reports.title')}
+        </h1>
         <p className="text-sm text-muted-foreground">
           {t('reports.subtitle', { timezone: timezone ?? '' })}
         </p>
@@ -207,7 +210,7 @@ export function DailyReportScreen({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm" data-testid="report-heading">
               {t('reports.heading', {
-                date: report.date.split('-').reverse().join('/'),
+                date: formatDisplayDate(report.date),
                 timezone: report.timezone,
                 time: report.generatedAtLocal.slice(11),
               })}

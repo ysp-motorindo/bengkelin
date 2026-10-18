@@ -18,7 +18,7 @@ import {
 } from '@/renderer/components/ui/card';
 import { Input } from '@/renderer/components/ui/input';
 import { Label } from '@/renderer/components/ui/label';
-import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { useShopTimezone } from '@/renderer/features/history/use-shop-timezone';
 import { flushAll } from '@/renderer/lib/flush-registry';
 import { useAction } from '@/renderer/lib/use-action';
@@ -50,7 +50,7 @@ export function RestoreSection() {
   const confirmed = typed.trim() === phrase;
   const locked = busy || phase !== 'idle';
   const time = (instant: string) =>
-    timezone ? formatLocal(instant, timezone) : instant;
+    timezone ? formatDisplayDateTime(instant, timezone) : instant;
 
   function reset() {
     setPreview(null);
@@ -108,7 +108,7 @@ export function RestoreSection() {
   return (
     <Card data-testid="restore-section">
       <CardHeader>
-        <CardTitle className="text-lg">{t('restore.title')}</CardTitle>
+        <CardTitle>{t('restore.title')}</CardTitle>
         <CardDescription>{t('restore.description')}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -214,7 +214,7 @@ export function RestoreSection() {
               <Button
                 onClick={restore}
                 disabled={locked || !confirmed}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                variant="destructive"
               >
                 {phase === 'restoring'
                   ? t('restore.working')

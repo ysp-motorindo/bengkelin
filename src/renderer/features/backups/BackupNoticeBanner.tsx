@@ -1,7 +1,7 @@
 import { DatabaseBackup, TriangleAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
-import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { useShopTimezone } from '@/renderer/features/history/use-shop-timezone';
 import { useAction } from '@/renderer/lib/use-action';
 import type { BackupNoticeDto } from '@/shared/contracts';
@@ -47,7 +47,7 @@ function FailureNotice({ notice }: { notice: BackupNoticeDto }) {
         <p>
           {t('backups.notice.detail', {
             time: timezone
-              ? formatLocal(notice.failedAt, timezone)
+              ? formatDisplayDateTime(notice.failedAt, timezone)
               : notice.failedAt,
             reason,
           })}

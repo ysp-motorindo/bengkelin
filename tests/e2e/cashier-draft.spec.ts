@@ -321,8 +321,8 @@ test('scanning adds, merges, keeps focus in search, and override/discount lines 
   await expect(searchBox(page)).toBeFocused();
   await expect(searchBox(page)).toHaveValue('');
 
-  // Saving -> Saved: free text is debounced and shows Saving until acknowledged.
-  await page.getByLabel(t('workspace.header.note'), exact).fill('Ganti oli');
+  // Saving -> Saved: free text is debounced until acknowledged.
+  await page.getByLabel(t('workspace.header.odometer'), exact).fill('12500');
   await expect(page.getByTestId('save-state')).toHaveAttribute(
     'data-state',
     'saving',
@@ -771,7 +771,7 @@ test('keyboard only: add, edit a discount, close, focus back in search; digits i
     await page.keyboard.press('Tab');
   }
   await expect(dialog.getByLabel(discountLabel, exact)).toBeFocused();
-  await page.keyboard.type('12.5');
+  await page.keyboard.type('12,5');
   await page.keyboard.press('Enter');
   await expect(dialog).toHaveCount(0);
   await expect(searchBox(page)).toBeFocused();
@@ -786,10 +786,19 @@ test('keyboard only: add, edit a discount, close, focus back in search; digits i
   await expect(searchBox(page)).toBeFocused();
 
   // Digits + Enter typed into another field are never treated as a scan.
-  const note = page.getByLabel(t('workspace.header.note'), exact);
+  await page
+    .getByRole('button', { name: t('workspace.header.addNote'), ...exact })
+    .press('Enter');
+  const note = page.getByRole('textbox', {
+    name: t('workspace.header.note'),
+    ...exact,
+  });
   await note.focus();
   await page.keyboard.type(BARCODE);
   await page.keyboard.press('Enter');
+  await page
+    .getByRole('button', { name: t('workspace.header.saveNote'), ...exact })
+    .press('Enter');
   const odometer = page.getByLabel(t('workspace.header.odometer'), exact);
   await odometer.focus();
   await page.keyboard.type('12345');
@@ -808,7 +817,15 @@ test('drafts survive an app restart and can be switched, created and discarded',
   await scan(BARCODE);
   await scan(BARCODE);
   await page.getByLabel(t('workspace.header.odometer'), exact).fill('15200');
-  await page.getByLabel(t('workspace.header.note'), exact).fill('Rem bunyi');
+  await page
+    .getByRole('button', { name: t('workspace.header.addNote'), ...exact })
+    .click();
+  await page
+    .getByRole('textbox', { name: t('workspace.header.note'), ...exact })
+    .fill('Rem bunyi');
+  await page
+    .getByRole('button', { name: t('workspace.header.saveNote'), ...exact })
+    .click();
   // Close immediately: the before-close handshake flushes the debounced text.
   await launched!.close();
 
@@ -819,10 +836,14 @@ test('drafts survive an app restart and can be switched, created and discarded',
   await expect(next.getByTestId('line-row')).toContainText('Oli MPX2 0.8L');
   await expect(
     next.getByLabel(t('workspace.header.odometer'), exact),
-  ).toHaveValue('15200');
-  await expect(next.getByLabel(t('workspace.header.note'), exact)).toHaveValue(
-    'Rem bunyi',
-  );
+  ).toHaveValue('15.200');
+  await next
+    .getByRole('button', { name: t('workspace.header.updateNote'), ...exact })
+    .click();
+  await expect(
+    next.getByRole('textbox', { name: t('workspace.header.note'), ...exact }),
+  ).toHaveValue('Rem bunyi');
+  await next.keyboard.press('Escape');
   await expect(next.getByTestId('header-customer')).toHaveText(
     t('workspace.header.anonymous'),
   );
@@ -850,7 +871,10 @@ test('drafts survive an app restart and can be switched, created and discarded',
   await switcher
     .getByTestId('draft-row')
     .nth(1)
-    .getByRole('button', { name: t('workspace.drafts.resume'), ...exact })
+    .getByRole('button', {
+      name: `${t('workspace.drafts.resume')}: ${t('workspace.header.anonymous')}`,
+      ...exact,
+    })
     .click();
   await expect(switcher).toHaveCount(0);
   await expect(next.getByTestId('line-quantity')).toHaveText('2');
@@ -862,7 +886,10 @@ test('drafts survive an app restart and can be switched, created and discarded',
   await switcher
     .getByTestId('draft-row')
     .first()
-    .getByRole('button', { name: t('workspace.drafts.discard'), ...exact })
+    .getByRole('button', {
+      name: `${t('workspace.drafts.discard')}: ${t('workspace.header.anonymous')}`,
+      ...exact,
+    })
     .click();
   const confirm = next.getByRole('alertdialog');
   await expect(confirm).toBeVisible();

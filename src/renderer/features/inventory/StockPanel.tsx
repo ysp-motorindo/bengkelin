@@ -12,7 +12,7 @@ import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
-import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
 import type {
@@ -113,7 +113,7 @@ export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
       className="flex flex-col gap-4 border-t border-border pt-4"
     >
       <div>
-        <h2 className="text-lg font-semibold">{item.title}</h2>
+        <h2 className="wrap-anywhere text-lg font-semibold">{item.title}</h2>
         <p
           data-testid="stock-current"
           className={cn(
@@ -349,53 +349,55 @@ function History({ ledger }: { ledger: LedgerDto | null }) {
           {t('inventory.detail.noHistory')}
         </p>
       ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-muted-foreground">
-              <th scope="col" className="py-1 pr-2">
-                {t('inventory.history.time', { zone: ledger.timezone })}
-              </th>
-              <th scope="col" className="py-1 pr-2">
-                {t('inventory.history.movement')}
-              </th>
-              <th scope="col" className="py-1 pr-2 text-right">
-                {t('inventory.history.change')}
-              </th>
-              <th scope="col" className="py-1 pr-2">
-                {t('inventory.history.cashier')}
-              </th>
-              <th scope="col" className="py-1">
-                {t('inventory.history.note')}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {ledger.entries.map((entry) => (
-              <tr
-                key={entry.id}
-                data-testid="ledger-row"
-                className="border-t border-border"
-              >
-                <td className="py-1 pr-2">
-                  {formatLocal(entry.createdAt, ledger.timezone)}
-                </td>
-                <td className="py-1 pr-2">
-                  {t(`inventory.movement.${entry.movementType}`)}
-                </td>
-                <td
-                  className={cn(
-                    'py-1 pr-2 text-right font-mono',
-                    entry.quantityDelta < 0 && 'text-destructive',
-                  )}
-                >
-                  {signed(entry.quantityDelta, formatNumber)}
-                </td>
-                <td className="py-1 pr-2">{entry.cashierName}</td>
-                <td className="py-1">{entry.note ?? ''}</td>
+        <div className="min-w-0 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th scope="col" className="px-2 py-2">
+                  {t('inventory.history.time', { zone: ledger.timezone })}
+                </th>
+                <th scope="col" className="px-2 py-2">
+                  {t('inventory.history.movement')}
+                </th>
+                <th scope="col" className="px-2 py-2 text-right">
+                  {t('inventory.history.change')}
+                </th>
+                <th scope="col" className="px-2 py-2">
+                  {t('inventory.history.cashier')}
+                </th>
+                <th scope="col" className="px-2 py-2">
+                  {t('inventory.history.note')}
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {ledger.entries.map((entry) => (
+                <tr
+                  key={entry.id}
+                  data-testid="ledger-row"
+                  className="border-t border-border"
+                >
+                  <td className="px-2 py-2">
+                    {formatDisplayDateTime(entry.createdAt, ledger.timezone)}
+                  </td>
+                  <td className="px-2 py-2">
+                    {t(`inventory.movement.${entry.movementType}`)}
+                  </td>
+                  <td
+                    className={cn(
+                      'px-2 py-2 text-right tabular',
+                      entry.quantityDelta < 0 && 'text-destructive',
+                    )}
+                  >
+                    {signed(entry.quantityDelta, formatNumber)}
+                  </td>
+                  <td className="px-2 py-2">{entry.cashierName}</td>
+                  <td className="px-2 py-2">{entry.note ?? ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

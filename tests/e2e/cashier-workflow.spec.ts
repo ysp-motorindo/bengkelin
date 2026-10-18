@@ -173,7 +173,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 130.000');
 
   // ---- F2 returns to "Cari barang" from anywhere ----
-  await page.getByLabel(t('workspace.header.note'), exact).focus();
+  await page.getByLabel(t('workspace.header.odometer'), exact).focus();
   await pressShortcut(app, 'F2');
   await expect(searchBox(page)).toBeFocused();
 

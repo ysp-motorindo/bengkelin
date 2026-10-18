@@ -28,6 +28,7 @@ export function CatalogScreen({ role }: { role: Role }) {
   const { t } = useTranslation();
   const admin = role === 'ADMIN';
   const [query, setQuery] = useState('');
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [includeInactive, setIncludeInactive] = useState(false);
   const [results, setResults] = useState<CatalogItemDto[]>([]);
   const [panel, setPanel] = useState<Panel>({ kind: 'none' });
@@ -45,7 +46,10 @@ export function CatalogScreen({ role }: { role: Role }) {
           includeInactive: inactive,
           limit: LIST_LIMIT,
         });
-        if (searchCheck(result)) setResults(result.value.results);
+        if (searchCheck(result)) {
+          setResults(result.value.results);
+          setHasLoaded(true);
+        }
       });
     },
     [searchRun, searchCheck],
@@ -88,9 +92,11 @@ export function CatalogScreen({ role }: { role: Role }) {
       : undefined;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">{t('catalog.title')}</h1>
+        <h1 className="text-xl font-semibold leading-tight tracking-tight">
+          {t('catalog.title')}
+        </h1>
         {admin ? (
           <Button onClick={() => setPanel({ kind: 'new' })}>
             {t('catalog.new')}
@@ -121,6 +127,7 @@ export function CatalogScreen({ role }: { role: Role }) {
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
+              disabled={search.busy}
               checked={includeInactive}
               onChange={(event) => {
                 setIncludeInactive(event.target.checked);
@@ -163,65 +170,79 @@ export function CatalogScreen({ role }: { role: Role }) {
       </div>
 
       {search.error ? <Alert>{search.error}</Alert> : null}
-      {results.length === 0 ? (
+      {search.busy ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t('common.loading')}
+        </p>
+      ) : null}
+      {hasLoaded && !search.busy && !search.error && results.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {t('catalog.search.empty')}
         </p>
-      ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-muted-foreground">
-              <th scope="col" className="py-1 pr-2">
-                {t('catalog.list.title')}
-              </th>
-              <th scope="col" className="py-1 pr-2">
-                {t('catalog.list.sku')}
-              </th>
-              <th scope="col" className="py-1 pr-2">
-                {t('catalog.list.type')}
-              </th>
-              <th scope="col" className="py-1 pr-2">
-                {t('catalog.list.unit')}
-              </th>
-              <th scope="col" className="py-1 pr-2">
-                {t('catalog.list.status')}
-              </th>
-              <th scope="col" className="py-1" />
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((item) => (
-              <tr
-                key={item.id}
-                data-testid="catalog-row"
-                className="border-t border-border"
-              >
-                <td className="py-1 pr-2">{item.title}</td>
-                <td className="py-1 pr-2">{item.sku ?? ''}</td>
-                <td className="py-1 pr-2">{t(`catalog.type.${item.type}`)}</td>
-                <td className="py-1 pr-2">{item.unitLabel}</td>
-                <td className="py-1 pr-2">
-                  {item.isActive
-                    ? t('catalog.status.active')
-                    : t('catalog.status.inactive')}
-                </td>
-                <td className="py-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label={`${t('catalog.list.open')}: ${item.title}`}
-                    onClick={() =>
-                      setPanel({ kind: 'item', id: item.id, editing: false })
-                    }
-                  >
-                    {t('catalog.list.open')}
-                  </Button>
-                </td>
+      ) : null}
+      {results.length > 0 ? (
+        <div className="min-w-0 overflow-x-auto">
+          <table className="w-full min-w-[40rem] text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th scope="col" className="px-2 py-2">
+                  {t('catalog.list.title')}
+                </th>
+                <th scope="col" className="px-2 py-2">
+                  {t('catalog.list.sku')}
+                </th>
+                <th scope="col" className="px-2 py-2">
+                  {t('catalog.list.type')}
+                </th>
+                <th scope="col" className="px-2 py-2">
+                  {t('catalog.list.unit')}
+                </th>
+                <th scope="col" className="px-2 py-2">
+                  {t('catalog.list.status')}
+                </th>
+                <th scope="col" className="px-2 py-2" />
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {results.map((item) => (
+                <tr
+                  key={item.id}
+                  data-testid="catalog-row"
+                  className="border-t border-border"
+                >
+                  <td className="max-w-80 wrap-anywhere px-2 py-2">
+                    {item.title}
+                  </td>
+                  <td className="max-w-40 wrap-anywhere px-2 py-2">
+                    {item.sku ?? ''}
+                  </td>
+                  <td className="px-2 py-2">
+                    {t(`catalog.type.${item.type}`)}
+                  </td>
+                  <td className="px-2 py-2">{item.unitLabel}</td>
+                  <td className="px-2 py-2">
+                    {item.isActive
+                      ? t('catalog.status.active')
+                      : t('catalog.status.inactive')}
+                  </td>
+                  <td className="px-2 py-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label={`${t('catalog.list.open')}: ${item.title}`}
+                      onClick={() =>
+                        setPanel({ kind: 'item', id: item.id, editing: false })
+                      }
+                    >
+                      {t('catalog.list.open')}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
       {results.length >= LIST_LIMIT ? (
         <p className="text-sm text-muted-foreground">
           {t('catalog.search.limit', { ...numberOptions, count: LIST_LIMIT })}
@@ -239,7 +260,7 @@ export function CatalogScreen({ role }: { role: Role }) {
       ) : null}
 
       {selected ? (
-        <div className="flex flex-col gap-6 border-t border-border pt-4">
+        <div className="flex min-w-0 flex-col gap-6 border-t border-border pt-4">
           {admin && panel.kind === 'item' && panel.editing ? (
             <ItemForm
               item={selected}
@@ -289,15 +310,17 @@ function ItemSummary({
       data-testid="item-detail"
       className="flex flex-col gap-1"
     >
-      <div className="flex items-center gap-3">
-        <h2 className="text-lg font-semibold">{item.title}</h2>
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
+        <h2 className="min-w-0 flex-1 wrap-anywhere text-lg font-semibold">
+          {item.title}
+        </h2>
         {onEdit ? (
           <Button variant="outline" size="sm" onClick={onEdit}>
             {t('catalog.form.editTitle')}
           </Button>
         ) : null}
       </div>
-      <p className="text-sm text-muted-foreground">
+      <p className="wrap-anywhere text-sm text-muted-foreground">
         {t(`catalog.type.${item.type}`)} ·{' '}
         {item.sku ?? t('catalog.detail.noSku')} · {item.unitLabel}
         {item.weight !== null
@@ -308,9 +331,11 @@ function ItemSummary({
           ? t('catalog.detail.tracked')
           : t('catalog.detail.notTracked')}
       </p>
-      {item.description ? <p className="text-sm">{item.description}</p> : null}
+      {item.description ? (
+        <p className="wrap-anywhere text-sm">{item.description}</p>
+      ) : null}
       {item.barcodes.length > 0 ? (
-        <p className="font-mono text-sm">
+        <p className="wrap-anywhere font-mono text-sm">
           {item.barcodes
             .filter((entry) => entry.isActive)
             .map((entry) => entry.barcode)

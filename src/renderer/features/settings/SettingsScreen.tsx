@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { BackupSection } from '@/renderer/features/backups/BackupSection';
 import { RestoreSection } from '@/renderer/features/backups/RestoreSection';
 import type { PublicSettings } from '@/shared/contracts';
@@ -14,8 +15,12 @@ export function SettingsScreen({
 }: {
   onShopSaved?: ((settings: PublicSettings) => void) | undefined;
 } = {}) {
+  const { t } = useTranslation();
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
+    <div className="flex min-w-0 max-w-3xl flex-col gap-6">
+      <h1 className="text-xl font-semibold leading-tight tracking-tight">
+        {t('shell.nav.settings')}
+      </h1>
       <ShopSettingsSection onSaved={onShopSaved} />
       <ShopLogoSection />
       <PrintSettingsSection />

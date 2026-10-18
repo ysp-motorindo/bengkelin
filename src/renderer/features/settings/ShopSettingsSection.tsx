@@ -131,9 +131,7 @@ export function ShopSettingsSection({
     <Card>
       <form onSubmit={submit} noValidate aria-label={t('settings.shop.title')}>
         <CardHeader>
-          <CardTitle className="text-base">
-            {t('settings.shop.title')}
-          </CardTitle>
+          <CardTitle>{t('settings.shop.title')}</CardTitle>
           <p className="text-sm text-muted-foreground">
             {t('settings.shop.description')}
           </p>

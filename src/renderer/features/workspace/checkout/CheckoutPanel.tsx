@@ -3,7 +3,7 @@ import { Banknote, ClipboardCheck, Plus, QrCode, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
-import { Button } from '@/renderer/components/ui/button';
+import { Button, IconButton } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
@@ -294,14 +294,14 @@ export function CheckoutPanel({
                 )
               }
             />
-            <button
+            <IconButton
+              destructive
               type="button"
-              aria-label={`${t('workspace.checkout.removePayment')} ${index + 1}`}
+              label={`${t('workspace.checkout.removePayment')} ${index + 1}`}
               onClick={() => changeRows(rows.filter((_, i) => i !== index))}
-              className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Trash2 aria-hidden="true" className="size-4" />
-            </button>
+            </IconButton>
             <Input
               aria-label={`${t('workspace.checkout.reference')} ${index + 1}`}
               placeholder={t('workspace.checkout.reference')}

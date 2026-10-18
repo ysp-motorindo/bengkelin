@@ -1,3 +1,4 @@
+import { formatDisplayDate } from '@/renderer/lib/date-format';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
@@ -38,40 +39,40 @@ export function SummaryTable({
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="text-left text-muted-foreground">
-            <th scope="col" className="py-1 pr-2">
+            <th scope="col" className="px-2 py-2">
               {t('history.table.number')}
             </th>
-            <th scope="col" className="py-1 pr-2">
+            <th scope="col" className="px-2 py-2">
               {t('history.table.invoiceDate')}
             </th>
-            <th scope="col" className="py-1 pr-2">
+            <th scope="col" className="px-2 py-2">
               {t('history.table.dueDate')}
             </th>
-            <th scope="col" className="py-1 pr-2">
+            <th scope="col" className="px-2 py-2">
               {t('history.table.customer')}
             </th>
-            <th scope="col" className="py-1 pr-2">
+            <th scope="col" className="px-2 py-2">
               {t('history.table.plate')}
             </th>
-            <th scope="col" className="py-1 pr-2">
+            <th scope="col" className="px-2 py-2">
               {t('history.table.channel')}
             </th>
-            <th scope="col" className="py-1 pr-2">
+            <th scope="col" className="px-2 py-2">
               {t('history.table.cashier')}
             </th>
-            <th scope="col" className="py-1 pr-2 text-right">
+            <th scope="col" className="px-2 py-2 text-right">
               {t('history.table.amount')}
             </th>
-            <th scope="col" className="py-1 pr-2 text-right">
+            <th scope="col" className="px-2 py-2 text-right">
               {t('history.table.paid')}
             </th>
-            <th scope="col" className="py-1 pr-2 text-right">
+            <th scope="col" className="px-2 py-2 text-right">
               {t('history.table.outstanding')}
             </th>
-            <th scope="col" className="py-1 pr-2">
+            <th scope="col" className="px-2 py-2">
               {t('history.table.status')}
             </th>
-            <th scope="col" className="py-1" />
+            <th scope="col" className="px-2 py-2" />
           </tr>
         </thead>
         <tbody>
@@ -85,14 +86,18 @@ export function SummaryTable({
                 row.status === 'VOID' && 'text-muted-foreground',
               )}
             >
-              <td className="py-1 pr-2 font-mono whitespace-nowrap">
+              <td className="px-2 py-2 font-mono whitespace-nowrap">
                 <span className={cn(row.status === 'VOID' && 'line-through')}>
                   {row.invoiceNumber}
                 </span>
               </td>
-              <td className="py-1 pr-2 whitespace-nowrap">{row.invoiceDate}</td>
-              <td className="py-1 pr-2 whitespace-nowrap">{row.dueDate}</td>
-              <td className="py-1 pr-2">
+              <td className="px-2 py-2 whitespace-nowrap">
+                {formatDisplayDate(row.invoiceDate)}
+              </td>
+              <td className="px-2 py-2 whitespace-nowrap">
+                {formatDisplayDate(row.dueDate)}
+              </td>
+              <td className="px-2 py-2">
                 {row.customerName ?? t('history.table.anonymous')}
                 {row.customerPhone ? (
                   <span className="block text-xs text-muted-foreground">
@@ -100,27 +105,27 @@ export function SummaryTable({
                   </span>
                 ) : null}
               </td>
-              <td className="py-1 pr-2 whitespace-nowrap">
+              <td className="px-2 py-2 whitespace-nowrap">
                 {row.plateNumber ?? ''}
               </td>
-              <td className="py-1 pr-2">{row.channel.label}</td>
-              <td className="py-1 pr-2">{row.cashier.displayName}</td>
-              <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">
+              <td className="px-2 py-2">{row.channel.label}</td>
+              <td className="px-2 py-2">{row.cashier.displayName}</td>
+              <td className="px-2 py-2 text-right tabular whitespace-nowrap">
                 {formatIdr(row.amount)}
               </td>
-              <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">
+              <td className="px-2 py-2 text-right tabular whitespace-nowrap">
                 {formatIdr(row.paidAmount)}
               </td>
-              <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">
+              <td className="px-2 py-2 text-right tabular whitespace-nowrap">
                 {row.status === 'VOID' ? '—' : formatIdr(row.outstandingAmount)}
               </td>
-              <td className="py-1 pr-2">
+              <td className="px-2 py-2">
                 <StatusBadges
                   status={row.status}
                   paymentStatus={row.paymentStatus}
                 />
               </td>
-              <td className="py-1">
+              <td className="px-2 py-2">
                 <Button
                   variant="outline"
                   size="sm"

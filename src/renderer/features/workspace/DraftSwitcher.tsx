@@ -3,9 +3,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { PencilLine, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
-import { Button } from '@/renderer/components/ui/button';
-import { Dialog } from '@/renderer/components/ui/dialog';
-import { formatLocal } from '@/renderer/features/catalog/local-time';
+import { Button, IconButton } from '@/renderer/components/ui/button';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
+import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { errorMessage } from '@/renderer/lib/errors';
 import { watchSessionError } from '@/renderer/lib/session-events';
 import type { DraftSummary } from '@/shared/contracts';
@@ -77,12 +77,14 @@ export function DraftSwitcher({
       scrollBody
       contentPadding={false}
       footer={
-        <div className="flex justify-start">
-          <Button variant="outline" onClick={onClose}>
-            <X aria-hidden="true" />
-            {t('workspace.common.close')}
-          </Button>
-        </div>
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('workspace.common.close')}
+            </Button>
+          }
+        />
       }
     >
       {error ? <Alert>{error}</Alert> : null}
@@ -96,22 +98,22 @@ export function DraftSwitcher({
             <caption className="sr-only">{t('workspace.drafts.title')}</caption>
             <thead className="text-left text-xs text-muted-foreground">
               <tr>
-                <th scope="col" className="py-1 pr-2">
+                <th scope="col" className="px-2 py-2">
                   {t('workspace.drafts.customer')}
                 </th>
-                <th scope="col" className="py-1 pr-2 text-right">
+                <th scope="col" className="px-2 py-2 text-right">
                   {t('workspace.drafts.amount')}
                 </th>
-                <th scope="col" className="py-1 pr-2">
+                <th scope="col" className="px-2 py-2">
                   {t('workspace.drafts.createdBy')}
                 </th>
-                <th scope="col" className="py-1 pr-2">
+                <th scope="col" className="px-2 py-2">
                   {t('workspace.drafts.lastEditedBy')}
                 </th>
-                <th scope="col" className="py-1 pr-2">
+                <th scope="col" className="px-2 py-2">
                   {t('workspace.drafts.updatedAt')}
                 </th>
-                <th scope="col" className="py-1">
+                <th scope="col" className="px-2 py-2">
                   <span className="sr-only">
                     {t('workspace.lines.actions')}
                   </span>
@@ -130,7 +132,7 @@ export function DraftSwitcher({
                     aria-current={current ? 'true' : undefined}
                     className="border-t border-border"
                   >
-                    <td className="py-1.5 pr-2">
+                    <td className="px-2 py-2">
                       <span className="font-medium">
                         {draft.customerLabel ?? t('workspace.header.anonymous')}
                       </span>
@@ -148,39 +150,37 @@ export function DraftSwitcher({
                         {current ? ` · ${t('workspace.drafts.current')}` : ''}
                       </span>
                     </td>
-                    <td className="tabular py-1.5 pr-2 text-right">
+                    <td className="tabular px-2 py-2 text-right">
                       {formatIdr(draft.amount)}
                     </td>
-                    <td className="py-1.5 pr-2">
-                      {draft.createdBy.displayName}
-                    </td>
-                    <td className="py-1.5 pr-2">
+                    <td className="px-2 py-2">{draft.createdBy.displayName}</td>
+                    <td className="px-2 py-2">
                       {draft.lastEditedBy.displayName}
                     </td>
-                    <td className="tabular py-1.5 pr-2">
-                      {formatLocal(draft.updatedAt, timezone).slice(0, 16)}
+                    <td className="tabular px-2 py-2">
+                      {formatDisplayDateTime(draft.updatedAt, timezone).slice(
+                        0,
+                        16,
+                      )}
                     </td>
-                    <td className="whitespace-nowrap py-1 text-right">
-                      <button
+                    <td className="whitespace-nowrap px-2 py-2 text-right">
+                      <IconButton
                         type="button"
-                        aria-label={`${t('workspace.drafts.resume')}: ${customer}`}
-                        title={t('workspace.drafts.resume')}
+                        label={`${t('workspace.drafts.resume')}: ${customer}`}
                         disabled={busy || current}
                         onClick={() => void onResume(draft.id)}
-                        className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                       >
                         <PencilLine aria-hidden="true" className="size-4" />
-                      </button>
-                      <button
+                      </IconButton>
+                      <IconButton
+                        destructive
                         type="button"
-                        aria-label={`${t('workspace.drafts.discard')}: ${customer}`}
-                        title={t('workspace.drafts.discard')}
+                        label={`${t('workspace.drafts.discard')}: ${customer}`}
                         disabled={busy}
                         onClick={() => setConfirming(draft)}
-                        className="inline-flex size-9 items-center justify-center rounded-md text-destructive hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                       >
                         <Trash2 aria-hidden="true" className="size-4" />
-                      </button>
+                      </IconButton>
                     </td>
                   </tr>
                 );
@@ -207,21 +207,28 @@ export function DraftSwitcher({
           initialFocus={cancelRef}
           onClose={() => setConfirming(null)}
           footer={
-            <div className="flex justify-between">
+            <DialogActions
+              secondary={
+                <Button
+                  ref={cancelRef}
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => setConfirming(null)}
+                >
+                  <X aria-hidden="true" />
+                  {t('workspace.common.cancel')}
+                </Button>
+              }
+            >
               <Button
-                ref={cancelRef}
-                variant="outline"
+                variant="destructive"
                 disabled={busy}
-                onClick={() => setConfirming(null)}
+                onClick={() => void discard(confirming)}
               >
-                <X aria-hidden="true" />
-                {t('workspace.common.cancel')}
-              </Button>
-              <Button disabled={busy} onClick={() => void discard(confirming)}>
                 <Trash2 aria-hidden="true" />
                 {t('workspace.drafts.confirmDiscard')}
               </Button>
-            </div>
+            </DialogActions>
           }
         >
           {null}

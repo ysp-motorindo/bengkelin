@@ -56,7 +56,7 @@ export function ShopLogoSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{t('printing.logo.title')}</CardTitle>
+        <CardTitle>{t('printing.logo.title')}</CardTitle>
         <CardDescription>{t('printing.logo.description')}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -79,7 +79,7 @@ export function ShopLogoSection() {
             {t('printing.logo.choose')}
           </Button>
           <Button
-            variant="outline"
+            variant="destructive-outline"
             onClick={remove}
             disabled={busy || logo === null}
           >

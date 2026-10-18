@@ -102,6 +102,20 @@ function bridge(
 describe('invoice detail', () => {
   beforeEach(() => vi.restoreAllMocks());
 
+  test('shows calendar dates in DD/MM/YYYY and timestamps in shop time', async () => {
+    bridge(view());
+    render(
+      <InvoiceDetail invoiceId={ID} timezone="Asia/Jakarta" onBack={vi.fn()} />,
+    );
+    const detail = await screen.findByTestId('invoice-detail');
+    expect(within(detail).getByRole('heading', { level: 1 })).toHaveTextContent(
+      'INV-20260930-0001',
+    );
+    expect(within(detail).getByText('30/09/2026')).toBeInTheDocument();
+    expect(within(detail).getByText('07/10/2026')).toBeInTheDocument();
+    expect(within(detail).getByText('30/09/2026 10:00')).toBeInTheDocument();
+  });
+
   test('record payment defaults to the outstanding amount and reuses the requestId on retry', async () => {
     const ids: string[] = [];
     const recordPayment = vi.fn(
@@ -191,7 +205,7 @@ describe('invoice detail', () => {
     );
     // Payment time is shown in the shop timezone (04:00Z = 11:00 WIB).
     expect(screen.getByTestId('payment-row')).toHaveTextContent(
-      '2026-09-30 11:00',
+      '30/09/2026 11:00',
     );
   });
 
@@ -235,7 +249,7 @@ describe('invoice detail', () => {
     const marking = await screen.findByTestId('void-marking');
     expect(marking).toHaveTextContent('Salah input');
     expect(marking).toHaveTextContent('Siti');
-    expect(marking).toHaveTextContent('2026-09-30 12:30');
+    expect(marking).toHaveTextContent('30/09/2026 12:30');
     expect(
       screen.getByRole('button', { name: 'Catat pembayaran' }),
     ).toBeDisabled();

@@ -19,11 +19,17 @@ export function CardHeader({ className, ...props }: ComponentProps<'div'>) {
   );
 }
 
-export function CardTitle({ className, ...props }: ComponentProps<'h1'>) {
+export function CardTitle({
+  className,
+  level = 2,
+  ...props
+}: ComponentProps<'h2'> & { level?: 1 | 2 | 3 }) {
+  const Heading = level === 1 ? 'h1' : level === 2 ? 'h2' : 'h3';
   return (
-    <h1
+    <Heading
       className={cn(
-        'text-xl font-semibold leading-tight tracking-tight',
+        'wrap-anywhere font-semibold leading-tight tracking-tight',
+        level === 1 ? 'text-xl' : 'text-lg',
         className,
       )}
       {...props}
