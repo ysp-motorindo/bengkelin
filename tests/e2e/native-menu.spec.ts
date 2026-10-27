@@ -76,12 +76,12 @@ test('ADMIN menu in both languages: rebuilt on language change; About, Backup an
     .locator('summary')
     .filter({ hasText: tr('id', 'shell.preferences.language') })
     .click();
-  await page
-    .getByRole('radio', {
-      name: tr('id', 'shell.preferences.languages.en'),
-      ...exact,
-    })
-    .check();
+  const english = page.getByRole('radio', {
+    name: tr('id', 'shell.preferences.languages.en'),
+    ...exact,
+  });
+  await english.click();
+  await expect(english).toBeChecked();
   await page.getByTestId('session-name').click();
   await expect(
     page.getByRole('button', {
