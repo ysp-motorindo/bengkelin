@@ -1,7 +1,7 @@
 import { withCurrentCustomerColumns } from './helpers/legacy-customers';
 import { createHash } from 'node:crypto';
-import {
-  chmodSync,
+import fs, {
+  accessSync,
   copyFileSync,
   existsSync,
   mkdirSync,
@@ -18,7 +18,7 @@ import {
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createApplicationServices } from '@/main/compose';
 import { openDatabase } from '@/main/database/connection';
 import { APPLICATION_ID } from '@/main/database/identity';
@@ -67,6 +67,16 @@ import {
 import { FakeDialogs } from './helpers/fake-print';
 import { createHarness, failure, value, type Harness } from './helpers/harness';
 
+// Directory chmod does not simulate denied writes on Windows.
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...actual,
+    accessSync: vi.fn(actual.accessSync),
+    mkdirSync: vi.fn(actual.mkdirSync),
+  };
+});
+
 /**
  * Task 14: validated local backups (spec 42, 44, 46, 47, 48, 55; Part A
  * review focus 5). The backup is SQLite's online backup of the live
@@ -82,7 +92,6 @@ const T0 = Date.UTC(2026, 8, 30, 3, 0, 0);
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
-const isRoot = process.getuid?.() === 0;
 
 let h: Harness;
 let dialogs: FakeDialogs;
@@ -94,6 +103,8 @@ const clock = { now };
 const priceStart = () => toInstant(T0 - 30 * DAY);
 
 beforeEach(async () => {
+  vi.mocked(accessSync).mockReset().mockImplementation(fs.accessSync);
+  vi.mocked(mkdirSync).mockReset().mockImplementation(fs.mkdirSync);
   nowMs = T0;
   dialogs = new FakeDialogs();
   h = createHarness({ clock, dialogs });
@@ -101,13 +112,6 @@ beforeEach(async () => {
   shop = await seedPrintShop(h.call, now);
 });
 afterEach(() => {
-  // Restore permissions changed by a test so the temp dirs can be removed.
-  for (const dir of [scratch, h.backupsDir]) {
-    if (!existsSync(dir)) continue;
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (entry.isDirectory()) chmodSync(path.join(dir, entry.name), 0o755);
-    }
-  }
   h.close();
   rmSync(scratch, { recursive: true, force: true });
 });
@@ -559,44 +563,42 @@ describe('createValidatedBackup', () => {
     ).toBe('BACKUP_DESTINATION_UNAVAILABLE');
   });
 
-  test.skipIf(isRoot)(
-    'a read-only destination fails with BACKUP_DESTINATION_READ_ONLY',
-    async () => {
-      const locked = path.join(scratch, 'locked');
-      mkdirSync(locked);
-      value(await chooseDestination(locked));
-      chmodSync(locked, 0o555);
-      const before = businessState();
-      const error = failure(
-        await h.call(C.backups.create, undefined, ADMIN_WINDOW),
-      );
-      expect(error.code).toBe('BACKUP_DESTINATION_READ_ONLY');
-      expect(files(locked)).toEqual([]);
-      expect(businessState()).toBe(before);
-      const after = value(await finalize(await prepareDraft()));
-      expect(after.status).toBe('FINALIZED');
-    },
-  );
+  test('a read-only destination fails with BACKUP_DESTINATION_READ_ONLY', async () => {
+    const locked = path.join(scratch, 'locked');
+    mkdirSync(locked);
+    value(await chooseDestination(locked));
+    vi.mocked(accessSync).mockImplementationOnce(() => {
+      throw Object.assign(new Error('Permission denied'), { code: 'EACCES' });
+    });
+    const before = businessState();
+    const error = failure(
+      await h.call(C.backups.create, undefined, ADMIN_WINDOW),
+    );
+    expect(error.code).toBe('BACKUP_DESTINATION_READ_ONLY');
+    expect(files(locked)).toEqual([]);
+    expect(businessState()).toBe(before);
+    const after = value(await finalize(await prepareDraft()));
+    expect(after.status).toBe('FINALIZED');
+  });
 
-  test.skipIf(isRoot)(
-    'an unwritable default folder parent is reported, not bypassed',
-    async () => {
-      // The default folder cannot be created: its parent is read-only.
-      const parent = path.join(scratch, 'userData');
-      mkdirSync(parent);
-      chmodSync(parent, 0o555);
-      const blocked = new BackupService({
-        db: h.db,
-        clock,
-        logger: noopLogger,
-        defaultDir: path.join(parent, 'backups'),
-        dialogs,
-      });
-      await expect(
-        blocked.createValidatedBackup({ kind: 'AUTO' }),
-      ).rejects.toMatchObject({ code: 'BACKUP_DESTINATION_READ_ONLY' });
-    },
-  );
+  test('an unwritable default folder parent is reported, not bypassed', async () => {
+    // The default folder cannot be created: its parent is read-only.
+    const parent = path.join(scratch, 'userData');
+    mkdirSync(parent);
+    const blocked = new BackupService({
+      db: h.db,
+      clock,
+      logger: noopLogger,
+      defaultDir: path.join(parent, 'backups'),
+      dialogs,
+    });
+    vi.mocked(mkdirSync).mockImplementationOnce(() => {
+      throw Object.assign(new Error('Permission denied'), { code: 'EACCES' });
+    });
+    await expect(
+      blocked.createValidatedBackup({ kind: 'AUTO' }),
+    ).rejects.toMatchObject({ code: 'BACKUP_DESTINATION_READ_ONLY' });
+  });
 });
 
 // ---- validation ----
@@ -1304,14 +1306,14 @@ describe('backups API', () => {
     expect(
       failure(await chooseDestination(path.join(scratch, 'missing'))).code,
     ).toBe('BACKUP_DESTINATION_UNAVAILABLE');
-    if (!isRoot) {
-      const locked = path.join(scratch, 'locked');
-      mkdirSync(locked);
-      chmodSync(locked, 0o555);
-      expect(failure(await chooseDestination(locked)).code).toBe(
-        'BACKUP_DESTINATION_READ_ONLY',
-      );
-    }
+    const locked = path.join(scratch, 'locked');
+    mkdirSync(locked);
+    vi.mocked(accessSync).mockImplementationOnce(() => {
+      throw Object.assign(new Error('Permission denied'), { code: 'EACCES' });
+    });
+    expect(failure(await chooseDestination(locked)).code).toBe(
+      'BACKUP_DESTINATION_READ_ONLY',
+    );
     expect(value(await status()).destination.isDefault).toBe(true);
   });
 });

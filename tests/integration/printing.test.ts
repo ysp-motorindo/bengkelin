@@ -489,7 +489,7 @@ describe('one print model, three presentations', () => {
     }
   });
 
-  test('English shop language prints English labels', async () => {
+  test('Indonesian shop language controls print labels despite English admin preference', async () => {
     value(
       await h.call(
         C.settings.updatePreferences,
@@ -499,17 +499,63 @@ describe('one print model, three presentations', () => {
     );
     const invoice = await acceptanceInvoice(shop, priceStart(), 3);
     for (const format of FORMATS) {
-      const { html } = value(await preview(invoice.id, format));
+      const { html } = value(await preview(invoice.id, format, ADMIN_WINDOW));
+      expect(html).toContain('FAKTUR');
+      expect(html).toContain('Dibayar sebagian');
+      expect(html).toContain('Tunai');
+      expect(html).toContain('14 hari');
+      expect(html).not.toContain('Partially paid');
+    }
+    const { html } = value(await preview(invoice.id, 'A4', ADMIN_WINDOW));
+    expect(html).toContain('Hal. ');
+    expect(html).toContain('<html lang="id">');
+  });
+});
+
+test('English shop language controls all print formats and reprint labels', async () => {
+  const english = createHarness({
+    clock: { now },
+    printDriver: new FakePrintDriver(),
+    dialogs: new FakeDialogs(),
+  });
+  try {
+    const englishShop = await seedPrintShop(english.call, now, 'en');
+    const invoice = await acceptanceInvoice(englishShop, priceStart(), 3);
+    for (const format of FORMATS) {
+      const { html } = value(
+        await english.call<PrintPreviewDto>(
+          C.printing.preview,
+          { invoiceId: invoice.id, format },
+          CASHIER_WINDOW,
+        ),
+      );
+      expect(html).toContain('<html lang="en">');
       expect(html).toContain('INVOICE');
       expect(html).toContain('Partially paid');
       expect(html).toContain('Cash');
       expect(html).toContain('14 days');
       expect(html).not.toContain('Dibayar sebagian');
     }
-    const { html } = value(await preview(invoice.id, 'A4'));
+    value(
+      await english.call<PrintOutcomeDto>(
+        C.printing.print,
+        { invoiceId: invoice.id, format: 'A4' },
+        CASHIER_WINDOW,
+      ),
+    );
+    const { html } = value(
+      await english.call<PrintPreviewDto>(
+        C.printing.preview,
+        { invoiceId: invoice.id, format: 'A4' },
+        CASHIER_WINDOW,
+      ),
+    );
+    expect(html).toContain('REPRINT');
     expect(html).toContain('Page ');
-    expect(html).toContain('<html lang="en">');
-  });
+    expect(html).not.toContain('CETAK ULANG');
+  } finally {
+    english.close();
+  }
 });
 
 // ---- escaping ----
@@ -656,7 +702,7 @@ describe('reprints and VOID', () => {
     );
   });
 
-  test('English reprint marking', async () => {
+  test('Indonesian reprint marking ignores English admin preference', async () => {
     value(
       await h.call(
         C.settings.updatePreferences,
@@ -666,7 +712,9 @@ describe('reprints and VOID', () => {
     );
     const invoice = await criticalInvoice(shop, priceStart());
     value(await print(invoice.id, 'A4'));
-    expect(value(await preview(invoice.id, 'A4')).html).toContain('REPRINT');
+    const { html } = value(await preview(invoice.id, 'A4', ADMIN_WINDOW));
+    expect(html).toContain('CETAK ULANG');
+    expect(html).not.toContain('REPRINT');
   });
 
   test('a VOID invoice prints a prominent VOID watermark and the reason', async () => {

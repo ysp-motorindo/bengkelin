@@ -48,10 +48,12 @@ test('admin imports customers and selects an inactive customer in a transaction'
     .click();
   const preview = page.getByTestId('customer-import-preview');
   await expect(preview).toBeVisible();
-  const commit = preview.getByRole('button', {
-    name: t('catalogTransfer.preview.commit'),
-    exact: true,
-  });
+  const commit = page
+    .getByRole('dialog', { name: t('customers.import.title') })
+    .getByRole('button', {
+      name: t('catalogTransfer.preview.commit'),
+      exact: true,
+    });
   await expect(commit).toBeDisabled();
   await preview
     .getByRole('checkbox', { name: t('customers.import.acknowledge') })
@@ -68,6 +70,7 @@ test('admin imports customers and selects an inactive customer in a transaction'
   await page
     .getByRole('dialog')
     .getByRole('button', { name: t('customers.edit.cancel'), exact: true })
+    .last()
     .click();
   await nav
     .getByRole('button', { name: t('shell.nav.workspace'), exact: true })

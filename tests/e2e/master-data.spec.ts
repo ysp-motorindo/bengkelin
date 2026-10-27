@@ -4,6 +4,7 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { tr } from './helpers/i18n';
 import { launchApp, type LaunchedApp } from './helpers/launch';
+import { tabTo } from './helpers/workflow-seed';
 
 const ADMIN_PASSWORD = 'correct-horse-battery';
 const CASHIER_PASSWORD = 'siti-password-1';
@@ -119,7 +120,7 @@ test('cashier: quick creation, keyboard use, plate lookup, mismatch, transfer an
   // Keyboard-only: type name, Tab to phone, type, Enter submits the form.
   await page.getByLabel(t('customers.quickCustomer.name'), exact).focus();
   await page.keyboard.type('Siti Aminah');
-  await page.keyboard.press('Tab');
+  await tabTo(page, page.getByLabel(t('customers.quickCustomer.phone'), exact));
   await page.keyboard.type('0857 1111 2222');
   await page.keyboard.press('Enter');
   await expect(selected).toContainText('Siti Aminah');

@@ -45,7 +45,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      # package.json `allowScripts` (better-sqlite3, electron) is an npm 12
+      # package.json `allowScripts` (SQLite, Electron, Squirrel) is an npm 12
       # feature; use the same npm major as development.
       - name: Use npm 12
         run: npm install -g npm@12

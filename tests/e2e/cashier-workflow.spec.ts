@@ -219,7 +219,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 196.500');
 
   // Save Draft (Ctrl+S) flushes: everything acknowledged.
-  await pressShortcut(app, 'Control+s');
+  await pressShortcut(app, 'CmdOrCtrl+S');
   await expect(page.getByTestId('save-state')).toHaveAttribute(
     'data-state',
     'saved',
@@ -299,7 +299,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   await expect
     .poll(async () => (await menuItem(app, 'print'))?.enabled)
     .toBe(true);
-  await pressShortcut(app, 'Control+p');
+  await pressShortcut(app, 'CmdOrCtrl+P');
   await expect(done.getByTestId('print-notice')).toHaveText(
     t('printing.outcome.printed', {
       format: t('printing.format.THERMAL_58'),
@@ -310,7 +310,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   expect(readFileSync(printed).subarray(0, 5).toString()).toBe('%PDF-');
 
   // ---- New Transaction (Ctrl+N) leaves the finalized draft ----
-  await pressShortcut(app, 'Control+n');
+  await pressShortcut(app, 'CmdOrCtrl+N');
   await expect(done).toHaveCount(0);
   await expect(page.getByTestId('line-row')).toHaveCount(0);
   await expect(searchBox(page)).toBeFocused();

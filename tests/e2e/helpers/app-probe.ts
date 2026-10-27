@@ -77,20 +77,31 @@ export async function clickMenuItem(
 }
 
 /**
- * Presses a native shortcut such as 'F8' or 'Control+s' as real keyboard
- * input. Playwright's `page.keyboard` injects keys straight into the page
- * (CDP), which never reaches Electron's input pipeline, so native menu
- * accelerators cannot see it. `webContents.sendInputEvent` enters the same
- * pipeline an OS keypress does (before-input-event, then the page, then
- * the menu accelerators when the page leaves the key unhandled).
+ * Synthetic input reaches native menu accelerators on Linux/Windows.
+ * macOS does not activate them from sendInputEvent, so verify the registered
+ * accelerator and dispatch its menu item there. Physical macOS keys need
+ * manual acceptance testing.
  */
 export async function pressShortcut(
   app: ElectronApplication,
   shortcut: string,
 ): Promise<void> {
+  if (process.platform === 'darwin') {
+    const items = flattenMenu((await readMenu(app)) ?? []);
+    const item = items.find(
+      (item) => item.accelerator?.toLowerCase() === shortcut.toLowerCase(),
+    );
+    if (!item?.id || !item.visible || !item.enabled) {
+      throw new Error(`No enabled menu item for ${shortcut}`);
+    }
+    await clickMenuItem(app, item.id);
+    return;
+  }
   const parts = shortcut.split('+');
   const keyCode = parts.pop()!;
-  const modifiers = parts.map((part) => part.toLowerCase());
+  const modifiers = parts.map((part) =>
+    part.toLowerCase() === 'cmdorctrl' ? 'control' : part.toLowerCase(),
+  );
   await app.evaluate(
     ({ BrowserWindow }, key) => {
       const contents = BrowserWindow.getAllWindows()[0]!.webContents;

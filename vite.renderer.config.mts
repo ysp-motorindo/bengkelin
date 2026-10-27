@@ -42,6 +42,7 @@ function productionCsp(): Plugin {
 export default defineConfig({
   // Relative asset URLs so the built renderer loads from file://.
   base: './',
+  build: { assetsInlineLimit: 0 },
   plugins: [react(), tailwindcss(), productionCsp()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },

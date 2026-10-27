@@ -154,7 +154,7 @@ test('scan, split payment, review, finalize, see the number, new transaction', a
     .selectOption('QRIS');
   await expect(
     page.getByLabel(`${t('workspace.checkout.amount')} 2`, exact),
-  ).toHaveValue('25000');
+  ).toHaveValue('25.000');
   await expect(page.getByTestId('unallocated-amount')).toHaveText('Rp 0');
 
   // Review (flushes first), then finalize.

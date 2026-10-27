@@ -71,9 +71,18 @@ test('ADMIN menu in both languages: rebuilt on language change; About, Backup an
   );
 
   // Switch to English: the UI and the native menu follow.
+  await page.getByTestId('session-name').click();
   await page
-    .getByLabel(tr('id', 'shell.preferences.language'), exact)
-    .selectOption('en');
+    .locator('summary')
+    .filter({ hasText: tr('id', 'shell.preferences.language') })
+    .click();
+  await page
+    .getByRole('radio', {
+      name: tr('id', 'shell.preferences.languages.en'),
+      ...exact,
+    })
+    .check();
+  await page.getByTestId('session-name').click();
   await expect(
     page.getByRole('button', {
       name: tr('en', 'shell.nav.workspace'),
@@ -178,15 +187,15 @@ test('View > Reload flushes pending draft input first', async () => {
   await scan(page, OIL_BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(1);
 
-  // Typed text is still inside the 300 ms debounce when Reload is chosen.
+  // The odometer is still inside the 300 ms debounce when Reload is chosen.
   await page
-    .getByLabel(tr('id', 'workspace.header.note'), exact)
-    .fill('Ganti oli dan cek rem');
+    .getByLabel(tr('id', 'workspace.header.odometer'), exact)
+    .fill('123');
   await clickMenuItem(app, 'reload');
   await expect(searchBox(page)).toBeFocused();
   await expect(
-    page.getByLabel(tr('id', 'workspace.header.note'), exact),
-  ).toHaveValue('Ganti oli dan cek rem');
+    page.getByLabel(tr('id', 'workspace.header.odometer'), exact),
+  ).toHaveValue('123');
 });
 
 test('ADMIN screens: cashier management with LAST_ACTIVE_ADMIN, shop settings with the timezone warning', async () => {
@@ -273,7 +282,16 @@ test('ADMIN screens: cashier management with LAST_ACTIVE_ADMIN, shop settings wi
   await shop
     .getByRole('button', { name: t('settings.shop.save'), ...exact })
     .click();
-  await expect(shop.getByText(t('validation.invalidTimezone'))).toBeVisible();
+  await expect(
+    shop.getByLabel(t('settings.shop.timezone'), exact),
+  ).toHaveAttribute('aria-invalid', 'true');
+  await shop
+    .getByRole('button', { name: t('validation.invalidTimezone'), ...exact })
+    .focus();
+  await expect(shop.getByRole('tooltip')).toHaveText(
+    t('validation.invalidTimezone'),
+  );
+  await expect(shop.getByRole('tooltip')).toBeVisible();
 });
 
 test('technical log: startup migration outcome and a gone renderer (spec 46/48)', async () => {
