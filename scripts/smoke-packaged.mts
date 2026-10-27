@@ -134,7 +134,7 @@ async function main(): Promise<void> {
     '--remote-debugging-port=0', // removed at startup when packaged
     `--log-net-log=${netLog}`,
     '--net-log-capture-mode=Everything',
-    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost',
+    '--host-resolver-rules=MAP * ^NOTFOUND, EXCLUDE localhost',
   ];
   console.log(`  temp profile: ${tmp}`);
 

@@ -345,519 +345,535 @@ describe('committed populated fixtures', () => {
 // ---------------------------------------------------------------------------
 
 describe('progressive upgrade from an empty database', () => {
-  test('each migration keeps all data, rebuilds nothing, and every trigger still fires', async () => {
-    const dir = tempDir('bengkelin-progressive-');
-    mkdirSync(path.join(dir, 'exports'));
-    const file = path.join(dir, 'db.sqlite');
-    let nowMs = Date.parse('2026-09-29T01:00:00.000Z');
-    const clock = { now: () => toInstant(nowMs) };
-    const at = (ms: number) => toInstant(ms);
-    let counter = 0;
-    const requestId = () =>
-      `00000000-0000-4000-8000-${String(++counter).padStart(12, '0')}`;
+  // Every migration runs real authentication and database operations on slower CI runners.
+  test(
+    'each migration keeps all data, rebuilds nothing, and every trigger still fires',
+    { timeout: 30_000 },
+    async () => {
+      const dir = tempDir('bengkelin-progressive-');
+      mkdirSync(path.join(dir, 'exports'));
+      const file = path.join(dir, 'db.sqlite');
+      let nowMs = Date.parse('2026-09-29T01:00:00.000Z');
+      const clock = { now: () => toInstant(nowMs) };
+      const at = (ms: number) => toInstant(ms);
+      let counter = 0;
+      const requestId = () =>
+        `00000000-0000-4000-8000-${String(++counter).padStart(12, '0')}`;
 
-    let db = openDatabase(file);
-    const ids: Record<string, string> = {};
+      let db = openDatabase(file);
+      const ids: Record<string, string> = {};
 
-    /** A fresh app on the current schema, with ADMIN and CASHIER signed in. */
-    async function app(signIn = true) {
-      const instance = appOn(db, dir, clock);
-      if (signIn) {
-        await instance.call(C.auth.login, FIXTURE_ADMIN, ADMIN);
-        await instance.call(C.auth.login, FIXTURE_CASHIER, CASHIER);
+      /** A fresh app on the current schema, with ADMIN and CASHIER signed in. */
+      async function app(signIn = true) {
+        const instance = appOn(db, dir, clock);
+        if (signIn) {
+          await instance.call(C.auth.login, FIXTURE_ADMIN, ADMIN);
+          await instance.call(C.auth.login, FIXTURE_CASHIER, CASHIER);
+        }
+        return instance;
       }
-      return instance;
-    }
 
-    // Representative writes each schema version supports: the app's own
-    // commands where today's code runs on that schema, otherwise the rows
-    // that version's app wrote (v1 setup, v2 seeds, v7 finalization).
-    const steps: Record<number, () => Promise<void>> = {
-      1: async () => {
-        // Version 1 has settings and cashiers only (first-run setup also
-        // seeds the version-2 channels/units): the rows v1 held, raw.
-        const now = at(nowMs);
-        db.prepare(
-          `UPDATE settings SET shop_name = 'Bengkel Lama', address = 'Jl. Lama 1',
+      // Representative writes each schema version supports: the app's own
+      // commands where today's code runs on that schema, otherwise the rows
+      // that version's app wrote (v1 setup, v2 seeds, v7 finalization).
+      const steps: Record<number, () => Promise<void>> = {
+        1: async () => {
+          // Version 1 has settings and cashiers only (first-run setup also
+          // seeds the version-2 channels/units): the rows v1 held, raw.
+          const now = at(nowMs);
+          db.prepare(
+            `UPDATE settings SET shop_name = 'Bengkel Lama', address = 'Jl. Lama 1',
              phone_number = '0221234567', language = 'id', appearance = 'LIGHT',
              setup_completed_at = ? WHERE id = 1`,
-        ).run(now);
-        const cashier = db.prepare(
-          `INSERT INTO cashiers (id, username, display_name, password_hash, role,
+          ).run(now);
+          const cashier = db.prepare(
+            `INSERT INTO cashiers (id, username, display_name, password_hash, role,
              is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
-        );
-        ids.admin = requestId();
-        cashier.run(
-          ids.admin,
-          FIXTURE_ADMIN.username,
-          'Pak Budi',
-          await hashPassword(FIXTURE_ADMIN.password),
-          'ADMIN',
-          now,
-          now,
-        );
-        cashier.run(
-          requestId(),
-          FIXTURE_CASHIER.username,
-          'Siti',
-          await hashPassword(FIXTURE_CASHIER.password),
-          'CASHIER',
-          now,
-          now,
-        );
-        db.prepare(
-          `INSERT INTO audit_log (cashier_id, action, entity_type, entity_id, metadata, created_at)
+          );
+          ids.admin = requestId();
+          cashier.run(
+            ids.admin,
+            FIXTURE_ADMIN.username,
+            'Pak Budi',
+            await hashPassword(FIXTURE_ADMIN.password),
+            'ADMIN',
+            now,
+            now,
+          );
+          cashier.run(
+            requestId(),
+            FIXTURE_CASHIER.username,
+            'Siti',
+            await hashPassword(FIXTURE_CASHIER.password),
+            'CASHIER',
+            now,
+            now,
+          );
+          db.prepare(
+            `INSERT INTO audit_log (cashier_id, action, entity_type, entity_id, metadata, created_at)
            VALUES (?, 'SETUP_COMPLETED', 'settings', '1', '{}', ?)`,
-        ).run(ids.admin, now);
-      },
-      2: async () => {
-        for (const [table, rows] of [
-          ['channels', SEED_CHANNELS],
-          ['units', SEED_UNITS],
-        ] as const) {
-          for (const row of rows) {
-            db.prepare(
-              `INSERT INTO ${table} (id, code, label, is_active) VALUES (?, ?, ?, 1)`,
-            ).run(requestId(), row.code, row.label);
+          ).run(ids.admin, now);
+        },
+        2: async () => {
+          for (const [table, rows] of [
+            ['channels', SEED_CHANNELS],
+            ['units', SEED_UNITS],
+          ] as const) {
+            for (const row of rows) {
+              db.prepare(
+                `INSERT INTO ${table} (id, code, label, is_active) VALUES (?, ?, ?, 1)`,
+              ).run(requestId(), row.code, row.label);
+            }
           }
-        }
-        const a = await app();
-        const joko = await a.call<{ id: string }>(C.cashiers.create, {
-          username: 'joko',
-          displayName: 'Joko',
-          password: 'joko-password-1',
-          role: 'CASHIER',
-        });
-        await a.call(C.cashiers.deactivate, { cashierId: joko.id });
-      },
-      3: async () => {
-        const a = await app();
-        ids.mechanic = (
-          await a.call<ReferenceDto>(C.references.save, {
-            entity: 'mechanic',
-            name: 'Andi',
-          })
-        ).id;
-        const brand = await a.call<ReferenceDto>(C.references.save, {
-          entity: 'vehicleBrand',
-          name: 'Yamaha',
-        });
-        const model = await a.call<ReferenceDto>(C.references.save, {
-          entity: 'vehicleModel',
-          brandId: brand.id,
-          name: 'NMAX',
-        });
-        const customer = async (name: string, phoneNumber: string) => {
-          const saved = await a.call<SaveCustomerResult>(
-            C.customers.save,
-            { name, phoneNumber },
-            CASHIER,
-          );
-          if (!saved.saved) throw new Error('customer not saved');
-          return saved.customer.id;
-        };
-        ids.customerA = await customer('Rina', '0812-1111-2222');
-        ids.customerB = await customer('Tono', '0813-3333-4444');
-        const vehicle = await a.call<SaveVehicleResult>(
-          C.vehicles.save,
-          {
-            plateNumber: 'd 5555 xy',
-            ownerCustomerId: ids.customerA,
-            brandId: brand.id,
-            vehicleModelId: model.id,
-          },
-          CASHIER,
-        );
-        ids.vehicle = vehicle.vehicle.id;
-      },
-      4: async () => {
-        const a = await app();
-        const units = await a.call<ReferenceDto[]>(C.references.list, {
-          entity: 'unit',
-        });
-        const channels = await a.call<ReferenceDto[]>(C.references.list, {
-          entity: 'channel',
-        });
-        ids.channel = channels.find((c) => c.code === 'BENGKEL')!.id;
-        const pcs = units.find((u) => u.code === 'PCS')!.id;
-        const svc = units.find((u) => u.code === 'SERVICE')!.id;
-        const item = async (input: Record<string, unknown>) =>
-          (await a.call<CatalogItemDto>(C.catalog.save, input)).id;
-        ids.oil = await item({ type: 'STOCK_ITEM', title: 'Oli', unitId: pcs });
-        ids.helmet = await item({
-          type: 'STOCK_ITEM',
-          title: 'Helm',
-          unitId: pcs,
-        });
-        ids.service = await item({
-          type: 'SERVICE',
-          title: 'Servis',
-          unitId: svc,
-        });
-        await a.call(C.catalog.saveBarcodes, {
-          catalogItemId: ids.oil,
-          barcodes: [{ barcode: '8991234567890', isActive: true }],
-        });
-        const price = async (
-          catalogItemId: string,
-          amount: string,
-          extra: Record<string, unknown> = {},
-        ) => {
-          const preview = await a.call<PricePreviewDto>(
-            C.catalog.previewPriceChange,
-            {
-              catalogItemId,
-              channelId: ids.channel,
-              effectiveStartAt: '2026-01-01T00:00:00.000Z',
-              price: amount,
-              ...extra,
-            },
-          );
-          await a.call(C.catalog.applyPriceChange, { token: preview.token });
-        };
-        await price(ids.oil, '60000');
-        const timeline = await a.call<PriceTimelineDto>(C.catalog.listPrices, {
-          catalogItemId: ids.oil,
-        });
-        await price(ids.oil, '65000', {
-          correctsPriceId: timeline.points[0]!.id,
-          reason: 'Koreksi',
-        });
-        await price(ids.helmet, '100000');
-        await price(ids.service, '50000');
-      },
-      5: async () => {
-        const a = await app();
-        for (const [channel, item, quantity] of [
-          [C.inventory.openBalance, ids.oil, 30],
-          [C.inventory.openBalance, ids.helmet, 5],
-          [C.inventory.receive, ids.oil, 6],
-        ] as const) {
-          await a.call(channel, {
-            requestId: requestId(),
-            catalogItemId: item,
-            quantity,
+          const a = await app();
+          const joko = await a.call<{ id: string }>(C.cashiers.create, {
+            username: 'joko',
+            displayName: 'Joko',
+            password: 'joko-password-1',
+            role: 'CASHIER',
           });
-        }
-      },
-      6: async () => {
-        const a = await app();
-        const create = () =>
-          a.call<DraftView>(
-            C.drafts.create,
+          await a.call(C.cashiers.deactivate, { cashierId: joko.id });
+        },
+        3: async () => {
+          const a = await app();
+          ids.mechanic = (
+            await a.call<ReferenceDto>(C.references.save, {
+              entity: 'mechanic',
+              name: 'Andi',
+            })
+          ).id;
+          const brand = await a.call<ReferenceDto>(C.references.save, {
+            entity: 'vehicleBrand',
+            name: 'Yamaha',
+          });
+          const model = await a.call<ReferenceDto>(C.references.save, {
+            entity: 'vehicleModel',
+            brandId: brand.id,
+            name: 'NMAX',
+          });
+          const customer = async (name: string, phoneNumber: string) => {
+            const saved = await a.call<SaveCustomerResult>(
+              C.customers.save,
+              { name, phoneNumber },
+              CASHIER,
+            );
+            if (!saved.saved) throw new Error('customer not saved');
+            return saved.customer.id;
+          };
+          ids.customerA = await customer('Rina', '0812-1111-2222');
+          ids.customerB = await customer('Tono', '0813-3333-4444');
+          const vehicle = await a.call<SaveVehicleResult>(
+            C.vehicles.save,
             {
-              requestId: requestId(),
-              channelId: ids.channel,
-              invoiceDate: '2026-09-29',
-              pricingAt: at(nowMs),
+              plateNumber: 'd 5555 xy',
+              ownerCustomerId: ids.customerA,
+              brandId: brand.id,
+              vehicleModelId: model.id,
             },
             CASHIER,
           );
-        const apply = (draft: DraftView, op: DraftOperation) =>
-          a.call<DraftView>(
-            C.drafts.apply,
+          ids.vehicle = vehicle.vehicle.id;
+        },
+        4: async () => {
+          const a = await app();
+          const units = await a.call<ReferenceDto[]>(C.references.list, {
+            entity: 'unit',
+          });
+          const channels = await a.call<ReferenceDto[]>(C.references.list, {
+            entity: 'channel',
+          });
+          ids.channel = channels.find((c) => c.code === 'BENGKEL')!.id;
+          const pcs = units.find((u) => u.code === 'PCS')!.id;
+          const svc = units.find((u) => u.code === 'SERVICE')!.id;
+          const item = async (input: Record<string, unknown>) =>
+            (await a.call<CatalogItemDto>(C.catalog.save, input)).id;
+          ids.oil = await item({
+            type: 'STOCK_ITEM',
+            title: 'Oli',
+            unitId: pcs,
+          });
+          ids.helmet = await item({
+            type: 'STOCK_ITEM',
+            title: 'Helm',
+            unitId: pcs,
+          });
+          ids.service = await item({
+            type: 'SERVICE',
+            title: 'Servis',
+            unitId: svc,
+          });
+          await a.call(C.catalog.saveBarcodes, {
+            catalogItemId: ids.oil,
+            barcodes: [{ barcode: '8991234567890', isActive: true }],
+          });
+          const price = async (
+            catalogItemId: string,
+            amount: string,
+            extra: Record<string, unknown> = {},
+          ) => {
+            const preview = await a.call<PricePreviewDto>(
+              C.catalog.previewPriceChange,
+              {
+                catalogItemId,
+                channelId: ids.channel,
+                effectiveStartAt: '2026-01-01T00:00:00.000Z',
+                price: amount,
+                ...extra,
+              },
+            );
+            await a.call(C.catalog.applyPriceChange, { token: preview.token });
+          };
+          await price(ids.oil, '60000');
+          const timeline = await a.call<PriceTimelineDto>(
+            C.catalog.listPrices,
             {
-              requestId: requestId(),
-              invoiceId: draft.id,
-              expectedVersion: draft.version,
-              op,
+              catalogItemId: ids.oil,
             },
-            CASHIER,
           );
-        // D1: finalized and paid at v8 (lines, service + mechanic, discounts).
-        let d1 = await create();
-        d1 = await apply(d1, {
-          kind: 'updateHeader',
-          changes: {
-            customerId: ids.customerA,
-            vehicleId: ids.vehicle,
-            odometerKm: 9000,
-          },
-        });
-        d1 = await apply(d1, {
-          kind: 'addCatalogLine',
-          barcode: '8991234567890',
-          quantity: 2,
-        });
-        d1 = await apply(d1, {
-          kind: 'setLineDiscounts',
-          lineId: d1.lines[0]!.id,
-          stages: [1000],
-        });
-        d1 = await apply(d1, {
-          kind: 'addCatalogLine',
-          catalogItemId: ids.service,
-        });
-        d1 = await apply(d1, {
-          kind: 'updateLine',
-          lineId: d1.lines[1]!.id,
-          mechanicId: ids.mechanic,
-          unitPrice: '45000',
-          reason: 'Langganan',
-        });
-        d1 = await apply(d1, { kind: 'setInvoiceDiscounts', stages: [500] });
-        d1 = await apply(d1, {
-          kind: 'setCheckoutAllocations',
-          allocations: [{ method: 'CASH', amount: d1.totals.amount }],
-        });
-        ids.d1 = d1.id;
-        // D2: finalized the v7 way at step 7.
-        let d2 = await create();
-        d2 = await apply(d2, {
-          kind: 'updateHeader',
-          changes: { customerId: ids.customerB },
-        });
-        d2 = await apply(d2, {
-          kind: 'addCustomLine',
-          type: 'SERVICE',
-          title: 'Tambal ban',
-          unitPrice: '20000',
-        });
-        ids.d2 = d2.id;
-        // D3: discarded with its planned payments.
-        let d3 = await create();
-        d3 = await apply(d3, {
-          kind: 'addCustomLine',
-          type: 'NON_STOCK_ITEM',
-          title: 'Stiker',
-          unitPrice: '5000',
-        });
-        d3 = await apply(d3, {
-          kind: 'setCheckoutAllocations',
-          allocations: [{ method: 'QRIS', amount: '5000' }],
-        });
-        await apply(d3, { kind: 'discard' });
-        ids.d3 = d3.id;
-        // D4: stays an open draft (with planned payments) to the end.
-        let d4 = await create();
-        d4 = await apply(d4, {
-          kind: 'addCatalogLine',
-          catalogItemId: ids.helmet,
-        });
-        d4 = await apply(d4, {
-          kind: 'setCheckoutAllocations',
-          allocations: [{ method: 'CASH', amount: '10000' }],
-        });
-        ids.d4 = d4.id;
-      },
-      7: async () => {
-        // v7 finalization (before the 008 snapshot columns), as 007 wrote it.
-        const admin = (
-          db
-            .prepare(`SELECT id FROM cashiers WHERE username = 'admin'`)
-            .get() as { id: string }
-        ).id;
-        db.transaction(() => {
-          db.prepare(
-            `INSERT INTO invoice_daily_counters (business_date, last_sequence)
+          await price(ids.oil, '65000', {
+            correctsPriceId: timeline.points[0]!.id,
+            reason: 'Koreksi',
+          });
+          await price(ids.helmet, '100000');
+          await price(ids.service, '50000');
+        },
+        5: async () => {
+          const a = await app();
+          for (const [channel, item, quantity] of [
+            [C.inventory.openBalance, ids.oil, 30],
+            [C.inventory.openBalance, ids.helmet, 5],
+            [C.inventory.receive, ids.oil, 6],
+          ] as const) {
+            await a.call(channel, {
+              requestId: requestId(),
+              catalogItemId: item,
+              quantity,
+            });
+          }
+        },
+        6: async () => {
+          const a = await app();
+          const create = () =>
+            a.call<DraftView>(
+              C.drafts.create,
+              {
+                requestId: requestId(),
+                channelId: ids.channel,
+                invoiceDate: '2026-09-29',
+                pricingAt: at(nowMs),
+              },
+              CASHIER,
+            );
+          const apply = (draft: DraftView, op: DraftOperation) =>
+            a.call<DraftView>(
+              C.drafts.apply,
+              {
+                requestId: requestId(),
+                invoiceId: draft.id,
+                expectedVersion: draft.version,
+                op,
+              },
+              CASHIER,
+            );
+          // D1: finalized and paid at v8 (lines, service + mechanic, discounts).
+          let d1 = await create();
+          d1 = await apply(d1, {
+            kind: 'updateHeader',
+            changes: {
+              customerId: ids.customerA,
+              vehicleId: ids.vehicle,
+              odometerKm: 9000,
+            },
+          });
+          d1 = await apply(d1, {
+            kind: 'addCatalogLine',
+            barcode: '8991234567890',
+            quantity: 2,
+          });
+          d1 = await apply(d1, {
+            kind: 'setLineDiscounts',
+            lineId: d1.lines[0]!.id,
+            stages: [1000],
+          });
+          d1 = await apply(d1, {
+            kind: 'addCatalogLine',
+            catalogItemId: ids.service,
+          });
+          d1 = await apply(d1, {
+            kind: 'updateLine',
+            lineId: d1.lines[1]!.id,
+            mechanicId: ids.mechanic,
+            unitPrice: '45000',
+            reason: 'Langganan',
+          });
+          d1 = await apply(d1, { kind: 'setInvoiceDiscounts', stages: [500] });
+          d1 = await apply(d1, {
+            kind: 'setCheckoutAllocations',
+            allocations: [{ method: 'CASH', amount: d1.totals.amount }],
+          });
+          ids.d1 = d1.id;
+          // D2: finalized the v7 way at step 7.
+          let d2 = await create();
+          d2 = await apply(d2, {
+            kind: 'updateHeader',
+            changes: { customerId: ids.customerB },
+          });
+          d2 = await apply(d2, {
+            kind: 'addCustomLine',
+            type: 'SERVICE',
+            title: 'Tambal ban',
+            unitPrice: '20000',
+          });
+          ids.d2 = d2.id;
+          // D3: discarded with its planned payments.
+          let d3 = await create();
+          d3 = await apply(d3, {
+            kind: 'addCustomLine',
+            type: 'NON_STOCK_ITEM',
+            title: 'Stiker',
+            unitPrice: '5000',
+          });
+          d3 = await apply(d3, {
+            kind: 'setCheckoutAllocations',
+            allocations: [{ method: 'QRIS', amount: '5000' }],
+          });
+          await apply(d3, { kind: 'discard' });
+          ids.d3 = d3.id;
+          // D4: stays an open draft (with planned payments) to the end.
+          let d4 = await create();
+          d4 = await apply(d4, {
+            kind: 'addCatalogLine',
+            catalogItemId: ids.helmet,
+          });
+          d4 = await apply(d4, {
+            kind: 'setCheckoutAllocations',
+            allocations: [{ method: 'CASH', amount: '10000' }],
+          });
+          ids.d4 = d4.id;
+        },
+        7: async () => {
+          // v7 finalization (before the 008 snapshot columns), as 007 wrote it.
+          const admin = (
+            db
+              .prepare(`SELECT id FROM cashiers WHERE username = 'admin'`)
+              .get() as { id: string }
+          ).id;
+          db.transaction(() => {
+            db.prepare(
+              `INSERT INTO invoice_daily_counters (business_date, last_sequence)
              VALUES ('2026-09-29', 1)`,
-          ).run();
-          db.prepare(
-            `UPDATE invoices SET customer_name_snapshot = 'Tono',
+            ).run();
+            db.prepare(
+              `UPDATE invoices SET customer_name_snapshot = 'Tono',
                customer_phone_snapshot = '0813-3333-4444',
                channel_label_snapshot = 'Bengkel', cashier_name_snapshot = 'Pak Budi',
                shop_identity_snapshot = '{"name":"Bengkel Lama"}', status = 'FINALIZED',
                invoice_number = 'INV-20260929-0001', cashier_id = ?, finalized_at = ?,
                version = version + 1
              WHERE id = ?`,
-          ).run(admin, at(nowMs), ids.d2);
-          db.prepare(
-            `INSERT INTO payments (id, invoice_id, method, amount, paid_at,
+            ).run(admin, at(nowMs), ids.d2);
+            db.prepare(
+              `INSERT INTO payments (id, invoice_id, method, amount, paid_at,
                received_by_cashier_id, source, created_at)
              VALUES (?, ?, 'CASH', 5000, ?, ?, 'CHECKOUT', ?)`,
-          ).run(requestId(), ids.d2, at(nowMs), admin, at(nowMs));
-        }).immediate();
-      },
-      8: async () => {
-        nowMs = Date.parse('2026-09-30T02:00:00.000Z');
-        const a = await app();
-        // A later payment on the v7 invoice (008 added the receiver name).
-        await a.call(
-          C.invoices.recordPayment,
-          {
-            requestId: requestId(),
-            invoiceId: ids.d2,
-            method: 'QRIS',
-            amount: '5000',
-          },
-          CASHIER,
-        );
-      },
-      9: async () => {
-        // Finalization snapshots the shop logo (009): from here on the
-        // current finalize, void and print commands apply.
-        const a = await app();
-        const finalize = async (invoiceId: string) => {
-          const shown = await a.call<FinalizePreviewDto>(
-            C.invoices.previewFinalize,
-            { invoiceId },
-            CASHIER,
-          );
-          expect(shown.errors).toEqual([]);
-          return a.call<InvoiceView>(
-            C.invoices.finalize,
+            ).run(requestId(), ids.d2, at(nowMs), admin, at(nowMs));
+          }).immediate();
+        },
+        8: async () => {
+          nowMs = Date.parse('2026-09-30T02:00:00.000Z');
+          const a = await app();
+          // A later payment on the v7 invoice (008 added the receiver name).
+          await a.call(
+            C.invoices.recordPayment,
             {
               requestId: requestId(),
-              invoiceId,
-              expectedVersion: shown.draftVersion,
-              acknowledgedWarnings: shown.warnings,
+              invoiceId: ids.d2,
+              method: 'QRIS',
+              amount: '5000',
             },
             CASHIER,
           );
-        };
-        const d1 = await finalize(ids.d1!);
-        expect(d1.paymentStatus).toBe('PAID');
-        const draft = async (itemId: string, quantity: number) => {
-          const d = await a.call<DraftView>(
-            C.drafts.create,
-            {
-              requestId: requestId(),
-              channelId: ids.channel,
-              invoiceDate: '2026-09-30',
-              pricingAt: at(nowMs),
-            },
+        },
+        9: async () => {
+          // Finalization snapshots the shop logo (009): from here on the
+          // current finalize, void and print commands apply.
+          const a = await app();
+          const finalize = async (invoiceId: string) => {
+            const shown = await a.call<FinalizePreviewDto>(
+              C.invoices.previewFinalize,
+              { invoiceId },
+              CASHIER,
+            );
+            expect(shown.errors).toEqual([]);
+            return a.call<InvoiceView>(
+              C.invoices.finalize,
+              {
+                requestId: requestId(),
+                invoiceId,
+                expectedVersion: shown.draftVersion,
+                acknowledgedWarnings: shown.warnings,
+              },
+              CASHIER,
+            );
+          };
+          const d1 = await finalize(ids.d1!);
+          expect(d1.paymentStatus).toBe('PAID');
+          const draft = async (itemId: string, quantity: number) => {
+            const d = await a.call<DraftView>(
+              C.drafts.create,
+              {
+                requestId: requestId(),
+                channelId: ids.channel,
+                invoiceDate: '2026-09-30',
+                pricingAt: at(nowMs),
+              },
+              CASHIER,
+            );
+            return a.call<DraftView>(
+              C.drafts.apply,
+              {
+                requestId: requestId(),
+                invoiceId: d.id,
+                expectedVersion: d.version,
+                op: { kind: 'addCatalogLine', catalogItemId: itemId, quantity },
+              },
+              CASHIER,
+            );
+          };
+          // D5: finalized, then voided (stock reversal).
+          const d5 = await finalize((await draft(ids.oil!, 3)).id);
+          await a.call(
+            C.invoices.void,
+            { requestId: requestId(), invoiceId: d5.id, reason: 'Batal' },
+            ADMIN,
+          );
+          ids.d5 = d5.id;
+          // D6: a credit sale (finalized, nothing paid).
+          ids.d6 = (await finalize((await draft(ids.helmet!, 1)).id)).id;
+          await a.call(
+            C.printing.print,
+            { invoiceId: ids.d1, format: 'A4' },
             CASHIER,
           );
-          return a.call<DraftView>(
-            C.drafts.apply,
-            {
-              requestId: requestId(),
-              invoiceId: d.id,
-              expectedVersion: d.version,
-              op: { kind: 'addCatalogLine', catalogItemId: itemId, quantity },
-            },
+          await a.call(
+            C.printing.print,
+            { invoiceId: ids.d5, format: 'THERMAL_58' },
             CASHIER,
           );
-        };
-        // D5: finalized, then voided (stock reversal).
-        const d5 = await finalize((await draft(ids.oil!, 3)).id);
-        await a.call(
-          C.invoices.void,
-          { requestId: requestId(), invoiceId: d5.id, reason: 'Batal' },
-          ADMIN,
-        );
-        ids.d5 = d5.id;
-        // D6: a credit sale (finalized, nothing paid).
-        ids.d6 = (await finalize((await draft(ids.helmet!, 1)).id)).id;
-        await a.call(
-          C.printing.print,
-          { invoiceId: ids.d1, format: 'A4' },
-          CASHIER,
-        );
-        await a.call(
-          C.printing.print,
-          { invoiceId: ids.d5, format: 'THERMAL_58' },
-          CASHIER,
-        );
-        a.dialogs.saveAnswers.push(path.join(dir, 'exports', 'd1.pdf'));
-        await a.call(C.printing.exportPdf, { invoiceId: ids.d1 }, CASHIER);
-      },
-      10: async () => {
-        // Report indexes only: the report reads the upgraded data.
-        const a = await app();
-        const report = await a.call<DailyReport>(
-          C.reports.daily,
-          { date: '2026-09-30' },
-          ADMIN,
-        );
-        expect(report.sales.invoiceCount).toBeGreaterThan(0);
-      },
-      11: async () => {
-        const a = await app();
-        await a.call(C.backups.create, undefined, ADMIN);
-      },
-    };
+          a.dialogs.saveAnswers.push(path.join(dir, 'exports', 'd1.pdf'));
+          await a.call(C.printing.exportPdf, { invoiceId: ids.d1 }, CASHIER);
+        },
+        10: async () => {
+          // Report indexes only: the report reads the upgraded data.
+          const a = await app();
+          const report = await a.call<DailyReport>(
+            C.reports.daily,
+            { date: '2026-09-30' },
+            ADMIN,
+          );
+          expect(report.sales.invoiceCount).toBeGreaterThan(0);
+        },
+        11: async () => {
+          const a = await app();
+          await a.call(C.backups.create, undefined, ADMIN);
+        },
+      };
 
-    try {
-      for (const migration of bundledMigrations) {
-        const v = migration.version;
+      try {
+        for (const migration of bundledMigrations) {
+          const v = migration.version;
+          const before = snapshot(db);
+          const roots = rootpages(db);
+          const outcome = migrateDatabase(
+            db,
+            bundledMigrations.filter((m) => m.version <= v),
+          );
+          expect(outcome.applied).toEqual([v]);
+          expectHealthy(db);
+          expectPreserved(before, roots, db, `migration ${v}`);
+          if (v >= 3 && v < 12) {
+            await withCurrentCustomerColumns(db, async () => {
+              await steps[v]?.();
+            });
+          } else {
+            await steps[v]?.();
+          }
+          expectHealthy(db);
+        }
+        // Then "run to latest" through the default path (a no-op today; any
+        // future migration must keep this populated database intact too).
         const before = snapshot(db);
         const roots = rootpages(db);
-        const outcome = migrateDatabase(
-          db,
-          bundledMigrations.filter((m) => m.version <= v),
-        );
-        expect(outcome.applied).toEqual([v]);
+        migrateDatabase(db);
+        expect(readSchemaVersion(db)).toBe(latestBundledVersion);
+        expectPreserved(before, roots, db, 'latest');
+
+        // Survives a reopen (a restart) unchanged.
+        db.close();
+        db = openDatabase(file);
+        expectPreserved(before, roots, db, 'reopen');
         expectHealthy(db);
-        expectPreserved(before, roots, db, `migration ${v}`);
-        if (v >= 3 && v < 12) {
-          await withCurrentCustomerColumns(db, async () => {
-            await steps[v]?.();
-          });
-        } else {
-          await steps[v]?.();
+
+        // Every table holds data (representative), every step's data is there.
+        const counts = tableCounts(db);
+        for (const [table, n] of Object.entries(counts)) {
+          expect(n, `${table} has rows`).toBeGreaterThan(0);
         }
+        const statuses = db
+          .prepare(`SELECT id, status, discarded_at FROM invoices`)
+          .all() as {
+          id: string;
+          status: string;
+          discarded_at: string | null;
+        }[];
+        const status = (id: string) => statuses.find((s) => s.id === id)!;
+        expect(status(ids.d1!).status).toBe('FINALIZED');
+        expect(status(ids.d2!).status).toBe('FINALIZED');
+        expect(status(ids.d3!).discarded_at).not.toBeNull();
+        expect(status(ids.d4!).status).toBe('DRAFT');
+        expect(status(ids.d5!).status).toBe('VOID');
+        expect(status(ids.d6!).status).toBe('FINALIZED');
+        // 008 backfilled the v7 invoice's normalized phone and receiver name.
+        expect(
+          db
+            .prepare(
+              `SELECT customer_phone_normalized_snapshot AS phone FROM invoices WHERE id = ?`,
+            )
+            .get(ids.d2),
+        ).toEqual({ phone: '6281333334444' });
+        expect(
+          db
+            .prepare(
+              `SELECT count(*) AS n FROM payments WHERE received_by_name_snapshot IS NULL`,
+            )
+            .get(),
+        ).toEqual({ n: 0n });
+
+        // The upgraded schema is exactly a fresh install's.
+        const freshDir = tempDir('bengkelin-fresh-');
+        const fresh = openDatabase(path.join(freshDir, 'db.sqlite'));
+        migrateDatabase(fresh);
+        expect(normalizedSchema(db)).toEqual(normalizedSchema(fresh));
+        fresh.close();
+
+        // Every trigger fires on the upgraded, populated database.
+        const fired = probeEveryTrigger(db, ids);
+        const triggers = (
+          db
+            .prepare(
+              `SELECT name FROM sqlite_master WHERE type = 'trigger' ORDER BY name`,
+            )
+            .all() as { name: string }[]
+        ).map((t) => t.name);
+        expect(fired.sort()).toEqual(triggers);
+        // Probes changed nothing.
+        expectPreserved(before, roots, db, 'after probes');
         expectHealthy(db);
+      } finally {
+        if (db.open) db.close();
       }
-      // Then "run to latest" through the default path (a no-op today; any
-      // future migration must keep this populated database intact too).
-      const before = snapshot(db);
-      const roots = rootpages(db);
-      migrateDatabase(db);
-      expect(readSchemaVersion(db)).toBe(latestBundledVersion);
-      expectPreserved(before, roots, db, 'latest');
-
-      // Survives a reopen (a restart) unchanged.
-      db.close();
-      db = openDatabase(file);
-      expectPreserved(before, roots, db, 'reopen');
-      expectHealthy(db);
-
-      // Every table holds data (representative), every step's data is there.
-      const counts = tableCounts(db);
-      for (const [table, n] of Object.entries(counts)) {
-        expect(n, `${table} has rows`).toBeGreaterThan(0);
-      }
-      const statuses = db
-        .prepare(`SELECT id, status, discarded_at FROM invoices`)
-        .all() as { id: string; status: string; discarded_at: string | null }[];
-      const status = (id: string) => statuses.find((s) => s.id === id)!;
-      expect(status(ids.d1!).status).toBe('FINALIZED');
-      expect(status(ids.d2!).status).toBe('FINALIZED');
-      expect(status(ids.d3!).discarded_at).not.toBeNull();
-      expect(status(ids.d4!).status).toBe('DRAFT');
-      expect(status(ids.d5!).status).toBe('VOID');
-      expect(status(ids.d6!).status).toBe('FINALIZED');
-      // 008 backfilled the v7 invoice's normalized phone and receiver name.
-      expect(
-        db
-          .prepare(
-            `SELECT customer_phone_normalized_snapshot AS phone FROM invoices WHERE id = ?`,
-          )
-          .get(ids.d2),
-      ).toEqual({ phone: '6281333334444' });
-      expect(
-        db
-          .prepare(
-            `SELECT count(*) AS n FROM payments WHERE received_by_name_snapshot IS NULL`,
-          )
-          .get(),
-      ).toEqual({ n: 0n });
-
-      // The upgraded schema is exactly a fresh install's.
-      const freshDir = tempDir('bengkelin-fresh-');
-      const fresh = openDatabase(path.join(freshDir, 'db.sqlite'));
-      migrateDatabase(fresh);
-      expect(normalizedSchema(db)).toEqual(normalizedSchema(fresh));
-      fresh.close();
-
-      // Every trigger fires on the upgraded, populated database.
-      const fired = probeEveryTrigger(db, ids);
-      const triggers = (
-        db
-          .prepare(
-            `SELECT name FROM sqlite_master WHERE type = 'trigger' ORDER BY name`,
-          )
-          .all() as { name: string }[]
-      ).map((t) => t.name);
-      expect(fired.sort()).toEqual(triggers);
-      // Probes changed nothing.
-      expectPreserved(before, roots, db, 'after probes');
-      expectHealthy(db);
-    } finally {
-      if (db.open) db.close();
-    }
-  });
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------

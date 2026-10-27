@@ -35,7 +35,7 @@ export class NetworkGuard {
         guardHook,
         `--log-net-log=${path.join(this.dir, `netlog-${this.launches}.json`)}`,
         '--net-log-capture-mode=Everything',
-        '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost',
+        '--host-resolver-rules=MAP * ^NOTFOUND, EXCLUDE localhost',
       ],
       env: {
         BENGKELIN_TEST_NET_GUARD_LOG: path.join(this.dir, 'node-sockets.log'),
