@@ -4,12 +4,26 @@ Offline cashier application for an Indonesian motorcycle workshop (single
 shop, single computer). Electron + React + SQLite (better-sqlite3).
 Specification: `docs/superpowers/specs/2026-09-30-bengkelin-design.md`.
 
+## Panduan admin
+
+[Panduan setup awal dan impor data (HTML)](docs/panduan/onboarding.html) dan
+[versi PDF](output/pdf/panduan-setup-dan-impor-data.pdf) menjelaskan pembukaan
+pertama aplikasi hingga impor katalog dan pelanggan dengan contoh data MMB.
+Panduan berbahasa Indonesia ini ditujukan untuk penggunaan internal karena
+screenshot memuat data pelanggan asli. Petunjuk pemeliharaan tersedia di
+[`docs/panduan`](docs/panduan/README.md).
+
+Setelah onboarding selesai, gunakan [Manual operasional kasir dan admin
+(HTML)](docs/panduan/manual-operasional.html) atau [versi PDF](output/pdf/manual-operasional-bengkelin.pdf)
+untuk transaksi, pembayaran piutang, cetak nota, laporan harian, pengelolaan
+master dan persediaan, serta pencadangan dan pemulihan data.
+
 ## Developer guide
 
 ### Setup
 
 - Node 24 and npm 12 (`allowScripts` in `package.json` approves the
-  `better-sqlite3` and `electron` install scripts).
+  `better-sqlite3`, `electron`, and `electron-winstaller` install scripts).
 - `npm ci` installs the locked dependencies and downloads Electron.
 - `npm start` runs the app in development (Vite dev server, DevTools on).
 
