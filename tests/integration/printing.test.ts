@@ -1257,6 +1257,7 @@ describe('migration 009 on a populated version-8 database', () => {
       let db = openDatabase(file);
       migrateDatabase(db, v8);
       expect(readSchemaVersion(db)).toBe(8);
+      db.exec(bundledMigrations.find((m) => m.version === 15)!.sql);
       const services = createApplicationServices({
         db,
         clock,
@@ -1473,4 +1474,64 @@ describe('migration 009 on a populated version-8 database', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   }, 30_000);
+});
+
+test('A4 uses current contacts on old invoices while thermal and stored business state stay unchanged', async () => {
+  const invoice = await criticalInvoice(shop, priceStart());
+  const before = businessState();
+  const thermal = value(await preview(invoice.id, 'THERMAL_58')).html;
+  const thermal80 = value(await preview(invoice.id, 'THERMAL_80')).html;
+  const update = async (
+    complaintPhoneNumber: string | null,
+    socialMediaUrl: string | null,
+  ) => {
+    const current = value(
+      await h.call<import('@/shared/contracts').ShopSettingsDto>(
+        C.settings.getShop,
+        undefined,
+        ADMIN_WINDOW,
+      ),
+    );
+    value(
+      await h.call(
+        C.settings.updateShop,
+        { ...current, complaintPhoneNumber, socialMediaUrl },
+        ADMIN_WINDOW,
+      ),
+    );
+  };
+  await update('0878-1640-9387', 'https://s.id/mitramotorbersama?s=qr');
+  const first = value(await preview(invoice.id, 'A4')).html;
+  expect(first).toContain('0878-1640-9387');
+  expect(first).toContain('data:image/gif;base64,');
+  expect(value(await preview(invoice.id, 'THERMAL_58')).html).toBe(thermal);
+  expect(value(await preview(invoice.id, 'THERMAL_80')).html).toBe(thermal80);
+  await print(invoice.id, 'A4');
+  expect(driver.printCalls.at(-1)!.html).toBe(first);
+  const pdfPreview = value(await preview(invoice.id, 'A4')).html;
+  dialogs.saveAnswers.push(path.join(scratch, 'contacts.pdf'));
+  value(
+    await h.call(
+      C.printing.exportPdf,
+      { invoiceId: invoice.id },
+      CASHIER_WINDOW,
+    ),
+  );
+  expect(driver.pdfCalls.at(-1)!.html).toBe(pdfPreview);
+  await update(null, 'https://example.com/baru?q=1&x=2');
+  const changed = value(await preview(invoice.id, 'A4')).html;
+  expect(changed).not.toContain('0878-1640-9387');
+  expect(changed).toContain('data:image/gif;base64,');
+  expect(changed.match(/data:image\/gif;base64,[^"]+/)?.[0]).not.toBe(
+    first.match(/data:image\/gif;base64,[^"]+/)?.[0],
+  );
+  await update('<123&>', null);
+  const phoneOnly = value(await preview(invoice.id, 'A4')).html;
+  expect(phoneOnly).toContain('&lt;123&amp;&gt;');
+  expect(phoneOnly).not.toContain('class="social-qr"');
+  await update(null, null);
+  expect(value(await preview(invoice.id, 'A4')).html).not.toContain(
+    'class="invoice-contacts"',
+  );
+  expect(businessState()).toBe(before);
 });

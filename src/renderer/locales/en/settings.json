@@ -1,7 +1,7 @@
 {
   "shop": {
     "title": "Shop information",
-    "description": "Printed on new invoices. Issued invoices keep the details they were finalized with.",
+    "description": "Shop identity on existing invoices uses finalized data. A4 complaint contacts and QR use the latest settings.",
     "name": "Shop name",
     "address": "Address",
     "phone": "Phone",
@@ -11,6 +11,9 @@
     "timezoneHint": "An IANA zone name, for example Asia/Jakarta (WIB), Asia/Makassar (WITA), Asia/Jayapura (WIT).",
     "timezoneWarning": "Changing the timezone affects report day boundaries and invoice numbering from now on. Existing invoices and reports do not change.",
     "save": "Save shop information",
-    "saved": "Shop information saved."
+    "saved": "Shop information saved.",
+    "complaintPhoneNumber": "Customer complaint number",
+    "socialMediaUrl": "Social media link",
+    "contactHint": "Optional. A4 uses the latest settings, including reprints."
   }
 }

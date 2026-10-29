@@ -21,6 +21,8 @@ export interface TemplateOptions {
   /** `data:image/png|jpeg;base64,...` read by main at render time. */
   logoDataUrl: string | null;
   numberLocale?: string;
+  complaintPhoneNumber?: string | null;
+  socialMediaQrDataUrl?: string | null;
 }
 
 export function labelsFor(

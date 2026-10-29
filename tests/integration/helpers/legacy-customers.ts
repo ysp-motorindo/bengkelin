@@ -16,9 +16,10 @@ export async function withCurrentCustomerColumns<T>(
 
 export function addCurrentCustomerColumns(db: AppDatabase): void {
   db.exec(bundledMigrations.find((m) => m.version === 12)!.sql);
+  db.exec(bundledMigrations.find((m) => m.version === 15)!.sql);
 }
 export function removeCurrentCustomerColumns(db: AppDatabase): void {
   db.exec(
-    'DROP INDEX customers_external_id; ALTER TABLE customers DROP COLUMN external_id; ALTER TABLE customers DROP COLUMN is_active;',
+    'ALTER TABLE settings DROP COLUMN complaint_phone_number; ALTER TABLE settings DROP COLUMN social_media_url; DROP INDEX customers_external_id; ALTER TABLE customers DROP COLUMN external_id; ALTER TABLE customers DROP COLUMN is_active;',
   );
 }

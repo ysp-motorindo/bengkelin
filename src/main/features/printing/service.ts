@@ -40,6 +40,7 @@ import type {
   PrintJobOptions,
 } from './driver';
 import { toInvoicePrintModel } from './model';
+import { createSocialQrDataUrl } from './social-qr';
 import { PrintingRepository } from './repository';
 import { pageInfoFor, renderInvoiceHtml } from './templates';
 
@@ -121,7 +122,12 @@ export class PrintingService {
     session?: Session,
   ): RenderedInvoice {
     const model = this.buildInvoicePrintModel(invoiceId);
+    const contacts = format === 'A4' ? this.settings.getShop() : null;
     const html = renderInvoiceHtml(model, format, {
+      complaintPhoneNumber: contacts?.complaintPhoneNumber ?? null,
+      socialMediaQrDataUrl: contacts?.socialMediaUrl
+        ? createSocialQrDataUrl(contacts.socialMediaUrl)
+        : null,
       logoDataUrl: this.logoDataUrl(model),
       numberLocale: resolveNumberLocale(
         session?.numberFormat,

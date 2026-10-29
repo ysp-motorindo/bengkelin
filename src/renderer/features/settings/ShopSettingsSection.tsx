@@ -18,6 +18,8 @@ interface ShopForm {
   name: string;
   address: string;
   phoneNumber: string;
+  complaintPhoneNumber: string;
+  socialMediaUrl: string;
   email: string;
   invoiceFooter: string;
   timezone: string;
@@ -27,6 +29,8 @@ const toForm = (shop: ShopSettingsDto): ShopForm => ({
   name: shop.name,
   address: shop.address,
   phoneNumber: shop.phoneNumber ?? '',
+  complaintPhoneNumber: shop.complaintPhoneNumber ?? '',
+  socialMediaUrl: shop.socialMediaUrl ?? '',
   email: shop.email ?? '',
   invoiceFooter: shop.invoiceFooter ?? '',
   timezone: shop.timezone,
@@ -144,6 +148,15 @@ export function ShopSettingsSection({
             {field('phoneNumber', t('settings.shop.phone'), { type: 'tel' })}
             {field('email', t('settings.shop.email'), { type: 'email' })}
           </div>
+          {field(
+            'complaintPhoneNumber',
+            t('settings.shop.complaintPhoneNumber'),
+            { type: 'tel', hint: t('settings.shop.contactHint') },
+          )}
+          {field('socialMediaUrl', t('settings.shop.socialMediaUrl'), {
+            type: 'url',
+            hint: t('settings.shop.contactHint'),
+          })}
           {field('invoiceFooter', t('settings.shop.footer'))}
           <FormField
             label={t('settings.shop.timezone')}

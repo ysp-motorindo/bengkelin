@@ -15,5 +15,6 @@
   "invalidInstant": "Tanggal dan jam tidak valid.",
   "invalidMoney": "Isi rupiah bulat, hanya angka (contoh 65000).",
   "duplicate": "Isian ganda.",
-  "serviceNotTracked": "Jasa tidak melacak stok."
+  "serviceNotTracked": "Jasa tidak melacak stok.",
+  "invalidUrl": "Masukkan URL HTTP atau HTTPS yang valid."
 }

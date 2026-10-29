@@ -175,6 +175,26 @@ async function main(): Promise<void> {
        SELECT ?, 'THERMAL_58', 'PRINT', id, ?, 'PRINTED', NULL, 0 FROM cashiers WHERE username = 'siti'`,
     ).run(critical.id, now());
 
+    const currentShop = must(
+      await call<import('@/shared/contracts').ShopSettingsDto>(
+        CHANNELS.settings.getShop,
+        undefined,
+        ADMIN_WINDOW,
+      ),
+      'shop',
+    );
+    must(
+      await call(
+        CHANNELS.settings.updateShop,
+        {
+          ...currentShop,
+          complaintPhoneNumber: '0878-1640-9387',
+          socialMediaUrl: 'https://s.id/mitramotorbersama?s=qr',
+        },
+        ADMIN_WINDOW,
+      ),
+      'contacts',
+    );
     const fixtures = [
       ['acceptance-42-lines', acceptance.id],
       ['critical-31500-reprint', critical.id],

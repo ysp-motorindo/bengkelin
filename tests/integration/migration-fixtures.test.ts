@@ -261,6 +261,7 @@ const FIXTURE_ROWS: Record<number, Record<string, number>> = {
 FIXTURE_ROWS[12] = FIXTURE_ROWS[11]!;
 FIXTURE_ROWS[13] = FIXTURE_ROWS[12]!;
 FIXTURE_ROWS[14] = FIXTURE_ROWS[13]!;
+FIXTURE_ROWS[15] = FIXTURE_ROWS[14]!;
 
 const fixtures = readdirSync(FIXTURE_DIR)
   .map((file) => /^schema-v(\d{3})-populated\.sqlite$/.exec(file))

@@ -82,6 +82,11 @@ html, body { margin: 0; padding: 0; background: #fff; }
 .layout-a4 table.payments td { padding: 0.8mm 1mm; border-bottom: 0.5px solid #bbb; vertical-align: top; }
 .layout-a4 table.payments .r { text-align: right; }
 .layout-a4 .nowrap { white-space: nowrap; }
+.layout-a4 .invoice-contacts { display: flex; gap: 4mm; align-items: center; margin-top: 3mm;
+  break-inside: avoid; page-break-inside: avoid; }
+.layout-a4 .social-qr { width: 40mm; height: 40mm; flex: none; image-rendering: pixelated; }
+.layout-a4 .contact-copy { min-width: 0; overflow-wrap: anywhere; }
+.layout-a4 .contact-copy strong { white-space: pre-line; }
 .layout-a4 .note { margin-top: 3mm; overflow-wrap: anywhere; }
 .layout-a4 footer { margin-top: 6mm; border-top: 0.5px solid #999; padding-top: 2mm;
   font-size: 8pt; text-align: center; overflow-wrap: anywhere; }
@@ -171,6 +176,16 @@ ${model.lines.map((line) => lineRow(line, labels))}
 <section class="bottom">
   <div>
     ${payments(model, labels)}
+    ${
+      options.complaintPhoneNumber || options.socialMediaQrDataUrl
+        ? html`<section class="invoice-contacts">
+      ${options.socialMediaQrDataUrl ? html`<img class="social-qr" src="${options.socialMediaQrDataUrl}" alt="${labels.socialMedia}" />` : ''}
+      <div class="contact-copy">
+        ${options.complaintPhoneNumber ? html`<div><strong>${labels.complaintContact}</strong><br />${options.complaintPhoneNumber}</div>` : ''}
+      </div>
+    </section>`
+        : ''
+    }
     ${model.note ? html`<div class="note"><strong>${labels.note}:</strong> ${model.note}</div>` : ''}
   </div>
   <dl class="totals">

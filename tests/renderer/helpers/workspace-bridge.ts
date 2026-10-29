@@ -79,6 +79,8 @@ export function workspaceBridge() {
           phoneNumber: null,
           email: null,
           invoiceFooter: null,
+          complaintPhoneNumber: null,
+          socialMediaUrl: null,
           timezone: 'Asia/Jakarta',
         }),
       ),

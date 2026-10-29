@@ -1,7 +1,7 @@
 {
   "shop": {
     "title": "Informasi bengkel",
-    "description": "Dicetak pada faktur baru. Faktur yang sudah terbit tetap memakai data saat difinalisasi.",
+    "description": "Identitas bengkel pada faktur lama memakai data saat difinalisasi. Kontak keluhan dan QR A4 memakai pengaturan terbaru.",
     "name": "Nama bengkel",
     "address": "Alamat",
     "phone": "Telepon",
@@ -11,6 +11,9 @@
     "timezoneHint": "Nama zona IANA, misalnya Asia/Jakarta (WIB), Asia/Makassar (WITA), Asia/Jayapura (WIT).",
     "timezoneWarning": "Mengubah zona waktu memengaruhi batas hari laporan dan penomoran faktur mulai sekarang. Faktur dan laporan yang sudah ada tidak berubah.",
     "save": "Simpan informasi bengkel",
-    "saved": "Informasi bengkel tersimpan."
+    "saved": "Informasi bengkel tersimpan.",
+    "complaintPhoneNumber": "Nomor keluhan pelanggan",
+    "socialMediaUrl": "Tautan media sosial",
+    "contactHint": "Opsional. Dicetak pada A4 menggunakan pengaturan terbaru, termasuk cetak ulang."
   }
 }

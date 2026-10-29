@@ -15,5 +15,6 @@
   "invalidInstant": "Invalid date and time.",
   "invalidMoney": "Enter whole rupiah, digits only (for example 65000).",
   "duplicate": "Duplicate entry.",
-  "serviceNotTracked": "Services do not track inventory."
+  "serviceNotTracked": "Services do not track inventory.",
+  "invalidUrl": "Enter a valid HTTP or HTTPS URL."
 }

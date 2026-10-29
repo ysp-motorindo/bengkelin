@@ -42,6 +42,8 @@ describe('settings.getShop (workspace shop context)', () => {
     expect(Object.keys(shop).sort()).toEqual(
       [
         'address',
+        'complaintPhoneNumber',
+        'socialMediaUrl',
         'email',
         'invoiceFooter',
         'name',
@@ -168,4 +170,115 @@ test('system locale is supplied by main independently of cashier language', asyn
   } finally {
     regional.close();
   }
+});
+
+describe('invoice contact settings', () => {
+  test('persists current contacts, clears independently, and survives reopen', async () => {
+    value(await h.call(C.settings.completeSetup, validSetup()));
+    value(
+      await h.call(C.auth.login, {
+        username: 'admin',
+        password: ADMIN_PASSWORD,
+      }),
+    );
+    const get = async () =>
+      value(await h.call<ShopSettingsDto>(C.settings.getShop));
+    expect(await get()).toMatchObject({
+      complaintPhoneNumber: null,
+      socialMediaUrl: null,
+    });
+    value(
+      await h.call(C.settings.updateShop, {
+        ...(await get()),
+        complaintPhoneNumber: ' 0878-1640-9387 ',
+        socialMediaUrl: ' https://s.id/mitramotorbersama?s=qr ',
+      }),
+    );
+    expect(await get()).toMatchObject({
+      complaintPhoneNumber: '0878-1640-9387',
+      socialMediaUrl: 'https://s.id/mitramotorbersama?s=qr',
+    });
+    h.reopen();
+    value(
+      await h.call(C.auth.login, {
+        username: 'admin',
+        password: ADMIN_PASSWORD,
+      }),
+    );
+    expect(await get()).toMatchObject({
+      socialMediaUrl: 'https://s.id/mitramotorbersama?s=qr',
+    });
+    value(
+      await h.call(C.settings.updateShop, {
+        ...(await get()),
+        complaintPhoneNumber: ' ',
+        socialMediaUrl: 'https://example.com/baru',
+      }),
+    );
+    expect(await get()).toMatchObject({
+      complaintPhoneNumber: null,
+      socialMediaUrl: 'https://example.com/baru',
+    });
+    value(
+      await h.call(C.settings.updateShop, {
+        ...(await get()),
+        socialMediaUrl: '',
+      }),
+    );
+    expect(await get()).toMatchObject({
+      complaintPhoneNumber: null,
+      socialMediaUrl: null,
+    });
+  });
+  test.each([
+    '/relative',
+    'javascript:alert(1)',
+    'data:text/plain,a',
+    'ftp://example.com',
+    'https://',
+    'https://example.com/' + 'x'.repeat(500),
+  ])(
+    'rejects invalid social URL %s without partial writes',
+    async (socialMediaUrl) => {
+      value(await h.call(C.settings.completeSetup, validSetup()));
+      value(
+        await h.call(C.auth.login, {
+          username: 'admin',
+          password: ADMIN_PASSWORD,
+        }),
+      );
+      const before = value(await h.call<ShopSettingsDto>(C.settings.getShop));
+      expect(
+        failure(
+          await h.call(C.settings.updateShop, {
+            ...before,
+            complaintPhoneNumber: '123',
+            socialMediaUrl,
+          }),
+        ).code,
+      ).toBe('VALIDATION_FAILED');
+      expect(value(await h.call(C.settings.getShop))).toEqual(before);
+    },
+  );
+});
+
+test('accepts Unicode HTTP(S) links and rejects overlong complaint numbers', async () => {
+  value(await h.call(C.settings.completeSetup, validSetup()));
+  value(
+    await h.call(C.auth.login, { username: 'admin', password: ADMIN_PASSWORD }),
+  );
+  const before = value(await h.call<ShopSettingsDto>(C.settings.getShop));
+  const socialMediaUrl = 'https://example.com/日本?q=keluhan&x=1';
+  value(await h.call(C.settings.updateShop, { ...before, socialMediaUrl }));
+  expect(
+    value(await h.call<ShopSettingsDto>(C.settings.getShop)).socialMediaUrl,
+  ).toBe(socialMediaUrl);
+  expect(
+    failure(
+      await h.call(C.settings.updateShop, {
+        ...before,
+        complaintPhoneNumber: '1'.repeat(41),
+      }),
+    ).code,
+  ).toBe('VALIDATION_FAILED');
 });

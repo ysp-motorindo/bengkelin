@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import jsQR from 'jsqr';
 import { tr } from './helpers/i18n';
 import { launchApp, type LaunchedApp } from './helpers/launch';
 
@@ -122,6 +123,15 @@ async function seed(page: Page): Promise<string> {
         }),
         'finalize',
       );
+      const shop = must(await b.settings.getShop(), 'shop');
+      must(
+        await b.settings.updateShop({
+          ...shop,
+          complaintPhoneNumber: '0878-1640-9387',
+          socialMediaUrl: 'https://example.com/日本?q=keluhan&x=1',
+        }),
+        'contacts',
+      );
       must(await b.auth.logout(), 'logout');
       return invoice.invoiceNumber;
     },
@@ -192,6 +202,31 @@ test('preview shows the invoice; A4 PDF export writes a multi-page PDF', async (
     .getByLabel(t('printing.preview.format'), exact)
     .selectOption('A4');
   await expect(document.locator('.layout-a4')).toHaveCount(1);
+  await expect(document.getByText('0878-1640-9387')).toBeVisible();
+  const qr = document.locator('img.social-qr');
+  await expect(qr).toBeVisible();
+  await expect
+    .poll(() => qr.evaluate((img) => (img as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+  const pixels = await qr.evaluate((element) => {
+    const image = element as HTMLImageElement;
+    const canvas = window.document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(image, 0, 0);
+    return {
+      width: canvas.width,
+      height: canvas.height,
+      data: Array.from(
+        context.getImageData(0, 0, canvas.width, canvas.height).data,
+      ),
+    };
+  });
+  expect(
+    jsQR(Uint8ClampedArray.from(pixels.data), pixels.width, pixels.height)
+      ?.data,
+  ).toBe('https://example.com/日本?q=keluhan&x=1');
   const a4 = await sheetWidths();
   expect(Math.abs(a4.content - mm(186))).toBeLessThan(2);
   expect(Math.abs(a4.paper - mm(210))).toBeLessThan(2);

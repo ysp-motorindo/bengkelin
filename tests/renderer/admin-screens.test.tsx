@@ -116,6 +116,8 @@ describe('shop settings', () => {
     phoneNumber: null,
     email: null,
     invoiceFooter: null,
+    complaintPhoneNumber: null,
+    socialMediaUrl: null,
     timezone: 'Asia/Jakarta',
   };
 
@@ -140,6 +142,14 @@ describe('shop settings', () => {
     await waitFor(() => expect(name).toHaveValue('Bengkel Maju'));
     expect(screen.queryByTestId('timezone-warning')).not.toBeInTheDocument();
 
+    await user.type(
+      screen.getByLabelText('Nomor keluhan pelanggan'),
+      '0878-1640-9387',
+    );
+    await user.type(
+      screen.getByLabelText('Tautan media sosial'),
+      'https://s.id/mitramotorbersama?s=qr',
+    );
     const zone = screen.getByLabelText('Zona waktu');
     await user.clear(zone);
     await user.type(zone, 'Mars/Olympus');
@@ -170,6 +180,8 @@ describe('shop settings', () => {
         phoneNumber: '',
         email: '',
         invoiceFooter: 'Terima kasih',
+        complaintPhoneNumber: '0878-1640-9387',
+        socialMediaUrl: 'https://s.id/mitramotorbersama?s=qr',
         timezone: 'Asia/Makassar',
       }),
     );

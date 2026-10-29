@@ -19,6 +19,8 @@ export interface ShopFields {
   name: string;
   address: string;
   phoneNumber: string | null;
+  complaintPhoneNumber: string | null;
+  socialMediaUrl: string | null;
   email: string | null;
   invoiceFooter: string | null;
   timezone: string;
@@ -57,13 +59,15 @@ export class SettingsRepository {
   getShop(): ShopSettingsDto {
     const row = this.db
       .prepare(
-        `SELECT shop_name, address, phone_number, email, invoice_footer, timezone
+        `SELECT shop_name, address, phone_number, email, invoice_footer, timezone, complaint_phone_number, social_media_url
            FROM settings WHERE id = 1`,
       )
       .get() as {
       shop_name: string;
       address: string | null;
       phone_number: string | null;
+      complaint_phone_number: string | null;
+      social_media_url: string | null;
       email: string | null;
       invoice_footer: string | null;
       timezone: string;
@@ -72,6 +76,8 @@ export class SettingsRepository {
       name: row.shop_name,
       address: row.address ?? '',
       phoneNumber: row.phone_number,
+      complaintPhoneNumber: row.complaint_phone_number,
+      socialMediaUrl: row.social_media_url,
       email: row.email,
       invoiceFooter: row.invoice_footer,
       timezone: row.timezone,
@@ -109,7 +115,7 @@ export class SettingsRepository {
     this.db
       .prepare(
         `UPDATE settings SET shop_name = ?, address = ?, phone_number = ?, email = ?,
-           invoice_footer = ?, timezone = ?, language = ?, appearance = ?,
+           invoice_footer = ?, complaint_phone_number = ?, social_media_url = ?, timezone = ?, language = ?, appearance = ?,
            default_thermal_printer_name = ?, default_a4_printer_name = ?,
            thermal_paper_width_mm = ?, setup_completed_at = ?
          WHERE id = 1`,
@@ -120,6 +126,8 @@ export class SettingsRepository {
         shop.phoneNumber,
         shop.email,
         shop.invoiceFooter,
+        shop.complaintPhoneNumber,
+        shop.socialMediaUrl,
         shop.timezone,
         preferences.language,
         preferences.appearance,
@@ -134,7 +142,7 @@ export class SettingsRepository {
     this.db
       .prepare(
         `UPDATE settings SET shop_name = ?, address = ?, phone_number = ?, email = ?,
-           invoice_footer = ?, timezone = ? WHERE id = 1`,
+           invoice_footer = ?, complaint_phone_number = ?, social_media_url = ?, timezone = ? WHERE id = 1`,
       )
       .run(
         shop.name,
@@ -142,6 +150,8 @@ export class SettingsRepository {
         shop.phoneNumber,
         shop.email,
         shop.invoiceFooter,
+        shop.complaintPhoneNumber,
+        shop.socialMediaUrl,
         shop.timezone,
       );
   }

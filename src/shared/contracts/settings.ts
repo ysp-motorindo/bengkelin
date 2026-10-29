@@ -17,6 +17,19 @@ export const shopSettingsInputSchema = z.strictObject({
   name: requiredText(120),
   address: requiredText(300),
   phoneNumber: optionalText(40),
+  complaintPhoneNumber: optionalText(40),
+  socialMediaUrl: optionalText(500).refine((value) => {
+    if (value === null) return true;
+    try {
+      const url = new URL(value);
+      return (
+        (url.protocol === 'http:' || url.protocol === 'https:') &&
+        url.hostname !== ''
+      );
+    } catch {
+      return false;
+    }
+  }, 'validation.invalidUrl'),
   email: z
     .string('validation.invalid')
     .trim()
@@ -78,6 +91,8 @@ export interface ShopSettingsDto {
   name: string;
   address: string;
   phoneNumber: string | null;
+  complaintPhoneNumber: string | null;
+  socialMediaUrl: string | null;
   email: string | null;
   invoiceFooter: string | null;
   timezone: string;
