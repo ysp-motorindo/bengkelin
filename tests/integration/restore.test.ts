@@ -398,6 +398,7 @@ class SimulatedCrash extends Error {}
 // ---- required assertions ----
 
 describe('required assertions', () => {
+  // Backup, restore and restart can exceed five seconds on Windows CI.
   test('restores the exact backed-up state, keeps counters ahead and rejects a newer schema', async () => {
     await criticalInvoice(shop, priceStart());
     const backupFile = await backupNow();
@@ -494,7 +495,7 @@ describe('required assertions', () => {
     const newerSchemaRestore = await inspect(newer);
     if (newerSchemaRestore.ok) throw new Error('expected a rejection');
     expect(newerSchemaRestore.error.code).toBe('UNSUPPORTED_SCHEMA');
-  });
+  }, 30_000);
 });
 
 // ---- inspectRestore ----

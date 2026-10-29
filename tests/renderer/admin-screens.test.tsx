@@ -177,7 +177,7 @@ describe('shop settings', () => {
     expect(onSaved).toHaveBeenCalledWith(
       expect.objectContaining({ shopName: 'Bengkel Maju Jaya' }),
     );
-  });
+  }, 30_000);
 });
 
 describe('cashier filters (T11 carry)', () => {

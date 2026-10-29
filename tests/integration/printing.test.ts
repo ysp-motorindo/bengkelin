@@ -1248,6 +1248,7 @@ function readdirOne(dir: string): string {
 describe('migration 009 on a populated version-8 database', () => {
   const v8 = bundledMigrations.filter((m) => m.version <= 8);
 
+  // This full migration workflow can exceed five seconds on Windows CI.
   test('adds print settings and print_jobs, reusing the T4 printer columns', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'bengkelin-v8-'));
     const file = path.join(dir, 'db.sqlite');
@@ -1471,5 +1472,5 @@ describe('migration 009 on a populated version-8 database', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
-  });
+  }, 30_000);
 });
