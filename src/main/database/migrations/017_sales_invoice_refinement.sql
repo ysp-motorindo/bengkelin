@@ -11,3 +11,8 @@ WHEN OLD.status IN ('FINALIZED','VOID') AND (
 BEGIN SELECT RAISE(ABORT, 'finalized invoice metadata cannot change'); END;
 
 ALTER TABLE invoice_items ADD COLUMN price_entry_confirmed INTEGER NOT NULL DEFAULT 1 CHECK(price_entry_confirmed IN (0,1));
+
+ALTER TABLE invoices ADD COLUMN cash_received INTEGER CHECK(cash_received IS NULL OR cash_received >= 0);
+CREATE TRIGGER invoices_cash_immutable BEFORE UPDATE ON invoices
+WHEN OLD.status IN ('FINALIZED','VOID') AND NEW.cash_received IS NOT OLD.cash_received
+BEGIN SELECT RAISE(ABORT, 'finalized invoice cash cannot change'); END;

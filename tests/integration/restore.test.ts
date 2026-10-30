@@ -787,6 +787,7 @@ describe('restore', () => {
             expedition_id: null,
             reserved_invoice_number: null,
             tax_invoice_number: null,
+            cash_received: null,
             sales_name_snapshot: null,
             expedition_name_snapshot: null,
           })),

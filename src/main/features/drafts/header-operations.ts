@@ -92,6 +92,11 @@ export function setCheckoutAllocations(
   ctx: OperationContext,
   op: Op<'setCheckoutAllocations'>,
 ): void {
+  if (ctx.invoice.cash_received !== null)
+    throw new DomainError(
+      'CHECKOUT_CASH_ONLY',
+      'Use cash payment for this draft',
+    );
   const allocations = op.allocations.map((a) => ({
     method: a.method,
     amount: parseRupiah(a.amount),

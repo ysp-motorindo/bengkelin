@@ -173,6 +173,8 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
     id: invoice.id,
     status: invoice.status,
     version: toNumber(invoice.version),
+    cashReceived:
+      invoice.cash_received === null ? null : money(invoice.cash_received),
     invoiceNumber: invoice.reserved_invoice_number,
     taxInvoiceNumber: invoice.tax_invoice_number,
     channelId: invoice.channel_id,

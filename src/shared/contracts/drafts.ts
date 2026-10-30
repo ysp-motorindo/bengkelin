@@ -234,7 +234,7 @@ export const setLineDiscountsOpSchema = z.strictObject({
 /** Replaces the invoice-level stages (empty = none). */
 export const setInvoiceDiscountsOpSchema = z.strictObject({
   kind: z.literal('setInvoiceDiscounts'),
-  stages: discountStagesSchema,
+  stages: discountStagesSchema.max(1, 'validation.tooLong'),
 });
 
 export const checkoutAllocationInputSchema = z.strictObject({
@@ -285,6 +285,7 @@ export const discardOpSchema = z.strictObject({
 });
 
 export const draftOperationSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('setCashPayment'), amount: priceSchema }),
   z.strictObject({ kind: z.literal('reserveInvoiceNumber') }),
   z.strictObject({
     kind: z.literal('confirmLineZeroPrice'),
@@ -434,6 +435,7 @@ export interface DraftVehicleDto {
 }
 
 export interface DraftView {
+  cashReceived: Rupiah | null;
   invoiceNumber: string | null;
   taxInvoiceNumber: string | null;
   id: UUID;

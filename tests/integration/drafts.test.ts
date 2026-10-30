@@ -1038,19 +1038,18 @@ describe('line edits', () => {
     });
     const v4 = await applyOk(v3, {
       kind: 'setInvoiceDiscounts',
-      stages: [250, 1000],
+      stages: [250],
     });
-    // 200000 -10% = 180000; -2.5% = 4500 -> 175500; -10% = 17550 -> 157950
+    // 200000 -10% = 180000; invoice -2.5% = 4500 -> 175500
     expect(v4.totals).toMatchObject({
       subtotal: '200000',
       itemDiscountAmount: '20000',
-      invoiceDiscountAmount: '22050',
-      discountAmount: '42050',
-      amount: '157950',
+      invoiceDiscountAmount: '4500',
+      discountAmount: '24500',
+      amount: '175500',
     });
     expect(v4.invoiceDiscounts).toEqual([
       { sequence: 1, percentageBps: 250, amount: '4500' },
-      { sequence: 2, percentageBps: 1000, amount: '17550' },
     ]);
     // A quantity change recomputes every persisted stage.
     const v5 = await applyOk(v4, {
@@ -1058,11 +1057,11 @@ describe('line edits', () => {
       lineId: line.id,
       quantity: 1,
     });
-    expect(v5.totals.amount).toBe('78975');
+    expect(v5.totals.amount).toBe('87750');
     expect(
       rows('SELECT amount FROM invoice_discounts ORDER BY sequence'),
-    ).toEqual([{ amount: 2250n }, { amount: 8775n }]);
-    expect(rows('SELECT amount FROM invoices')).toEqual([{ amount: 78975n }]);
+    ).toEqual([{ amount: 2250n }]);
+    expect(rows('SELECT amount FROM invoices')).toEqual([{ amount: 87750n }]);
     expect(
       failure(
         await apply(v5, {
@@ -1509,72 +1508,50 @@ describe('header, customer and vehicle', () => {
   });
 });
 
-describe('checkout allocations', () => {
-  test('planned splits may be partial but never exceed the amount, and create no payments', async () => {
+describe('legacy checkout allocations', () => {
+  test('legacy split plans remain intact until explicitly replaced with cash', async () => {
     const { draft } = await draftWithLine('65000');
-    const v2 = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [
-        { method: 'CASH', amount: '50000' },
-        { method: 'QRIS', amount: '15000', reference: 'QR-778' },
-      ],
-    });
-    expect(v2.checkoutAllocations).toEqual([
-      {
-        sequence: 1,
-        method: 'CASH',
-        amount: '50000',
-        reference: null,
-        note: null,
-      },
-      {
-        sequence: 2,
-        method: 'QRIS',
-        amount: '15000',
-        reference: 'QR-778',
-        note: null,
-      },
+    h.db
+      .prepare('UPDATE invoices SET cash_received = NULL WHERE id = ?')
+      .run(draft.id);
+    const legacy = value(
+      await apply(draft, {
+        kind: 'setCheckoutAllocations',
+        allocations: [
+          { method: 'CASH', amount: '50000' },
+          { method: 'QRIS', amount: '15000', reference: 'QR-778' },
+        ],
+      }),
+    );
+    expect(legacy.cashReceived).toBeNull();
+    expect(legacy.checkoutAllocations).toMatchObject([
+      { method: 'CASH', amount: '50000' },
+      { method: 'QRIS', amount: '15000' },
     ]);
-    expect(v2.totals).toMatchObject({
-      allocatedAmount: '65000',
-      unallocatedAmount: '0',
-    });
-    const over = await apply(v2, {
-      kind: 'setCheckoutAllocations',
-      allocations: [
-        { method: 'CASH', amount: '50000' },
-        { method: 'QRIS', amount: '15001' },
-      ],
-    });
-    expect(failure(over).code).toBe('ALLOCATION_EXCEEDS_AMOUNT');
-    const v3 = await applyOk(v2, {
-      kind: 'setCheckoutAllocations',
-      allocations: [{ method: 'CASH', amount: '20000' }],
-    });
-    expect(v3.totals).toMatchObject({
-      allocatedAmount: '20000',
-      unallocatedAmount: '45000',
-    });
-    expect(
-      rows('SELECT method, amount FROM draft_checkout_allocations'),
-    ).toEqual([{ method: 'CASH', amount: 20000n }]);
+    const preview = value(
+      await h.call<{ errors: { code: string }[] }>(
+        C.invoices.previewFinalize,
+        { invoiceId: legacy.id },
+        CASHIER,
+      ),
+    );
+    expect(preview.errors.map((e) => e.code)).toContain(
+      'LEGACY_CHECKOUT_REVIEW_REQUIRED',
+    );
+    const replaced = value(
+      await apply(legacy, { kind: 'setCashPayment', amount: '65000' }),
+    );
+    expect(replaced.checkoutAllocations).toMatchObject([
+      { method: 'CASH', amount: '65000' },
+    ]);
     expect(
       failure(
-        await apply(v3, {
+        await apply(replaced, {
           kind: 'setCheckoutAllocations',
-          allocations: [{ method: 'CASH', amount: '0' }],
+          allocations: [],
         }),
       ).code,
-    ).toBe('VALIDATION_FAILED');
-    // Lowering the amount later flags the plan instead of blocking the edit.
-    const v4 = await applyOk(v3, {
-      kind: 'setInvoiceDiscounts',
-      stages: [9000],
-    });
-    expect(v4.allocationsExceedAmount).toBe(true);
-    expect(v4.totals.unallocatedAmount).toBe('-13500');
-    // Allocations are plans: no payment exists until finalization (T10).
-    expect(count('SELECT COUNT(*) AS n FROM payments')).toBe(0);
+    ).toBe('CHECKOUT_CASH_ONLY');
   });
 });
 
@@ -1604,8 +1581,8 @@ describe('no side effects and the status guard', () => {
       unitPrice: '5000',
     });
     v = await applyOk(v, {
-      kind: 'setCheckoutAllocations',
-      allocations: [{ method: 'CASH', amount: '200000' }],
+      kind: 'setCashPayment',
+      amount: '200000',
     });
     v = await applyOk(v, { kind: 'removeLine', lineId: v.lines[1]!.id });
     expect(count('SELECT COUNT(*) AS n FROM stock_ledger_entries')).toBe(
@@ -2036,4 +2013,58 @@ test('positive manual price clears provisional state and zero confirmation persi
     value(await h.call<DraftView>(C.drafts.get, confirmed.id, CASHIER))
       .lines[0]!.priceEntryConfirmed,
   ).toBe(true);
+});
+
+test('cash received is capped to the invoice amount and survives total edits', async () => {
+  const { draft } = await draftWithLine('100000');
+  const paid = value(
+    await apply(draft, {
+      kind: 'setCashPayment',
+      amount: '120000',
+    } as DraftOperation),
+  );
+  expect(paid).toHaveProperty('cashReceived', '120000');
+  expect(paid.checkoutAllocations).toMatchObject([
+    { method: 'CASH', amount: '100000' },
+  ]);
+  const changed = value(
+    await apply(paid, {
+      kind: 'updateLine',
+      lineId: paid.lines[0]!.id,
+      unitPrice: '50000',
+    }),
+  );
+  expect(changed).toHaveProperty('cashReceived', '120000');
+  expect(changed.checkoutAllocations).toMatchObject([
+    { method: 'CASH', amount: '50000' },
+  ]);
+});
+
+test('TOP zero requires full cash and positive TOP allows credit', async () => {
+  const { draft } = await draftWithLine('100000');
+  const partial = value(
+    await apply(draft, { kind: 'setCashPayment', amount: '40000' }),
+  );
+  const before = value(
+    await h.call<{ errors: { code: string }[] }>(
+      C.invoices.previewFinalize,
+      { invoiceId: partial.id },
+      CASHIER,
+    ),
+  );
+  expect(before.errors.map((e) => e.code)).toContain(
+    'CASH_PAYMENT_INSUFFICIENT',
+  );
+  const credit = value(
+    await apply(partial, { kind: 'updateHeader', changes: { topDays: 30 } }),
+  );
+  const after = value(
+    await h.call<{ errors: { code: string }[] }>(
+      C.invoices.previewFinalize,
+      { invoiceId: credit.id },
+      CASHIER,
+    ),
+  );
+  expect(after.errors).toEqual([]);
+  expect(credit.totals.unallocatedAmount).toBe('60000');
 });

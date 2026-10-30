@@ -202,7 +202,7 @@ async function createDraft(
   overrides: Record<string, unknown> = {},
   windowId = CASHIER,
 ) {
-  return value(
+  const draft = value(
     await h.call<DraftView>(
       C.drafts.create,
       {
@@ -215,6 +215,7 @@ async function createDraft(
       windowId,
     ),
   );
+  return applyOk(draft, { kind: 'updateHeader', changes: { topDays: 30 } });
 }
 
 async function applyOk(
@@ -354,8 +355,8 @@ describe('required assertions', () => {
     // A second draft whose finalization fails inside SQLite (a trigger).
     const other = await draftWith([{ itemId: item.id }]);
     const withPlan = await applyOk(other, {
-      kind: 'setCheckoutAllocations',
-      allocations: [{ method: 'CASH', amount: '65000' }],
+      kind: 'setCashPayment',
+      amount: '65000',
     });
     h.db.exec(
       `CREATE TEMP TRIGGER fail_payment BEFORE INSERT ON payments
@@ -395,8 +396,8 @@ describe('idempotency and duplicates', () => {
   test('a retry with the same requestId returns the identical view and adds nothing', async () => {
     const { draft } = await stockedDraft(2, '65000');
     const planned = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [{ method: 'CASH', amount: '100000' }],
+      kind: 'setCashPayment',
+      amount: '100000',
     });
     const requestId = uuid();
     const first = await finalizeOk(planned, { requestId });
@@ -488,11 +489,8 @@ describe('numbering', () => {
   test('one clock read per finalization: number date, finalized_at and payments agree across midnight', async () => {
     const { draft } = await stockedDraft(2, '65000');
     const withPlan = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [
-        { method: 'CASH', amount: '50000' },
-        { method: 'QRIS', amount: '30000' },
-      ],
+      kind: 'setCashPayment',
+      amount: '80000',
     });
     const shown = value(await preview(withPlan.id));
     // The first read is 23:59:59.999 WIB; every later read is past midnight.
@@ -514,7 +512,7 @@ describe('numbering', () => {
     );
     expect(view.invoiceNumber).toBe(`INV-${day}-0001`);
     const payments = paymentRows(withPlan.id);
-    expect(payments).toHaveLength(2);
+    expect(payments).toHaveLength(1);
     for (const payment of payments) {
       expect(payment.paid_at).toBe(finalizedAt);
     }
@@ -666,8 +664,8 @@ describe('inactive references', () => {
   test('a catalog item deactivated after it was added blocks preview and finalize', async () => {
     const { item, draft } = await stockedDraft(2);
     const planned = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [{ method: 'CASH', amount: '50000' }],
+      kind: 'setCashPayment',
+      amount: '50000',
     });
     // Previewed while still active...
     const earlier = value(await preview(planned.id));
@@ -974,94 +972,28 @@ describe('payments at checkout', () => {
     expect(view.outstandingAmount).toBe('0');
   });
 
-  test('a zero-total invoice with allocations is an error', async () => {
+  test('a zero-total invoice clears applied cash without losing received cash', async () => {
     const item = await pricedItem('50000');
     let draft = await draftWith([{ itemId: item.id }]);
-    draft = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [{ method: 'CASH', amount: '50000' }],
-    });
+    draft = await applyOk(draft, { kind: 'setCashPayment', amount: '50000' });
     draft = await applyOk(draft, {
       kind: 'setInvoiceDiscounts',
       stages: [10000],
     });
-    const shown = value(await preview(draft.id));
-    expect(shown.errors.map((e) => e.code)).toEqual([
-      'ZERO_TOTAL_WITH_ALLOCATIONS',
-    ]);
-    expect(failure(await finalize(draft)).code).toBe(
-      'ZERO_TOTAL_WITH_ALLOCATIONS',
-    );
+    expect(draft.cashReceived).toBe('50000');
+    expect(draft.checkoutAllocations).toEqual([]);
+    expect((await finalizeOk(draft)).paidAmount).toBe('0');
   });
 
-  test('partial and split payments: 60000 CASH + 40000 QRIS on 145000', async () => {
+  test('partial cash payment leaves the remaining amount as credit', async () => {
     const item = await pricedItem('145000');
     let draft = await draftWith([{ itemId: item.id }]);
-    draft = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [
-        { method: 'CASH', amount: '60000' },
-        { method: 'QRIS', amount: '40000', reference: 'QR-778' },
-      ],
-    });
-    const shown = value(await preview(draft.id));
-    expect(shown.paymentStatusAfterCheckout).toBe('PARTIALLY_PAID');
-    expect(shown.totals).toMatchObject({
-      amount: '145000',
-      checkoutPaymentAmount: '100000',
-      outstandingAmount: '45000',
-    });
-    nowMs = T0 + 5 * 60_000;
+    draft = await applyOk(draft, { kind: 'setCashPayment', amount: '100000' });
     const view = await finalizeOk(draft);
     expect(view.paymentStatus).toBe('PARTIALLY_PAID');
     expect(view.paidAmount).toBe('100000');
     expect(view.outstandingAmount).toBe('45000');
-    expect(view.payments.map(({ id: _id, ...payment }) => payment)).toEqual([
-      {
-        method: 'CASH',
-        amount: '60000',
-        paidAt: at(nowMs),
-        reference: null,
-        note: null,
-        receivedBy: { id: cashierId, displayName: 'Siti' },
-        source: 'CHECKOUT',
-      },
-      {
-        method: 'QRIS',
-        amount: '40000',
-        paidAt: at(nowMs),
-        reference: 'QR-778',
-        note: null,
-        receivedBy: { id: cashierId, displayName: 'Siti' },
-        source: 'CHECKOUT',
-      },
-    ]);
-    // Allocations are draft-only: consumed by finalization.
-    expect(
-      count(
-        'SELECT COUNT(*) AS n FROM draft_checkout_allocations WHERE invoice_id = ?',
-        draft.id,
-      ),
-    ).toBe(0);
-    expect(
-      rows(
-        'SELECT method, amount, source, received_by_cashier_id FROM payments WHERE invoice_id = ? ORDER BY rowid',
-        draft.id,
-      ),
-    ).toEqual([
-      {
-        method: 'CASH',
-        amount: 60000n,
-        source: 'CHECKOUT',
-        received_by_cashier_id: cashierId,
-      },
-      {
-        method: 'QRIS',
-        amount: 40000n,
-        source: 'CHECKOUT',
-        received_by_cashier_id: cashierId,
-      },
-    ]);
+    expect(view.payments).toMatchObject([{ method: 'CASH', amount: '100000' }]);
   });
 
   test('full cash with a larger tender stores only the applied amount', async () => {
@@ -1069,8 +1001,8 @@ describe('payments at checkout', () => {
     let draft = await draftWith([{ itemId: item.id }]);
     // The UI tendered 150000 and showed 5000 change; only 145000 is sent.
     draft = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [{ method: 'CASH', amount: '145000' }],
+      kind: 'setCashPayment',
+      amount: '145000',
     });
     const view = await finalizeOk(draft);
     expect(view.paymentStatus).toBe('PAID');
@@ -1090,31 +1022,17 @@ describe('payments at checkout', () => {
     expect(view.outstandingAmount).toBe('80000');
   });
 
-  test('allocations above the amount after a discount block finalization', async () => {
+  test('a discount recap caps cash allocation before finalization', async () => {
     const item = await pricedItem('100000');
     let draft = await draftWith([{ itemId: item.id }]);
-    draft = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [{ method: 'CASH', amount: '100000' }],
-    });
+    draft = await applyOk(draft, { kind: 'setCashPayment', amount: '100000' });
     draft = await applyOk(draft, {
       kind: 'setInvoiceDiscounts',
       stages: [1000],
     });
-    expect(draft.allocationsExceedAmount).toBe(true);
-    const shown = value(await preview(draft.id));
-    expect(shown.errors).toEqual([
-      {
-        code: 'ALLOCATION_EXCEEDS_AMOUNT',
-        params: { allocatedAmount: '100000', amount: '90000' },
-      },
-    ]);
-    expect(shown.paymentStatusAfterCheckout).toBeNull();
-    const before = dump();
-    expect(failure(await finalize(draft)).code).toBe(
-      'ALLOCATION_EXCEEDS_AMOUNT',
-    );
-    expect(dump()).toEqual(before);
+    expect(draft.cashReceived).toBe('100000');
+    expect(draft.checkoutAllocations).toMatchObject([{ amount: '90000' }]);
+    expect((await finalizeOk(draft)).paidAmount).toBe('90000');
   });
 });
 
@@ -1320,8 +1238,8 @@ describe('database guards', () => {
     const item = await pricedItem('100000');
     let draft = await draftWith([{ itemId: item.id }]);
     draft = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [{ method: 'CASH', amount: '40000' }],
+      kind: 'setCashPayment',
+      amount: '40000',
     });
     const view = await finalizeOk(draft);
     const paymentId = view.payments[0]!.id;
@@ -1431,11 +1349,8 @@ describe('fault injection', () => {
       stages: [500],
     });
     draft = await applyOk(draft, {
-      kind: 'setCheckoutAllocations',
-      allocations: [
-        { method: 'CASH', amount: '100000' },
-        { method: 'QRIS', amount: '50000' },
-      ],
+      kind: 'setCashPayment',
+      amount: '150000',
     });
     return draft;
   }
@@ -1492,7 +1407,7 @@ describe('fault injection', () => {
         await h.call<InvoiceView>(C.invoices.finalize, input, CASHIER),
       );
       expect(view.invoiceNumber).toBe('INV-20260930-0001');
-      expect(view.payments).toHaveLength(2);
+      expect(view.payments).toHaveLength(1);
     },
   );
 

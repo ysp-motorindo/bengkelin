@@ -35,6 +35,7 @@ export interface FullInvoiceRow {
   version: bigint;
   invoice_number: string | null;
   tax_invoice_number: string | null;
+  cash_received: bigint | null;
   cashier_id: string | null;
   finalized_at: Instant | null;
   customer_name_snapshot: string | null;
@@ -80,7 +81,7 @@ export class InvoiceRepository {
   findFull(id: string): FullInvoiceRow | undefined {
     return this.db
       .prepare(
-        `SELECT i.tax_invoice_number, i.sales_id, i.expedition_id, i.sales_name_snapshot, i.expedition_name_snapshot, i.id, i.status, i.customer_id, i.vehicle_id, i.channel_id, i.invoice_date,
+        `SELECT i.cash_received, i.tax_invoice_number, i.sales_id, i.expedition_id, i.sales_name_snapshot, i.expedition_name_snapshot, i.id, i.status, i.customer_id, i.vehicle_id, i.channel_id, i.invoice_date,
            i.pricing_at, i.top_days, i.due_date, i.odometer_km, i.note, i.subtotal,
            i.item_discount_amount, i.invoice_discount_amount, i.discount_amount, i.amount,
            i.created_by_cashier_id, cb.display_name AS created_by_name, i.version,

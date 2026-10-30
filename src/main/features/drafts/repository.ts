@@ -21,6 +21,7 @@ export interface InvoiceRow {
   status: InvoiceStatus;
   reserved_invoice_number: string | null;
   tax_invoice_number: string | null;
+  cash_received: bigint | null;
   sales_id: string | null;
   expedition_id: string | null;
   customer_id: string | null;
@@ -185,6 +186,12 @@ export class DraftRepository {
       : new ReferenceRepository(this.db).find(entity, id);
   }
 
+  saveCashReceived(id: string, amount: bigint): void {
+    this.db
+      .prepare('UPDATE invoices SET cash_received = ? WHERE id = ?')
+      .run(amount, id);
+  }
+
   confirmPrice(lineId: string, confirmed: boolean): void {
     this.db
       .prepare(
@@ -220,7 +227,7 @@ export class DraftRepository {
   findInvoice(id: string): InvoiceRow | undefined {
     return this.db
       .prepare(
-        `SELECT id, status, reserved_invoice_number, tax_invoice_number, sales_id, expedition_id, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
+        `SELECT id, status, reserved_invoice_number, tax_invoice_number, cash_received, sales_id, expedition_id, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
            due_date, odometer_km, note, subtotal, item_discount_amount, invoice_discount_amount,
            discount_amount, amount, created_by_cashier_id, last_edited_by_cashier_id, version,
            discarded_at, created_at, updated_at

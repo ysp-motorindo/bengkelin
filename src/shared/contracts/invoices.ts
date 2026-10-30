@@ -66,6 +66,8 @@ export type FinalizeWarningCode = FinalizeWarning['code'];
 
 /** Blocking problems. The same codes are the `finalize` error codes. */
 export type FinalizeErrorCode =
+  | 'CASH_PAYMENT_INSUFFICIENT'
+  | 'LEGACY_CHECKOUT_REVIEW_REQUIRED'
   | 'PRICE_CONFIRMATION_REQUIRED'
   | 'DRAFT_EMPTY'
   | 'INVOICE_DATE_IN_FUTURE'
@@ -248,6 +250,7 @@ export interface InvoiceView {
   id: UUID;
   invoiceNumber: string;
   taxInvoiceNumber: string | null;
+  cashReceived: Rupiah | null;
   status: Exclude<InvoiceStatus, 'DRAFT'>;
   version: number;
   invoiceDate: LocalDate;

@@ -101,6 +101,7 @@ export class DraftService {
         cashierId: actor.cashierId,
         now: this.deps.clock.now(),
       });
+      this.repo.saveCashReceived(id, 0n);
       this.repo.reserveNumber(
         id,
         allocateInvoiceNumber(
@@ -180,6 +181,20 @@ export class DraftService {
           );
       } else runOperation(ctx, input.op);
       recalculateDraft(this.repo, invoice.id);
+      const recalculated = this.repo.findInvoice(invoice.id)!;
+      if (recalculated.cash_received !== null) {
+        const applied =
+          recalculated.cash_received < recalculated.amount
+            ? recalculated.cash_received
+            : recalculated.amount;
+        this.repo.replaceAllocations(
+          invoice.id,
+          applied > 0n
+            ? [{ method: 'CASH', amount: applied, reference: null, note: null }]
+            : [],
+          this.newId,
+        );
+      }
       this.mustSucceed(
         this.repo.bumpVersion(invoice.id, expected, actor.cashierId, now),
       );

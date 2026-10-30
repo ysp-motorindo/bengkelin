@@ -106,6 +106,8 @@ export function buildInvoiceView(
     id: invoice.id,
     invoiceNumber: invoice.invoice_number!,
     taxInvoiceNumber: invoice.tax_invoice_number,
+    cashReceived:
+      invoice.cash_received === null ? null : invoice.cash_received.toString(),
     status: invoice.status,
     version: toNumber(invoice.version),
     invoiceDate: invoice.invoice_date,

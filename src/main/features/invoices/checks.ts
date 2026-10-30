@@ -77,6 +77,14 @@ export function checkFinalization(
         params: { lineId: line.id },
       });
   }
+  if (invoice.cash_received === null || calculation.invoiceStages.length > 1)
+    errors.push({ code: 'LEGACY_CHECKOUT_REVIEW_REQUIRED', params: {} });
+  if (
+    invoice.cash_received !== null &&
+    invoice.top_days === 0n &&
+    allocatedAmount < amount
+  )
+    errors.push({ code: 'CASH_PAYMENT_INSUFFICIENT', params: {} });
   // LocalDate strings compare chronologically.
   if (invoice.invoice_date > today) {
     errors.push({
