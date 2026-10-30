@@ -122,13 +122,9 @@ test('custom name and manual price reason use existing audited operations', asyn
   expect(bridge.drafts.apply.mock.calls.at(-1)![0].op).toMatchObject({
     title: 'Servis lengkap',
   });
-  await user.click(
-    screen.getByRole('button', { name: 'Ubah: Servis lengkap' }),
-  );
-  await user.type(
-    screen.getByLabelText('Alasan perubahan harga (opsional)'),
-    'Kesepakatan',
-  );
+  expect(
+    screen.queryByLabelText('Alasan perubahan harga (opsional)'),
+  ).not.toBeInTheDocument();
   const price = screen.getByRole('textbox', {
     name: 'Harga jual: Servis lengkap',
   });
@@ -138,7 +134,6 @@ test('custom name and manual price reason use existing audited operations', asyn
   await waitFor(() =>
     expect(bridge.drafts.apply.mock.calls.at(-1)![0].op).toMatchObject({
       unitPrice: '60000',
-      reason: 'Kesepakatan',
     }),
   );
 });
@@ -207,7 +202,6 @@ test('service mechanic selection is staged until blur', async () => {
     );
   }
   render(<Service />);
-  await user.click(screen.getByRole('button', { name: 'Ubah: Servis CVT' }));
   await user.selectOptions(
     screen.getByRole('combobox', { name: 'Mekanik: Servis CVT' }),
     'mechanic',

@@ -1,11 +1,11 @@
 import { errorMessage } from '@/renderer/lib/errors';
 import { useEffect, useId, useState } from 'react';
-import { ChevronDown, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
-import { Button, IconButton } from '@/renderer/components/ui/button';
+import { IconButton } from '@/renderer/components/ui/button';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { parseRupiahInput } from '@/renderer/lib/money';
 import {
@@ -43,9 +43,7 @@ export function EditableLineRow({
   const { t } = useTranslation();
   const { formatIdr } = useNumberFormat();
   const detailId = useId();
-  const [expanded, setExpanded] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const [reason, setReason] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const key = (field: string) => `line:${line.id}:${field}`;
   const server = {
@@ -99,7 +97,6 @@ export function EditableLineRow({
       const price = parseRupiahInput(text);
       valid = price !== null;
       if (price !== null) op.unitPrice = price;
-      if (reason.trim()) op.reason = reason.trim();
       error = 'workspace.validation.money';
     }
     if (field === 'title') {
@@ -194,26 +191,6 @@ export function EditableLineRow({
             value={values.unitPrice}
             onValueChange={(text) => change('unitPrice', text)}
           />
-          {!line.priceEntryConfirmed && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                if (!(await commands.flush())) return;
-                const result = await commands.send({
-                  kind: 'confirmLineZeroPrice',
-                  lineId: line.id,
-                });
-                if (!result.ok)
-                  setErrors((old) => ({
-                    ...old,
-                    unitPrice: errorMessage(t, result.error),
-                  }));
-              }}
-            >
-              {t('workspace.entry.confirmZero')}
-            </Button>
-          )}
         </td>
         {values.discounts.map((text, index) => (
           <td key={index}>
@@ -236,15 +213,6 @@ export function EditableLineRow({
         </td>
         <td className="whitespace-nowrap">
           <IconButton
-            type="button"
-            label={`${t('workspace.lines.edit')}: ${line.title}`}
-            aria-expanded={expanded}
-            aria-controls={detailId}
-            onClick={() => setExpanded(!expanded)}
-          >
-            <ChevronDown className="size-3.5" />
-          </IconButton>
-          <IconButton
             destructive
             type="button"
             label={`${t('workspace.lines.remove')}: ${line.title}`}
@@ -264,7 +232,7 @@ export function EditableLineRow({
           </IconButton>
         </td>
       </tr>
-      {(expanded || Object.keys(errors).length > 0) && (
+      {
         <tr>
           <td
             colSpan={11}
@@ -280,7 +248,7 @@ export function EditableLineRow({
                 {error}
               </p>
             ))}
-            {expanded && (
+            {
               <div
                 id={detailId}
                 className="flex flex-wrap items-start gap-3 text-xs"
@@ -339,15 +307,6 @@ export function EditableLineRow({
                     </Select>
                   </label>
                 )}
-                <label>
-                  {t('workspace.editor.reason')}
-                  <Input
-                    className="h-8"
-                    maxLength={500}
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                  />
-                </label>
                 <span>
                   {t('workspace.editor.listed', {
                     price: line.listedUnitPrice
@@ -369,10 +328,10 @@ export function EditableLineRow({
                   ))}
                 </ul>
               </div>
-            )}
+            }
           </td>
         </tr>
-      )}
+      }
     </>
   );
 }

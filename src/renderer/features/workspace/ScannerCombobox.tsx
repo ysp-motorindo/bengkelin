@@ -17,6 +17,7 @@ import type { CatalogItemDto } from '@/shared/contracts';
 export type ScanOutcome = 'added' | 'unknown' | 'other';
 
 interface ScannerComboboxProps {
+  onCustom(): void;
   compact?: boolean;
   disabled?: boolean;
   onTextChange?(text: string): void;
@@ -40,6 +41,7 @@ const SEARCH_DELAY_MS = 150;
  * field clears on Enter so back-to-back scans never run together.
  */
 export function ScannerCombobox({
+  onCustom,
   compact = false,
   disabled = false,
   onTextChange,
@@ -125,7 +127,7 @@ export function ScannerCombobox({
     if (!query.trim()) {
       searchSeq.current += 1;
       setResults([]);
-      setOpen(false);
+      setOpen(true);
       setActive(-1);
       return;
     }
@@ -133,7 +135,7 @@ export function ScannerCombobox({
       void search(query.trim()).then((found) => {
         if (inputRef.current?.value !== query) return; // typed on / cleared
         setResults(found);
-        setOpen(found.length > 0);
+        setOpen(true);
         setActive(-1);
       });
     }, SEARCH_DELAY_MS);
@@ -168,14 +170,13 @@ export function ScannerCombobox({
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      if (results.length === 0) return;
       event.preventDefault();
       setOpen(true);
       navigated.current = true;
       setActive((index) => {
         const step = event.key === 'ArrowDown' ? 1 : -1;
-        if (index < 0) return step > 0 ? 0 : results.length - 1;
-        return (index + step + results.length) % results.length;
+        if (index < 0) return step > 0 ? 0 : results.length;
+        return (index + step + results.length + 1) % (results.length + 1);
       });
       return;
     }
@@ -189,12 +190,15 @@ export function ScannerCombobox({
     }
     if (event.key !== 'Enter') return;
     event.preventDefault();
+    const customPicked = navigated.current && open && active === results.length;
     const picked =
       navigated.current && open && active >= 0 ? results[active] : undefined;
     const code = text.trim();
     reset();
     setHint(null);
-    if (picked) {
+    if (customPicked) {
+      onCustom();
+    } else if (picked) {
       void onPick(picked);
     } else if (code) {
       void submitText(code);
@@ -238,6 +242,7 @@ export function ScannerCombobox({
             scheduleSearch(event.target.value);
           }}
           onKeyDown={onKeyDown}
+          onFocus={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           className={cn(
             'w-full rounded-md border border-input bg-card pl-11 pr-3 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -284,6 +289,23 @@ export function ScannerCombobox({
                 </span>
               </li>
             ))}
+            <li
+              id={`${listId}-${results.length}`}
+              role="option"
+              aria-selected={active === results.length}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                reset();
+                onCustom();
+              }}
+              onMouseEnter={() => setActive(results.length)}
+              className={cn(
+                'cursor-pointer border-t border-border px-3 py-2 text-sm',
+                active === results.length && 'bg-accent text-accent-foreground',
+              )}
+            >
+              {t('workspace.custom.open')}
+            </li>
           </ul>,
           document.body,
         )}

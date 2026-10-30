@@ -281,8 +281,6 @@ describe('scanner Enter after new input is a scan, never a highlighted pick', ()
     await user.keyboard('servis');
     await screen.findByRole('option', { name: /Jasa Servis Ringan/ });
     await user.keyboard('{ArrowDown}{Enter}');
-    expect(addOps(bridge)).toHaveLength(0);
-    await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
     await waitFor(() => expect(addOps(bridge)).toHaveLength(1));
     expect(addOps(bridge)[0]).toEqual({
       kind: 'addCatalogLine',

@@ -49,40 +49,17 @@ test('unsubmitted search blocks transitions and Escape clears it', async () => {
   await user.keyboard('{Escape}');
   expect(await flushAll()).toBe(true);
 });
-test('PRICE_REQUIRED keeps entry and accepts inline price', async () => {
-  const bridge = install();
-  const apply = bridge.drafts.apply;
-  apply.mockResolvedValueOnce({
-    ok: false,
-    error: { code: 'PRICE_REQUIRED', messageKey: 'errors.PRICE_REQUIRED' },
-  });
-  const user = userEvent.setup();
-  render(<Harness />);
-  await user.type(
-    screen.getByRole('combobox', { name: 'Cari barang' }),
-    '899123{Enter}',
-  );
-  const price = await screen.findByRole('textbox', { name: 'Harga jual' });
-  await user.type(price, '50000');
-  await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
-  await waitFor(() =>
-    expect(apply.mock.calls.at(-1)![0].op).toMatchObject({
-      barcode: '899123',
-      unitPrice: '50000',
-    }),
-  );
-});
-test('custom entry is inline and incomplete data blocks transitions', async () => {
+test('custom action opens a modal and cancellation restores search focus', async () => {
   install();
   const user = userEvent.setup();
   render(<Harness />);
-  await user.click(screen.getByRole('button', { name: 'Item kustom' }));
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  await user.type(
-    screen.getByRole('combobox', { name: 'Nama item' }),
-    'Servis CVT',
-  );
-  expect(await flushAll()).toBe(false);
+  const search = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.click(search);
+  await user.click(await screen.findByRole('option', { name: 'Item kustom' }));
+  expect(screen.getByRole('dialog')).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Batal' }));
+  expect(search).toHaveFocus();
+  expect(await flushAll()).toBe(true);
 });
 
 test('duplicate Enter while adding does not dispatch a second add', async () => {
@@ -106,7 +83,7 @@ test('duplicate Enter while adding does not dispatch a second add', async () => 
   resolve({ ok: true, value: draftView({ version: 2 }) });
   await waitFor(() => expect(search).not.toBeDisabled());
 });
-test('selecting catalog search result stages until Add', async () => {
+test('selecting catalog search result immediately adds quantity one', async () => {
   const bridge = install();
   bridge.catalog.search.mockResolvedValue({
     ok: true,
@@ -135,25 +112,17 @@ test('selecting catalog search result stages until Add', async () => {
   render(<Harness />);
   const search = screen.getByRole('combobox', { name: 'Cari barang' });
   await user.type(search, 'Oli');
-  await screen.findByRole('option');
-  expect(screen.getByRole('listbox').closest('table')).toBeNull();
+  await screen.findByRole('option', { name: /Oli mesin/ });
   await user.keyboard('{ArrowDown}{Enter}');
-  await waitFor(() =>
-    expect(screen.getByLabelText('Harga jual')).toHaveValue('Rp 65.000'),
-  );
-  expect(bridge.drafts.apply).not.toHaveBeenCalled();
-  expect(await flushAll()).toBe(false);
-  await user.type(search, 'new query');
-  expect(screen.getByRole('button', { name: 'Tambahkan' })).toBeDisabled();
-  await user.clear(search);
-  await user.type(search, 'Oli');
-  await screen.findByRole('option');
-  await user.keyboard('{ArrowDown}{Enter}');
-  await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
   await waitFor(() => expect(bridge.drafts.apply).toHaveBeenCalledOnce());
   expect(bridge.drafts.apply.mock.calls[0]![0].op).toMatchObject({
+    kind: 'addCatalogLine',
     catalogItemId: 'item',
+    quantity: 1,
   });
+  expect(
+    screen.queryByRole('button', { name: 'Tambahkan' }),
+  ).not.toBeInTheDocument();
 });
 
 test('two complete barcode scans during a delayed add are both retained', async () => {
@@ -216,7 +185,8 @@ test('Escape cannot abandon a custom item submission in flight', async () => {
   );
   const user = userEvent.setup();
   render(<Harness />);
-  await user.click(screen.getByRole('button', { name: 'Item kustom' }));
+  await user.click(screen.getByRole('combobox', { name: 'Cari barang' }));
+  await user.click(await screen.findByRole('option', { name: 'Item kustom' }));
   await user.type(
     screen.getByRole('combobox', { name: 'Nama item' }),
     'Demo service',
