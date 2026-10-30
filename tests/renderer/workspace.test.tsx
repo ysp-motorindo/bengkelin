@@ -94,7 +94,8 @@ describe('cashier workspace', () => {
     );
     render(<CashierWorkspace />);
     const cell = await screen.findByText(code);
-    expect(cell).toHaveClass('break-all');
+    expect(cell).toHaveClass('truncate');
+    expect(cell).toHaveAttribute('title', code);
     expect(screen.getByTestId('line-row')).toHaveTextContent('0');
   });
 

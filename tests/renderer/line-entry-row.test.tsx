@@ -290,3 +290,11 @@ test('custom transport exhaustion exposes an idempotent retry inside the modal',
   );
   expect(api.drafts.apply.mock.calls.at(-1)![0].requestId).toBe(request);
 });
+
+test('search spans code and item columns', () => {
+  install();
+  render(<Harness />);
+  expect(
+    screen.getByRole('combobox', { name: 'Cari barang' }).closest('td'),
+  ).toHaveAttribute('colspan', '2');
+});

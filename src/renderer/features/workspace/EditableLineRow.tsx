@@ -164,7 +164,9 @@ export function EditableLineRow({
         className="border-t border-border text-xs [&>td]:px-1 [&>td]:py-1"
       >
         <td className="text-right text-muted-foreground">{rowNumber}</td>
-        <td className="break-all">{line.itemCode ?? '—'}</td>
+        <td className="truncate" title={line.itemCode ?? undefined}>
+          {line.itemCode ?? '—'}
+        </td>
         <td className="min-w-48">
           {line.source === 'CUSTOM' ? (
             <Input
@@ -178,7 +180,7 @@ export function EditableLineRow({
             </span>
           )}
         </td>
-        <td>{line.unitLabel ?? '—'}</td>
+        <td className="text-center">{line.unitLabel ?? '—'}</td>
         <td className="text-right">{line.currentStock ?? '—'}</td>
         <td>
           <NumericInput
