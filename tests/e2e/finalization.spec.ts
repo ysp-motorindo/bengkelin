@@ -138,24 +138,12 @@ test('scan, split payment, review, finalize, see the number, new transaction', a
   await expect(page.getByTestId('line-row')).toHaveCount(1);
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 65.000');
 
-  // Split: 40.000 cash + 25.000 QRIS.
-  const addPayment = page.getByRole('button', {
-    name: t('workspace.checkout.addPayment'),
-    ...exact,
-  });
-  await addPayment.click();
   await page
-    .getByLabel(`${t('workspace.checkout.amount')} 1`, exact)
-    .fill('40000');
-  await expect(page.getByTestId('unallocated-amount')).toHaveText('Rp 25.000');
-  await addPayment.click();
-  await page
-    .getByLabel(`${t('workspace.checkout.method')} 2`, exact)
-    .selectOption('QRIS');
-  await expect(
-    page.getByLabel(`${t('workspace.checkout.amount')} 2`, exact),
-  ).toHaveValue('25.000');
-  await expect(page.getByTestId('unallocated-amount')).toHaveText('Rp 0');
+    .getByRole('textbox', {
+      name: t('workspace.checkout.payments'),
+      exact: true,
+    })
+    .fill('65000');
 
   // Review (flushes first), then finalize.
   await page
@@ -166,10 +154,7 @@ test('scan, split payment, review, finalize, see the number, new transaction', a
   });
   await expect(review.getByTestId('review-total')).toHaveText('Rp 65.000');
   await expect(review.getByTestId('review-payments')).toContainText(
-    'Rp 40.000',
-  );
-  await expect(review.getByTestId('review-payments')).toContainText(
-    'Rp 25.000',
+    'Rp 65.000',
   );
   await expect(review.getByTestId('review-payment-status')).toHaveText(
     t('workspace.paymentStatus.PAID'),

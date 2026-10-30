@@ -2068,3 +2068,79 @@ test('TOP zero requires full cash and positive TOP allows credit', async () => {
   expect(after.errors).toEqual([]);
   expect(credit.totals.unallocatedAmount).toBe('60000');
 });
+
+test('explicit zero on an unpriced catalog add still requires audited confirmation', async () => {
+  const item = await newItem();
+  const initial = value(await createDraft());
+  const added = value(
+    await apply(initial, {
+      kind: 'addCatalogLine',
+      catalogItemId: item.id,
+      unitPrice: '0',
+    }),
+  );
+  expect(added.lines[0]!.priceEntryConfirmed).toBe(false);
+  const blocked = value(
+    await h.call<{ errors: { code: string }[] }>(
+      C.invoices.previewFinalize,
+      { invoiceId: added.id },
+      CASHIER,
+    ),
+  );
+  expect(blocked.errors.map((error) => error.code)).toContain(
+    'PRICE_CONFIRMATION_REQUIRED',
+  );
+  expect(
+    failure(
+      await h.call(
+        C.invoices.finalize,
+        {
+          requestId: uuid(),
+          invoiceId: added.id,
+          expectedVersion: added.version,
+          acknowledgedWarnings: [],
+        },
+        CASHIER,
+      ),
+    ).code,
+  ).toBe('PRICE_CONFIRMATION_REQUIRED');
+  const confirmed = value(
+    await apply(added, {
+      kind: 'confirmLineZeroPrice',
+      lineId: added.lines[0]!.id,
+    }),
+  );
+  expect(
+    value(await h.call<DraftView>(C.drafts.get, confirmed.id, CASHIER))
+      .lines[0]!.priceEntryConfirmed,
+  ).toBe(true);
+  expect(
+    h.db
+      .prepare(
+        "SELECT action FROM audit_log WHERE entity_id = ? AND action = 'DRAFT_ZERO_PRICE_CONFIRMED'",
+      )
+      .all(confirmed.id),
+  ).toHaveLength(1);
+  const ready = value(
+    await h.call<{
+      draftVersion: number;
+      warnings: unknown[];
+      errors: unknown[];
+    }>(C.invoices.previewFinalize, { invoiceId: confirmed.id }, CASHIER),
+  );
+  expect(ready.errors).toEqual([]);
+  expect(
+    value(
+      await h.call<{ invoiceNumber: string }>(
+        C.invoices.finalize,
+        {
+          requestId: uuid(),
+          invoiceId: confirmed.id,
+          expectedVersion: ready.draftVersion,
+          acknowledgedWarnings: ready.warnings,
+        },
+        CASHIER,
+      ),
+    ).invoiceNumber,
+  ).toBe(confirmed.invoiceNumber);
+});

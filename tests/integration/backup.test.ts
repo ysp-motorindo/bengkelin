@@ -226,6 +226,18 @@ async function prepareDraft() {
       CASHIER_WINDOW,
     ),
   );
+  draft = value(
+    await h.call<DraftView>(
+      C.drafts.apply,
+      {
+        requestId: fixtureId(),
+        invoiceId: draft.id,
+        expectedVersion: draft.version,
+        op: { kind: 'setCashPayment', amount: draft.totals.amount },
+      },
+      CASHIER_WINDOW,
+    ),
+  );
   const preview = value(
     await h.call<FinalizePreviewDto>(
       C.invoices.previewFinalize,

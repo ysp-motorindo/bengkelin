@@ -1,10 +1,11 @@
+import { errorMessage } from '@/renderer/lib/errors';
 import { useEffect, useId, useState } from 'react';
 import { ChevronDown, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
-import { IconButton } from '@/renderer/components/ui/button';
+import { Button, IconButton } from '@/renderer/components/ui/button';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { parseRupiahInput } from '@/renderer/lib/money';
 import {
@@ -159,37 +160,12 @@ export function EditableLineRow({
     <>
       <tr
         data-testid="line-row"
+        data-line-id={line.id}
         inert={removing}
         className="border-t border-border text-xs [&>td]:px-1 [&>td]:py-1"
       >
         <td className="text-right text-muted-foreground">{line.position}</td>
         <td className="min-w-48">
-          {line.source === 'CUSTOM' && (
-            <span className="sr-only">{line.title}</span>
-          )}
-          {line.mechanicName && (
-            <span
-              data-testid="indicator-mechanic"
-              className="text-[10px] text-muted-foreground"
-            >
-              {line.mechanicName}
-            </span>
-          )}
-          {line.pricing.manualPriceOverride && (
-            <span data-testid="indicator-override" className="sr-only">
-              {t('workspace.indicators.override')}
-            </span>
-          )}
-          {line.priceChanges.some(
-            (change) => change.kind === 'MISSING_PRICE_ENTRY',
-          ) && (
-            <span
-              data-testid="indicator-missing-price"
-              className="text-[10px] text-warning"
-            >
-              {t('workspace.indicators.missingPrice')}
-            </span>
-          )}
           {line.source === 'CUSTOM' ? (
             <Input
               {...common('title', t('workspace.editor.itemTitle'))}
@@ -201,15 +177,6 @@ export function EditableLineRow({
               {line.title}
             </span>
           )}
-          <div className="text-[10px] text-muted-foreground">
-            {t(`workspace.itemType.${line.itemType}`)}
-            {line.pricing.manualPriceOverride
-              ? ` · ${t('workspace.indicators.override')}`
-              : ''}
-            {line.pricing.listedPriceDiffersFromCurrent
-              ? ` · ${t('workspace.indicators.differs', { price: line.pricing.currentListedPrice ? formatIdr(line.pricing.currentListedPrice) : '—' })}`
-              : ''}
-          </div>
         </td>
         <td>{line.unitLabel ?? '—'}</td>
         <td>
@@ -223,9 +190,30 @@ export function EditableLineRow({
         <td>
           <NumericInput
             {...common('unitPrice', t('workspace.editor.unitPrice'))}
+            data-price-input
             value={values.unitPrice}
             onValueChange={(text) => change('unitPrice', text)}
           />
+          {!line.priceEntryConfirmed && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                if (!(await commands.flush())) return;
+                const result = await commands.send({
+                  kind: 'confirmLineZeroPrice',
+                  lineId: line.id,
+                });
+                if (!result.ok)
+                  setErrors((old) => ({
+                    ...old,
+                    unitPrice: errorMessage(t, result.error),
+                  }));
+              }}
+            >
+              {t('workspace.entry.confirmZero')}
+            </Button>
+          )}
         </td>
         {values.discounts.map((text, index) => (
           <td key={index}>
@@ -297,6 +285,41 @@ export function EditableLineRow({
                 id={detailId}
                 className="flex flex-wrap items-start gap-3 text-xs"
               >
+                {line.source === 'CUSTOM' && (
+                  <span className="sr-only">{line.title}</span>
+                )}
+                {line.mechanicName && (
+                  <span
+                    data-testid="indicator-mechanic"
+                    className="text-[10px] text-muted-foreground"
+                  >
+                    {line.mechanicName}
+                  </span>
+                )}
+                {line.pricing.manualPriceOverride && (
+                  <span data-testid="indicator-override" className="sr-only">
+                    {t('workspace.indicators.override')}
+                  </span>
+                )}
+                {line.priceChanges.some(
+                  (change) => change.kind === 'MISSING_PRICE_ENTRY',
+                ) && (
+                  <span
+                    data-testid="indicator-missing-price"
+                    className="text-[10px] text-warning"
+                  >
+                    {t('workspace.indicators.missingPrice')}
+                  </span>
+                )}
+                <div className="text-[10px] text-muted-foreground">
+                  {t(`workspace.itemType.${line.itemType}`)}
+                  {line.pricing.manualPriceOverride
+                    ? ` · ${t('workspace.indicators.override')}`
+                    : ''}
+                  {line.pricing.listedPriceDiffersFromCurrent
+                    ? ` · ${t('workspace.indicators.differs', { price: line.pricing.currentListedPrice ? formatIdr(line.pricing.currentListedPrice) : '—' })}`
+                    : ''}
+                </div>
                 {line.itemType === 'SERVICE' && (
                   <label>
                     {t('workspace.editor.mechanic')}

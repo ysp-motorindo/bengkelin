@@ -269,6 +269,38 @@ FIXTURE_ROWS[16] = {
   audit_log: 46,
 };
 
+FIXTURE_ROWS[17] = {
+  ad_hoc_item_references: 3,
+  audit_log: 46,
+  backup_runs: 1,
+  cashiers: 3,
+  catalog_item_barcodes: 3,
+  catalog_item_prices: 6,
+  catalog_items: 3,
+  channels: 3,
+  command_receipts: 33,
+  customers: 2,
+  draft_checkout_allocations: 0,
+  expeditions: 1,
+  invoice_daily_counters: 2,
+  invoice_discounts: 1,
+  invoice_item_discounts: 3,
+  invoice_item_price_changes: 1,
+  invoice_items: 10,
+  invoices: 5,
+  mechanics: 2,
+  payments: 3,
+  print_jobs: 5,
+  sales: 1,
+  settings: 1,
+  stock_ledger_entries: 8,
+  units: 6,
+  vehicle_brands: 1,
+  vehicle_models: 1,
+  vehicle_ownerships: 2,
+  vehicles: 2,
+};
+
 const fixtures = readdirSync(FIXTURE_DIR)
   .map((file) => /^schema-v(\d{3})-populated\.sqlite$/.exec(file))
   .filter((m): m is RegExpExecArray => m !== null)
@@ -615,8 +647,8 @@ describe('progressive upgrade from an empty database', () => {
           });
           d1 = await apply(d1, { kind: 'setInvoiceDiscounts', stages: [500] });
           d1 = await apply(d1, {
-            kind: 'setCheckoutAllocations',
-            allocations: [{ method: 'CASH', amount: d1.totals.amount }],
+            kind: 'setCashPayment',
+            amount: d1.totals.amount,
           });
           ids.d1 = d1.id;
           // D2: finalized the v7 way at step 7.
@@ -641,8 +673,8 @@ describe('progressive upgrade from an empty database', () => {
             unitPrice: '5000',
           });
           d3 = await apply(d3, {
-            kind: 'setCheckoutAllocations',
-            allocations: [{ method: 'QRIS', amount: '5000' }],
+            kind: 'setCashPayment',
+            amount: '5000',
           });
           await apply(d3, { kind: 'discard' });
           ids.d3 = d3.id;
@@ -653,8 +685,8 @@ describe('progressive upgrade from an empty database', () => {
             catalogItemId: ids.helmet,
           });
           d4 = await apply(d4, {
-            kind: 'setCheckoutAllocations',
-            allocations: [{ method: 'CASH', amount: '10000' }],
+            kind: 'setCashPayment',
+            amount: '10000',
           });
           ids.d4 = d4.id;
         },
@@ -706,6 +738,38 @@ describe('progressive upgrade from an empty database', () => {
           // current finalize, void and print commands apply.
           const a = await app();
           const finalize = async (invoiceId: string) => {
+            let current = await a.call<DraftView>(
+              C.drafts.get,
+              invoiceId,
+              CASHIER,
+            );
+            if (
+              current.topDays === 0 &&
+              BigInt(current.totals.unallocatedAmount) > 0n
+            )
+              current = await a.call<DraftView>(
+                C.drafts.apply,
+                {
+                  requestId: requestId(),
+                  invoiceId,
+                  expectedVersion: current.version,
+                  op: { kind: 'updateHeader', changes: { topDays: 30 } },
+                },
+                CASHIER,
+              );
+            await a.call<DraftView>(
+              C.drafts.apply,
+              {
+                requestId: requestId(),
+                invoiceId,
+                expectedVersion: current.version,
+                op: {
+                  kind: 'setCashPayment',
+                  amount: current.totals.allocatedAmount,
+                },
+              },
+              CASHIER,
+            );
             const shown = await a.call<FinalizePreviewDto>(
               C.invoices.previewFinalize,
               { invoiceId },
@@ -974,6 +1038,29 @@ function probeEveryTrigger(
       `UPDATE invoices SET ${column} = 'changed' WHERE id = ?`,
       [ids.d1],
     );
+  }
+  expectFires(
+    'invoices_cash_immutable',
+    'UPDATE invoices SET cash_received = 1 WHERE id = ?',
+    [ids.d1],
+  );
+  expectFires(
+    'invoices_refinement_finalized_immutable',
+    "UPDATE invoices SET tax_invoice_number = 'TAX-X' WHERE id = ?",
+    [ids.d1],
+  );
+  db.exec('SAVEPOINT reservation_probe');
+  try {
+    db.prepare(
+      "UPDATE invoices SET reserved_invoice_number = 'INV-20260930-9000' WHERE id = ?",
+    ).run(ids.d4);
+    expectFires(
+      'invoices_reservation_immutable',
+      "UPDATE invoices SET reserved_invoice_number = 'INV-20260930-9001' WHERE id = ?",
+      [ids.d4],
+    );
+  } finally {
+    db.exec('ROLLBACK TO reservation_probe; RELEASE reservation_probe');
   }
   // Generic append-only / no-delete guards.
   for (const { name, tbl } of triggers) {

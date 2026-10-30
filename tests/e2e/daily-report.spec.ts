@@ -120,10 +120,11 @@ async function seed(page: Page): Promise<string> {
         });
         if (pay) {
           await apply({
-            kind: 'setCheckoutAllocations',
-            allocations: [{ method: 'CASH', amount: pay }],
+            kind: 'setCashPayment',
+            amount: pay,
           });
         }
+        await apply({ kind: 'updateHeader', changes: { topDays: 30 } });
         const preview = must(
           await b.invoices.previewFinalize({ invoiceId: draft.id }),
           'preview',

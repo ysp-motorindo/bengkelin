@@ -81,6 +81,14 @@ function issueInvoice(page: Page, title: string): Promise<string> {
         },
       } as never),
     );
+    draft = must(
+      await b.drafts.apply({
+        requestId: crypto.randomUUID(),
+        invoiceId: draft.id,
+        expectedVersion: draft.version,
+        op: { kind: 'setCashPayment', amount: '50000' },
+      }),
+    );
     const preview = must<{ draftVersion: number; warnings: unknown[] }>(
       await b.invoices.previewFinalize({ invoiceId: draft.id }),
     );
@@ -151,8 +159,8 @@ test('ADMIN restores backup A over data B; the app restarts to login with A and 
   });
   copyFileSync(path.join(dataDir, 'backups', backupName), pick);
   const numberB = await issueInvoice(page, 'Servis B');
-  expect(numberA).toMatch(/^INV-\d{8}-0001$/);
-  expect(numberB).toMatch(/^INV-\d{8}-0002$/);
+  expect(numberA).toMatch(/^INV-\d{8}-0002$/);
+  expect(numberB).toMatch(/^INV-\d{8}-0003$/);
   expect(await issuedNumbers(page)).toEqual([numberA, numberB]);
 
   // Settings -> Restore: choose, preview, type the phrase, restore.
@@ -223,7 +231,7 @@ test('ADMIN restores backup A over data B; the app restarts to login with A and 
     .poll(() => existsSync(path.join(dataDir, 'restore-notice.json')))
     .toBe(false);
   expect(await issuedNumbers(page)).toEqual([numberA]);
-  // B's number stays used: the next one is -0003, never -0002 again.
+  // The workspace reserved -0001; B's -0003 stays used after restore.
   const next = await issueInvoice(page, 'Servis setelah pemulihan');
-  expect(next).toBe(numberB.replace(/-0002$/, '-0003'));
+  expect(next).toBe(numberB.replace(/-0003$/, '-0004'));
 });

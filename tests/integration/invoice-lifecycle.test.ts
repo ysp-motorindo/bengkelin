@@ -278,14 +278,16 @@ async function issue(options: IssueOptions = {}): Promise<InvoiceView> {
   const changes: Record<string, unknown> = {};
   if (options.customerId) changes.customerId = options.customerId;
   if (options.vehicleId) changes.vehicleId = options.vehicleId;
-  if (options.topDays !== undefined) changes.topDays = options.topDays;
+  changes.topDays = options.topDays ?? 7;
   if (Object.keys(changes).length > 0) {
     await apply({ kind: 'updateHeader', changes } as DraftOperation);
   }
   if (options.pay?.length) {
     await apply({
-      kind: 'setCheckoutAllocations',
-      allocations: options.pay.map((amount) => ({ method: 'CASH', amount })),
+      kind: 'setCashPayment',
+      amount: options.pay
+        .reduce((sum, amount) => sum + BigInt(amount), 0n)
+        .toString(),
     });
   }
   const shown = value(
@@ -974,16 +976,16 @@ describe('payment / void race (two connections, BEGIN IMMEDIATE)', () => {
 describe('receivables', () => {
   test('outstanding and overdue exclude VOID and PAID; due today is not overdue', async () => {
     // Due today (TOP 0 on today's date).
-    const dueToday = await issue({ invoiceDate: '2026-09-30', topDays: 0 });
+    const dueToday = await issue({ invoiceDate: '2026-09-29', topDays: 1 });
     // Due yesterday (backdated, TOP 0).
-    const dueYesterday = await issue({ invoiceDate: '2026-09-29', topDays: 0 });
+    const dueYesterday = await issue({ invoiceDate: '2026-09-28', topDays: 1 });
     // Partly paid, due long ago.
     const partial = await issue({ invoiceDate: '2026-09-13', topDays: 7 });
     value(await pay(partial.id, '40000'));
     // Paid in full at checkout, due yesterday.
     await issue({ invoiceDate: '2026-09-29', pay: ['100000'] });
     // Voided, unpaid and overdue.
-    const voided = await issue({ invoiceDate: '2026-09-01', topDays: 0 });
+    const voided = await issue({ invoiceDate: '2026-09-01', topDays: 1 });
     value(await voidInvoice(voided.id, 'Batal'));
     // Not yet due.
     const later = await issue({ invoiceDate: '2026-09-30', topDays: 30 });
@@ -1736,6 +1738,7 @@ describe('migration 008 on a populated version-7 database', () => {
 
       // Current readers require the later optional-reference columns.
       db.exec(bundledMigrations.find((m) => m.version === 16)!.sql);
+      db.exec(bundledMigrations.find((m) => m.version === 17)!.sql);
       // The upgraded database works with the new services.
       const upgraded = new InvoiceService({ db, clock });
       const session: Session = {

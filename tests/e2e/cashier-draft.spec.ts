@@ -273,8 +273,7 @@ test('scanning adds, merges, keeps focus in search, and override/discount lines 
     .fill('Pelanggan tetap');
   await searchBox(page).click();
   await expect(searchBox(page)).toBeFocused();
-  const firstRow = page.getByTestId('line-row').nth(0);
-  await expect(firstRow.getByTestId('indicator-override')).toBeVisible();
+  await expect(page.getByTestId('indicator-override')).toBeVisible();
   await scan(BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(2);
   await expect(page.getByTestId('line-quantity').nth(0)).toHaveValue('2');
@@ -370,14 +369,17 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   // No configured price: manual entry, then the line is added.
   await scan(NO_PRICE_BARCODE);
   const price = page
-    .getByTestId('line-entry')
-    .getByLabel(t('workspace.editor.unitPrice'), exact);
+    .getByTestId('line-row')
+    .last()
+    .getByLabel(t('workspace.editor.unitPrice'));
   await expect(price).toBeFocused();
   await price.fill('15000');
-  await price.press('Enter');
+  await price.press('Tab');
   await expect(page.getByTestId('line-row')).toHaveCount(1);
   await expect(page.getByTestId('line-row')).toContainText('Filter Udara');
+  await openEditor(page, 0);
   await expect(page.getByTestId('indicator-missing-price')).toBeVisible();
+  await searchBox(page).focus();
   await expect(searchBox(page)).toBeFocused();
   await expect(feedback).toHaveCount(0);
 
@@ -433,87 +435,52 @@ test('Customer & Vehicle dialog keeps its title and Done action visible while co
       if (!vehicle.ok) throw new Error(JSON.stringify(vehicle.error));
     }
   });
-  await page
-    .getByRole('button', { name: t('workspace.header.chooseParty'), ...exact })
-    .click();
-  const dialog = page.getByRole('dialog', { name: t('workspace.party.title') });
-  const title = dialog.getByRole('heading', {
-    name: t('workspace.party.title'),
-  });
-  const done = dialog.getByRole('button', {
-    name: t('workspace.party.done'),
-    ...exact,
-  });
-  const panes = dialog.locator('.overflow-y-auto');
-  const customerPane = panes.nth(0);
-  const vehiclePane = panes.nth(1);
-  await expect(title).toBeInViewport();
-  await expect(done).toBeInViewport();
-  const customerSearch = dialog.getByPlaceholder(
-    t('workspace.party.customerSearch'),
-  );
-  const searchTop = (await customerSearch.boundingBox())!.y;
-  await expect
-    .poll(() =>
-      customerPane.evaluate((el) => el.scrollHeight > el.clientHeight),
-    )
-    .toBe(true);
-  await customerPane.evaluate((el) => {
-    el.scrollTop = el.scrollHeight;
-  });
-  await expect(title).toBeInViewport();
-  await expect(done).toBeInViewport();
-  expect((await customerSearch.boundingBox())!.y).toBe(searchTop);
-  await expect
-    .poll(() => customerPane.evaluate((el) => el.scrollTop))
-    .toBeGreaterThan(0);
-  await expect(
-    customerPane.getByRole('form', {
-      name: t('customers.quickCustomer.title'),
-    }),
-  ).toBeVisible();
-  const plateSearch = dialog.getByPlaceholder(t('workspace.party.plateSearch'));
-  await plateSearch.fill('TST');
-  await expect(
-    dialog.getByRole('button', { name: /Pilih: TST/ }).first(),
-  ).toBeVisible();
-  await expect
-    .poll(() => vehiclePane.evaluate((el) => el.scrollHeight > el.clientHeight))
-    .toBe(true);
-  await vehiclePane.evaluate((el) => {
-    el.scrollTop = el.scrollHeight;
-  });
-  await expect
-    .poll(() => vehiclePane.evaluate((el) => el.scrollTop))
-    .toBeGreaterThan(0);
-  await expect(
-    vehiclePane.getByRole('form', { name: t('customers.quickVehicle.title') }),
-  ).toBeVisible();
-  await expect(title).toBeInViewport();
-  await expect(done).toBeInViewport();
-
-  // Desktop columns keep the search controls stationary while a real wheel scrolls the list.
-  await page.setViewportSize({ width: 1120, height: 800 });
-  await customerPane.evaluate((el) => {
-    el.scrollTop = 0;
-  });
-  const desktopSearchTop = (await customerSearch.boundingBox())!.y;
-  await customerPane.hover();
-  await page.mouse.wheel(0, 300);
-  await expect
-    .poll(() => customerPane.evaluate((el) => el.scrollTop))
-    .toBeGreaterThan(0);
-  expect((await customerSearch.boundingBox())!.y).toBe(desktopSearchTop);
-  await expect(dialog.locator('.dialog-scroll-area')).toHaveAttribute(
-    'data-scrolling',
-    'true',
-  );
-  await expect(dialog.locator('.dialog-scroll-area')).toHaveAttribute(
-    'data-scrolling',
-    'false',
-  );
-  await expect(title).toBeInViewport();
-  await expect(done).toBeInViewport();
+  for (const mode of ['customer', 'vehicle'] as const) {
+    const choose = t(
+      mode === 'customer'
+        ? 'workspace.header.chooseCustomer'
+        : 'workspace.header.chooseVehicle',
+    );
+    await page.getByRole('button', { name: choose, ...exact }).click();
+    const dialog = page.getByRole('dialog', { name: choose });
+    const title = dialog.getByRole('heading', { name: choose });
+    const done = dialog.getByRole('button', {
+      name: t('workspace.party.done'),
+      ...exact,
+    });
+    const panel = dialog.getByRole('region', {
+      name: t(
+        mode === 'customer'
+          ? 'workspace.party.customers'
+          : 'workspace.party.vehicles',
+      ),
+    });
+    const pane = panel.locator('.overflow-y-auto');
+    const search = dialog.getByPlaceholder(
+      t(
+        mode === 'customer'
+          ? 'workspace.party.customerSearch'
+          : 'workspace.party.plateSearch',
+      ),
+    );
+    if (mode === 'vehicle') await search.fill('TST');
+    await expect(title).toBeInViewport();
+    await expect(done).toBeInViewport();
+    const top = (await search.boundingBox())!.y;
+    await expect
+      .poll(() => pane.evaluate((el) => el.scrollHeight > el.clientHeight))
+      .toBe(true);
+    await pane.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect
+      .poll(() => pane.evaluate((el) => el.scrollTop))
+      .toBeGreaterThan(0);
+    expect((await search.boundingBox())!.y).toBe(top);
+    await expect(title).toBeInViewport();
+    await expect(done).toBeInViewport();
+    await done.click();
+  }
 });
 
 test('short dialogs fit content and custom entry stays inline on a narrow screen', async () => {
@@ -739,7 +706,7 @@ test('drafts survive an app restart and can be switched, created and discarded',
     next.getByRole('textbox', { name: t('workspace.header.note'), ...exact }),
   ).toHaveValue('Rem bunyi');
   await next.keyboard.press('Escape');
-  await expect(next.getByTestId('header-customer')).toHaveText(
+  await expect(next.getByTestId('header-customer')).toHaveValue(
     t('workspace.header.anonymous'),
   );
 
@@ -827,18 +794,21 @@ test('custom service line with mechanic, checkout allocations and the review ste
   await expect(custom).toHaveCount(0);
   await expect(page.getByTestId('line-row')).toHaveCount(2);
   const serviceRow = page.getByTestId('line-row').nth(1);
-  await expect(serviceRow).toContainText('Jasa las bracket');
-  await expect(serviceRow.getByTestId('indicator-mechanic')).toContainText(
-    'Andi',
-  );
+  await expect(
+    serviceRow.getByRole('textbox', {
+      name: `${t('workspace.editor.itemTitle')}: Jasa las bracket`,
+    }),
+  ).toHaveValue('Jasa las bracket');
+  await openEditor(page, 1);
+  await expect(page.getByTestId('indicator-mechanic')).toContainText('Andi');
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 100.000');
 
   // Invoice discount 10% (sequential stages come from the view).
   await page
-    .getByLabel(t('workspace.checkout.invoiceDiscount1'), exact)
+    .getByLabel(t('workspace.checkout.singleDiscount'), exact)
     .fill('10');
   await page
-    .getByLabel(t('workspace.checkout.invoiceDiscount1'), exact)
+    .getByLabel(t('workspace.checkout.singleDiscount'), exact)
     .press('Enter');
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 90.000');
   await expect(page.getByTestId('invoice-discount-amount')).toHaveText(
@@ -846,17 +816,12 @@ test('custom service line with mechanic, checkout allocations and the review ste
   );
 
   await page
-    .getByRole('button', {
-      name: t('workspace.checkout.payFullCash'),
-      ...exact,
+    .getByRole('textbox', {
+      name: t('workspace.checkout.payments'),
+      exact: true,
     })
-    .click();
-  await expect(page.getByTestId('allocation-row')).toHaveCount(1);
-  await expect(page.getByTestId('unallocated-amount')).toHaveText('Rp 0');
-
-  // Tender/change is UI only.
-  await page.getByLabel(t('workspace.checkout.tendered'), exact).fill('100000');
-  await expect(page.getByTestId('change-amount')).toHaveText('Rp 10.000');
+    .fill('100000');
+  await expect(page.getByTestId('cash-change')).toHaveText('Rp 10.000');
 
   await page
     .getByRole('button', { name: t('workspace.checkout.review'), ...exact })

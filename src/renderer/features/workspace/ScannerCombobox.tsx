@@ -1,6 +1,8 @@
+import { createPortal } from 'react-dom';
 import { ScanBarcode } from 'lucide-react';
 import {
   useEffect,
+  useLayoutEffect,
   useId,
   useRef,
   useState,
@@ -55,6 +57,36 @@ export function ScannerCombobox({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [hint, setHint] = useState<string | null>(null);
+  const [popup, setPopup] = useState({
+    left: 0,
+    top: 0,
+    width: 0,
+    maxHeight: 288,
+  });
+  useLayoutEffect(() => {
+    if (!open) return;
+    const position = () => {
+      const rect = inputRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const below = window.innerHeight - rect.bottom - 8;
+      const above = rect.top - 8;
+      const height = Math.min(288, Math.max(below, above));
+      const down = below >= Math.min(288, above);
+      setPopup({
+        left: Math.max(8, rect.left),
+        top: down ? rect.bottom + 4 : rect.top - height - 4,
+        width: Math.min(rect.width, window.innerWidth - 16),
+        maxHeight: Math.max(80, height),
+      });
+    };
+    position();
+    window.addEventListener('resize', position);
+    document.addEventListener('scroll', position, true);
+    return () => {
+      window.removeEventListener('resize', position);
+      document.removeEventListener('scroll', position, true);
+    };
+  }, [open, inputRef]);
   const searchSeq = useRef(0);
   // True only after arrow-key navigation since the last input change: Enter
   // then picks the highlighted result. Any new input (a scanner typing its
@@ -63,6 +95,12 @@ export function ScannerCombobox({
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => {
+    if (open && active >= 0)
+      document
+        .getElementById(`${listId}-${active}`)
+        ?.scrollIntoView?.({ block: 'nearest' });
+  }, [open, active, listId]);
 
   async function search(query: string): Promise<CatalogItemDto[]> {
     const seq = ++searchSeq.current;
@@ -208,43 +246,47 @@ export function ScannerCombobox({
               : 'h-12 text-base',
           )}
         />
-        <ul
-          id={listId}
-          role="listbox"
-          aria-label={t('workspace.search.results')}
-          hidden={!open}
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-md border border-border bg-card py-1 shadow-lg"
-        >
-          {results.map((item, index) => (
-            <li
-              key={item.id}
-              id={`${listId}-${index}`}
-              role="option"
-              aria-selected={index === active}
-              onMouseDown={(event) => {
-                event.preventDefault(); // keep focus in the field
-                reset();
-                void onPick(item);
-              }}
-              onMouseEnter={() => setActive(index)}
-              className={cn(
-                'flex cursor-pointer items-baseline justify-between gap-3 px-3 py-2 text-sm',
-                index === active && 'bg-accent text-accent-foreground',
-              )}
-            >
-              <span className="font-medium">{item.title}</span>
-              <span className="truncate text-xs text-muted-foreground">
-                {[
-                  t(`workspace.itemType.${item.type}`),
-                  item.sku,
-                  item.barcodes.find((b) => b.isActive)?.barcode,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {createPortal(
+          <ul
+            id={listId}
+            role="listbox"
+            aria-label={t('workspace.search.results')}
+            hidden={!open}
+            style={popup}
+            className="fixed z-40 overflow-auto rounded-md border border-border bg-card py-1 shadow-lg"
+          >
+            {results.map((item, index) => (
+              <li
+                key={item.id}
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={index === active}
+                onMouseDown={(event) => {
+                  event.preventDefault(); // keep focus in the field
+                  reset();
+                  void onPick(item);
+                }}
+                onMouseEnter={() => setActive(index)}
+                className={cn(
+                  'flex cursor-pointer items-baseline justify-between gap-3 px-3 py-2 text-sm',
+                  index === active && 'bg-accent text-accent-foreground',
+                )}
+              >
+                <span className="font-medium">{item.title}</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {[
+                    t(`workspace.itemType.${item.type}`),
+                    item.sku,
+                    item.barcodes.find((b) => b.isActive)?.barcode,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              </li>
+            ))}
+          </ul>,
+          document.body,
+        )}
       </div>
       <div id={hintId} aria-live="polite" className="empty:hidden">
         {feedback ? (

@@ -611,6 +611,18 @@ describe('workflow e2e print hook (test-only route to printToPDF)', () => {
           ADMIN,
         ),
       );
+      draft = value(
+        await ph.call<DraftView>(
+          C.drafts.apply,
+          {
+            requestId: uuid(),
+            invoiceId: draft.id,
+            expectedVersion: draft.version,
+            op: { kind: 'setCashPayment', amount: '1000' },
+          },
+          ADMIN,
+        ),
+      );
       const preview = value(
         await ph.call<{ draftVersion: number; warnings: unknown[] }>(
           C.invoices.previewFinalize,

@@ -102,7 +102,7 @@ describe('menu action dispatch in the shell', () => {
     );
     await fire('finalize');
     expect(
-      screen.getByRole('button', { name: 'Transaksi Baru' }),
+      screen.getByRole('button', { name: 'Faktur Penjualan' }),
     ).toHaveAttribute('aria-current', 'page');
     expect(
       await screen.findByRole('dialog', { name: 'Tinjau checkout' }),
@@ -118,7 +118,7 @@ describe('menu action dispatch in the shell', () => {
     await screen.findByRole('combobox', { name: 'Cari barang' });
     expect(bridge.drafts.create).toHaveBeenCalledTimes(1);
     await userEvent.click(
-      screen.getByRole('button', { name: 'Pilih pelanggan/kendaraan' }),
+      screen.getByRole('button', { name: 'Pilih pelanggan' }),
     );
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     await fire('newTransaction');
@@ -236,7 +236,7 @@ describe('menu action dispatch in the shell', () => {
     ).toHaveAttribute('aria-current', 'page');
     await fire('searchItem');
     expect(
-      screen.getByRole('button', { name: 'Transaksi Baru' }),
+      screen.getByRole('button', { name: 'Faktur Penjualan' }),
     ).toHaveAttribute('aria-current', 'page');
     await waitFor(() => expect(search).toHaveFocus());
   });

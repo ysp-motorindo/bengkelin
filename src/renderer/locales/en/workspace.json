@@ -1,5 +1,5 @@
 {
-  "title": "New Transaction",
+  "title": "Invoice",
   "common": {
     "cancel": "Cancel",
     "close": "Close",
@@ -109,7 +109,14 @@
     "updateNote": "Update note",
     "saveNote": "Save note",
     "ownerMismatch": "This vehicle's active owner is not the selected customer. Ownership is never changed automatically.",
-    "reviewOwnership": "Review ownership"
+    "reviewOwnership": "Review ownership",
+    "customer": "Customer",
+    "chooseCustomer": "Choose customer",
+    "vehicleNumber": "Vehicle Number",
+    "chooseVehicle": "Choose vehicle",
+    "invoiceNumber": "Invoice Number",
+    "taxInvoiceNumber": "Tax Invoice Number",
+    "pricingOptions": "Channel and pricing time"
   },
   "pricing": {
     "title": "Pricing time",
@@ -175,7 +182,11 @@
     "tendered": "Cash received",
     "change": "Change",
     "short": "Short",
-    "review": "Review checkout"
+    "review": "Review checkout",
+    "singleDiscount": "Disc (%)",
+    "downPayment": "Down Payment",
+    "replaceDiscount": "Replace discount",
+    "replacePayment": "Replace with cash"
   },
   "paymentMethod": {
     "CASH": "Cash",
@@ -197,7 +208,7 @@
     "back": "Back"
   },
   "repricing": {
-    "open": "Review prices",
+    "open": "Check Prices",
     "title": "Review prices",
     "description": "Prices for channel {{channel}} at {{time}}. Choose the lines to update.",
     "select": "Update",
@@ -210,8 +221,8 @@
     "stale": "Prices changed since the preview. The preview was refreshed; check it again."
   },
   "drafts": {
-    "open": "Drafts",
-    "new": "New transaction",
+    "open": "Draft",
+    "new": "Create New",
     "title": "Transaction drafts",
     "customer": "Customer",
     "amount": "Total",
@@ -265,6 +276,8 @@
     "PAID": "Paid"
   },
   "entry": {
-    "automatic": "Automatic"
+    "automatic": "Automatic",
+    "loadingPrice": "Loading price…",
+    "confirmZero": "Confirm Rp0"
   }
 }

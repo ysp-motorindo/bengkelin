@@ -74,7 +74,10 @@ export function workspaceBridge() {
   let current = draftView();
   const apply = vi.fn(async (command: DraftCommand) => {
     current = { ...current, version: current.version + 1 };
-    void command;
+    if (command.op.kind === 'setCashPayment')
+      current = { ...current, cashReceived: command.op.amount };
+    if (command.op.kind === 'updateHeader')
+      current = { ...current, ...command.op.changes } as DraftView;
     return ok(current);
   });
   return {
@@ -106,6 +109,18 @@ export function workspaceBridge() {
       create: vi.fn(async (_input: CreateDraftInput) => ok(current)),
       get: vi.fn(async () => ok(current)),
       apply,
+      previewCatalogPrice: vi.fn(
+        async ({ catalogItemId }: { catalogItemId: string }) =>
+          ok({
+            invoiceId: current.id,
+            version: current.version,
+            catalogItemId,
+            channelId: current.channelId,
+            pricingAt: current.pricingAt,
+            resolvedPriceId: 'price',
+            unitPrice: '65000',
+          }),
+      ),
       previewPriceRefresh: vi.fn(),
     },
     adHocReferences: { search: vi.fn(async () => ok({ results: [] })) },

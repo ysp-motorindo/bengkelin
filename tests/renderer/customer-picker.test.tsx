@@ -47,7 +47,7 @@ test('initial active customers, current-query toggle, inactive selection and res
     clearParty: vi.fn(async () => ok(null)),
     onClose: vi.fn(),
   };
-  const view = render(<CustomerVehicleDialog {...props} />);
+  const view = render(<CustomerVehicleDialog mode="customer" {...props} />);
   await waitFor(() =>
     expect(search).toHaveBeenCalledWith({ query: '', includeInactive: false }),
   );
@@ -69,7 +69,7 @@ test('initial active customers, current-query toggle, inactive selection and res
   await userEvent.click(screen.getByRole('button', { name: 'Pilih: Dormant' }));
   expect(select).toHaveBeenCalledWith('c1');
   view.unmount();
-  render(<CustomerVehicleDialog {...props} />);
+  render(<CustomerVehicleDialog mode="customer" {...props} />);
   expect(
     screen.getByRole('checkbox', { name: 'Tampilkan Pelanggan Nonaktif' }),
   ).not.toBeChecked();
@@ -93,6 +93,7 @@ test('older search responses cannot overwrite a newer filter result', async () =
   };
   render(
     <CustomerVehicleDialog
+      mode="customer"
       view={draftView()}
       selectCustomer={vi.fn(async () => true)}
       selectVehicle={vi.fn(async () => true)}
@@ -121,6 +122,7 @@ test('customer and plate search update after typing without search buttons', asy
   };
   render(
     <CustomerVehicleDialog
+      mode="vehicle"
       view={draftView()}
       selectCustomer={vi.fn(async () => true)}
       selectVehicle={vi.fn(async () => true)}
@@ -128,17 +130,9 @@ test('customer and plate search update after typing without search buttons', asy
       onClose={vi.fn()}
     />,
   );
-  await userEvent.type(
-    screen.getByPlaceholderText('Cari nama atau telepon'),
-    'Ayu',
-  );
   await userEvent.type(screen.getByPlaceholderText('Cari plat nomor'), 'B123');
   await act(async () => {
     await vi.advanceTimersByTimeAsync(250);
-  });
-  expect(search).toHaveBeenLastCalledWith({
-    query: 'Ayu',
-    includeInactive: false,
   });
   expect(searchByPlate).toHaveBeenLastCalledWith({ query: 'B123' });
   expect(
@@ -158,6 +152,7 @@ test('clearing customer search restores the unfiltered results', async () => {
   };
   render(
     <CustomerVehicleDialog
+      mode="customer"
       view={draftView()}
       selectCustomer={vi.fn(async () => true)}
       selectVehicle={vi.fn(async () => true)}
@@ -187,6 +182,7 @@ test('walk-in clears customer and vehicle together and closes only after success
   const onClose = vi.fn();
   render(
     <CustomerVehicleDialog
+      mode="customer"
       view={draftView()}
       selectCustomer={vi.fn(async () => true)}
       selectVehicle={vi.fn(async () => true)}
@@ -210,6 +206,7 @@ test('failed walk-in keeps the dialog open and shows the returned error', async 
   const onClose = vi.fn();
   render(
     <CustomerVehicleDialog
+      mode="customer"
       view={draftView()}
       selectCustomer={vi.fn(async () => true)}
       selectVehicle={vi.fn(async () => true)}
@@ -236,6 +233,7 @@ test('blank plate input clears its previous no-results state immediately', async
   };
   render(
     <CustomerVehicleDialog
+      mode="vehicle"
       view={draftView()}
       selectCustomer={vi.fn(async () => true)}
       selectVehicle={vi.fn(async () => true)}

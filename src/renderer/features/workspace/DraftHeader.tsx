@@ -1,11 +1,10 @@
 import { CalendarClock, TriangleAlert, UserRound } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Button, IconButton } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
-import { Label } from '@/renderer/components/ui/label';
 import { Select } from '@/renderer/components/ui/select';
 import { customerLabel } from '@/renderer/features/customers/labels';
 import { errorMessage } from '@/renderer/lib/errors';
@@ -29,6 +28,7 @@ import { useSyncedValue } from './synced-field';
 import type { DraftCommands } from './use-draft-commands';
 
 interface DraftHeaderProps {
+  toolbar?: ReactNode;
   commands: DraftCommands;
   sales: ReferenceDto[];
   expeditions: ReferenceDto[];
@@ -40,7 +40,7 @@ interface DraftHeaderProps {
 type Pending =
   | { kind: 'pricing' }
   | { kind: 'backdate'; date: LocalDate }
-  | { kind: 'party' }
+  | { kind: 'party'; mode: 'customer' | 'vehicle' }
   | { kind: 'ownership' }
   | null;
 
@@ -61,6 +61,7 @@ function parseCount(text: string, max: number): number | null | undefined {
  */
 export function DraftHeader({
   commands,
+  toolbar,
   channels,
   sales,
   expeditions,
@@ -69,6 +70,10 @@ export function DraftHeader({
 }: DraftHeaderProps) {
   const { t } = useTranslation();
   const { view, send, edit, isDirty, markInvalid } = commands;
+  const [taxNumber, setTaxNumber] = useSyncedValue(
+    commands.view.taxInvoiceNumber ?? '',
+    () => commands.isDirty('taxInvoiceNumber'),
+  );
   const [pending, setPending] = useState<Pending>(null);
   const [date, setDate] = useState(view.invoiceDate);
   const [dateKey, setDateKey] = useState(view.invoiceDate);
@@ -157,233 +162,195 @@ export function DraftHeader({
   const customer = view.customer
     ? customerLabel(t, view.customer)
     : t('workspace.header.anonymous');
-  const vehicle = view.vehicle
-    ? [view.vehicle.plateNumber, view.vehicle.description]
-        .filter(Boolean)
-        .join(' · ')
-    : t('workspace.header.noVehicle');
 
   return (
     <section
       aria-label={t('workspace.header.label')}
       className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 [&_input]:h-8 [&_select]:h-8 [&_input]:text-xs [&_select]:text-xs [&_label]:text-xs"
     >
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(22rem,0.85fr)_minmax(0,1.15fr)]">
-        <div className="grid gap-2">
-          <div className="grid grid-cols-4 gap-2">
-            <div className="w-full col-span-3">
-              <div className="flex flex-col gap-1.5">
-                <div className="flex min-h-5 items-center">
-                  <Label htmlFor="header-customer-vehicle">
-                    {t('workspace.header.customerVehicle')}
-                  </Label>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="header-customer-vehicle"
-                    className="w-full pr-12"
-                    readOnly
-                    value={`${customer} · ${vehicle}`}
-                    title={`${customer} · ${vehicle}`}
-                  />
-                  <span
-                    data-testid="header-customer"
-                    className="sr-only"
-                    aria-hidden="true"
-                  >
-                    {customer}
-                  </span>
-                  <span
-                    data-testid="header-vehicle"
-                    className="sr-only"
-                    aria-hidden="true"
-                  >
-                    {vehicle}
-                  </span>
-                  <IconButton
-                    variant="input-action"
-                    size="default"
-                    className="absolute right-0 top-0"
-                    label={t('workspace.header.chooseParty')}
-                    onClick={() => setPending({ kind: 'party' })}
-                  >
-                    <UserRound aria-hidden="true" />
-                  </IconButton>
-                </div>
-              </div>
-            </div>
-
-            <div className="w-full col-span-1">
-              <FormField
-                label={t('workspace.header.odometer')}
-                error={fieldErrors.odometer}
-              >
-                <NumericInput
-                  autoComplete="off"
-                  className="tabular text-right"
-                  value={odometer}
-                  onValueChange={(value) => {
-                    setOdometer(value);
-                    textField(
-                      'odometer',
-                      value,
-                      100_000_000,
-                      (km) => ({
-                        kind: 'updateHeader',
-                        changes: { odometerKm: km },
-                      }),
-                      { kind: 'updateHeader', changes: { odometerKm: null } },
-                    );
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') event.preventDefault();
-                  }}
-                />
-              </FormField>
-            </div>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {(['sales', 'expedition'] as const).map((entity) => {
-              const options = entity === 'sales' ? sales : expeditions;
-              const current = view[entity];
-              return (
-                <FormField
-                  key={entity}
-                  label={t(`references.entities.${entity}`)}
-                >
-                  <Select
-                    value={current?.id ?? ''}
-                    onChange={(event) =>
-                      void apply({
-                        kind: 'updateHeader',
-                        changes: {
-                          [`${entity}Id`]: event.target.value || null,
-                        },
-                      })
-                    }
-                  >
-                    <option value="" />
-                    {current &&
-                    !options.some((option) => option.id === current.id) ? (
-                      <option value={current.id}>{current.name}</option>
-                    ) : null}
-                    {options.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.code} · {option.label}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-              );
-            })}
-          </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-xl font-semibold whitespace-nowrap">
+          {t('workspace.title')}
+        </h1>
+        <div className="flex items-end gap-1">
+          <FormField label={t('workspace.header.customer')}>
+            <Input readOnly value={customer} data-testid="header-customer" />
+          </FormField>
+          <IconButton
+            label={t('workspace.header.chooseCustomer')}
+            variant="outline"
+            onClick={() => setPending({ kind: 'party', mode: 'customer' })}
+          >
+            <UserRound aria-hidden="true" />
+          </IconButton>
         </div>
-        <div className="grid gap-2">
-          <div className="flex flex-col gap-4 sm:flex-row sm:gap-2">
-            <div className="w-full">
-              <FormField label={t('workspace.header.channel')}>
+        <div className="ml-auto min-w-0">{toolbar}</div>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(10rem,1fr)_minmax(12rem,1fr)_minmax(10rem,1fr)_minmax(16rem,1.5fr)]">
+        <div className="row-span-2 grid gap-2">
+          {(['sales', 'expedition'] as const).map((entity) => {
+            const options = entity === 'sales' ? sales : expeditions;
+            const current = view[entity];
+            return (
+              <FormField
+                key={entity}
+                label={t(`references.entities.${entity}`)}
+              >
                 <Select
-                  value={view.channelId}
+                  value={current?.id ?? ''}
                   onChange={(event) =>
                     void apply({
                       kind: 'updateHeader',
-                      changes: { channelId: event.target.value },
+                      changes: { [`${entity}Id`]: event.target.value || null },
                     })
                   }
                 >
-                  {channelMissing ? (
-                    <option value={view.channelId}>{view.channelLabel}</option>
-                  ) : null}
-                  {channels.map((channel) => (
-                    <option key={channel.id} value={channel.id}>
-                      {channel.label}
+                  <option value="" />
+                  {current &&
+                    !options.some((option) => option.id === current.id) && (
+                      <option value={current.id}>{current.name}</option>
+                    )}
+                  {options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.code} · {option.label}
                     </option>
                   ))}
                 </Select>
               </FormField>
-            </div>
-
-            <div className="w-full">
-              <FormField label={t('workspace.header.invoiceDate')}>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  onBlur={commitDate}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      commitDate();
-                    }
-                  }}
-                />
-              </FormField>
-            </div>
-          </div>
-
-          <div className="grid min-w-0 gap-2 sm:grid-cols-2">
-            <div className="flex w-full flex-col gap-1.5">
-              <Label htmlFor="header-pricing-at">
-                {t('workspace.header.pricingAt')}
-              </Label>
-              <div className="relative">
-                <Input
-                  id="header-pricing-at"
-                  className="tabular pr-12"
-                  data-testid="header-pricing-at"
-                  readOnly
-                  value={formatDisplayDateTime(view.pricingAt, timezone)}
-                  title={t('workspace.header.timezoneTooltip', {
-                    zone: timezone,
-                  })}
-                />
-                <IconButton
-                  variant="input-action"
-                  size="default"
-                  className="absolute right-0 top-0"
-                  label={t('workspace.header.changePricingAt')}
-                  onClick={() => setPending({ kind: 'pricing' })}
-                >
-                  <CalendarClock aria-hidden="true" />
-                </IconButton>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <div className="min-w-0 w-full">
-                <FormField
-                  label={t('workspace.header.topDays')}
-                  error={fieldErrors.topDays}
-                >
-                  <NumericInput
-                    autoComplete="off"
-                    className="tabular text-right"
-                    value={topDays}
-                    onValueChange={(value) => {
-                      setTopDays(value);
-                      textField('topDays', value, MAX_TOP_DAYS, (days) => ({
-                        kind: 'updateHeader',
-                        changes: { topDays: days },
-                      }));
-                    }}
-                  />
-                </FormField>
-              </div>
-
-              <div className="min-w-0 w-full">
-                <FormField label={t('workspace.header.dueDate')}>
-                  <Input
-                    className="tabular text-right"
-                    data-testid="header-due-date"
-                    readOnly
-                    value={formatDisplayDate(view.dueDate)}
-                  />
-                </FormField>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
+        <FormField label={t('workspace.header.invoiceNumber')}>
+          <Input readOnly value={view.invoiceNumber ?? ''} />
+        </FormField>
+        <FormField label={t('workspace.header.invoiceDate')}>
+          <Input
+            type="date"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+            onBlur={commitDate}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                commitDate();
+              }
+            }}
+          />
+        </FormField>
+        <div className="grid grid-cols-[5rem_1fr] gap-2">
+          <FormField
+            label={t('workspace.header.topDays')}
+            error={fieldErrors.topDays}
+          >
+            <NumericInput
+              value={topDays}
+              onValueChange={(value) => {
+                setTopDays(value);
+                textField('topDays', value, MAX_TOP_DAYS, (days) => ({
+                  kind: 'updateHeader',
+                  changes: { topDays: days },
+                }));
+              }}
+            />
+          </FormField>
+          <FormField label={t('workspace.header.dueDate')}>
+            <Input
+              readOnly
+              data-testid="header-due-date"
+              value={formatDisplayDate(view.dueDate)}
+            />
+          </FormField>
+        </div>
+        <FormField label={t('workspace.header.taxInvoiceNumber')}>
+          <Input
+            maxLength={100}
+            value={taxNumber}
+            onChange={(event) => {
+              setTaxNumber(event.target.value);
+              edit('taxInvoiceNumber', {
+                kind: 'updateHeader',
+                changes: { taxInvoiceNumber: event.target.value },
+              });
+            }}
+          />
+        </FormField>
+        <div className="flex items-end gap-1">
+          <FormField label={t('workspace.header.vehicleNumber')}>
+            <Input
+              readOnly
+              data-testid="header-vehicle"
+              value={
+                view.vehicle?.plateNumber ?? t('workspace.header.noVehicle')
+              }
+            />
+          </FormField>
+          <IconButton
+            variant="outline"
+            label={t('workspace.header.chooseVehicle')}
+            onClick={() => setPending({ kind: 'party', mode: 'vehicle' })}
+          >
+            <UserRound aria-hidden="true" />
+          </IconButton>
+        </div>
+        <FormField
+          label={t('workspace.header.odometer')}
+          error={fieldErrors.odometer}
+        >
+          <NumericInput
+            value={odometer}
+            onValueChange={(value) => {
+              setOdometer(value);
+              textField(
+                'odometer',
+                value,
+                100_000_000,
+                (km) => ({ kind: 'updateHeader', changes: { odometerKm: km } }),
+                { kind: 'updateHeader', changes: { odometerKm: null } },
+              );
+            }}
+          />
+        </FormField>
       </div>
+      <details className="text-xs text-muted-foreground">
+        <summary className="cursor-pointer">
+          {t('workspace.header.pricingOptions')}
+        </summary>
+        <div className="mt-2 flex items-end gap-2">
+          <FormField label={t('workspace.header.channel')}>
+            <Select
+              value={view.channelId}
+              onChange={(event) =>
+                void apply({
+                  kind: 'updateHeader',
+                  changes: { channelId: event.target.value },
+                })
+              }
+            >
+              {channelMissing && (
+                <option value={view.channelId}>{view.channelLabel}</option>
+              )}
+              {channels.map((channel) => (
+                <option key={channel.id} value={channel.id}>
+                  {channel.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          <FormField label={t('workspace.header.pricingAt')}>
+            <Input
+              readOnly
+              data-testid="header-pricing-at"
+              value={formatDisplayDateTime(view.pricingAt, timezone)}
+            />
+          </FormField>
+          <IconButton
+            label={t('workspace.header.changePricingAt')}
+            onClick={() => setPending({ kind: 'pricing' })}
+          >
+            <CalendarClock aria-hidden="true" />
+          </IconButton>
+        </div>
+      </details>
 
       {view.ownerMismatch ? (
         <div
@@ -422,10 +389,14 @@ export function DraftHeader({
       {pending?.kind === 'party' ? (
         <CustomerVehicleDialog
           view={view}
+          mode={pending.mode}
           clearParty={async (): Promise<Result<null>> => {
             const result = await send({
               kind: 'updateHeader',
-              changes: { customerId: null, vehicleId: null },
+              changes:
+                pending.mode === 'customer'
+                  ? { customerId: null }
+                  : { vehicleId: null },
             });
             if (result.ok) {
               onError(null);

@@ -350,7 +350,7 @@ export async function issueInvoice(
     changes.vehicleId = shop.vehicleId;
   }
   if (spec.odometerKm !== undefined) changes.odometerKm = spec.odometerKm;
-  if (spec.topDays !== undefined) changes.topDays = spec.topDays;
+  changes.topDays = spec.topDays ?? 30;
   if (spec.note !== undefined) changes.note = spec.note;
   if (Object.keys(changes).length > 0) {
     await apply({ kind: 'updateHeader', changes } as DraftOperation);
@@ -360,8 +360,10 @@ export async function issueInvoice(
   }
   if (spec.checkout?.length) {
     await apply({
-      kind: 'setCheckoutAllocations',
-      allocations: spec.checkout,
+      kind: 'setCashPayment',
+      amount: spec.checkout
+        .reduce((sum, payment) => sum + BigInt(payment.amount), 0n)
+        .toString(),
     } as DraftOperation);
   }
   const preview = must(
@@ -459,7 +461,7 @@ export async function acceptanceInvoice(
     references: true,
     odometerKm: 23456,
     topDays: 14,
-    invoiceDiscounts: [500, 250],
+    invoiceDiscounts: [750],
     note: 'Pelanggan minta bagian lama dikembalikan.',
     checkout: [{ method: 'CASH', amount: '250000' }],
   });

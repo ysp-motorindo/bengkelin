@@ -20,9 +20,22 @@ export function addCurrentCustomerColumns(db: AppDatabase): void {
   if (db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'invoices'").get()) {
     db.exec(bundledMigrations.find((m) => m.version === 16)!.sql);
     db.exec(bundledMigrations.find((m) => m.version === 17)!.sql);
+    if (Number(db.pragma('user_version', { simple: true })) < 7)
+      db.exec(
+        'CREATE TABLE invoice_daily_counters (business_date TEXT PRIMARY KEY, last_sequence INTEGER NOT NULL) STRICT',
+      );
   }
 }
 export function removeCurrentCustomerColumns(db: AppDatabase): void {
+  if (
+    Number(db.pragma('user_version', { simple: true })) < 7 &&
+    db
+      .prepare(
+        "SELECT 1 FROM sqlite_master WHERE name = 'invoice_daily_counters'",
+      )
+      .get()
+  )
+    db.exec('DROP TABLE invoice_daily_counters');
   if (
     (
       db.prepare('PRAGMA table_info(invoices)').all() as { name: string }[]

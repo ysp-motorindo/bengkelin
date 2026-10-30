@@ -123,7 +123,7 @@ export function addCatalogLine(
     // The price was typed by hand: never merged, always shown as manual.
     manual: true,
   });
-  ctx.repo.confirmPrice(lineId, op.unitPrice !== undefined);
+  ctx.repo.confirmPrice(lineId, unitPrice > 0n);
   recordPriceChange(ctx, {
     lineId,
     kind: 'MISSING_PRICE_ENTRY',

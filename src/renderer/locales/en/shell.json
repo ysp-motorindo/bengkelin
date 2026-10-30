@@ -4,7 +4,7 @@
   "profileMenuLabel": "User account menu",
   "nav": {
     "label": "Main navigation",
-    "workspace": "New Transaction",
+    "workspace": "Invoice",
     "customers": "Customers & Vehicles",
     "catalog": "Catalog & Prices",
     "inventory": "Inventory",

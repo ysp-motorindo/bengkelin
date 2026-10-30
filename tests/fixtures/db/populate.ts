@@ -338,6 +338,11 @@ export async function populateWorkshop(
       op.kind,
     );
   const finalize = async (draft: DraftView) => {
+    if (draft.topDays === 0 && BigInt(draft.totals.unallocatedAmount) > 0n)
+      draft = await apply(draft, {
+        kind: 'updateHeader',
+        changes: { topDays: 30 },
+      });
     const shown = ok(
       await call<FinalizePreviewDto>(
         C.invoices.previewFinalize,
@@ -399,8 +404,8 @@ export async function populateWorkshop(
   draft = await apply(draft, { kind: 'setInvoiceDiscounts', stages: [1000] });
   const paidTotal = draft.totals.amount;
   draft = await apply(draft, {
-    kind: 'setCheckoutAllocations',
-    allocations: [{ method: 'CASH', amount: paidTotal }],
+    kind: 'setCashPayment',
+    amount: paidTotal,
   });
   const paid = await finalize(draft);
 
@@ -428,11 +433,8 @@ export async function populateWorkshop(
     reason: 'Harga langganan',
   });
   draft = await apply(draft, {
-    kind: 'setCheckoutAllocations',
-    allocations: [
-      { method: 'CASH', amount: '20000' },
-      { method: 'QRIS', amount: '10000', reference: 'QR-001' },
-    ],
+    kind: 'setCashPayment',
+    amount: '30000',
   });
   let partial = await finalize(draft);
   ctx.setNow(wib('2026-10-01', '11:00'));

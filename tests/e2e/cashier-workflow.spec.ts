@@ -193,11 +193,15 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
     .click();
   await expect(custom).toHaveCount(0);
   await expect(page.getByTestId('line-row')).toHaveCount(2);
-  await expect(
-    page.getByTestId('line-row').nth(1).getByTestId('indicator-mechanic'),
-  ).toContainText('Andi');
+  await page
+    .getByTestId('line-row')
+    .nth(1)
+    .getByRole('button', { name: new RegExp(t('workspace.lines.edit')) })
+    .click();
+  await expect(page.getByTestId('indicator-mechanic')).toContainText('Andi');
 
   // ---- Sequential discounts 30/50/10 on a Rp 100.000 item ----
+  await searchBox(page).focus();
   await expect(searchBox(page)).toBeFocused();
   await scan(page, HELMET_BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(3);
@@ -235,23 +239,14 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   ).toHaveText('Rp 31.500');
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 196.500');
 
-  // ---- Partial, split payment: 100.000 cash + 50.000 QRIS ----
-  const addPayment = page.getByRole('button', {
-    name: t('workspace.checkout.addPayment'),
-    ...exact,
-  });
-  await addPayment.click();
+  await page.getByLabel(t('workspace.header.topDays'), exact).fill('7');
   await page
-    .getByLabel(`${t('workspace.checkout.amount')} 1`, exact)
-    .fill('100000');
-  await addPayment.click();
-  await page
-    .getByLabel(`${t('workspace.checkout.method')} 2`, exact)
-    .selectOption('QRIS');
-  await page
-    .getByLabel(`${t('workspace.checkout.amount')} 2`, exact)
-    .fill('50000');
-  await expect(page.getByTestId('unallocated-amount')).toHaveText('Rp 46.500');
+    .getByRole('textbox', {
+      name: t('workspace.checkout.payments'),
+      exact: true,
+    })
+    .fill('150000');
+  await expect(page.getByTestId('total-amount')).toHaveText('Rp 196.500');
 
   // ---- F8 opens the review only; nothing is finalized by the shortcut ----
   await searchBox(page).focus();

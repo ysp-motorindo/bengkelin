@@ -77,12 +77,12 @@ test('admin imports customers and selects an inactive customer in a transaction'
     .click();
   await page
     .getByRole('button', {
-      name: t('workspace.header.chooseParty'),
+      name: t('workspace.header.chooseCustomer'),
       exact: true,
     })
     .click();
   const party = page.getByRole('dialog', {
-    name: t('workspace.party.title'),
+    name: t('workspace.header.chooseCustomer'),
     exact: true,
   });
   await expect(
@@ -99,15 +99,15 @@ test('admin imports customers and selects an inactive customer in a transaction'
       exact: true,
     })
     .click();
-  await expect(page.getByTestId('header-customer')).toContainText(
-    'Dormant Fixture',
+  await expect(page.getByTestId('header-customer')).toHaveValue(
+    /Dormant Fixture/,
   );
   await party
     .getByRole('button', { name: t('workspace.common.close'), exact: true })
     .click();
   await page
     .getByRole('button', {
-      name: t('workspace.header.chooseParty'),
+      name: t('workspace.header.chooseCustomer'),
       exact: true,
     })
     .click();

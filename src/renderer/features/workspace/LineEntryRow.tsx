@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import {
   useCallback,
   useEffect,
@@ -33,6 +34,9 @@ interface Props {
 }
 export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
   const { t } = useTranslation();
+  const { formatIdr } = useNumberFormat();
+  const [priceFocus, setPriceFocus] = useState<string | null>(null);
+  const [previewPrice, setPreviewPrice] = useState<string | null>(null);
   const search = useRef<HTMLInputElement>(null);
   const container = useRef<HTMLTableCellElement>(null);
   const [focusRequest, setFocusRequest] = useState(0);
@@ -64,7 +68,7 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
     [markInvalid],
   );
   useEffect(() => () => markInvalid('entry', false), [markInvalid]);
-  function clear() {
+  function clear(returnToSearch = true) {
     revision.current += 1;
     setCustom(false);
     setSelected(null);
@@ -76,8 +80,9 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
     setFeedback(null);
     dirty(false);
     if (
-      container.current?.contains(document.activeElement) ||
-      document.activeElement === document.body
+      returnToSearch &&
+      (container.current?.contains(document.activeElement) ||
+        document.activeElement === document.body)
     )
       setFocusRequest((value) => value + 1);
   }
@@ -126,7 +131,15 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
           : {}),
       });
       if (result.ok) {
-        if (submittedRevision === revision.current) clear();
+        if (submittedRevision === revision.current) {
+          const unpriced = result.value.lines.find(
+            (line) =>
+              !line.priceEntryConfirmed &&
+              !commands.view.lines.some((old) => old.id === line.id),
+          );
+          clear(!unpriced);
+          if (unpriced) setPriceFocus(unpriced.id);
+        }
         return 'added';
       }
       if (
@@ -150,6 +163,48 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
       setBusy(false);
     }
   }
+  useEffect(() => {
+    if (!priceFocus) return;
+    const input = document.querySelector<HTMLInputElement>(
+      `[data-line-id="${priceFocus}"] [data-price-input]`,
+    );
+    if (input) {
+      input.focus();
+      setPriceFocus(null);
+    }
+  }, [priceFocus, commands.view.lines]);
+  useEffect(() => {
+    setPreviewPrice(null);
+    if (!selected) return;
+    let current = true;
+    window.bengkelin.drafts
+      .previewCatalogPrice({
+        invoiceId: commands.view.id,
+        catalogItemId: selected.id,
+      })
+      .then((result) => {
+        if (!current) return;
+        if (
+          result.ok &&
+          result.value.channelId === commands.view.channelId &&
+          result.value.pricingAt === commands.view.pricingAt
+        )
+          setPreviewPrice(result.value.unitPrice);
+        else if (!result.ok) setFeedback(errorMessage(t, result.error));
+      })
+      .catch(() => {
+        if (current) setFeedback(t('errors.INTERNAL_ERROR'));
+      });
+    return () => {
+      current = false;
+    };
+  }, [
+    selected,
+    commands.view.id,
+    commands.view.channelId,
+    commands.view.pricingAt,
+    t,
+  ]);
   async function pick(item: CatalogItemDto) {
     revision.current += 1;
     setSelected(item);
@@ -194,7 +249,7 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
             units={units}
             mechanics={mechanics}
             send={commands.send}
-            onClose={clear}
+            onClose={() => clear()}
             onDirtyChange={dirty}
           />
         ) : (
@@ -262,7 +317,14 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
                   <Input
                     readOnly
                     className={transactionCellClass}
-                    value={t('workspace.entry.automatic')}
+                    aria-label={t('workspace.editor.unitPrice')}
+                    value={
+                      selected
+                        ? previewPrice === null
+                          ? t('workspace.entry.loadingPrice')
+                          : formatIdr(previewPrice)
+                        : '—'
+                    }
                   />
                 )}
               </label>
@@ -304,7 +366,12 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
               </label>
             )}
             {source && (
-              <Button size="sm" variant="ghost" disabled={busy} onClick={clear}>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => clear()}
+              >
                 {t('workspace.common.cancel')}
               </Button>
             )}

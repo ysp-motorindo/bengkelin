@@ -225,6 +225,9 @@ for (const locale of ['id', 'en'] as const) {
       });
       await page.reload();
       await page
+        .getByLabel(t('workspace.header.topDays'), { exact: true })
+        .fill('7');
+      await page
         .getByRole('button', {
           name: t('workspace.checkout.review'),
           exact: true,

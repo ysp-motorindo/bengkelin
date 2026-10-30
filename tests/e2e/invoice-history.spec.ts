@@ -132,6 +132,7 @@ async function creditSale(page: Page): Promise<string> {
   await page.keyboard.type(BARCODE);
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('line-row')).toHaveCount(1);
+  await page.getByLabel(t('workspace.header.topDays'), exact).fill('7');
   await page
     .getByRole('button', { name: t('workspace.checkout.review'), ...exact })
     .click();

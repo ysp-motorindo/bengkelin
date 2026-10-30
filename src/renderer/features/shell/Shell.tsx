@@ -125,7 +125,13 @@ export function Shell({
         ];
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div
+      className={
+        view === 'workspace'
+          ? 'flex min-h-screen flex-col lg:h-screen lg:overflow-hidden'
+          : 'flex min-h-screen flex-col'
+      }
+    >
       <div className="sticky top-0 z-40 bg-card">
         <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card px-4 py-2 sm:px-6">
           <div className="flex items-center gap-2 font-semibold">
@@ -190,7 +196,13 @@ export function Shell({
       </div>
       {session.role === 'ADMIN' ? <BackupNoticeBanner /> : null}
       {session.role === 'ADMIN' ? <RestoreOutcomeNotice /> : null}
-      <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
+      <main
+        className={
+          view === 'workspace'
+            ? 'min-w-0 flex-1 p-3 sm:p-4 lg:min-h-0 lg:overflow-hidden'
+            : 'min-w-0 flex-1 p-3 sm:p-4 lg:p-6'
+        }
+      >
         {error ? <Alert className="mb-4">{error}</Alert> : null}
         {menu.notice ? (
           <div
@@ -214,7 +226,7 @@ export function Shell({
             </button>
           </div>
         ) : null}
-        <div hidden={view !== 'workspace'}>
+        <div hidden={view !== 'workspace'} className="h-full min-h-0">
           <CashierWorkspace
             finalizer={finalizer}
             active={view === 'workspace'}

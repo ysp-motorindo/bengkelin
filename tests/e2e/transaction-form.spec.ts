@@ -181,12 +181,15 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
               exact: true,
             })
             .fill('Demo: check brakes');
+          const total = (await page
+            .getByTestId('total-amount')
+            .textContent())!.replace(/\D/g, '');
           await page
-            .getByRole('button', {
-              name: t('workspace.checkout.payFullCash'),
+            .getByRole('textbox', {
+              name: t('workspace.checkout.payments'),
               exact: true,
             })
-            .click();
+            .fill(total);
           await expect(page.getByTestId('save-state')).toHaveAttribute(
             'data-state',
             'saved',

@@ -136,7 +136,11 @@ test('selecting catalog search result stages until Add', async () => {
   const search = screen.getByRole('combobox', { name: 'Cari barang' });
   await user.type(search, 'Oli');
   await screen.findByRole('option');
+  expect(screen.getByRole('listbox').closest('table')).toBeNull();
   await user.keyboard('{ArrowDown}{Enter}');
+  await waitFor(() =>
+    expect(screen.getByLabelText('Harga jual')).toHaveValue('Rp 65.000'),
+  );
   expect(bridge.drafts.apply).not.toHaveBeenCalled();
   expect(await flushAll()).toBe(false);
   await user.type(search, 'new query');

@@ -319,9 +319,7 @@ describe('one print model, three presentations', () => {
     expect(model.lines).toHaveLength(42);
     expect(model.lines[0]!.title).toBe(LONG_TITLE);
     expect(model.lines[1]!.mechanicName).toBe('Joko Susilo');
-    expect(model.invoiceDiscounts.map((d) => d.percentageBps)).toEqual([
-      500, 250,
-    ]);
+    expect(model.invoiceDiscounts.map((d) => d.percentageBps)).toEqual([750]);
     expect(model.shop.name).toBe('Bengkel Maju Jaya Motor');
     expect(model.language).toBe('id');
     expect(model.isReprint).toBe(false);
@@ -1259,6 +1257,7 @@ describe('migration 009 on a populated version-8 database', () => {
       expect(readSchemaVersion(db)).toBe(8);
       db.exec(bundledMigrations.find((m) => m.version === 15)!.sql);
       db.exec(bundledMigrations.find((m) => m.version === 16)!.sql);
+      db.exec(bundledMigrations.find((m) => m.version === 17)!.sql);
       const services = createApplicationServices({
         db,
         clock,

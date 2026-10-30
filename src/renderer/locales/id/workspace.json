@@ -1,5 +1,5 @@
 {
-  "title": "Transaksi Baru",
+  "title": "Faktur Penjualan",
   "common": {
     "cancel": "Batal",
     "close": "Tutup",
@@ -109,7 +109,14 @@
     "updateNote": "Ubah catatan",
     "saveNote": "Simpan catatan",
     "ownerMismatch": "Pemilik aktif kendaraan ini bukan pelanggan yang dipilih. Kepemilikan tidak berubah otomatis.",
-    "reviewOwnership": "Tinjau kepemilikan"
+    "reviewOwnership": "Tinjau kepemilikan",
+    "customer": "Pelanggan",
+    "chooseCustomer": "Pilih pelanggan",
+    "vehicleNumber": "No. Kendaraan",
+    "chooseVehicle": "Pilih kendaraan",
+    "invoiceNumber": "No. Faktur",
+    "taxInvoiceNumber": "No. Faktur Pajak",
+    "pricingOptions": "Channel dan waktu harga"
   },
   "pricing": {
     "title": "Waktu harga",
@@ -175,7 +182,11 @@
     "tendered": "Uang diterima",
     "change": "Kembalian",
     "short": "Kurang",
-    "review": "Tinjau checkout"
+    "review": "Tinjau checkout",
+    "singleDiscount": "Disc (%)",
+    "downPayment": "Uang Muka",
+    "replaceDiscount": "Ganti diskon",
+    "replacePayment": "Ganti dengan tunai"
   },
   "paymentMethod": {
     "CASH": "Tunai",
@@ -197,7 +208,7 @@
     "back": "Kembali"
   },
   "repricing": {
-    "open": "Tinjau harga",
+    "open": "Cek Harga",
     "title": "Tinjau harga",
     "description": "Harga menurut channel {{channel}} pada {{time}}. Pilih baris yang akan diperbarui.",
     "select": "Perbarui",
@@ -210,8 +221,8 @@
     "stale": "Harga berubah sejak pratinjau. Pratinjau telah diperbarui; periksa lagi."
   },
   "drafts": {
-    "open": "Daftar draf",
-    "new": "Transaksi baru",
+    "open": "Draft",
+    "new": "Buat Baru",
     "title": "Draf transaksi",
     "customer": "Pelanggan",
     "amount": "Total",
@@ -265,6 +276,8 @@
     "PAID": "Lunas"
   },
   "entry": {
-    "automatic": "Otomatis"
+    "automatic": "Otomatis",
+    "loadingPrice": "Memuat harga…",
+    "confirmZero": "Konfirmasi Rp0"
   }
 }

@@ -162,51 +162,49 @@ export function DraftWorkspace({
     (line) => line.pricing.listedPriceDiffersFromCurrent,
   ).length;
 
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="mr-2 text-xl font-semibold leading-tight tracking-tight">
-            {t('workspace.title')}
-          </h1>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDialog({ kind: 'switcher' })}
-          >
-            <FolderOpen aria-hidden="true" />
-            {t('workspace.drafts.open')}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => void onNewDraft()}>
-            <FilePlus aria-hidden="true" />
-            {t('workspace.drafts.new')}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={view.lines.every((line) => line.source !== 'CATALOG')}
-            onClick={() => setDialog({ kind: 'repricing' })}
-          >
-            <RefreshCcw aria-hidden="true" />
-            {t('workspace.repricing.open')}
-            {differing > 0 ? (
-              <span className="rounded-full bg-warning-surface px-1.5 text-xs text-warning">
-                {differing}
-              </span>
-            ) : null}
-          </Button>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span>
-            {t('workspace.drafts.by', {
-              creator: view.createdBy.displayName,
-              editor: view.lastEditedBy.displayName,
-            })}
-          </span>
-          <SaveIndicator state={commands.saveState} onRetry={commands.retry} />
-        </div>
+  const toolbar = (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setDialog({ kind: 'switcher' })}
+        >
+          <FolderOpen aria-hidden="true" />
+          {t('workspace.drafts.open')}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => void onNewDraft()}>
+          <FilePlus aria-hidden="true" />
+          {t('workspace.drafts.new')}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={view.lines.every((line) => line.source !== 'CATALOG')}
+          onClick={() => setDialog({ kind: 'repricing' })}
+        >
+          <RefreshCcw aria-hidden="true" />
+          {t('workspace.repricing.open')}
+          {differing > 0 ? (
+            <span className="rounded-full bg-warning-surface px-1.5 text-xs text-warning">
+              {differing}
+            </span>
+          ) : null}
+        </Button>
       </div>
-
+      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        <span>
+          {t('workspace.drafts.by', {
+            creator: view.createdBy.displayName,
+            editor: view.lastEditedBy.displayName,
+          })}
+        </span>
+        <SaveIndicator state={commands.saveState} onRetry={commands.retry} />
+      </div>
+    </div>
+  );
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-2">
       {notice ? (
         <p
           role="status"
@@ -228,6 +226,7 @@ export function DraftWorkspace({
       ) : null}
 
       <DraftHeader
+        toolbar={toolbar}
         commands={commands}
         channels={references.channels}
         sales={references.sales}
@@ -236,7 +235,10 @@ export function DraftWorkspace({
         onError={setError}
       />
 
-      <section aria-label={t('workspace.lines.label')} className="min-w-0">
+      <section
+        aria-label={t('workspace.lines.label')}
+        className="min-h-48 min-w-0 flex-1 overflow-auto lg:min-h-0"
+      >
         <LinesTable
           lines={view.lines}
           commands={commands}
@@ -252,7 +254,7 @@ export function DraftWorkspace({
           }
         />
       </section>
-      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(26rem,0.9fr)]">
+      <div className="grid shrink-0 items-start gap-3 border-t border-border bg-card pt-2 lg:grid-cols-[minmax(0,1fr)_minmax(23rem,0.45fr)]">
         <TransactionNote commands={commands} />
         <CheckoutPanel
           commands={commands}

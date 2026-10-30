@@ -29,7 +29,7 @@ describe('cashier workspace', () => {
     const input = bridge.drafts.create.mock.calls[0]![0];
     expect(input.invoiceDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(input.pricingAt).toMatch(/Z$/);
-    expect(screen.getByTestId('header-customer')).toHaveTextContent('Umum');
+    expect(screen.getByTestId('header-customer')).toHaveValue('Umum');
   });
 
   test('keeps the due date compact and places odometer after the customer field', async () => {
@@ -37,13 +37,15 @@ describe('cashier workspace', () => {
     render(<CashierWorkspace />);
     await screen.findByRole('combobox', { name: 'Cari barang' });
 
-    const customer = screen.getByLabelText('Pelanggan & kendaraan');
+    const customer = screen.getByLabelText('Pelanggan');
     const odometer = screen.getByLabelText('Odometer (km)');
     const dueDate = screen.getByTestId('header-due-date');
     const topDays = screen.getByLabelText('TOP (hari)');
     expect(dueDate).toHaveValue('30/09/2026');
     expect(dueDate).toHaveAttribute('readonly');
-    const table = screen.getByRole('table');
+    const table = screen.getByRole('table', {
+      name: 'Daftar barang pada transaksi ini',
+    });
     const note = screen.getByRole('textbox', { name: 'Catatan' });
     expect(
       customer.compareDocumentPosition(table) &
@@ -102,8 +104,7 @@ describe('invalid unsent input is never labelled saved (C1)', () => {
     render(<CashierWorkspace />);
     const user = userEvent.setup();
     await screen.findByRole('combobox', { name: 'Cari barang' });
-    await user.click(screen.getByRole('button', { name: 'Tambah pembayaran' }));
-    const amount = screen.getByRole('textbox', { name: 'Nominal 1' });
+    const amount = screen.getByRole('textbox', { name: 'Pembayaran' });
     await user.type(amount, '150');
     await waitFor(() =>
       expect(screen.getByTestId('save-state')).toHaveAttribute(
@@ -114,9 +115,9 @@ describe('invalid unsent input is never labelled saved (C1)', () => {
     const allocationOps = () =>
       bridge.drafts.apply.mock.calls
         .map((call) => (call[0] as DraftCommand).op)
-        .filter((op) => op.kind === 'setCheckoutAllocations');
+        .filter((op) => op.kind === 'setCashPayment');
     expect(allocationOps().at(-1)).toMatchObject({
-      allocations: [{ method: 'CASH', amount: '150' }],
+      amount: '150',
     });
 
     await user.clear(amount);
@@ -127,8 +128,14 @@ describe('invalid unsent input is never labelled saved (C1)', () => {
     expect(screen.getByTestId('save-state')).not.toHaveTextContent('Tersimpan');
     const sent = allocationOps().length;
     await getWorkspaceActions()!.openCheckoutReview();
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Perubahan belum tersimpan',
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByRole('alert')
+          .some((alert) =>
+            alert.textContent?.includes('Perubahan belum tersimpan'),
+          ),
+      ).toBe(true),
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(await getWorkspaceActions()!.saveDraft()).toBe(false);
@@ -139,7 +146,7 @@ describe('invalid unsent input is never labelled saved (C1)', () => {
     await user.type(amount, '150.000');
     expect(await getWorkspaceActions()!.saveDraft()).toBe(true);
     expect(allocationOps().at(-1)).toMatchObject({
-      allocations: [{ method: 'CASH', amount: '150000' }],
+      amount: '150000',
     });
     await waitFor(() =>
       expect(screen.getByTestId('save-state')).toHaveAttribute(
@@ -156,15 +163,14 @@ describe('Pay Full replaces invalid allocation input (C1)', () => {
     render(<CashierWorkspace />);
     const user = userEvent.setup();
     await screen.findByRole('combobox', { name: 'Cari barang' });
-    await user.click(screen.getByRole('button', { name: 'Tambah pembayaran' }));
-    const amount = screen.getByRole('textbox', { name: 'Nominal 1' });
+    const amount = screen.getByRole('textbox', { name: 'Pembayaran' });
     await user.type(amount, '1');
     await user.clear(amount);
     expect(screen.getByTestId('save-state')).toHaveAttribute(
       'data-state',
       'unsaved',
     );
-    await user.click(screen.getByRole('button', { name: 'Bayar Penuh Tunai' }));
+    await user.type(amount, '0');
     await waitFor(() =>
       expect(screen.getByTestId('save-state')).toHaveAttribute(
         'data-state',
@@ -481,4 +487,17 @@ test('rejected inline saves explain the server error and block review', async ()
   ).toBeInTheDocument();
   await getWorkspaceActions()!.openCheckoutReview();
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+test('invoice header separates Customer and Vehicle Number and shows reserved number', async () => {
+  install();
+  render(<CashierWorkspace />);
+  await screen.findByRole('combobox', { name: 'Cari barang' });
+  expect(screen.getByLabelText('Pelanggan')).toHaveValue('Umum');
+  expect(screen.getByLabelText('No. Kendaraan')).toHaveValue('Tanpa kendaraan');
+  expect(screen.getByLabelText('No. Faktur')).toHaveValue('INV-20260930-0001');
+  expect(screen.getByLabelText('No. Faktur Pajak')).toHaveValue('');
+  expect(
+    screen.queryByRole('textbox', { name: 'Pelanggan & kendaraan' }),
+  ).not.toBeInTheDocument();
 });

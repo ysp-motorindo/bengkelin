@@ -172,15 +172,7 @@ async function issue(options: IssueOptions = {}): Promise<InvoiceView> {
   if (options.invoiceStages?.length) {
     await apply({ kind: 'setInvoiceDiscounts', stages: options.invoiceStages });
   }
-  if (options.pay?.length) {
-    await apply({
-      kind: 'setCheckoutAllocations',
-      allocations: options.pay.map((p) => ({
-        method: (p.method ?? 'CASH') as 'CASH',
-        amount: p.amount,
-      })),
-    });
-  }
+  await apply({ kind: 'updateHeader', changes: { topDays: 30 } });
   const shown = value(
     await h.call<FinalizePreviewDto>(
       C.invoices.previewFinalize,
@@ -189,7 +181,7 @@ async function issue(options: IssueOptions = {}): Promise<InvoiceView> {
     ),
   );
   expect(shown.errors).toEqual([]);
-  return value(
+  let invoice = value(
     await h.call<InvoiceView>(
       C.invoices.finalize,
       {
@@ -201,6 +193,14 @@ async function issue(options: IssueOptions = {}): Promise<InvoiceView> {
       windowId,
     ),
   );
+  for (const payment of options.pay ?? [])
+    invoice = await pay(
+      invoice.id,
+      payment.amount,
+      windowId,
+      payment.method ?? 'CASH',
+    );
+  return invoice;
 }
 
 let timezone = TZ;

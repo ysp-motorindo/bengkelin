@@ -110,6 +110,15 @@ async function seed(page: Page): Promise<string> {
           `line ${i}`,
         );
       }
+      draft = must(
+        await b.drafts.apply({
+          requestId: crypto.randomUUID(),
+          invoiceId: draft.id,
+          expectedVersion: draft.version,
+          op: { kind: 'setCashPayment', amount: draft.totals.amount },
+        }),
+        'cash payment',
+      );
       const preview = must(
         await b.invoices.previewFinalize({ invoiceId: draft.id }),
         'preview',
