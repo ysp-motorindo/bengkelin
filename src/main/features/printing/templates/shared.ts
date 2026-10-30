@@ -122,6 +122,9 @@ export function partyFacts(
   labels: PrintLabels,
 ): [string, string][] {
   const facts: [string, string][] = [];
+  if (model.salesName) facts.push([labels.sales, model.salesName]);
+  if (model.expeditionName)
+    facts.push([labels.expedition, model.expeditionName]);
   if (model.customer?.name) facts.push([labels.customer, model.customer.name]);
   if (model.customer?.phoneNumber) {
     facts.push([labels.phone, model.customer.phoneNumber]);

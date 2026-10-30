@@ -243,6 +243,7 @@ export interface LineSpec {
 export interface InvoiceSpec {
   lines: LineSpec[];
   customer?: boolean;
+  references?: boolean;
   odometerKm?: number;
   topDays?: number;
   invoiceDiscounts?: number[];
@@ -287,6 +288,29 @@ export async function issueInvoice(
       `apply ${op.kind}`,
     );
   };
+  if (spec.references) {
+    for (const entity of ['sales', 'expedition'] as const) {
+      const master = must(
+        await call<ReferenceDto>(
+          C.references.save,
+          {
+            entity,
+            code: `REF${fixtureId().slice(-8)}`,
+            label:
+              entity === 'sales'
+                ? 'Sales <Andi> & Rekan — Cabang Utama Bandung Selatan'
+                : 'Ekspedisi Aman & Cepat — Pengiriman Wilayah Bandung Selatan dan Sekitarnya',
+          },
+          ADMIN_WINDOW,
+        ),
+        'reference',
+      );
+      await apply({
+        kind: 'updateHeader',
+        changes: { [`${entity}Id`]: master.id },
+      });
+    }
+  }
   for (const line of spec.lines) {
     if (line.custom) {
       await apply({
@@ -432,6 +456,7 @@ export async function acceptanceInvoice(
   return issueInvoice(shop, {
     lines,
     customer: true,
+    references: true,
     odometerKm: 23456,
     topDays: 14,
     invoiceDiscounts: [500, 250],

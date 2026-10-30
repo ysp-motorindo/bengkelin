@@ -162,6 +162,8 @@ export interface PrintPayment {
  * Templates format these; they never recompute money.
  */
 export interface InvoicePrintModel {
+  salesName: string | null;
+  expeditionName: string | null;
   language: Language;
   timezone: string;
   invoiceId: UUID;

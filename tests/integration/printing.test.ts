@@ -1258,6 +1258,7 @@ describe('migration 009 on a populated version-8 database', () => {
       migrateDatabase(db, v8);
       expect(readSchemaVersion(db)).toBe(8);
       db.exec(bundledMigrations.find((m) => m.version === 15)!.sql);
+      db.exec(bundledMigrations.find((m) => m.version === 16)!.sql);
       const services = createApplicationServices({
         db,
         clock,
@@ -1534,4 +1535,38 @@ test('A4 uses current contacts on old invoices while thermal and stored business
     'class="invoice-contacts"',
   );
   expect(businessState()).toBe(before);
+});
+
+test('all layouts use escaped frozen reference names after rename and deactivation', async () => {
+  const invoice = await acceptanceInvoice(shop, priceStart());
+  expect(invoice.sales).not.toBeNull();
+  for (const entity of ['sales', 'expedition'] as const) {
+    const selected = invoice[entity]!;
+    value(
+      await h.call(
+        C.references.save,
+        { entity, id: selected.id, label: 'Renamed later' },
+        ADMIN_WINDOW,
+      ),
+    );
+    value(
+      await h.call(
+        C.references.deactivate,
+        { entity, id: selected.id },
+        ADMIN_WINDOW,
+      ),
+    );
+  }
+  for (const format of FORMATS) {
+    const { model, html } = h.services.printing.renderInvoice(
+      invoice.id,
+      format,
+    );
+    expect(model.salesName).toBe(invoice.sales!.name);
+    expect(model.expeditionName).toBe(invoice.expedition!.name);
+    expect(html).toContain(escapeHtml(invoice.sales!.name));
+    expect(html).toContain(escapeHtml(invoice.expedition!.name));
+    expect(html).not.toContain('Renamed later');
+    expect(html).not.toContain('<Andi>');
+  }
 });
