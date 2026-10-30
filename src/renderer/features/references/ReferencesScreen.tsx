@@ -182,6 +182,7 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
 
       {editing ? (
         <EntityForm
+          key={editing.kind === 'edit' ? editing.item.id : 'new'}
           entity={entity}
           editing={editing}
           brands={brands.filter((b) => b.isActive || editing.kind === 'edit')}

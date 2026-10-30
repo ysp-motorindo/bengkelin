@@ -460,3 +460,48 @@ describe.each(['Sales', 'Ekspedisi'])('%s reference management', (name) => {
     );
   });
 });
+
+test('switching reference rows loads the selected row fields before saving', async () => {
+  const base = {
+    entity: 'sales',
+    code: '001',
+    phoneNumber: null,
+    brandId: null,
+    address: null,
+    city: null,
+    isActive: true,
+  };
+  const a = { ...base, id: 'a', label: 'Alpha', address: 'Alpha Street' };
+  const b = {
+    ...base,
+    code: '002',
+    id: 'b',
+    label: 'Beta',
+    address: 'Beta Street',
+  };
+  const save = vi.fn(async (input) => ok({ ...b, ...input }));
+  install({ references: { list: vi.fn(async () => ok([a, b])), save } });
+  render(<ReferencesScreen />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('tab', { name: 'Sales' }));
+  await user.click(await screen.findByRole('button', { name: 'Ubah: Alpha' }));
+  await user.click(screen.getByRole('button', { name: 'Ubah: Beta' }));
+  const form = screen.getByRole('form');
+  expect(within(form).getByLabelText('Label')).toHaveValue('Beta');
+  expect(within(form).getByLabelText('Alamat')).toHaveValue('Beta Street');
+  await user.click(within(form).getByRole('button', { name: 'Simpan' }));
+  await waitFor(() =>
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'b',
+        label: 'Beta',
+        address: 'Beta Street',
+      }),
+    ),
+  );
+  await user.click(screen.getByRole('button', { name: 'Ubah: Alpha' }));
+  await user.click(screen.getByRole('button', { name: 'Tambah' }));
+  expect(within(screen.getByRole('form')).getByLabelText('Label')).toHaveValue(
+    '',
+  );
+});

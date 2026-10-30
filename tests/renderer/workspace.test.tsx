@@ -410,3 +410,32 @@ test('retains an inactive selection as a visible fallback and allows clearing', 
     ),
   );
 });
+
+test.each(['sales', 'expedition'] as const)(
+  'refreshes a renamed inactive %s selection when returning to a draft',
+  async (entity) => {
+    const bridge = install();
+    bridge.drafts.create.mockResolvedValue(
+      ok(
+        draftView({ [entity]: { id: 'inactive-reference', name: 'Old name' } }),
+      ),
+    );
+    const { rerender } = render(<CashierWorkspace active />);
+    expect(
+      await screen.findByRole('option', { name: 'Old name' }),
+    ).toBeInTheDocument();
+    rerender(<CashierWorkspace active={false} />);
+    bridge.drafts.get.mockResolvedValue(
+      ok(
+        draftView({ [entity]: { id: 'inactive-reference', name: 'New name' } }),
+      ),
+    );
+    rerender(<CashierWorkspace active />);
+    expect(
+      await screen.findByRole('option', { name: 'New name' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: 'Old name' }),
+    ).not.toBeInTheDocument();
+  },
+);

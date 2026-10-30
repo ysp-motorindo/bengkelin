@@ -51,6 +51,7 @@ export interface WorkspaceReferences {
 }
 
 interface DraftWorkspaceProps {
+  active: boolean;
   initialView: DraftView;
   timezone: string;
   references: WorkspaceReferences;
@@ -84,6 +85,7 @@ type Dialog =
  * goes through the draft's command queue (useDraftCommands).
  */
 export function DraftWorkspace({
+  active,
   initialView,
   timezone,
   references,
@@ -118,7 +120,17 @@ export function DraftWorkspace({
     initialView,
     onNotice,
   });
-  const { view, send, flush } = commands;
+  const { view, send, flush, reload } = commands;
+  const wasActive = useRef(active);
+  useEffect(() => {
+    const returning = active && !wasActive.current;
+    wasActive.current = active;
+    if (returning) {
+      void flush()
+        .then((saved) => (saved ? reload() : undefined))
+        .catch(() => setError(t('errors.INTERNAL_ERROR')));
+    }
+  }, [active, flush, reload, t]);
 
   const focusSearch = useCallback(() => {
     searchRef.current?.focus();

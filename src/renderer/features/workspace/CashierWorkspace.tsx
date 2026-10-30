@@ -273,6 +273,7 @@ export function CashierWorkspace({
       ) : null}
       <DraftWorkspace
         key={phase.draft.id}
+        active={active}
         initialView={phase.draft}
         timezone={phase.shop.timezone}
         references={phase.references}

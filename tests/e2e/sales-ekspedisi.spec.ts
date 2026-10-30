@@ -174,6 +174,35 @@ for (const locale of ['id', 'en'] as const) {
       await expect(sales).toHaveValue(ids.sales.id);
       await expect(expedition).toHaveValue(ids.expedition.id);
       await capture('selected-draft');
+      await nav
+        .getByRole('button', { name: t('shell.nav.references'), exact: true })
+        .click();
+      await page.evaluate(async (ids) => {
+        for (const entity of ['sales', 'expedition'] as const) {
+          const saved = await window.bengkelin.references.save({
+            entity,
+            id: ids[entity].id,
+            label: `${ids[entity].label} updated`,
+          });
+          const deactivated = await window.bengkelin.references.deactivate({
+            entity,
+            id: ids[entity].id,
+          });
+          if (!saved.ok || !deactivated.ok)
+            throw new Error('draft master edit failed');
+        }
+      }, ids);
+      ids.sales.label += ' updated';
+      ids.expedition.label += ' updated';
+      await nav
+        .getByRole('button', { name: t('shell.nav.workspace'), exact: true })
+        .click();
+      await expect(sales.locator('option:checked')).toHaveText(ids.sales.label);
+      await expect(expedition.locator('option:checked')).toHaveText(
+        ids.expedition.label,
+      );
+      await capture('renamed-inactive-draft');
+
       await page.evaluate(async () => {
         const b = window.bengkelin;
         const list = await b.drafts.list();
