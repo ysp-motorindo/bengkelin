@@ -19,6 +19,8 @@ import { assertInt64, type Instant, type LocalDate } from '@/shared/primitives';
 export interface InvoiceRow {
   id: string;
   status: InvoiceStatus;
+  reserved_invoice_number: string | null;
+  tax_invoice_number: string | null;
   sales_id: string | null;
   expedition_id: string | null;
   customer_id: string | null;
@@ -99,6 +101,7 @@ export interface AllocationRow {
 }
 
 export interface DraftSummaryRow {
+  reserved_invoice_number: string | null;
   id: string;
   version: bigint;
   channel_id: string;
@@ -181,12 +184,34 @@ export class DraftRepository {
       : new ReferenceRepository(this.db).find(entity, id);
   }
 
+  saveTaxNumber(id: string, number: string | null): void {
+    this.db
+      .prepare('UPDATE invoices SET tax_invoice_number = ? WHERE id = ?')
+      .run(number, id);
+  }
+
+  reserveNumber(id: string, number: string): void {
+    this.db
+      .prepare(
+        'UPDATE invoices SET reserved_invoice_number = ? WHERE id = ? AND reserved_invoice_number IS NULL',
+      )
+      .run(number, id);
+  }
+
+  shopTimezone(): string {
+    return (
+      this.db.prepare('SELECT timezone FROM settings WHERE id = 1').get() as {
+        timezone: string;
+      }
+    ).timezone;
+  }
+
   // ---- invoice header ----
 
   findInvoice(id: string): InvoiceRow | undefined {
     return this.db
       .prepare(
-        `SELECT id, status, sales_id, expedition_id, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
+        `SELECT id, status, reserved_invoice_number, tax_invoice_number, sales_id, expedition_id, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
            due_date, odometer_km, note, subtotal, item_discount_amount, invoice_discount_amount,
            discount_amount, amount, created_by_cashier_id, last_edited_by_cashier_id, version,
            discarded_at, created_at, updated_at
@@ -309,7 +334,7 @@ export class DraftRepository {
   listOpenDrafts(): DraftSummaryRow[] {
     return this.db
       .prepare(
-        `SELECT i.id, i.version, i.channel_id, ch.label AS channel_label, i.invoice_date,
+        `SELECT i.reserved_invoice_number, i.id, i.version, i.channel_id, ch.label AS channel_label, i.invoice_date,
            c.name AS customer_name, c.phone_number AS customer_phone, v.plate_number, i.amount,
            (SELECT COUNT(*) FROM invoice_items l WHERE l.invoice_id = i.id AND l.removed_at IS NULL) AS line_count,
            i.created_by_cashier_id, cb.display_name AS created_by_name,

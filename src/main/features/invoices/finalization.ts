@@ -18,7 +18,7 @@ import { writeSnapshots, type SnapshotDeps } from './snapshots';
 export const FINALIZE_STEPS = [
   'snapshots',
   'allocationsCleared',
-  'counterIncremented',
+  'numberResolved',
   'stockRecorded',
   'statusFlipped',
   'paymentsInserted',
@@ -49,7 +49,7 @@ export class FinalizationIntegrityError extends Error {
  *                        rows freeze once the status leaves DRAFT).
  *  2. allocationsCleared the checkout plan is read into memory and deleted,
  *                        while DRAFT (allocations are draft-only rows).
- *  3. counterIncremented the day's counter is upserted and incremented.
+ *  3. numberResolved the draft reservation is reused (legacy unreserved drafts allocate once).
  *  4. stockRecorded      one SALE per tracked item (aggregated demand); the
  *                        ledger has no invoice-status trigger.
  *  5. statusFlipped      ONE guarded update: DRAFT -> FINALIZED with number,
@@ -97,8 +97,9 @@ export function finalizeDraft(
   ctx.invoices.clearAllocations(invoice.id);
   step('allocationsCleared');
 
-  const invoiceNumber = allocateInvoiceNumber(ctx.db, today);
-  step('counterIncremented');
+  const invoiceNumber =
+    invoice.reserved_invoice_number ?? allocateInvoiceNumber(ctx.db, today);
+  step('numberResolved');
 
   for (const item of check.demand) {
     recordSale(ctx.db, {

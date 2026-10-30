@@ -73,6 +73,8 @@ export function updateHeader(
     }
   }
   repo.saveHeader(invoice.id, header);
+  if (c.taxInvoiceNumber !== undefined)
+    repo.saveTaxNumber(invoice.id, c.taxInvoiceNumber);
 }
 
 export function setInvoiceDiscounts(

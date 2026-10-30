@@ -23,9 +23,12 @@ export function readIssuedSequences(db: AppDatabase): IssuedSequences {
     .all() as { business_date: string; last_sequence: bigint }[];
   for (const row of counters) raise(row.business_date, row.last_sequence);
   // Guard: a counter should never lag the numbers actually issued.
+  const hasReservations = (
+    db.prepare('PRAGMA table_info(invoices)').all() as { name: string }[]
+  ).some((column) => column.name === 'reserved_invoice_number');
   const numbers = db
     .prepare(
-      'SELECT invoice_number FROM invoices WHERE invoice_number IS NOT NULL',
+      `SELECT invoice_number FROM invoices WHERE invoice_number IS NOT NULL ${hasReservations ? 'UNION ALL SELECT reserved_invoice_number AS invoice_number FROM invoices WHERE reserved_invoice_number IS NOT NULL' : ''}`,
     )
     .all() as { invoice_number: string }[];
   for (const { invoice_number: number } of numbers) {

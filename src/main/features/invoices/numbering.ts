@@ -3,7 +3,7 @@ import type { LocalDate } from '@/shared/primitives';
 
 /**
  * Official invoice numbers (spec 17): `INV-YYYYMMDD-NNNN`, keyed by the
- * FINALIZATION business day in the shop timezone (not the invoice date, which
+ * CREATION business day in the shop timezone (not the invoice date, which
  * may be backdated). The sequence is padded to at least four digits and never
  * wraps: 9999 is followed by 10000.
  */
@@ -20,7 +20,7 @@ export function formatInvoiceNumber(
 /**
  * Takes the next sequence of the day: upsert + increment in ONE statement,
  * inside the caller's write transaction, so allocation is atomic with the
- * rest of finalization (a rollback returns the number). Counters only move
+ * rest of draft creation (a rollback returns the number). Counters only move
  * forward (migration 007 triggers), so an issued number is never reused.
  */
 export function allocateInvoiceNumber(

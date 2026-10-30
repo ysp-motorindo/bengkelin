@@ -14,6 +14,8 @@ const INVOICE = '7d8f5a3e-1c2b-4a55-9c5b-0a8f3f0b9d11';
 
 function makeView(version: number, extra: Partial<DraftView> = {}): DraftView {
   return {
+    invoiceNumber: 'INV-20260930-0001',
+    taxInvoiceNumber: null,
     id: INVOICE,
     status: 'DRAFT',
     version,

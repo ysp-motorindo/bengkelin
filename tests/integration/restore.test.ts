@@ -778,6 +778,8 @@ describe('restore', () => {
             ...(row as object),
             sales_id: null,
             expedition_id: null,
+            reserved_invoice_number: null,
+            tax_invoice_number: null,
             sales_name_snapshot: null,
             expedition_name_snapshot: null,
           })),

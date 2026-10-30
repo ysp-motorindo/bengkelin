@@ -459,7 +459,7 @@ describe('idempotency and duplicates', () => {
     const discarded = await applyOk(empty, { kind: 'discard' });
     expect(failure(await finalize(discarded)).code).toBe('DRAFT_DISCARDED');
     expect(failure(await preview(empty.id)).code).toBe('DRAFT_DISCARDED');
-    expect(count('SELECT COUNT(*) AS n FROM invoice_daily_counters')).toBe(0);
+    expect(count('SELECT COUNT(*) AS n FROM invoice_daily_counters')).toBe(1);
   });
 
   test('preview is read-only', async () => {
@@ -645,7 +645,7 @@ describe('numbering', () => {
     expect(dump()).toEqual(before);
     // After local midnight the same date is today.
     nowMs = Date.UTC(2026, 8, 30, 17, 0, 0, 0);
-    expect((await finalizeOk(draft)).invoiceNumber).toBe('INV-20261001-0001');
+    expect((await finalizeOk(draft)).invoiceNumber).toBe('INV-20260930-0001');
   });
 });
 
@@ -691,7 +691,7 @@ describe('inactive references', () => {
     });
     expect(readSaleEntriesForInvoice(h.db, planned.id)).toEqual([]);
     expect(paymentRows(planned.id)).toHaveLength(0);
-    expect(count('SELECT COUNT(*) AS n FROM invoice_daily_counters')).toBe(0);
+    expect(count('SELECT COUNT(*) AS n FROM invoice_daily_counters')).toBe(1);
     expect(
       count(
         'SELECT COUNT(*) AS n FROM draft_checkout_allocations WHERE invoice_id = ?',
@@ -1754,4 +1754,13 @@ describe('optional sales and expedition selections', () => {
       failure(await apply(draft.version, { expeditionId: uuid() })).code,
     ).toBe('REFERENCE_NOT_FOUND');
   });
+});
+
+test('finalization retains the number reserved when the draft was created', async () => {
+  const { draft } = await stockedDraft();
+  const before = h.db
+    .prepare('SELECT reserved_invoice_number FROM invoices WHERE id = ?')
+    .get(draft.id) as { reserved_invoice_number: string };
+  const invoice = await finalizeOk(draft);
+  expect(invoice.invoiceNumber).toBe(before.reserved_invoice_number);
 });

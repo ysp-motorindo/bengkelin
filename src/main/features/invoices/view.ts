@@ -105,6 +105,7 @@ export function buildInvoiceView(
           },
     id: invoice.id,
     invoiceNumber: invoice.invoice_number!,
+    taxInvoiceNumber: invoice.tax_invoice_number,
     status: invoice.status,
     version: toNumber(invoice.version),
     invoiceDate: invoice.invoice_date,

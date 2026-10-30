@@ -172,6 +172,8 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
     id: invoice.id,
     status: invoice.status,
     version: toNumber(invoice.version),
+    invoiceNumber: invoice.reserved_invoice_number,
+    taxInvoiceNumber: invoice.tax_invoice_number,
     channelId: invoice.channel_id,
     channelLabel: repo.channel(invoice.channel_id)?.label ?? '',
     sales:
@@ -254,6 +256,7 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
 
 export function toDraftSummary(row: DraftSummaryRow): DraftSummary {
   return {
+    invoiceNumber: row.reserved_invoice_number,
     id: row.id,
     version: toNumber(row.version),
     channelId: row.channel_id,

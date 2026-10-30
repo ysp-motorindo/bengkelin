@@ -119,6 +119,7 @@ export function InvoiceDetail({
   }
 
   const fields: [string, string][] = [
+    [t('history.detail.taxInvoiceNumber'), invoice.taxInvoiceNumber ?? none],
     [t('history.detail.invoiceDate'), formatDisplayDate(invoice.invoiceDate)],
     [t('history.detail.topDays'), formatNumber(invoice.topDays)],
     [t('history.detail.dueDate'), formatDisplayDate(invoice.dueDate)],

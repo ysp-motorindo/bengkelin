@@ -106,6 +106,7 @@ export const updateHeaderOpSchema = z.strictObject({
       channelId: uuidSchema.optional(),
       invoiceDate: localDateSchema.optional(),
       pricingAt: instantSchema.optional(),
+      taxInvoiceNumber: clearableText(100).optional(),
       salesId: uuidSchema.nullable().optional(),
       expeditionId: uuidSchema.nullable().optional(),
       customerId: uuidSchema.nullable().optional(),
@@ -267,6 +268,7 @@ export const discardOpSchema = z.strictObject({
 });
 
 export const draftOperationSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('reserveInvoiceNumber') }),
   updateHeaderOpSchema,
   addCatalogLineOpSchema,
   addCustomLineOpSchema,
@@ -410,6 +412,8 @@ export interface DraftVehicleDto {
 }
 
 export interface DraftView {
+  invoiceNumber: string | null;
+  taxInvoiceNumber: string | null;
   id: UUID;
   status: InvoiceStatus;
   version: number;
@@ -442,6 +446,7 @@ export interface DraftView {
 }
 
 export interface DraftSummary {
+  invoiceNumber: string | null;
   id: UUID;
   version: number;
   channelId: UUID;

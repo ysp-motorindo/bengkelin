@@ -46,6 +46,23 @@ function must<T>(result: Result<T>): T {
   return result.value;
 }
 
+async function ensureInvoiceNumber(draft: DraftView): Promise<DraftView> {
+  if (draft.invoiceNumber !== null) return draft;
+  const command = {
+    requestId: crypto.randomUUID(),
+    invoiceId: draft.id,
+    expectedVersion: draft.version,
+    op: { kind: 'reserveInvoiceNumber' as const },
+  };
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return must(await window.bengkelin.drafts.apply(command));
+    } catch (error) {
+      if (error instanceof LoadError || attempt >= 3) throw error;
+    }
+  }
+}
+
 /**
  * "New Transaction" (spec 49), the default post-login screen. Loads shop
  * context and pickers, then resumes the most recently updated shared draft
@@ -111,7 +128,7 @@ export function CashierWorkspace({
       for (const summary of drafts) {
         if (summary.id === skipId) continue;
         const draft = await window.bengkelin.drafts.get(summary.id);
-        if (draft.ok) return draft.value;
+        if (draft.ok) return ensureInvoiceNumber(draft.value);
       }
       return createDraft();
     },
@@ -201,7 +218,11 @@ export function CashierWorkspace({
       if (!(await flushOrWarn())) return;
       try {
         setNotice(null);
-        show(must(await window.bengkelin.drafts.get(id)));
+        show(
+          await ensureInvoiceNumber(
+            must(await window.bengkelin.drafts.get(id)),
+          ),
+        );
       } catch (error) {
         setNotice(
           error instanceof LoadError

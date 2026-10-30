@@ -246,6 +246,7 @@ export interface InvoiceVoidDto {
 export interface InvoiceView {
   id: UUID;
   invoiceNumber: string;
+  taxInvoiceNumber: string | null;
   status: Exclude<InvoiceStatus, 'DRAFT'>;
   version: number;
   invoiceDate: LocalDate;

@@ -111,7 +111,8 @@
     "paymentBlockedPaid": "Faktur ini sudah lunas.",
     "paymentBlockedVoid": "Faktur yang dibatalkan tidak menerima pembayaran.",
     "paymentRecorded": "Pembayaran {{amount}} dicatat.",
-    "voided": "Faktur {{number}} dibatalkan."
+    "voided": "Faktur {{number}} dibatalkan.",
+    "taxInvoiceNumber": "No. Faktur Pajak"
   },
   "payment": {
     "title": "Catat pembayaran — {{number}}",

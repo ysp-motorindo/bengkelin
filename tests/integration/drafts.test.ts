@@ -1866,3 +1866,63 @@ describe('forced-process recovery', () => {
     }
   }, 120_000);
 });
+
+describe('invoice number reservation', () => {
+  test('creation reserves a stable number and retries consume no extra number', async () => {
+    const requestId = uuid();
+    const first = value(await createDraft({}, CASHIER, requestId));
+    const replay = value(await createDraft({}, CASHIER, requestId));
+    expect(first).toHaveProperty('invoiceNumber', 'INV-20260930-0001');
+    expect(replay).toHaveProperty('invoiceNumber', 'INV-20260930-0001');
+    const second = value(await createDraft());
+    expect(second).toHaveProperty('invoiceNumber', 'INV-20260930-0002');
+  });
+});
+
+test('tax number is trimmed and persisted without changing the reservation', async () => {
+  const initial = value(await createDraft());
+  const updated = value(
+    await apply(initial, {
+      kind: 'updateHeader',
+      changes: { taxInvoiceNumber: '  TAX-123  ', invoiceDate: '2026-09-29' },
+    } as DraftOperation),
+  );
+  expect(updated).toHaveProperty('taxInvoiceNumber', 'TAX-123');
+  expect(updated).toHaveProperty('invoiceNumber', 'INV-20260930-0001');
+});
+
+test('discarded reservations leave a gap and reopening or backdating retains the number', async () => {
+  const first = value(await createDraft());
+  value(await apply(first, { kind: 'discard' }));
+  const second = value(await createDraft());
+  const updated = value(
+    await apply(second, {
+      kind: 'updateHeader',
+      changes: { invoiceDate: '2026-09-29' },
+    }),
+  );
+  expect(updated.invoiceNumber).toBe('INV-20260930-0002');
+  expect(
+    value(await h.call<DraftView>(C.drafts.get, updated.id, CASHIER))
+      .invoiceNumber,
+  ).toBe(updated.invoiceNumber);
+});
+
+test('legacy reservation command is idempotent and read-only get does not reserve', async () => {
+  const draft = value(await createDraft());
+  h.db.exec('DROP TRIGGER invoices_reservation_immutable');
+  h.db
+    .prepare('UPDATE invoices SET reserved_invoice_number = NULL WHERE id = ?')
+    .run(draft.id);
+  const read = value(await h.call<DraftView>(C.drafts.get, draft.id, CASHIER));
+  expect(read.invoiceNumber).toBeNull();
+  const requestId = uuid();
+  const reserved = value(
+    await apply(read, { kind: 'reserveInvoiceNumber' }, { requestId }),
+  );
+  const replay = value(
+    await apply(read, { kind: 'reserveInvoiceNumber' }, { requestId }),
+  );
+  expect(reserved.invoiceNumber).toBe('INV-20260930-0002');
+  expect(replay.invoiceNumber).toBe(reserved.invoiceNumber);
+});

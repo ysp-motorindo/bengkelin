@@ -21,6 +21,8 @@ import type {
   PreviewPriceRefreshInput,
   PriceRefreshPreviewDto,
 } from '@/shared/contracts';
+import { allocateInvoiceNumber } from '@/main/features/invoices/numbering';
+import { businessDay } from '@/shared/time';
 import { DomainError } from '@/shared/primitives';
 import type { Clock } from '@/shared/time';
 import { requireActiveChannel, type OperationContext } from './context';
@@ -51,7 +53,7 @@ export interface DraftServiceDeps {
  *  3. applies the operation, recomputes and persists the authoritative totals
  *     with the shared calculation, increments `version`, records the editor
  *     and time, and returns the new DraftView (JSON-safe, money as strings).
- * Drafts never allocate invoice numbers, never record payments and never
+ * Drafts reserve invoice numbers but never record payments and never
  * move stock.
  */
 export class DraftService {
@@ -97,6 +99,13 @@ export class DraftService {
         cashierId: actor.cashierId,
         now: this.deps.clock.now(),
       });
+      this.repo.reserveNumber(
+        id,
+        allocateInvoiceNumber(
+          this.deps.db,
+          businessDay(this.deps.clock.now(), this.repo.shopTimezone()),
+        ),
+      );
       return this.view(id);
     });
   }
@@ -158,7 +167,16 @@ export class DraftService {
         newId: this.newId,
         audit,
       };
-      runOperation(ctx, input.op);
+      if (input.op.kind === 'reserveInvoiceNumber') {
+        if (invoice.reserved_invoice_number === null)
+          this.repo.reserveNumber(
+            invoice.id,
+            allocateInvoiceNumber(
+              this.deps.db,
+              businessDay(now, this.repo.shopTimezone()),
+            ),
+          );
+      } else runOperation(ctx, input.op);
       recalculateDraft(this.repo, invoice.id);
       this.mustSucceed(
         this.repo.bumpVersion(invoice.id, expected, actor.cashierId, now),

@@ -15,7 +15,10 @@ import {
 import { applyPriceRefresh } from './price-refresh';
 
 /** Every operation except `discard`, which DraftService handles itself. */
-export type EditOperation = Exclude<DraftOperationData, { kind: 'discard' }>;
+export type EditOperation = Exclude<
+  DraftOperationData,
+  { kind: 'discard' | 'reserveInvoiceNumber' }
+>;
 
 /** Applies one edit to the draft's rows. Totals are recomputed afterwards. */
 export function runOperation(ctx: OperationContext, op: EditOperation): void {
