@@ -25,6 +25,36 @@ const cashier: CashierSession = {
 };
 
 describe('shell', () => {
+  test('shows invoice controls before profile only on the invoice page', async () => {
+    (window as unknown as { bengkelin: unknown }).bengkelin = workspaceBridge();
+    render(
+      <Shell session={cashier} shopName="Bengkel" onLoggedOut={vi.fn()} />,
+    );
+    const draft = await screen.findByRole('button', { name: 'Draft' });
+    const header = screen.getByText('Siti').closest('header')!;
+    expect(header).toContainElement(draft);
+    expect(header).toContainElement(
+      screen.getByRole('button', { name: 'Buat Baru' }),
+    );
+    expect(header).toContainElement(
+      screen.getByRole('button', { name: 'Cek harga' }),
+    );
+    expect(
+      draft.compareDocumentPosition(screen.getByText('Siti')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('heading', { name: 'Faktur Penjualan' }),
+    ).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Riwayat' }));
+    expect(
+      screen.queryByRole('button', { name: 'Draft' }),
+    ).not.toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Faktur Penjualan' }),
+    );
+    expect(screen.getByRole('button', { name: 'Draft' })).toBeInTheDocument();
+  });
   test('profile preferences start collapsed and expose full-width language options with flags', async () => {
     const changed = vi.fn();
     (window as unknown as { bengkelin: unknown }).bengkelin = {

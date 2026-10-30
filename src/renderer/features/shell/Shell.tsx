@@ -70,6 +70,7 @@ export function Shell({
 }: ShellProps) {
   const { t } = useTranslation();
   const [view, setView] = useState<View>('workspace');
+  const [toolbarSlot, setToolbarSlot] = useState<HTMLDivElement | null>(null);
   const profileMenu = useRef<HTMLDetailsElement>(null);
   const { busy, error, setError, run, check } = useAction();
   const menu = useShellMenu({ session, showView: setView });
@@ -139,6 +140,7 @@ export function Shell({
             <span>{shopName || t('common.appName')}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div ref={setToolbarSlot} hidden={view !== 'workspace'} />
             <details ref={profileMenu} className="relative text-sm select-none">
               <summary
                 aria-label={t('shell.profileMenuLabel')}
@@ -230,6 +232,7 @@ export function Shell({
           <CashierWorkspace
             finalizer={finalizer}
             active={view === 'workspace'}
+            toolbarSlot={toolbarSlot}
           />
         </div>
         {view === 'history' ? <HistoryScreen session={session} /> : null}

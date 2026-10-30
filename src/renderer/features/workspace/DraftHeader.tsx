@@ -1,5 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Button } from '@/renderer/components/ui/button';
@@ -23,7 +23,6 @@ import { useSyncedValue } from './synced-field';
 import type { DraftCommands } from './use-draft-commands';
 
 interface DraftHeaderProps {
-  toolbar?: ReactNode;
   commands: DraftCommands;
   sales: ReferenceDto[];
   expeditions: ReferenceDto[];
@@ -54,7 +53,6 @@ function parseCount(text: string, max: number): number | null | undefined {
  */
 export function DraftHeader({
   commands,
-  toolbar,
   channels,
   sales,
   expeditions,
@@ -156,12 +154,9 @@ export function DraftHeader({
   return (
     <section
       aria-label={t('workspace.header.label')}
-      className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 [&_input]:h-8 [&_select]:h-8 [&_select]:py-0 [&_select]:leading-normal [&_input]:text-xs [&_select]:text-xs [&_label]:text-xs"
+      className="flex flex-col gap-2 [&_input]:h-8 [&_select]:h-8 [&_select]:py-0 [&_select]:leading-normal [&_input]:text-xs [&_select]:text-xs [&_label]:text-xs"
     >
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold whitespace-nowrap">
-          {t('workspace.title')}
-        </h1>
         <CustomerVehiclePicker
           mode="customer"
           commands={commands}
@@ -187,7 +182,6 @@ export function DraftHeader({
             ))}
           </Select>
         </FormField>
-        <div className="ml-auto min-w-0">{toolbar}</div>
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]">
         <div className="grid content-start gap-2">

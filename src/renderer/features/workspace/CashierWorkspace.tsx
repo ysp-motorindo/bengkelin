@@ -18,6 +18,7 @@ import { nowInstant, todayInShop } from './shop-time';
 
 interface CashierWorkspaceProps {
   active?: boolean;
+  toolbarSlot?: HTMLElement | null;
   /** Finalization from the review step (default: the preload bridge). */
   finalizer?: FinalizeClient | undefined;
 }
@@ -71,6 +72,7 @@ async function ensureInvoiceNumber(draft: DraftView): Promise<DraftView> {
  */
 export function CashierWorkspace({
   finalizer,
+  toolbarSlot,
   active = true,
 }: CashierWorkspaceProps) {
   const { t } = useTranslation();
@@ -295,6 +297,7 @@ export function CashierWorkspace({
       <DraftWorkspace
         key={phase.draft.id}
         active={active}
+        toolbarSlot={toolbarSlot}
         initialView={phase.draft}
         timezone={phase.shop.timezone}
         references={phase.references}

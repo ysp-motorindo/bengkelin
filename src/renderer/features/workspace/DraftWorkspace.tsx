@@ -1,5 +1,6 @@
 import { FilePlus, FolderOpen, RefreshCcw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
 import { controlClass } from '@/renderer/components/ui/input';
@@ -37,6 +38,7 @@ export interface WorkspaceReferences {
 
 interface DraftWorkspaceProps {
   active: boolean;
+  toolbarSlot?: HTMLElement | null;
   initialView: DraftView;
   timezone: string;
   references: WorkspaceReferences;
@@ -59,6 +61,7 @@ type Dialog = { kind: 'repricing' | 'switcher' | 'review' } | null;
  */
 export function DraftWorkspace({
   active,
+  toolbarSlot,
   initialView,
   timezone,
   references,
@@ -218,8 +221,8 @@ export function DraftWorkspace({
         </p>
       ) : null}
 
+      {toolbarSlot ? createPortal(toolbar, toolbarSlot) : toolbar}
       <DraftHeader
-        toolbar={toolbar}
         commands={commands}
         channels={references.channels}
         sales={references.sales}
