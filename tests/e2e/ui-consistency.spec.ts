@@ -144,7 +144,9 @@ for (const language of ['id', 'en'] as const) {
         exact: true,
       });
       await open.click();
-      const dialog = page.getByRole('dialog');
+      const dialog = page.getByRole('region', {
+        name: t('workspace.custom.title'),
+      });
       const cancel = dialog.getByRole('button', {
         name: t('workspace.common.cancel'),
         exact: true,
@@ -153,19 +155,11 @@ for (const language of ['id', 'en'] as const) {
         name: t('workspace.custom.add'),
         exact: true,
       });
+      await cancel.scrollIntoViewIfNeeded();
       await expect(cancel).toBeInViewport();
+      await add.scrollIntoViewIfNeeded();
       await expect(add).toBeInViewport();
-      expect((await cancel.boundingBox())!.x).toBeLessThan(
-        (await add.boundingBox())!.x,
-      );
-      await cancel.focus();
-      await page.keyboard.press('Shift+Tab');
-      expect(
-        await dialog.evaluate((element) =>
-          element.contains(document.activeElement),
-        ),
-      ).toBe(true);
-      await page.keyboard.press('Escape');
+      await cancel.click();
       await expect(dialog).toHaveCount(0);
       await expect(
         page.getByRole('combobox', { name: t('workspace.search.label') }),

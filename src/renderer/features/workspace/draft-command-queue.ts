@@ -102,7 +102,7 @@ export class DraftCommandQueue {
     string,
     { handle: ReturnType<typeof setTimeout> | undefined; op: DraftOperation }
   >();
-  private readonly failedKeys = new Set<string>();
+  private readonly failedKeys = new Map<string, DraftOperation>();
   private readonly invalidKeys = new Set<string>();
   private idleWaiters: Array<(flushed: boolean) => void> = [];
   private running = false;
@@ -190,6 +190,12 @@ export class DraftCommandQueue {
     if (pending) clearTimeout(pending.handle);
     this.timers.delete(key);
     this.invalidKeys.delete(key);
+    this.failedKeys.delete(key);
+    for (let index = this.items.length - 1; index >= 0; index -= 1) {
+      const item = this.items[index]!;
+      if (item.key === key && item.command === null)
+        this.items.splice(index, 1);
+    }
     this.emitState();
   }
 
@@ -197,6 +203,7 @@ export class DraftCommandQueue {
   isDirty(key: string): boolean {
     return (
       this.invalidKeys.has(key) ||
+      this.failedKeys.has(key) ||
       this.timers.has(key) ||
       this.items.some((item) => item.key === key)
     );
@@ -233,11 +240,17 @@ export class DraftCommandQueue {
       this.enqueueText(key, op);
     }
     if (this.halted) return Promise.resolve(false);
-    if (this.isIdle()) return Promise.resolve(this.invalidKeys.size === 0);
+    if (this.isIdle())
+      return Promise.resolve(
+        this.invalidKeys.size === 0 && this.failedKeys.size === 0,
+      );
     return new Promise<boolean>((resolve) => {
       this.idleWaiters.push(resolve);
       void this.pump();
-    }).then((flushed) => flushed && this.invalidKeys.size === 0);
+    }).then(
+      (flushed) =>
+        flushed && this.invalidKeys.size === 0 && this.failedKeys.size === 0,
+    );
   }
 
   /**
@@ -251,8 +264,12 @@ export class DraftCommandQueue {
 
   /** Resumes after exhausted transport retries (same requestIds). */
   retry(): void {
-    if (!this.halted || this.isClosed) return;
+    if (this.isClosed) return;
     this.halted = false;
+    for (const [key, op] of this.failedKeys) {
+      if (!this.timers.has(key) && !this.items.some((item) => item.key === key))
+        this.enqueueText(key, op);
+    }
     this.emitState();
     void this.pump();
   }
@@ -347,7 +364,7 @@ export class DraftCommandQueue {
           retried: false,
         });
       } else if (item.key) {
-        this.failedKeys.add(item.key);
+        this.failedKeys.set(item.key, item.op);
         this.listener.notice({ kind: 'failed', error: result.error });
       }
       item.resolve(result);
@@ -362,7 +379,7 @@ export class DraftCommandQueue {
       this.listener.notice({ kind: 'unauthenticated' });
     }
     if (item.key) {
-      this.failedKeys.add(item.key);
+      this.failedKeys.set(item.key, item.op);
       this.listener.notice({ kind: 'failed', error: result.error });
     }
     item.resolve(result);

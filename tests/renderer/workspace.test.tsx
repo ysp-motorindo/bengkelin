@@ -440,3 +440,45 @@ test.each(['sales', 'expedition'] as const)(
     ).not.toBeInTheDocument();
   },
 );
+
+test('rejected inline saves explain the server error and block review', async () => {
+  const { DraftWorkspace } =
+    await import('@/renderer/features/workspace/DraftWorkspace');
+  const { customLine } = await import('./helpers/transaction-line');
+  const bridge = install();
+  bridge.drafts.apply.mockResolvedValue({
+    ok: false,
+    error: {
+      code: 'MECHANIC_INACTIVE',
+      messageKey: 'errors.MECHANIC_INACTIVE',
+    },
+  });
+  render(
+    <DraftWorkspace
+      active
+      initialView={draftView({ lines: [customLine()] })}
+      timezone="Asia/Jakarta"
+      references={{
+        sales: [],
+        expeditions: [],
+        channels: [],
+        mechanics: [],
+        units: [],
+      }}
+      onNewDraft={async () => {}}
+      onOpenDraft={async () => {}}
+      onDiscardOther={async () => null}
+      onLeave={() => {}}
+    />,
+  );
+  const user = userEvent.setup();
+  const qty = screen.getByRole('textbox', { name: 'Jumlah: Servis CVT' });
+  await user.clear(qty);
+  await user.type(qty, '2');
+  await user.tab();
+  expect(
+    await screen.findByText('Mekanik ini tidak aktif.'),
+  ).toBeInTheDocument();
+  await getWorkspaceActions()!.openCheckoutReview();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});

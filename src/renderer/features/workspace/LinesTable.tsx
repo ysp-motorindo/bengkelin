@@ -8,7 +8,7 @@ interface Props {
   commands: DraftCommands;
   mechanics: ReferenceDto[];
   entryRow?: ReactNode;
-  onRemove(line: DraftLineDto): void;
+  onRemove(line: DraftLineDto): boolean | Promise<boolean>;
 }
 export function LinesTable({
   lines,

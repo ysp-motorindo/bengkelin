@@ -11,13 +11,18 @@ function install() {
   return bridge;
 }
 function Harness() {
-  const commands = useDraftCommands('draft', { initialView: draftView() });
+  const commands = useDraftCommands(draftView().id, {
+    initialView: draftView(),
+  });
   return (
-    <table>
-      <tbody>
-        <LineEntryRow commands={commands} units={[]} mechanics={[]} />
-      </tbody>
-    </table>
+    <>
+      <input aria-label="Other control" />
+      <table>
+        <tbody>
+          <LineEntryRow commands={commands} units={[]} mechanics={[]} />
+        </tbody>
+      </table>
+    </>
   );
 }
 test('barcode Enter adds once and returns focus to entry', async () => {
@@ -134,9 +139,122 @@ test('selecting catalog search result stages until Add', async () => {
   await user.keyboard('{ArrowDown}{Enter}');
   expect(bridge.drafts.apply).not.toHaveBeenCalled();
   expect(await flushAll()).toBe(false);
+  await user.type(search, 'new query');
+  expect(screen.getByRole('button', { name: 'Tambahkan' })).toBeDisabled();
+  await user.clear(search);
+  await user.type(search, 'Oli');
+  await screen.findByRole('option');
+  await user.keyboard('{ArrowDown}{Enter}');
   await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
   await waitFor(() => expect(bridge.drafts.apply).toHaveBeenCalledOnce());
   expect(bridge.drafts.apply.mock.calls[0]![0].op).toMatchObject({
     catalogItemId: 'item',
   });
+});
+
+test('two complete barcode scans during a delayed add are both retained', async () => {
+  const bridge = install();
+  let resolve!: (
+    value: import('@/shared/primitives').Result<
+      import('@/shared/contracts').DraftView
+    >,
+  ) => void;
+  bridge.drafts.apply.mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  const user = userEvent.setup();
+  render(<Harness />);
+  const search = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.type(search, '899123{Enter}');
+  await user.type(search, '899123{Enter}');
+  resolve({ ok: true, value: draftView({ version: 2 }) });
+  await waitFor(() => expect(bridge.drafts.apply).toHaveBeenCalledTimes(2));
+});
+
+test('old add acknowledgment preserves a newer query and its transition blocker', async () => {
+  const bridge = install();
+  let resolve!: (
+    value: import('@/shared/primitives').Result<
+      import('@/shared/contracts').DraftView
+    >,
+  ) => void;
+  bridge.drafts.apply.mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  const user = userEvent.setup();
+  render(<Harness />);
+  const search = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.type(search, '899123{Enter}');
+  await user.type(search, 'New query');
+  resolve({ ok: true, value: draftView({ version: 2 }) });
+  await waitFor(() => expect(search).toHaveValue('New query'));
+  await new Promise((done) => setTimeout(done, 20));
+  expect(await flushAll()).toBe(false);
+});
+test('Escape cannot abandon a custom item submission in flight', async () => {
+  const bridge = install();
+  let resolve!: (
+    value: import('@/shared/primitives').Result<
+      import('@/shared/contracts').DraftView
+    >,
+  ) => void;
+  bridge.drafts.apply.mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.click(screen.getByRole('button', { name: 'Item kustom' }));
+  await user.type(
+    screen.getByRole('combobox', { name: 'Nama item' }),
+    'Demo service',
+  );
+  await user.type(screen.getByRole('textbox', { name: 'Harga' }), '35000');
+  await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
+  await user.click(screen.getByRole('textbox', { name: 'Harga' }));
+  await user.keyboard('{Escape}');
+  expect(
+    screen.getByRole('region', { name: 'Tambah item kustom' }),
+  ).toBeInTheDocument();
+  resolve({ ok: true, value: draftView({ version: 2 }) });
+  await waitFor(() =>
+    expect(
+      screen.getByRole('combobox', { name: 'Cari barang' }),
+    ).toBeInTheDocument(),
+  );
+});
+
+test('a completed scan does not steal focus from a newer edit elsewhere', async () => {
+  const bridge = install();
+  let resolve!: (
+    value: import('@/shared/primitives').Result<
+      import('@/shared/contracts').DraftView
+    >,
+  ) => void;
+  bridge.drafts.apply.mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.type(
+    screen.getByRole('combobox', { name: 'Cari barang' }),
+    '899123{Enter}',
+  );
+  const other = screen.getByRole('textbox', { name: 'Other control' });
+  await user.type(other, '15200');
+  resolve({ ok: true, value: draftView({ version: 2 }) });
+  await new Promise((done) => setTimeout(done, 20));
+  expect(other).toHaveFocus();
+  expect(other).toHaveValue('15200');
 });

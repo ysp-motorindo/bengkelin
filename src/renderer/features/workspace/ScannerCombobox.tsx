@@ -246,7 +246,7 @@ export function ScannerCombobox({
           ))}
         </ul>
       </div>
-      <div id={hintId} aria-live="polite">
+      <div id={hintId} aria-live="polite" className="empty:hidden">
         {feedback ? (
           <p
             role="alert"

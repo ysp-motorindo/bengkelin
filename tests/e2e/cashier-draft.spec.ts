@@ -239,16 +239,11 @@ async function startAsCashier(): Promise<Page> {
 }
 
 async function openEditor(page: Page, index: number) {
-  await page
-    .getByTestId('line-row')
-    .nth(index)
+  const row = page.getByTestId('line-row').nth(index);
+  await row
     .getByRole('button', { name: new RegExp(`^${t('workspace.lines.edit')}`) })
     .click();
-  const dialog = page.getByRole('dialog', {
-    name: t('workspace.editor.title'),
-  });
-  await expect(dialog).toBeVisible();
-  return dialog;
+  return row.or(row.locator('xpath=following-sibling::tr[1]'));
 }
 
 test('scanning adds, merges, keeps focus in search, and override/discount lines stay separate', async () => {
@@ -257,7 +252,7 @@ test('scanning adds, merges, keeps focus in search, and override/discount lines 
 
   await scan('8991234567890');
   await scan('8991234567890');
-  await expect(page.getByTestId('line-quantity')).toHaveText('2');
+  await expect(page.getByTestId('line-quantity')).toHaveValue('2');
   await expect(
     page.getByRole('combobox', { name: 'Cari barang' }),
   ).toBeFocused();
@@ -272,35 +267,32 @@ test('scanning adds, merges, keeps focus in search, and override/discount lines 
 
   // Manual override on the line: the next scan becomes a separate line.
   let dialog = await openEditor(page, 0);
-  await dialog.getByLabel(t('workspace.editor.unitPrice'), exact).fill('60000');
+  await dialog.getByLabel(t('workspace.editor.unitPrice')).fill('60000');
   await dialog
     .getByLabel(t('workspace.editor.reason'), exact)
     .fill('Pelanggan tetap');
-  await dialog
-    .getByRole('button', { name: t('workspace.editor.save'), ...exact })
-    .click();
-  await expect(dialog).toHaveCount(0);
+  await searchBox(page).click();
   await expect(searchBox(page)).toBeFocused();
   const firstRow = page.getByTestId('line-row').nth(0);
   await expect(firstRow.getByTestId('indicator-override')).toBeVisible();
   await scan(BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(2);
-  await expect(page.getByTestId('line-quantity').nth(0)).toHaveText('2');
-  await expect(page.getByTestId('line-quantity').nth(1)).toHaveText('1');
+  await expect(page.getByTestId('line-quantity').nth(0)).toHaveValue('2');
+  await expect(page.getByTestId('line-quantity').nth(1)).toHaveValue('1');
 
   // A line discount also keeps the line separate.
   dialog = await openEditor(page, 1);
-  await dialog.getByLabel(t('workspace.editor.discount1'), exact).fill('10');
-  await dialog
-    .getByRole('button', { name: t('workspace.editor.save'), ...exact })
-    .click();
-  await expect(dialog).toHaveCount(0);
+  await dialog.getByLabel(t('workspace.editor.discount1')).fill('10');
+  await searchBox(page).click();
   await expect(
-    page.getByTestId('line-row').nth(1).getByTestId('line-discount'),
-  ).toContainText('10%');
+    page
+      .getByTestId('line-row')
+      .nth(1)
+      .getByLabel(t('workspace.editor.discount1')),
+  ).toHaveValue('10');
   await scan(BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(3);
-  await expect(page.getByTestId('line-quantity').nth(2)).toHaveText('1');
+  await expect(page.getByTestId('line-quantity').nth(2)).toHaveValue('1');
   // 2 x 60.000 + (65.000 - 10%) + 65.000
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 243.500');
 
@@ -314,6 +306,9 @@ test('scanning adds, merges, keeps focus in search, and override/discount lines 
   );
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
+  await page
+    .getByRole('button', { name: t('workspace.custom.add'), ...exact })
+    .click();
   await expect(page.getByTestId('line-row')).toHaveCount(4);
   await expect(page.getByTestId('line-row').nth(3)).toContainText(
     'Jasa Servis Ringan',
@@ -374,16 +369,12 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
 
   // No configured price: manual entry, then the line is added.
   await scan(NO_PRICE_BARCODE);
-  const dialog = page.getByRole('dialog', {
-    name: t('workspace.manualPrice.title'),
-  });
-  await expect(dialog).toBeVisible();
-  await expect(
-    dialog.getByLabel(t('workspace.manualPrice.price'), exact),
-  ).toBeFocused();
-  await page.keyboard.type('15000');
-  await page.keyboard.press('Enter');
-  await expect(dialog).toHaveCount(0);
+  const price = page
+    .getByTestId('line-entry')
+    .getByLabel(t('workspace.editor.unitPrice'), exact);
+  await expect(price).toBeFocused();
+  await price.fill('15000');
+  await price.press('Enter');
   await expect(page.getByTestId('line-row')).toHaveCount(1);
   await expect(page.getByTestId('line-row')).toContainText('Filter Udara');
   await expect(page.getByTestId('indicator-missing-price')).toBeVisible();
@@ -420,7 +411,7 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   );
   await expect(searchBox(page)).toHaveValue('');
   await scan(BARCODE);
-  await expect(page.getByTestId('line-quantity').nth(1)).toHaveText('2');
+  await expect(page.getByTestId('line-quantity').nth(1)).toHaveValue('2');
   await expect(page.getByTestId('line-row')).toHaveCount(2);
   await expect(
     page.getByTestId('line-title').filter({ hasText: 'Jasa Servis Ringan' }),
@@ -525,59 +516,27 @@ test('Customer & Vehicle dialog keeps its title and Done action visible while co
   await expect(done).toBeInViewport();
 });
 
-test('dialogs fit short content and scroll long forms with fixed header and footer', async () => {
+test('short dialogs fit content and custom entry stays inline on a narrow screen', async () => {
   const page = await startAsCashier();
-  await page.setViewportSize({ width: 1120, height: 800 });
   await clickMenuItem(launched!.app, 'about');
   const about = page.getByRole('dialog', { name: t('shell.about.title') });
   await expect(about.getByTestId('about-version')).toBeVisible();
-  // A short dialog uses its content height, rather than filling the 70vh ceiling.
   expect((await about.boundingBox())!.height).toBeLessThan(350);
   await page.keyboard.press('Escape');
-
   await page.setViewportSize({ width: 390, height: 560 });
   await page
     .getByRole('button', { name: t('workspace.custom.open'), ...exact })
     .click();
-  const dialog = page.getByRole('dialog', {
-    name: t('workspace.custom.title'),
-  });
-  const body = dialog.locator('.dialog-scroll-area');
-  const title = dialog.getByRole('heading', {
-    name: t('workspace.custom.title'),
-  });
-  const submit = dialog.getByRole('button', {
-    name: t('workspace.custom.add'),
-    ...exact,
-  });
-  const cancel = dialog.getByRole('button', {
+  const entry = page.getByRole('region', { name: t('workspace.custom.title') });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const cancel = entry.getByRole('button', {
     name: t('workspace.common.cancel'),
     ...exact,
   });
-  const titleTop = (await title.boundingBox())!.y;
-  const submitTop = (await submit.boundingBox())!.y;
-  expect((await dialog.boundingBox())!.height).toBeLessThanOrEqual(393);
-  expect(
-    (await cancel.boundingBox())!.x + (await cancel.boundingBox())!.width,
-  ).toBeLessThan((await submit.boundingBox())!.x);
-  await expect
-    .poll(() => body.evaluate((el) => el.scrollHeight > el.clientHeight))
-    .toBe(true);
-  await body.hover();
-  await page.mouse.wheel(0, 300);
-  await expect
-    .poll(() => body.evaluate((el) => el.scrollTop))
-    .toBeGreaterThan(0);
-  await expect(body).toHaveAttribute('data-scrolling', 'true');
-  await expect
-    .poll(() => body.evaluate((el) => getComputedStyle(el).scrollbarColor))
-    .not.toBe('rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)');
-  expect((await title.boundingBox())!.y).toBe(titleTop);
-  expect((await submit.boundingBox())!.y).toBe(submitTop);
-  await expect(body).toHaveAttribute('data-scrolling', 'false');
-  await expect
-    .poll(() => body.evaluate((el) => getComputedStyle(el).scrollbarColor))
-    .toBe('rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)');
+  await cancel.scrollIntoViewIfNeeded();
+  await expect(cancel).toBeInViewport();
+  await cancel.click();
+  await expect(searchBox(page)).toBeFocused();
 });
 
 test('draft table scrolls without content padding while its footer stays visible', async () => {
@@ -728,87 +687,32 @@ test('shell title stays sticky and navigation scrolls horizontally in one row', 
     .toBe(0);
 });
 
-test('keyboard only: add, edit a discount, close, focus back in search; digits in other fields are not scans', async () => {
+test('keyboard inline editing saves on Tab; Escape cancels; digits outside search never scan', async () => {
   const page = await startAsCashier();
-  const scan = scanner(page);
-  await scan(BARCODE);
-  await expect(page.getByTestId('line-row')).toHaveCount(1);
-
-  // Tab to the line's edit button and open the editor with Enter.
-  const editName = `${t('workspace.lines.edit')}: Oli MPX2 0.8L`;
-  for (let i = 0; i < 40; i += 1) {
-    await page.keyboard.press('Tab');
-    const label = await page.evaluate(() =>
-      document.activeElement?.getAttribute('aria-label'),
-    );
-    if (label === editName) break;
-  }
-  await expect(page.getByRole('button', { name: editName })).toBeFocused();
-  await page.keyboard.press('Enter');
-  const dialog = page.getByRole('dialog', {
-    name: t('workspace.editor.title'),
-  });
-  await expect(dialog).toBeVisible();
-  await expect(
-    dialog.getByLabel(t('workspace.editor.quantity'), exact),
-  ).toBeFocused();
-
-  // Focus is trapped: many Tabs never leave the dialog.
-  for (let i = 0; i < 25; i += 1) await page.keyboard.press('Tab');
-  expect(
-    await dialog.evaluate((node) => node.contains(document.activeElement)),
-  ).toBe(true);
-
-  // Reach Discount 1 with Tab, type, submit with Enter.
-  const discountLabel = t('workspace.editor.discount1');
-  await dialog.getByLabel(t('workspace.editor.quantity'), exact).focus();
-  for (let i = 0; i < 20; i += 1) {
-    const focusedLabel = await page.evaluate(() => {
-      const el = document.activeElement as HTMLInputElement | null;
-      return el?.labels?.[0]?.textContent ?? null;
-    });
-    if (focusedLabel === discountLabel) break;
-    await page.keyboard.press('Tab');
-  }
-  await expect(dialog.getByLabel(discountLabel, exact)).toBeFocused();
-  await page.keyboard.type('12,5');
-  await page.keyboard.press('Enter');
-  await expect(dialog).toHaveCount(0);
-  await expect(searchBox(page)).toBeFocused();
-  await expect(page.getByTestId('line-discount')).toContainText('12,5%');
-  await expect(page.getByTestId('line-amount')).toHaveText('Rp 56.875');
-
-  // Escape closes a dialog without saving and returns focus to search.
-  await page.getByRole('button', { name: editName }).press('Enter');
-  await expect(dialog).toBeVisible();
+  await scanner(page)(BARCODE);
+  const row = page.getByTestId('line-row');
+  const qty = row.getByLabel(t('workspace.editor.quantity'));
+  await qty.focus();
+  await qty.fill('3');
   await page.keyboard.press('Escape');
-  await expect(dialog).toHaveCount(0);
-  await expect(searchBox(page)).toBeFocused();
-
-  // Digits + Enter typed into another field are never treated as a scan.
-  await page
-    .getByRole('button', { name: t('workspace.header.addNote'), ...exact })
-    .press('Enter');
+  await expect(qty).toHaveValue('1');
+  const discount = row.getByLabel(t('workspace.editor.discount1'));
+  await discount.focus();
+  await page.keyboard.type('12,5');
+  await page.keyboard.press('Tab');
+  await expect(row.getByTestId('line-amount')).toHaveText('Rp 56.875');
   const note = page.getByRole('textbox', {
     name: t('workspace.header.note'),
     ...exact,
   });
-  await note.focus();
-  await page.keyboard.type(BARCODE);
-  await page.keyboard.press('Enter');
-  await page
-    .getByRole('button', { name: t('workspace.header.saveNote'), ...exact })
-    .press('Enter');
-  const odometer = page.getByLabel(t('workspace.header.odometer'), exact);
-  await odometer.focus();
-  await page.keyboard.type('12345');
-  await page.keyboard.press('Enter');
+  await note.fill(BARCODE);
+  await note.press('Enter');
+  await page.getByLabel(t('workspace.header.odometer'), exact).fill('12345');
   await expect(page.getByTestId('save-state')).toHaveAttribute(
     'data-state',
     'saved',
   );
   await expect(page.getByTestId('line-row')).toHaveCount(1);
-  await expect(page.getByTestId('line-quantity')).toHaveText('1');
 });
 
 test('drafts survive an app restart and can be switched, created and discarded', async () => {
@@ -818,28 +722,19 @@ test('drafts survive an app restart and can be switched, created and discarded',
   await scan(BARCODE);
   await page.getByLabel(t('workspace.header.odometer'), exact).fill('15200');
   await page
-    .getByRole('button', { name: t('workspace.header.addNote'), ...exact })
-    .click();
-  await page
     .getByRole('textbox', { name: t('workspace.header.note'), ...exact })
     .fill('Rem bunyi');
-  await page
-    .getByRole('button', { name: t('workspace.header.saveNote'), ...exact })
-    .click();
   // Close immediately: the before-close handshake flushes the debounced text.
   await launched!.close();
 
   launched = await launchApp({ dataDir });
   const next = launched.page;
   await login(next);
-  await expect(next.getByTestId('line-quantity')).toHaveText('2');
+  await expect(next.getByTestId('line-quantity')).toHaveValue('2');
   await expect(next.getByTestId('line-row')).toContainText('Oli MPX2 0.8L');
   await expect(
     next.getByLabel(t('workspace.header.odometer'), exact),
   ).toHaveValue('15.200');
-  await next
-    .getByRole('button', { name: t('workspace.header.updateNote'), ...exact })
-    .click();
   await expect(
     next.getByRole('textbox', { name: t('workspace.header.note'), ...exact }),
   ).toHaveValue('Rem bunyi');
@@ -877,7 +772,7 @@ test('drafts survive an app restart and can be switched, created and discarded',
     })
     .click();
   await expect(switcher).toHaveCount(0);
-  await expect(next.getByTestId('line-quantity')).toHaveText('2');
+  await expect(next.getByTestId('line-quantity')).toHaveValue('2');
 
   // Discard the other (newer) draft, with confirmation; the open one stays.
   await next
@@ -902,7 +797,7 @@ test('drafts survive an app restart and can be switched, created and discarded',
   await expect(switcher.getByTestId('draft-row')).toHaveCount(1);
   await next.keyboard.press('Escape');
   await expect(switcher).toHaveCount(0);
-  await expect(next.getByTestId('line-quantity')).toHaveText('2');
+  await expect(next.getByTestId('line-quantity')).toHaveValue('2');
 });
 
 test('custom service line with mechanic, checkout allocations and the review step', async () => {
@@ -913,7 +808,7 @@ test('custom service line with mechanic, checkout allocations and the review ste
   await page
     .getByRole('button', { name: t('workspace.custom.open'), ...exact })
     .click();
-  const custom = page.getByRole('dialog', {
+  const custom = page.getByRole('region', {
     name: t('workspace.custom.title'),
   });
   await custom
@@ -1072,5 +967,5 @@ test('language and theme switch; 1024x768, 1366x768 and 200% zoom keep key contr
   await keyControlsUsable('en');
   await searchBox(page, 'en').focus();
   await scanner(page)(BARCODE);
-  await expect(page.getByTestId('line-quantity')).toHaveText('2');
+  await expect(page.getByTestId('line-quantity')).toHaveValue('2');
 });

@@ -559,3 +559,55 @@ describe('deferred inline edits', () => {
     expect(await flushed).toBe(true);
   });
 });
+
+describe('inline cancellation and rejected saves', () => {
+  test('Escape cancels a keyed edit queued behind an in-flight command', async () => {
+    const { queue, server } = setup();
+    const first = queue.send({ kind: 'addCatalogLine', barcode: '111' });
+    queue.stage('qty', { kind: 'updateLine', lineId: 'line', quantity: 3 });
+    const flushed = queue.flush();
+    queue.cancelPending('qty');
+    server.calls[0]!.resolve(ok(makeView(2)));
+    await first;
+    await settle();
+    expect(server.calls).toHaveLength(1);
+    expect(await flushed).toBe(true);
+  });
+  test('a rejected staged edit stays dirty and blocks flush until cancelled', async () => {
+    const { queue, server } = setup();
+    queue.stage('mechanic', {
+      kind: 'updateLine',
+      lineId: 'line',
+      mechanicId: 'inactive',
+    });
+    const flushed = queue.flush();
+    server.calls[0]!.resolve(fail('MECHANIC_INACTIVE'));
+    expect(await flushed).toBe(false);
+    expect(queue.isDirty('mechanic')).toBe(true);
+    queue.cancelPending('mechanic');
+    expect(queue.isDirty('mechanic')).toBe(false);
+    expect(await queue.flush()).toBe(true);
+    expect(queue.saveState).toBe('saved');
+  });
+  test('retry resubmits a definitively rejected staged edit', async () => {
+    const { queue, server } = setup();
+    queue.stage('mechanic', {
+      kind: 'updateLine',
+      lineId: 'line',
+      mechanicId: 'reactivated',
+    });
+    const flushed = queue.flush();
+    server.calls[0]!.resolve(fail('MECHANIC_INACTIVE'));
+    await flushed;
+    queue.retry();
+    await settle();
+    expect(server.calls).toHaveLength(2);
+    expect(server.calls[1]!.command.requestId).not.toBe(
+      server.calls[0]!.command.requestId,
+    );
+    server.calls[1]!.resolve(ok(makeView(2)));
+    await settle();
+    expect(await queue.flush()).toBe(true);
+    expect(queue.saveState).toBe('saved');
+  });
+});

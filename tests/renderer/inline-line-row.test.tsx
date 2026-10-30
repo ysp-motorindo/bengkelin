@@ -9,22 +9,50 @@ import { customLine } from './helpers/transaction-line';
 
 function install() {
   const bridge = workspaceBridge();
+  let current = draftView({ lines: [customLine()] });
+  bridge.drafts.apply.mockImplementation(async ({ op }) => {
+    if (op.kind === 'updateLine')
+      current = {
+        ...current,
+        lines: current.lines.map((line) =>
+          line.id === op.lineId ? { ...line, ...op } : line,
+        ),
+      };
+    if (op.kind === 'setLineDiscounts')
+      current = {
+        ...current,
+        lines: current.lines.map((line) =>
+          line.id === op.lineId
+            ? {
+                ...line,
+                discounts: op.stages.map((percentageBps, index) => ({
+                  sequence: index + 1,
+                  percentageBps,
+                  amount: '0',
+                })),
+              }
+            : line,
+        ),
+      };
+    current = { ...current, version: current.version + 1 };
+    return ok(current);
+  });
   Object.assign(window, { bengkelin: bridge });
   return bridge;
 }
-function Harness() {
+function Harness({ removeSucceeds = true }: { removeSucceeds?: boolean }) {
   const line = customLine();
-  const commands = useDraftCommands('draft', {
+  const commands = useDraftCommands(draftView().id, {
     initialView: draftView({ lines: [line] }),
   });
   return (
     <table>
       <tbody>
         <EditableLineRow
-          line={line}
+          line={commands.view.lines[0]!}
           commands={commands}
           mechanics={[]}
-          onRemove={() => {}}
+          onRemove={() => removeSucceeds}
         />
       </tbody>
     </table>
@@ -94,12 +122,16 @@ test('custom name and manual price reason use existing audited operations', asyn
   expect(bridge.drafts.apply.mock.calls.at(-1)![0].op).toMatchObject({
     title: 'Servis lengkap',
   });
-  await user.click(screen.getByRole('button', { name: 'Ubah: Servis CVT' }));
+  await user.click(
+    screen.getByRole('button', { name: 'Ubah: Servis lengkap' }),
+  );
   await user.type(
     screen.getByLabelText('Alasan perubahan harga (opsional)'),
     'Kesepakatan',
   );
-  const price = screen.getByRole('textbox', { name: 'Harga jual: Servis CVT' });
+  const price = screen.getByRole('textbox', {
+    name: 'Harga jual: Servis lengkap',
+  });
   await user.clear(price);
   await user.type(price, '60000');
   await user.tab();
@@ -153,7 +185,7 @@ test('service mechanic selection is staged until blur', async () => {
   const user = userEvent.setup();
   function Service() {
     const line = customLine();
-    const commands = useDraftCommands('draft', {
+    const commands = useDraftCommands(draftView().id, {
       initialView: draftView({ lines: [line] }),
     });
     return (
@@ -168,7 +200,7 @@ test('service mechanic selection is staged until blur', async () => {
                 label: 'Andi',
               } as import('@/shared/contracts').ReferenceDto,
             ]}
-            onRemove={() => {}}
+            onRemove={() => true}
           />
         </tbody>
       </table>
@@ -187,4 +219,13 @@ test('service mechanic selection is staged until blur', async () => {
       mechanicId: 'mechanic',
     }),
   );
+});
+
+test('failed removal preserves validation on the retained row', async () => {
+  install();
+  const user = userEvent.setup();
+  render(<Harness removeSucceeds={false} />);
+  await user.clear(screen.getByRole('textbox', { name: 'Jumlah: Servis CVT' }));
+  await user.click(screen.getByRole('button', { name: 'Hapus: Servis CVT' }));
+  expect(await flushAll()).toBe(false);
 });

@@ -27,6 +27,7 @@ export interface DraftCommands {
   /** Registers client-invalid input: state 'unsaved', flush() false. */
   markInvalid(key: string, invalid: boolean): void;
   flush(): Promise<boolean>;
+  getView(): DraftView;
   retry(): void;
   /** Reloads from main (e.g. after an ownership transfer elsewhere). */
   reload(): Promise<void>;
@@ -104,6 +105,10 @@ export function useDraftCommands(
   const markInvalid = useCallback((key: string, invalid: boolean) => {
     queueRef.current?.markInvalid(key, invalid);
   }, []);
+  const getView = useCallback(
+    () => queueRef.current?.view ?? latestView.current,
+    [],
+  );
   const flush = useCallback(
     () => queueRef.current?.flush() ?? Promise.resolve(true),
     [],
@@ -125,6 +130,7 @@ export function useDraftCommands(
     cancelPending,
     markInvalid,
     flush,
+    getView,
     retry,
     reload,
   };

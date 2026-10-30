@@ -84,7 +84,7 @@ export function DraftWorkspace({
       } else if (queueNotice.kind === 'closed') {
         leaveRef.current(queueNotice.code);
       } else if (queueNotice.kind === 'failed') {
-        setNotice(null);
+        setNotice(errorMessage(t, queueNotice.error));
       }
     },
     [t],
@@ -142,7 +142,8 @@ export function DraftWorkspace({
     if (!result.ok && result.error.code !== 'QUEUE_CLOSED') {
       setError(errorMessage(t, result.error));
     }
-    focusSearch();
+    if (result.ok) focusSearch();
+    return result.ok;
   }
 
   async function discard(summary: DraftSummary): Promise<string | null> {
@@ -240,7 +241,7 @@ export function DraftWorkspace({
           lines={view.lines}
           commands={commands}
           mechanics={references.mechanics}
-          onRemove={(line) => void removeLine(line)}
+          onRemove={removeLine}
           entryRow={
             <LineEntryRow
               commands={commands}

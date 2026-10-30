@@ -32,6 +32,7 @@ import type { Result } from '@/shared/primitives';
 
 interface CustomLineEntryProps {
   onDirtyChange?(dirty: boolean): void;
+  onBusyChange?(busy: boolean): void;
   /** Ids of the draft's current lines, to find the one this dialog adds. */
   existingLineIds: readonly string[];
   units: ReferenceDto[];
@@ -47,6 +48,7 @@ interface CustomLineEntryProps {
  */
 export function CustomLineEntry({
   onDirtyChange,
+  onBusyChange,
   existingLineIds,
   units,
   mechanics,
@@ -148,6 +150,7 @@ export function CustomLineEntry({
     if (busy) return;
     if (createdLineId.current) {
       setBusy(true);
+      onBusyChange?.(true);
       setFormError(null);
       try {
         if (await assignMechanic(createdLineId.current)) onClose();
@@ -155,6 +158,7 @@ export function CustomLineEntry({
         setFormError(t('errors.INTERNAL_ERROR'));
       } finally {
         setBusy(false);
+        onBusyChange?.(false);
       }
       return;
     }
@@ -172,6 +176,7 @@ export function CustomLineEntry({
     if (Object.keys(next).length > 0 || unitPrice === null) return;
 
     setBusy(true);
+    onBusyChange?.(true);
     setFormError(null);
     try {
       const op: Extract<DraftOperation, { kind: 'addCustomLine' }> = {
@@ -204,6 +209,7 @@ export function CustomLineEntry({
       setFormError(t('errors.INTERNAL_ERROR'));
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
     }
   }
 
@@ -351,7 +357,9 @@ export function CustomLineEntry({
   );
   return (
     <section aria-label={t('workspace.custom.title')} className="grid gap-2">
-      {form}
+      <fieldset disabled={busy} className="contents">
+        {form}
+      </fieldset>
       <div className="flex gap-2">
         <Button type="submit" form="custom-line-form" disabled={busy}>
           {t('workspace.custom.add')}

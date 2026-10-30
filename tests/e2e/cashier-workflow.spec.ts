@@ -96,16 +96,11 @@ async function expectNoPageNetwork(app: LaunchedApp['app']): Promise<void> {
 }
 
 async function openLineEditor(page: Page, index: number) {
-  await page
-    .getByTestId('line-row')
-    .nth(index)
+  const row = page.getByTestId('line-row').nth(index);
+  await row
     .getByRole('button', { name: new RegExp(`^${t('workspace.lines.edit')}`) })
     .click();
-  const dialog = page.getByRole('dialog', {
-    name: t('workspace.editor.title'),
-  });
-  await expect(dialog).toBeVisible();
-  return dialog;
+  return row.or(row.locator('xpath=following-sibling::tr[1]'));
 }
 
 test('full cashier workflow: scan, service, discounts, restart, split payment, F8 review, finalize, print, later payment', async () => {
@@ -169,7 +164,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   await scan(page, OIL_BARCODE);
   await scan(page, OIL_BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(1);
-  await expect(page.getByTestId('line-quantity')).toHaveText('2');
+  await expect(page.getByTestId('line-quantity')).toHaveValue('2');
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 130.000');
 
   // ---- F2 returns to "Cari barang" from anywhere ----
@@ -179,7 +174,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
 
   // ---- Service line with a mechanic (Transaction > Add Custom Item) ----
   await clickMenuItem(app, 'addCustomItem');
-  const custom = page.getByRole('dialog', {
+  const custom = page.getByRole('region', {
     name: t('workspace.custom.title'),
   });
   await expect(custom).toBeVisible();
@@ -207,13 +202,11 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   await scan(page, HELMET_BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(3);
   const editor = await openLineEditor(page, 2);
-  await editor.getByLabel(t('workspace.editor.discount1'), exact).fill('30');
-  await editor.getByLabel(t('workspace.editor.discount2'), exact).fill('50');
-  await editor.getByLabel(t('workspace.editor.discount3'), exact).fill('10');
-  await editor
-    .getByLabel(t('workspace.editor.discount3'), exact)
-    .press('Enter');
-  await expect(editor).toHaveCount(0);
+  await editor.getByLabel(t('workspace.editor.discount1')).fill('30');
+  await editor.getByLabel(t('workspace.editor.discount2')).fill('50');
+  await editor.getByLabel(t('workspace.editor.discount3')).fill('10');
+  await editor.getByLabel(t('workspace.editor.discount3')).press('Enter');
+  await searchBox(page).click();
   const helmetRow = page.getByTestId('line-row').nth(2);
   await expect(helmetRow.getByTestId('line-amount')).toHaveText('Rp 31.500');
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 196.500');
@@ -236,7 +229,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   ({ page, app } = launched);
   await loginWithKeyboard(page, 'siti', CASHIER_PASSWORD);
   await expect(page.getByTestId('line-row')).toHaveCount(3);
-  await expect(page.getByTestId('line-quantity').first()).toHaveText('2');
+  await expect(page.getByTestId('line-quantity').first()).toHaveValue('2');
   await expect(
     page.getByTestId('line-row').nth(2).getByTestId('line-amount'),
   ).toHaveText('Rp 31.500');

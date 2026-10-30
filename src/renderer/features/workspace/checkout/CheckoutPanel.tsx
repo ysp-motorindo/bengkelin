@@ -130,11 +130,14 @@ export function CheckoutPanel({
     // Pay Full replaces the typed rows, so invalid row input no longer
     // matters (and must not keep the draft "Not saved").
     markInvalid('allocations', false);
-    await flush();
+    if (!(await flush())) {
+      onError(t('workspace.notices.unsaved'));
+      return;
+    }
+    const amount = commands.getView().totals.amount;
     const result = await send({
       kind: 'setCheckoutAllocations',
-      allocations:
-        BigInt(totals.amount) > 0n ? [{ method, amount: totals.amount }] : [],
+      allocations: BigInt(amount) > 0n ? [{ method, amount }] : [],
     });
     if (result.ok) {
       onError(null);

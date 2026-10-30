@@ -21,7 +21,7 @@ interface Props {
   line: DraftLineDto;
   commands: DraftCommands;
   mechanics: ReferenceDto[];
-  onRemove(line: DraftLineDto): void;
+  onRemove(line: DraftLineDto): boolean | Promise<boolean>;
 }
 const fields = [
   'quantity',
@@ -43,6 +43,7 @@ export function EditableLineRow({
   const { formatIdr } = useNumberFormat();
   const detailId = useId();
   const [expanded, setExpanded] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [reason, setReason] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const key = (field: string) => `line:${line.id}:${field}`;
@@ -158,10 +159,37 @@ export function EditableLineRow({
     <>
       <tr
         data-testid="line-row"
+        inert={removing}
         className="border-t border-border text-xs [&>td]:px-1 [&>td]:py-1"
       >
         <td className="text-right text-muted-foreground">{line.position}</td>
         <td className="min-w-48">
+          {line.source === 'CUSTOM' && (
+            <span className="sr-only">{line.title}</span>
+          )}
+          {line.mechanicName && (
+            <span
+              data-testid="indicator-mechanic"
+              className="text-[10px] text-muted-foreground"
+            >
+              {line.mechanicName}
+            </span>
+          )}
+          {line.pricing.manualPriceOverride && (
+            <span data-testid="indicator-override" className="sr-only">
+              {t('workspace.indicators.override')}
+            </span>
+          )}
+          {line.priceChanges.some(
+            (change) => change.kind === 'MISSING_PRICE_ENTRY',
+          ) && (
+            <span
+              data-testid="indicator-missing-price"
+              className="text-[10px] text-warning"
+            >
+              {t('workspace.indicators.missingPrice')}
+            </span>
+          )}
           {line.source === 'CUSTOM' ? (
             <Input
               {...common('title', t('workspace.editor.itemTitle'))}
@@ -187,6 +215,7 @@ export function EditableLineRow({
         <td>
           <NumericInput
             {...common('quantity', t('workspace.editor.quantity'))}
+            data-testid="line-quantity"
             value={values.quantity}
             onValueChange={(text) => change('quantity', text)}
           />
@@ -231,9 +260,16 @@ export function EditableLineRow({
             destructive
             type="button"
             label={`${t('workspace.lines.remove')}: ${line.title}`}
-            onClick={() => {
-              for (const field of fields) commands.cancelPending(key(field));
-              onRemove(line);
+            disabled={removing}
+            onClick={async () => {
+              setRemoving(true);
+              try {
+                if (await onRemove(line))
+                  for (const field of fields)
+                    commands.cancelPending(key(field));
+              } finally {
+                setRemoving(false);
+              }
             }}
           >
             <Trash2 className="size-3.5" />

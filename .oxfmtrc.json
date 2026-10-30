@@ -2,5 +2,9 @@
   "singleQuote": true,
   "printWidth": 80,
   "sortPackageJson": false,
-  "ignorePatterns": ["docs/**", ".superpowers/**"]
+  "ignorePatterns": [
+    "docs/**",
+    ".superpowers/**",
+    "output/transaction-form-*/**"
+  ]
 }
