@@ -328,9 +328,26 @@ export function CustomerVehiclePicker({
               ref={popup}
               onBlur={closeOnBlur}
               onKeyDown={(event) => {
-                if (event.key === 'Tab' && event.shiftKey) {
+                if (event.key === 'Tab') {
                   event.preventDefault();
-                  input.current?.focus();
+                  if (event.shiftKey) input.current?.focus();
+                  else {
+                    // Resume the form's tab order after the portaled filter.
+                    const controls = [
+                      ...document.querySelectorAll<HTMLElement>(
+                        'input, select, textarea, button, a[href], [tabindex]',
+                      ),
+                    ].filter(
+                      (element) =>
+                        element.tabIndex >= 0 &&
+                        !element.matches(':disabled') &&
+                        !element.closest('[hidden], [inert]') &&
+                        !popup.current?.contains(element),
+                    );
+                    controls[controls.indexOf(input.current!) + 1]?.focus();
+                    setOpen(false);
+                    setQuery('');
+                  }
                 }
                 if (event.key === 'Escape') {
                   event.preventDefault();

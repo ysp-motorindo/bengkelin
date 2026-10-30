@@ -236,5 +236,6 @@ test('keyboard can leave the filter or dismiss it with Escape', async () => {
   await user.tab();
   expect(screen.getByRole('checkbox')).toHaveFocus();
   await user.tab();
+  expect(screen.getByRole('button', { name: 'Outside' })).toHaveFocus();
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
 });
