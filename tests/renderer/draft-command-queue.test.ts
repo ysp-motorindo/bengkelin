@@ -523,3 +523,39 @@ describe('useDraftCommands', () => {
     expect(result.current.saveState).toBe('saved');
   });
 });
+
+describe('deferred inline edits', () => {
+  test('stage waits for flush and latest staged value wins', async () => {
+    const { queue, server } = setup();
+    queue.stage('qty', { kind: 'updateLine', lineId: 'line', quantity: 2 });
+    queue.stage('qty', { kind: 'updateLine', lineId: 'line', quantity: 3 });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(server.apply).not.toHaveBeenCalled();
+    expect(queue.isDirty('qty')).toBe(true);
+    const flushed = queue.flush();
+    expect(server.calls[0]!.command.op).toMatchObject({ quantity: 3 });
+    server.calls[0]!.resolve(ok(makeView(2)));
+    expect(await flushed).toBe(true);
+    expect(queue.isDirty('qty')).toBe(false);
+  });
+  test('cancel removes staged input and invalid markers without sending', async () => {
+    const { queue, server } = setup();
+    queue.stage('qty', { kind: 'updateLine', lineId: 'line', quantity: 2 });
+    queue.cancelPending('qty');
+    queue.markInvalid('bad', true);
+    queue.cancelPending('bad');
+    expect(await queue.flush()).toBe(true);
+    expect(server.apply).not.toHaveBeenCalled();
+  });
+  test('retry reuses the staged command identity', async () => {
+    const { queue, server } = setup();
+    queue.stage('qty', { kind: 'updateLine', lineId: 'line', quantity: 2 });
+    const flushed = queue.flush();
+    server.calls[0]!.reject(new Error('offline'));
+    await vi.advanceTimersByTimeAsync(1);
+    expect(server.calls[1]!.command).toEqual(server.calls[0]!.command);
+    server.get.mockResolvedValue(ok(makeView(2)));
+    server.calls[1]!.resolve(ok(makeView(2)));
+    expect(await flushed).toBe(true);
+  });
+});

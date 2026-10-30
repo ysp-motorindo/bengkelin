@@ -100,7 +100,7 @@ export class DraftCommandQueue {
   private readonly items: Item[] = [];
   private readonly timers = new Map<
     string,
-    { handle: ReturnType<typeof setTimeout>; op: DraftOperation }
+    { handle: ReturnType<typeof setTimeout> | undefined; op: DraftOperation }
   >();
   private readonly failedKeys = new Set<string>();
   private readonly invalidKeys = new Set<string>();
@@ -173,6 +173,23 @@ export class DraftCommandQueue {
       this.enqueueText(key, op);
     }, this.debounceMs);
     this.timers.set(key, { handle, op });
+    this.emitState();
+  }
+
+  /** Hold inline input until blur or an explicit context flush. */
+  stage(key: string, op: DraftOperation): void {
+    if (this.isClosed) return;
+    this.cancelPending(key);
+    this.timers.set(key, { handle: undefined, op });
+    this.emitState();
+  }
+
+  /** Cancel only unsent input; dispatched commands still settle normally. */
+  cancelPending(key: string): void {
+    const pending = this.timers.get(key);
+    if (pending) clearTimeout(pending.handle);
+    this.timers.delete(key);
+    this.invalidKeys.delete(key);
     this.emitState();
   }
 
@@ -422,7 +439,11 @@ export class DraftCommandQueue {
 
   private computeState(): SaveState {
     if (this.halted) return 'failed';
-    if (this.invalidKeys.size > 0) return 'unsaved';
+    if (
+      this.invalidKeys.size > 0 ||
+      [...this.timers.values()].some((entry) => entry.handle === undefined)
+    )
+      return 'unsaved';
     if (this.items.length > 0 || this.timers.size > 0) return 'saving';
     return this.failedKeys.size > 0 ? 'failed' : 'saved';
   }

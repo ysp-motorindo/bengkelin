@@ -21,6 +21,8 @@ export interface DraftCommands {
   saveState: SaveState;
   send(op: DraftOperation, options?: SendOptions): Promise<Result<DraftView>>;
   edit(key: string, op: DraftOperation): void;
+  stage(key: string, op: DraftOperation): void;
+  cancelPending(key: string): void;
   isDirty(key: string): boolean;
   /** Registers client-invalid input: state 'unsaved', flush() false. */
   markInvalid(key: string, invalid: boolean): void;
@@ -89,6 +91,12 @@ export function useDraftCommands(
   const edit = useCallback((key: string, op: DraftOperation) => {
     queueRef.current?.edit(key, op);
   }, []);
+  const stage = useCallback((key: string, op: DraftOperation) => {
+    queueRef.current?.stage(key, op);
+  }, []);
+  const cancelPending = useCallback((key: string) => {
+    queueRef.current?.cancelPending(key);
+  }, []);
   const isDirty = useCallback(
     (key: string) => queueRef.current?.isDirty(key) ?? false,
     [],
@@ -113,6 +121,8 @@ export function useDraftCommands(
     send,
     edit,
     isDirty,
+    stage,
+    cancelPending,
     markInvalid,
     flush,
     retry,
