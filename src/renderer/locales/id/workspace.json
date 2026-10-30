@@ -116,7 +116,8 @@
     "chooseVehicle": "Pilih kendaraan",
     "invoiceNumber": "No. Faktur",
     "taxInvoiceNumber": "No. Faktur Pajak",
-    "pricingOptions": "Channel dan waktu harga"
+    "pricingOptions": "Channel dan waktu harga",
+    "cashier": "Kasir"
   },
   "pricing": {
     "title": "Waktu harga",
@@ -152,7 +153,9 @@
     "noOwner": "Belum ada pemilik",
     "noVehicle": "Tanpa kendaraan",
     "done": "Selesai",
-    "showInactive": "Tampilkan Pelanggan Nonaktif"
+    "showInactive": "Tampilkan Pelanggan Nonaktif",
+    "createCustomer": "Tambah pelanggan",
+    "createVehicle": "Tambah kendaraan"
   },
   "ownership": {
     "title": "Kepemilikan kendaraan"

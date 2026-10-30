@@ -193,12 +193,6 @@ export function DraftWorkspace({
         </Button>
       </div>
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <span>
-          {t('workspace.drafts.by', {
-            creator: view.createdBy.displayName,
-            editor: view.lastEditedBy.displayName,
-          })}
-        </span>
         <SaveIndicator state={commands.saveState} onRetry={commands.retry} />
       </div>
     </div>
@@ -255,7 +249,12 @@ export function DraftWorkspace({
         />
       </section>
       <div className="grid shrink-0 items-start gap-3 border-t border-border bg-card pt-2 lg:grid-cols-[minmax(0,1fr)_minmax(23rem,0.45fr)]">
-        <TransactionNote commands={commands} />
+        <div className="grid gap-2">
+          <p className="text-xs text-muted-foreground">
+            {t('workspace.header.cashier')}: {view.lastEditedBy.displayName}
+          </p>
+          <TransactionNote commands={commands} />
+        </div>
         <CheckoutPanel
           commands={commands}
           onReview={() => void openReview()}

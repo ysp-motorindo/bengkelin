@@ -1,4 +1,4 @@
-import { CalendarClock, TriangleAlert, UserRound } from 'lucide-react';
+import { CalendarClock, TriangleAlert } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
@@ -6,7 +6,6 @@ import { Button, IconButton } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
-import { customerLabel } from '@/renderer/features/customers/labels';
 import { errorMessage } from '@/renderer/lib/errors';
 import {
   MAX_TOP_DAYS,
@@ -15,8 +14,7 @@ import {
   type ReferenceDto,
 } from '@/shared/contracts';
 import type { Instant, LocalDate } from '@/shared/primitives';
-import type { Result } from '@/shared/primitives';
-import { CustomerVehicleDialog } from './CustomerVehicleDialog';
+import { CustomerVehiclePicker } from './CustomerVehiclePicker';
 import { OwnershipDialog } from './OwnershipDialog';
 import { PricingTimeDialog } from './PricingTimeDialog';
 import {
@@ -40,7 +38,6 @@ interface DraftHeaderProps {
 type Pending =
   | { kind: 'pricing' }
   | { kind: 'backdate'; date: LocalDate }
-  | { kind: 'party'; mode: 'customer' | 'vehicle' }
   | { kind: 'ownership' }
   | null;
 
@@ -159,9 +156,6 @@ export function DraftHeader({
 
   const channelMissing =
     channels.length > 0 && !channels.some((c) => c.id === view.channelId);
-  const customer = view.customer
-    ? customerLabel(t, view.customer)
-    : t('workspace.header.anonymous');
 
   return (
     <section
@@ -172,18 +166,31 @@ export function DraftHeader({
         <h1 className="text-xl font-semibold whitespace-nowrap">
           {t('workspace.title')}
         </h1>
-        <div className="flex items-end gap-1">
-          <FormField label={t('workspace.header.customer')}>
-            <Input readOnly value={customer} data-testid="header-customer" />
-          </FormField>
-          <IconButton
-            label={t('workspace.header.chooseCustomer')}
-            variant="outline"
-            onClick={() => setPending({ kind: 'party', mode: 'customer' })}
+        <CustomerVehiclePicker
+          mode="customer"
+          commands={commands}
+          onError={onError}
+        />
+        <FormField label={t('workspace.header.channel')}>
+          <Select
+            value={view.channelId}
+            onChange={(event) =>
+              void apply({
+                kind: 'updateHeader',
+                changes: { channelId: event.target.value },
+              })
+            }
           >
-            <UserRound aria-hidden="true" />
-          </IconButton>
-        </div>
+            {channelMissing && (
+              <option value={view.channelId}>{view.channelLabel}</option>
+            )}
+            {channels.map((channel) => (
+              <option key={channel.id} value={channel.id}>
+                {channel.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
         <div className="ml-auto min-w-0">{toolbar}</div>
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(10rem,1fr)_minmax(12rem,1fr)_minmax(10rem,1fr)_minmax(16rem,1.5fr)]">
@@ -274,24 +281,11 @@ export function DraftHeader({
             }}
           />
         </FormField>
-        <div className="flex items-end gap-1">
-          <FormField label={t('workspace.header.vehicleNumber')}>
-            <Input
-              readOnly
-              data-testid="header-vehicle"
-              value={
-                view.vehicle?.plateNumber ?? t('workspace.header.noVehicle')
-              }
-            />
-          </FormField>
-          <IconButton
-            variant="outline"
-            label={t('workspace.header.chooseVehicle')}
-            onClick={() => setPending({ kind: 'party', mode: 'vehicle' })}
-          >
-            <UserRound aria-hidden="true" />
-          </IconButton>
-        </div>
+        <CustomerVehiclePicker
+          mode="vehicle"
+          commands={commands}
+          onError={onError}
+        />
         <FormField
           label={t('workspace.header.odometer')}
           error={fieldErrors.odometer}
@@ -316,26 +310,6 @@ export function DraftHeader({
           {t('workspace.header.pricingOptions')}
         </summary>
         <div className="mt-2 flex items-end gap-2">
-          <FormField label={t('workspace.header.channel')}>
-            <Select
-              value={view.channelId}
-              onChange={(event) =>
-                void apply({
-                  kind: 'updateHeader',
-                  changes: { channelId: event.target.value },
-                })
-              }
-            >
-              {channelMissing && (
-                <option value={view.channelId}>{view.channelLabel}</option>
-              )}
-              {channels.map((channel) => (
-                <option key={channel.id} value={channel.id}>
-                  {channel.label}
-                </option>
-              ))}
-            </Select>
-          </FormField>
           <FormField label={t('workspace.header.pricingAt')}>
             <Input
               readOnly
@@ -384,36 +358,6 @@ export function DraftHeader({
             setPending(null);
             setDate(view.invoiceDate);
           }}
-        />
-      ) : null}
-      {pending?.kind === 'party' ? (
-        <CustomerVehicleDialog
-          view={view}
-          mode={pending.mode}
-          clearParty={async (): Promise<Result<null>> => {
-            const result = await send({
-              kind: 'updateHeader',
-              changes:
-                pending.mode === 'customer'
-                  ? { customerId: null }
-                  : { vehicleId: null },
-            });
-            if (result.ok) {
-              onError(null);
-              return { ok: true, value: null };
-            }
-            if (result.error.code !== 'QUEUE_CLOSED') {
-              onError(errorMessage(t, result.error));
-            }
-            return result;
-          }}
-          selectCustomer={(customerId) =>
-            apply({ kind: 'updateHeader', changes: { customerId } })
-          }
-          selectVehicle={(vehicleId) =>
-            apply({ kind: 'updateHeader', changes: { vehicleId } })
-          }
-          onClose={() => setPending(null)}
         />
       ) : null}
       {pending?.kind === 'ownership' && view.vehicle && view.customer ? (

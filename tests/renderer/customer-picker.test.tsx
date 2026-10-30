@@ -1,7 +1,9 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
-import { CustomerVehicleDialog } from '@/renderer/features/workspace/CustomerVehicleDialog';
+import { CustomerVehiclePicker } from '@/renderer/features/workspace/CustomerVehiclePicker';
+import { useDraftCommands } from '@/renderer/features/workspace/use-draft-commands';
+import { workspaceBridge } from './helpers/workspace-bridge';
 import { draftView } from './helpers/workspace-bridge';
 import type { CustomerDto } from '@/shared/contracts';
 const ok = <T,>(value: T) => ({ ok: true as const, value });
@@ -30,229 +32,97 @@ const active: CustomerDto = {
   name: 'Active',
   isActive: true,
 };
-test('initial active customers, current-query toggle, inactive selection and reset', async () => {
-  const search = vi.fn(
-    async (input: { query: string; includeInactive?: boolean }) =>
-      ok({ results: input.includeInactive ? [inactive] : [active] }),
+
+function Harness({ mode = 'customer' as 'customer' | 'vehicle' }) {
+  const commands = useDraftCommands(draftView().id, {
+    initialView: draftView(),
+  });
+  return (
+    <CustomerVehiclePicker mode={mode} commands={commands} onError={() => {}} />
   );
-  (window as unknown as { bengkelin: unknown }).bengkelin = {
-    customers: { search },
-    references: { listActive: vi.fn(async () => ok([])) },
+}
+function install() {
+  const bridge = workspaceBridge();
+  const search = vi.fn(async () => ok({ results: [active] }));
+  const api = {
+    ...bridge,
+    customers: { search, get: vi.fn() },
+    vehicles: { searchByPlate: vi.fn(async () => ok({ results: [] })) },
   };
-  const select = vi.fn(async () => true);
-  const props = {
-    view: draftView(),
-    selectCustomer: select,
-    selectVehicle: vi.fn(async () => true),
-    clearParty: vi.fn(async () => ok(null)),
-    onClose: vi.fn(),
-  };
-  const view = render(<CustomerVehicleDialog mode="customer" {...props} />);
+  Object.assign(window, { bengkelin: api });
+  return api;
+}
+test('selects a customer directly from results without a dialog', async () => {
+  const api = install();
+  const user = userEvent.setup();
+  render(<Harness />);
+  const input = screen.getByRole('combobox', { name: 'Pelanggan' });
+  await user.click(input);
+  await screen.findByRole('option', { name: 'Active' });
+  await user.keyboard('{ArrowDown}{Enter}');
   await waitFor(() =>
-    expect(search).toHaveBeenCalledWith({ query: '', includeInactive: false }),
+    expect(api.drafts.apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        op: { kind: 'updateHeader', changes: { customerId: 'c2' } },
+      }),
+    ),
   );
-  expect(await screen.findByText('Active')).toBeVisible();
-  await userEvent.type(
-    screen.getByPlaceholderText('Cari nama atau telepon'),
-    'Dorm',
-  );
-  await userEvent.click(
-    screen.getByRole('checkbox', { name: 'Tampilkan Pelanggan Nonaktif' }),
-  );
-  await waitFor(() =>
-    expect(search).toHaveBeenLastCalledWith({
-      query: 'Dorm',
-      includeInactive: true,
-    }),
-  );
-  expect(await screen.findByText(/Dormant.*Nonaktif/)).toBeVisible();
-  await userEvent.click(screen.getByRole('button', { name: 'Pilih: Dormant' }));
-  expect(select).toHaveBeenCalledWith('c1');
-  view.unmount();
-  render(<CustomerVehicleDialog mode="customer" {...props} />);
-  expect(
-    screen.getByRole('checkbox', { name: 'Tampilkan Pelanggan Nonaktif' }),
-  ).not.toBeChecked();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
-test('older search responses cannot overwrite a newer filter result', async () => {
-  let resolveOld!: (
+test('Escape abandons only search text and creation is last result', async () => {
+  install();
+  const user = userEvent.setup();
+  render(<Harness />);
+  const input = screen.getByRole('combobox', { name: 'Pelanggan' });
+  await user.type(input, 'missing');
+  await user.keyboard('{Escape}');
+  expect(input).toHaveValue('Umum');
+  await user.click(input);
+  await screen.findByRole('option', { name: 'Active' });
+  const options = screen.getAllByRole('option');
+  expect(options.at(-1)).toHaveTextContent('Tambah pelanggan');
+  await user.click(options.at(-1)!);
+  expect(screen.getByRole('dialog')).toBeVisible();
+});
+test('inactive filter uses current query and ignores an older response', async () => {
+  const api = install();
+  let resolve!: (
     value: ReturnType<typeof ok<{ results: CustomerDto[] }>>,
   ) => void;
-  const old = new Promise<ReturnType<typeof ok<{ results: CustomerDto[] }>>>(
-    (resolve) => {
-      resolveOld = resolve;
-    },
+  api.customers.search.mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
   );
-  const search = vi
-    .fn()
-    .mockImplementationOnce(() => old)
-    .mockResolvedValue(ok({ results: [inactive] }));
-  (window as unknown as { bengkelin: unknown }).bengkelin = {
-    customers: { search },
-    references: { listActive: vi.fn(async () => ok([])) },
-  };
-  render(
-    <CustomerVehicleDialog
-      mode="customer"
-      view={draftView()}
-      selectCustomer={vi.fn(async () => true)}
-      selectVehicle={vi.fn(async () => true)}
-      clearParty={vi.fn(async () => ok(null))}
-      onClose={vi.fn()}
-    />,
-  );
-  await userEvent.click(
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.click(screen.getByRole('combobox', { name: 'Pelanggan' }));
+  api.customers.search.mockResolvedValue(ok({ results: [inactive] }));
+  await user.click(
     screen.getByRole('checkbox', { name: 'Tampilkan Pelanggan Nonaktif' }),
   );
-  expect(await screen.findByText(/Dormant.*Nonaktif/)).toBeVisible();
-  await act(async () => {
-    resolveOld(ok({ results: [] }));
-  });
-  expect(screen.getByText(/Dormant.*Nonaktif/)).toBeVisible();
-});
-
-test('customer and plate search update after typing without search buttons', async () => {
-  vi.useFakeTimers({ shouldAdvanceTime: true });
-  const search = vi.fn(async () => ok({ results: [] }));
-  const searchByPlate = vi.fn(async () => ok({ results: [] }));
-  (window as unknown as { bengkelin: unknown }).bengkelin = {
-    customers: { search },
-    vehicles: { searchByPlate },
-    references: { listActive: vi.fn(async () => ok([])) },
-  };
-  render(
-    <CustomerVehicleDialog
-      mode="vehicle"
-      view={draftView()}
-      selectCustomer={vi.fn(async () => true)}
-      selectVehicle={vi.fn(async () => true)}
-      clearParty={vi.fn(async () => ok(null))}
-      onClose={vi.fn()}
-    />,
-  );
-  await userEvent.type(screen.getByPlaceholderText('Cari plat nomor'), 'B123');
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(250);
-  });
-  expect(searchByPlate).toHaveBeenLastCalledWith({ query: 'B123' });
+  expect(await screen.findByRole('option', { name: /Dormant/ })).toBeVisible();
+  await act(async () => resolve(ok({ results: [active] })));
   expect(
-    screen.queryByRole('button', { name: 'Cari' }),
+    screen.queryByRole('option', { name: 'Active' }),
   ).not.toBeInTheDocument();
-  vi.useRealTimers();
 });
-
-test('clearing customer search restores the unfiltered results', async () => {
-  vi.useFakeTimers({ shouldAdvanceTime: true });
-  const search = vi.fn(async ({ query }: { query: string }) =>
-    ok({ results: query ? [] : [active] }),
+test('vehicle typing searches plates and supports explicit clearing', async () => {
+  const api = install();
+  const user = userEvent.setup();
+  render(<Harness mode="vehicle" />);
+  await user.type(
+    screen.getByRole('combobox', { name: 'No. Kendaraan' }),
+    'B123',
   );
-  (window as unknown as { bengkelin: unknown }).bengkelin = {
-    customers: { search },
-    references: { listActive: vi.fn(async () => ok([])) },
-  };
-  render(
-    <CustomerVehicleDialog
-      mode="customer"
-      view={draftView()}
-      selectCustomer={vi.fn(async () => true)}
-      selectVehicle={vi.fn(async () => true)}
-      clearParty={vi.fn(async () => ok(null))}
-      onClose={vi.fn()}
-    />,
+  await waitFor(() =>
+    expect(api.vehicles.searchByPlate).toHaveBeenCalledWith({ query: 'B123' }),
   );
-  const input = screen.getByPlaceholderText('Cari nama atau telepon');
-  expect(await screen.findByText('Active')).toBeVisible();
-  await userEvent.type(input, 'missing');
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(250);
-  });
-  expect(await screen.findByText('Tidak ditemukan.')).toBeVisible();
-  await userEvent.clear(input);
-  expect(await screen.findByText('Active')).toBeVisible();
-  vi.useRealTimers();
-});
-
-test('walk-in clears customer and vehicle together and closes only after success', async () => {
-  const clearParty = vi.fn(async () => ok(null));
-  (window as unknown as { bengkelin: unknown }).bengkelin = {
-    customers: { search: vi.fn(async () => ok({ results: [] })) },
-    vehicles: { searchByPlate: vi.fn(async () => ok({ results: [] })) },
-    references: { listActive: vi.fn(async () => ok([])) },
-  };
-  const onClose = vi.fn();
-  render(
-    <CustomerVehicleDialog
-      mode="customer"
-      view={draftView()}
-      selectCustomer={vi.fn(async () => true)}
-      selectVehicle={vi.fn(async () => true)}
-      clearParty={clearParty}
-      onClose={onClose}
-    />,
+  await user.click(screen.getByRole('option', { name: 'Tanpa kendaraan' }));
+  expect(api.drafts.apply).toHaveBeenCalledWith(
+    expect.objectContaining({
+      op: { kind: 'updateHeader', changes: { vehicleId: null } },
+    }),
   );
-  await userEvent.click(
-    screen.getByRole('button', { name: 'Gunakan pelanggan umum' }),
-  );
-  expect(clearParty).toHaveBeenCalledOnce();
-  expect(onClose).toHaveBeenCalledOnce();
-});
-
-test('failed walk-in keeps the dialog open and shows the returned error', async () => {
-  (window as unknown as { bengkelin: unknown }).bengkelin = {
-    customers: { search: vi.fn(async () => ok({ results: [] })) },
-    vehicles: { searchByPlate: vi.fn(async () => ok({ results: [] })) },
-    references: { listActive: vi.fn(async () => ok([])) },
-  };
-  const onClose = vi.fn();
-  render(
-    <CustomerVehicleDialog
-      mode="customer"
-      view={draftView()}
-      selectCustomer={vi.fn(async () => true)}
-      selectVehicle={vi.fn(async () => true)}
-      clearParty={vi.fn(async () => ({
-        ok: false as const,
-        error: { code: 'FAILED', messageKey: 'errors.INTERNAL_ERROR' },
-      }))}
-      onClose={onClose}
-    />,
-  );
-  await userEvent.click(
-    screen.getByRole('button', { name: 'Gunakan pelanggan umum' }),
-  );
-  expect(onClose).not.toHaveBeenCalled();
-  expect(await screen.findByRole('alert')).toBeInTheDocument();
-});
-
-test('blank plate input clears its previous no-results state immediately', async () => {
-  vi.useFakeTimers({ shouldAdvanceTime: true });
-  (window as unknown as { bengkelin: unknown }).bengkelin = {
-    customers: { search: vi.fn(async () => ok({ results: [] })) },
-    vehicles: { searchByPlate: vi.fn(async () => ok({ results: [] })) },
-    references: { listActive: vi.fn(async () => ok([])) },
-  };
-  render(
-    <CustomerVehicleDialog
-      mode="vehicle"
-      view={draftView()}
-      selectCustomer={vi.fn(async () => true)}
-      selectVehicle={vi.fn(async () => true)}
-      clearParty={vi.fn(async () => ok(null))}
-      onClose={vi.fn()}
-    />,
-  );
-  const vehicles = screen.getByRole('region', { name: 'Kendaraan' });
-  const input = screen.getByPlaceholderText('Cari plat nomor');
-  await userEvent.type(input, 'B123');
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(250);
-  });
-  expect(
-    await within(vehicles).findByText('Tidak ditemukan.'),
-  ).toBeInTheDocument();
-  await userEvent.clear(input);
-  expect(
-    within(vehicles).queryByText('Tidak ditemukan.'),
-  ).not.toBeInTheDocument();
-  vi.useRealTimers();
 });

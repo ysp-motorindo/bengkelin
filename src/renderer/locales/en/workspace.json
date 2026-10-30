@@ -116,7 +116,8 @@
     "chooseVehicle": "Choose vehicle",
     "invoiceNumber": "Invoice Number",
     "taxInvoiceNumber": "Tax Invoice Number",
-    "pricingOptions": "Channel and pricing time"
+    "pricingOptions": "Channel and pricing time",
+    "cashier": "Cashier"
   },
   "pricing": {
     "title": "Pricing time",
@@ -152,7 +153,9 @@
     "noOwner": "No owner yet",
     "noVehicle": "No vehicle",
     "done": "Done",
-    "showInactive": "Show Inactive Customers"
+    "showInactive": "Show Inactive Customers",
+    "createCustomer": "Add customer",
+    "createVehicle": "Add vehicle"
   },
   "ownership": {
     "title": "Vehicle ownership"
