@@ -224,6 +224,9 @@ export interface BengkelinApi {
    * `expectedVersion` of the view it was built from.
    */
   readonly drafts: {
+    previewCatalogPrice(
+      input: import('./contracts').PreviewCatalogPriceInput,
+    ): Promise<Result<import('./contracts').CatalogPricePreviewDto>>;
     create(input: CreateDraftInput): Promise<Result<DraftView>>;
     list(): Promise<Result<DraftSummary[]>>;
     get(id: UUID): Promise<Result<DraftView>>;

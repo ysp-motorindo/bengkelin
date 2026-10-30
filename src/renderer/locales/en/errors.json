@@ -146,5 +146,6 @@
   "REFERENCE_IMPORT_HEADER": "CSV columns must match the template.",
   "REFERENCE_IMPORT_INVALID_ROW": "Invalid row; check the CSV column count and any indicated field.",
   "REFERENCE_IMPORT_DUPLICATE_CODE": "Duplicate code in the file.",
-  "EXPORT_FAILED": "Could not save the CSV. Try another location."
+  "EXPORT_FAILED": "Could not save the CSV. Try another location.",
+  "PRICE_CONFIRMATION_REQUIRED": "Enter a selling price or explicitly confirm zero for unpriced items."
 }

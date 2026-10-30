@@ -772,6 +772,13 @@ describe('restore', () => {
             number_format: 'ID',
           })),
         );
+      } else if (table === 'invoice_items') {
+        expect(restored[table], table).toEqual(
+          data.map((row) => ({
+            ...(row as object),
+            price_entry_confirmed: 1n,
+          })),
+        );
       } else if (table === 'invoices') {
         expect(restored[table], table).toEqual(
           data.map((row) => ({

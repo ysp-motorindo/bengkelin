@@ -14,6 +14,8 @@ import { CustomerRepository } from '@/main/features/customers/repository';
 import { calculateDueDate } from '@/main/features/invoices/domain';
 import { VehicleRepository } from '@/main/features/vehicles/repository';
 import type {
+  PreviewCatalogPriceInput,
+  CatalogPricePreviewDto,
   CreateDraftInput,
   DraftCommandData,
   DraftSummary,
@@ -190,6 +192,31 @@ export class DraftService {
    * the selected ones back with `applyPriceRefresh` and `expectedVersion =
    * version`.
    */
+  previewCatalogPrice(
+    session: Session | undefined,
+    input: PreviewCatalogPriceInput,
+  ): CatalogPricePreviewDto {
+    requireSession(session);
+    const invoice = this.requireOpen(input.invoiceId);
+    const item = this.deps.catalog.get(session, { id: input.catalogItemId });
+    if (!item.isActive)
+      throw new DomainError('CATALOG_ITEM_INACTIVE', 'Item is inactive');
+    const resolved = this.deps.catalog.resolvePrice(
+      item.id,
+      invoice.channel_id,
+      invoice.pricing_at,
+    );
+    return {
+      invoiceId: invoice.id,
+      version: toNumber(invoice.version),
+      catalogItemId: item.id,
+      channelId: invoice.channel_id,
+      pricingAt: invoice.pricing_at,
+      resolvedPriceId: resolved?.priceId ?? null,
+      unitPrice: resolved?.price ?? '0',
+    };
+  }
+
   previewPriceRefresh(
     session: Session | undefined,
     input: PreviewPriceRefreshInput,

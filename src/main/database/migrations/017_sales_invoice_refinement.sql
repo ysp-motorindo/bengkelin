@@ -9,3 +9,5 @@ WHEN OLD.status IN ('FINALIZED','VOID') AND (
  NEW.reserved_invoice_number IS NOT OLD.reserved_invoice_number OR
  NEW.tax_invoice_number IS NOT OLD.tax_invoice_number)
 BEGIN SELECT RAISE(ABORT, 'finalized invoice metadata cannot change'); END;
+
+ALTER TABLE invoice_items ADD COLUMN price_entry_confirmed INTEGER NOT NULL DEFAULT 1 CHECK(price_entry_confirmed IN (0,1));

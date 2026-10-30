@@ -146,5 +146,6 @@
   "REFERENCE_IMPORT_HEADER": "Kolom CSV tidak sesuai templat.",
   "REFERENCE_IMPORT_INVALID_ROW": "Baris tidak valid; periksa jumlah kolom CSV dan kolom yang ditunjukkan, jika ada.",
   "REFERENCE_IMPORT_DUPLICATE_CODE": "Kode duplikat dalam berkas.",
-  "EXPORT_FAILED": "CSV gagal disimpan. Coba lokasi lain."
+  "EXPORT_FAILED": "CSV gagal disimpan. Coba lokasi lain.",
+  "PRICE_CONFIRMATION_REQUIRED": "Isi harga jual atau konfirmasi harga Rp0 pada barang yang belum memiliki harga."
 }

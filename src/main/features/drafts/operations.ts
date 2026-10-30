@@ -6,6 +6,7 @@ import {
   updateHeader,
 } from './header-operations';
 import {
+  confirmLineZeroPrice,
   addCatalogLine,
   addCustomLine,
   removeLine,
@@ -23,6 +24,8 @@ export type EditOperation = Exclude<
 /** Applies one edit to the draft's rows. Totals are recomputed afterwards. */
 export function runOperation(ctx: OperationContext, op: EditOperation): void {
   switch (op.kind) {
+    case 'confirmLineZeroPrice':
+      return confirmLineZeroPrice(ctx, op);
     case 'updateHeader':
       return updateHeader(ctx, op);
     case 'addCatalogLine':

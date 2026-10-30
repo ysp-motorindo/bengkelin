@@ -84,6 +84,7 @@ const api: BengkelinApi = Object.freeze({
     get: call(c.drafts.get),
     apply: call(c.drafts.apply),
     previewPriceRefresh: call(c.drafts.previewPriceRefresh),
+    previewCatalogPrice: call(c.drafts.previewCatalogPrice),
   }),
   adHocReferences: Object.freeze({
     search: call(c.adHocReferences.search),

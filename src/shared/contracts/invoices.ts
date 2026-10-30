@@ -66,6 +66,7 @@ export type FinalizeWarningCode = FinalizeWarning['code'];
 
 /** Blocking problems. The same codes are the `finalize` error codes. */
 export type FinalizeErrorCode =
+  | 'PRICE_CONFIRMATION_REQUIRED'
   | 'DRAFT_EMPTY'
   | 'INVOICE_DATE_IN_FUTURE'
   /** The draft's pricing time is later than the finalize instant. */

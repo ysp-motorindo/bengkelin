@@ -707,11 +707,6 @@ describe('catalog lines and pricing', () => {
   test('a missing price needs an explicit, audited entry with a null previous price', async () => {
     const item = await newItem({ title: 'Kampas rem' });
     const draft = value(await createDraft());
-    expect(
-      failure(
-        await apply(draft, { kind: 'addCatalogLine', catalogItemId: item.id }),
-      ).code,
-    ).toBe('PRICE_REQUIRED');
     const v2 = await applyOk(draft, {
       kind: 'addCatalogLine',
       catalogItemId: item.id,
@@ -1925,4 +1920,120 @@ test('legacy reservation command is idempotent and read-only get does not reserv
   );
   expect(reserved.invoiceNumber).toBe('INV-20260930-0002');
   expect(replay.invoiceNumber).toBe(reserved.invoiceNumber);
+});
+
+test('adding an unpriced product inserts zero immediately and requires confirmation', async () => {
+  const item = await newItem();
+  const draft = value(await createDraft());
+  const added = value(
+    await apply(draft, { kind: 'addCatalogLine', catalogItemId: item.id }),
+  );
+  expect(added.lines[0]).toMatchObject({
+    unitPrice: '0',
+    priceEntryConfirmed: false,
+  });
+  const confirmed = value(
+    await apply(added, {
+      kind: 'confirmLineZeroPrice',
+      lineId: added.lines[0]!.id,
+    }),
+  );
+  expect(confirmed.lines[0]).toHaveProperty('priceEntryConfirmed', true);
+});
+
+test('finalization preview rejects an unconfirmed zero price', async () => {
+  const item = await newItem();
+  const draft = value(await createDraft());
+  const added = value(
+    await apply(draft, { kind: 'addCatalogLine', catalogItemId: item.id }),
+  );
+  const preview = value(
+    await h.call<{ errors: { code: string }[] }>(
+      C.invoices.previewFinalize,
+      { invoiceId: added.id },
+      CASHIER,
+    ),
+  );
+  expect(preview.errors.map((e) => e.code)).toContain(
+    'PRICE_CONFIRMATION_REQUIRED',
+  );
+});
+
+test('entry price preview resolves draft context without changing the draft', async () => {
+  const { item } = await pricedItem('65000');
+  const draft = value(await createDraft());
+  const preview = h.services.drafts.previewCatalogPrice(
+    h.services.sessions.get(CASHIER),
+    { invoiceId: draft.id, catalogItemId: item.id },
+  );
+  expect(preview).toMatchObject({
+    version: draft.version,
+    unitPrice: '65000',
+    channelId: bengkel,
+    pricingAt: at(T0),
+  });
+  expect(
+    value(await h.call<DraftView>(C.drafts.get, draft.id, CASHIER)),
+  ).toEqual(draft);
+});
+
+test('price preview handles missing prices, authentication and channel changes', async () => {
+  const item = await newItem();
+  const draft = value(await createDraft());
+  const input = { invoiceId: draft.id, catalogItemId: item.id };
+  expect(
+    h.services.drafts.previewCatalogPrice(
+      h.services.sessions.get(CASHIER),
+      input,
+    ),
+  ).toMatchObject({ unitPrice: '0', resolvedPriceId: null });
+  expect(() =>
+    h.services.drafts.previewCatalogPrice(undefined, input),
+  ).toThrow();
+  await addPrice({
+    itemId: item.id,
+    channelId: shopee,
+    start: at(T0 - DAY),
+    price: '12345',
+  });
+  const changed = value(
+    await apply(draft, {
+      kind: 'updateHeader',
+      changes: { channelId: shopee },
+    }),
+  );
+  expect(
+    h.services.drafts.previewCatalogPrice(
+      h.services.sessions.get(CASHIER),
+      input,
+    ),
+  ).toMatchObject({
+    unitPrice: '12345',
+    version: changed.version,
+    channelId: shopee,
+  });
+});
+
+test('positive manual price clears provisional state and zero confirmation persists', async () => {
+  const item = await newItem();
+  const draft = value(await createDraft());
+  const added = value(
+    await apply(draft, { kind: 'addCatalogLine', catalogItemId: item.id }),
+  );
+  const lineId = added.lines[0]!.id;
+  const priced = value(
+    await apply(added, { kind: 'updateLine', lineId, unitPrice: '1000' }),
+  );
+  expect(priced.lines[0]!.priceEntryConfirmed).toBe(true);
+  const zero = value(
+    await apply(priced, { kind: 'updateLine', lineId, unitPrice: '0' }),
+  );
+  expect(zero.lines[0]!.priceEntryConfirmed).toBe(false);
+  const confirmed = value(
+    await apply(zero, { kind: 'confirmLineZeroPrice', lineId }),
+  );
+  expect(
+    value(await h.call<DraftView>(C.drafts.get, confirmed.id, CASHIER))
+      .lines[0]!.priceEntryConfirmed,
+  ).toBe(true);
 });

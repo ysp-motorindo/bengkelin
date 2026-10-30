@@ -85,6 +85,7 @@ export function applyPriceRefresh(
       );
     }
     const price = parseRupiah(resolved.price);
+    ctx.repo.confirmPrice(line.id, true);
     ctx.repo.setPrice(
       line.id,
       line.quantity,

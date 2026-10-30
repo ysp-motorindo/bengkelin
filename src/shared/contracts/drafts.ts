@@ -92,6 +92,23 @@ export type PreviewPriceRefreshInput = z.input<
   typeof previewPriceRefreshInputSchema
 >;
 
+export const previewCatalogPriceInputSchema = z.strictObject({
+  invoiceId: uuidSchema,
+  catalogItemId: uuidSchema,
+});
+export type PreviewCatalogPriceInput = z.infer<
+  typeof previewCatalogPriceInputSchema
+>;
+export interface CatalogPricePreviewDto {
+  invoiceId: UUID;
+  version: number;
+  catalogItemId: UUID;
+  channelId: UUID;
+  pricingAt: Instant;
+  resolvedPriceId: UUID | null;
+  unitPrice: Rupiah;
+}
+
 // ---- operations of drafts.apply ----
 
 /**
@@ -269,6 +286,10 @@ export const discardOpSchema = z.strictObject({
 
 export const draftOperationSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('reserveInvoiceNumber') }),
+  z.strictObject({
+    kind: z.literal('confirmLineZeroPrice'),
+    lineId: uuidSchema,
+  }),
   updateHeaderOpSchema,
   addCatalogLineOpSchema,
   addCustomLineOpSchema,
@@ -348,6 +369,7 @@ export interface LinePricingDto {
 }
 
 export interface DraftLineDto {
+  priceEntryConfirmed: boolean;
   id: UUID;
   position: number;
   source: 'CATALOG' | 'CUSTOM';

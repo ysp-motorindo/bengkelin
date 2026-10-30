@@ -70,6 +70,13 @@ export function checkFinalization(
   if (calculation.lines.length === 0) {
     errors.push({ code: 'DRAFT_EMPTY', params: {} });
   }
+  for (const line of calculation.lines) {
+    if (line.price_entry_confirmed === 0n)
+      errors.push({
+        code: 'PRICE_CONFIRMATION_REQUIRED',
+        params: { lineId: line.id },
+      });
+  }
   // LocalDate strings compare chronologically.
   if (invoice.invoice_date > today) {
     errors.push({

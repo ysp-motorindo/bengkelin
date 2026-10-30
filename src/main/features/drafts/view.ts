@@ -113,6 +113,7 @@ function toLineDto(
 ): DraftLineDto {
   return {
     id: line.id,
+    priceEntryConfirmed: bool(line.price_entry_confirmed),
     position: toNumber(line.position),
     source: line.catalog_item_id === null ? 'CUSTOM' : 'CATALOG',
     catalogItemId: line.catalog_item_id,

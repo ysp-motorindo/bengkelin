@@ -115,10 +115,7 @@ export function addCatalogLine(
     return;
   }
 
-  if (op.unitPrice === undefined) {
-    throw new DomainError('PRICE_REQUIRED', 'No price is configured');
-  }
-  const unitPrice = parseRupiah(op.unitPrice);
+  const unitPrice = parseRupiah(op.unitPrice ?? '0');
   const lineId = insertCatalogLine(ctx, item, quantity, {
     listed: null,
     unitPrice,
@@ -126,6 +123,7 @@ export function addCatalogLine(
     // The price was typed by hand: never merged, always shown as manual.
     manual: true,
   });
+  ctx.repo.confirmPrice(lineId, op.unitPrice !== undefined);
   recordPriceChange(ctx, {
     lineId,
     kind: 'MISSING_PRICE_ENTRY',
@@ -320,6 +318,8 @@ export function updateLine(ctx: OperationContext, op: Op<'updateLine'>): void {
 
   if (op.unitPrice !== undefined) {
     const newPrice = parseRupiah(op.unitPrice);
+    if (line.catalog_item_id !== null && line.listed_unit_price === null)
+      repo.confirmPrice(line.id, newPrice > 0n);
     if (newPrice !== line.unit_price) {
       repo.setPrice(
         line.id,
@@ -363,4 +363,22 @@ export function setLineDiscounts(
 ): void {
   const line = requireLine(ctx, op.lineId);
   ctx.repo.replaceLineStages(line.id, op.stages, ctx.newId);
+}
+
+export function confirmLineZeroPrice(
+  ctx: OperationContext,
+  op: Op<'confirmLineZeroPrice'>,
+): void {
+  const line = requireLine(ctx, op.lineId);
+  if (
+    line.catalog_item_id === null ||
+    line.unit_price !== 0n ||
+    line.listed_unit_price !== null
+  )
+    throw new DomainError(
+      'VALIDATION_FAILED',
+      'Only unpriced zero catalog rows can be confirmed',
+    );
+  ctx.repo.confirmPrice(line.id, true);
+  ctx.audit('DRAFT_ZERO_PRICE_CONFIRMED', { lineId: line.id });
 }

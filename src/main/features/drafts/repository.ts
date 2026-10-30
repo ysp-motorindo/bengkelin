@@ -46,6 +46,7 @@ export interface InvoiceRow {
 }
 
 export interface LineRow {
+  price_entry_confirmed: bigint;
   id: string;
   invoice_id: string;
   position: bigint;
@@ -168,7 +169,7 @@ export interface Totals {
   amount: bigint;
 }
 
-const LINE_COLUMNS = `id, invoice_id, position, catalog_item_id, ad_hoc_item_reference_id,
+const LINE_COLUMNS = `price_entry_confirmed, id, invoice_id, position, catalog_item_id, ad_hoc_item_reference_id,
   item_type_snapshot, title_snapshot, unit_id, unit_snapshot, mechanic_id, mechanic_name_snapshot,
   quantity, listed_unit_price, unit_price, subtotal, discount_amount, amount, resolved_price_id,
   price_resolved_at, manual_price_override, removed_at, created_at, updated_at`;
@@ -182,6 +183,14 @@ export class DraftRepository {
     return id === null
       ? undefined
       : new ReferenceRepository(this.db).find(entity, id);
+  }
+
+  confirmPrice(lineId: string, confirmed: boolean): void {
+    this.db
+      .prepare(
+        'UPDATE invoice_items SET price_entry_confirmed = ? WHERE id = ?',
+      )
+      .run(confirmed ? 1n : 0n, lineId);
   }
 
   saveTaxNumber(id: string, number: string | null): void {

@@ -21,6 +21,7 @@ import {
   createDraftInputSchema,
   draftCommandSchema,
   draftIdSchema,
+  previewCatalogPriceInputSchema,
   previewPriceRefreshInputSchema,
   searchAdHocReferencesInputSchema,
   catalogIdInputSchema,
@@ -102,6 +103,7 @@ const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
   C.inventory.history,
   C.drafts.list,
   C.drafts.get,
+  C.drafts.previewCatalogPrice,
   C.adHocReferences.search,
   C.adHocReferences.list,
   C.invoices.previewFinalize,
@@ -400,6 +402,12 @@ export function buildCommands(services: ApplicationServices): Command[] {
       inventory.setStock(session(windowId), input),
     ),
 
+    command(
+      C.drafts.previewCatalogPrice,
+      previewCatalogPriceInputSchema,
+      ({ windowId }, input) =>
+        drafts.previewCatalogPrice(session(windowId), input),
+    ),
     command(C.drafts.create, createDraftInputSchema, ({ windowId }, input) =>
       drafts.create(session(windowId), input),
     ),

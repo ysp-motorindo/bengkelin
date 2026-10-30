@@ -29,7 +29,7 @@ export function removeCurrentCustomerColumns(db: AppDatabase): void {
     ).some((c) => c.name === 'reserved_invoice_number')
   )
     db.exec(
-      'DROP TRIGGER invoices_reservation_immutable; DROP TRIGGER invoices_refinement_finalized_immutable; DROP INDEX invoices_reserved_number; ALTER TABLE invoices DROP COLUMN reserved_invoice_number; ALTER TABLE invoices DROP COLUMN tax_invoice_number;',
+      'ALTER TABLE invoice_items DROP COLUMN price_entry_confirmed; DROP TRIGGER invoices_reservation_immutable; DROP TRIGGER invoices_refinement_finalized_immutable; DROP INDEX invoices_reserved_number; ALTER TABLE invoices DROP COLUMN reserved_invoice_number; ALTER TABLE invoices DROP COLUMN tax_invoice_number;',
     );
   if (db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'sales'").get())
     db.exec(

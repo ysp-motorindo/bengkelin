@@ -88,6 +88,7 @@ export const CHANNELS = {
     get: 'bengkelin:drafts:get',
     apply: 'bengkelin:drafts:apply',
     previewPriceRefresh: 'bengkelin:drafts:previewPriceRefresh',
+    previewCatalogPrice: 'bengkelin:drafts:previewCatalogPrice',
   },
   adHocReferences: {
     search: 'bengkelin:adHocReferences:search',
