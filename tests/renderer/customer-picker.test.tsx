@@ -182,3 +182,59 @@ test('a late result cannot retarget the highlighted create action', async () => 
   expect(api.drafts.apply).not.toHaveBeenCalled();
   expect(screen.getByRole('dialog')).toBeVisible();
 });
+
+test('keyboard can toggle inactive customers and select a result', async () => {
+  const api = install();
+  api.customers.search.mockImplementation(
+    async (input?: { includeInactive?: boolean }) =>
+      ok({ results: input?.includeInactive ? [inactive] : [active] }),
+  );
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.tab();
+  await user.keyboard('{ArrowDown}');
+  await screen.findByRole('option', { name: 'Active' });
+  await user.tab();
+  const checkbox = screen.getByRole('checkbox', {
+    name: 'Tampilkan Pelanggan Nonaktif',
+  });
+  expect(checkbox).toHaveFocus();
+  await user.keyboard(' ');
+  await screen.findByRole('option', { name: /Dormant/ });
+  expect(api.customers.search).toHaveBeenLastCalledWith(
+    expect.objectContaining({ includeInactive: true }),
+  );
+  await user.tab({ shift: true });
+  await user.keyboard('{ArrowDown}{Enter}');
+  await waitFor(() =>
+    expect(api.drafts.apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        op: { kind: 'updateHeader', changes: { customerId: 'c1' } },
+      }),
+    ),
+  );
+});
+
+test('keyboard can leave the filter or dismiss it with Escape', async () => {
+  install();
+  const user = userEvent.setup();
+  render(
+    <>
+      <Harness />
+      <button>Outside</button>
+    </>,
+  );
+  const input = screen.getByRole('combobox', { name: 'Pelanggan' });
+  await user.type(input, 'missing');
+  await user.tab();
+  expect(screen.getByRole('checkbox')).toHaveFocus();
+  await user.keyboard('{Escape}');
+  expect(input).toHaveFocus();
+  expect(input).toHaveValue('Umum');
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  await user.keyboard('{ArrowDown}');
+  await user.tab();
+  expect(screen.getByRole('checkbox')).toHaveFocus();
+  await user.tab();
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+});

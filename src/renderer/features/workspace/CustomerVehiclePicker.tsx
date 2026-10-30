@@ -1,4 +1,11 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/renderer/components/ui/input';
@@ -22,6 +29,18 @@ export function CustomerVehiclePicker({
   const { t } = useTranslation();
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
+  const container = useRef<HTMLDivElement>(null);
+  const popup = useRef<HTMLDivElement>(null);
+  function closeOnBlur(event: FocusEvent) {
+    const next = event.relatedTarget;
+    if (
+      next instanceof Node &&
+      (container.current?.contains(next) || popup.current?.contains(next))
+    )
+      return;
+    setOpen(false);
+    setQuery('');
+  }
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
@@ -222,7 +241,11 @@ export function CustomerVehiclePicker({
         ?.scrollIntoView?.({ block: 'nearest' });
   }, [id, open, activeIndex]);
   return (
-    <div className="relative flex flex-col gap-1.5">
+    <div
+      ref={container}
+      onBlur={closeOnBlur}
+      className="relative flex flex-col gap-1.5"
+    >
       <label htmlFor={id} className="flex min-h-5 items-center">
         {label}
       </label>
@@ -249,16 +272,22 @@ export function CustomerVehiclePicker({
           setActive(null);
         }}
         onClick={() => setOpen(true)}
-        onBlur={() => {
-          setOpen(false);
-          setQuery('');
-        }}
         onChange={(event) => {
           setQuery(event.target.value);
           setActive(null);
           setOpen(true);
         }}
         onKeyDown={(event) => {
+          if (
+            event.key === 'Tab' &&
+            !event.shiftKey &&
+            open &&
+            mode === 'customer'
+          ) {
+            event.preventDefault();
+            popup.current?.querySelector('input')?.focus();
+            return;
+          }
           if (event.key === 'Escape') {
             event.preventDefault();
             setOpen(false);
@@ -296,6 +325,20 @@ export function CustomerVehiclePicker({
       {open
         ? createPortal(
             <div
+              ref={popup}
+              onBlur={closeOnBlur}
+              onKeyDown={(event) => {
+                if (event.key === 'Tab' && event.shiftKey) {
+                  event.preventDefault();
+                  input.current?.focus();
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  setOpen(false);
+                  setQuery('');
+                  input.current?.focus();
+                }
+              }}
               style={position}
               className="fixed z-40 overflow-auto rounded-md border border-border bg-card py-1 shadow-lg"
               onMouseDown={(event) => event.preventDefault()}
