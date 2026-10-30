@@ -39,7 +39,8 @@
     "remove": "Remove",
     "listed": "Listed price",
     "empty": "No items yet. Scan a barcode or search for an item above.",
-    "details": "Details"
+    "details": "Details",
+    "resizeColumn": "Resize {{column}} column"
   },
   "indicators": {
     "override": "Manual price",

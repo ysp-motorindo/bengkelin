@@ -39,7 +39,8 @@
     "remove": "Hapus",
     "listed": "Harga daftar",
     "empty": "Belum ada barang. Pindai barcode atau cari barang di atas.",
-    "details": "Detail"
+    "details": "Detail",
+    "resizeColumn": "Ubah lebar kolom {{column}}"
   },
   "indicators": {
     "override": "Harga manual",
