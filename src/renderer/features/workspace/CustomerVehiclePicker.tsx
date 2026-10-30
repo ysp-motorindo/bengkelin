@@ -84,7 +84,6 @@ export function CustomerVehiclePicker({
     if (!open) return;
     setCustomers([]);
     setPlates([]);
-    setActive(-1);
     setError(null);
     const timer = setTimeout(
       async () => {
@@ -242,7 +241,6 @@ export function CustomerVehiclePicker({
             : 'workspace.party.plateSearch',
         )}
         onFocus={() => {
-          setOpen(true);
           setActive(-1);
         }}
         onClick={() => setOpen(true)}
@@ -265,13 +263,11 @@ export function CustomerVehiclePicker({
           if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
             setOpen(true);
-            setActive(
-              (index) =>
-                (index +
-                  (event.key === 'ArrowDown' ? 1 : -1) +
-                  actions.length) %
-                actions.length,
-            );
+            setActive((index) => {
+              const step = event.key === 'ArrowDown' ? 1 : -1;
+              if (index < 0) return step > 0 ? 0 : actions.length - 1;
+              return (index + step + actions.length) % actions.length;
+            });
           }
           if (event.key === 'Enter') {
             event.preventDefault();

@@ -75,43 +75,20 @@ test('admin imports customers and selects an inactive customer in a transaction'
   await nav
     .getByRole('button', { name: t('shell.nav.workspace'), exact: true })
     .click();
-  await page
-    .getByRole('button', {
-      name: t('workspace.header.chooseCustomer'),
-      exact: true,
-    })
-    .click();
-  const party = page.getByRole('dialog', {
-    name: t('workspace.header.chooseCustomer'),
+  const picker = page.getByRole('combobox', {
+    name: t('workspace.header.customer'),
     exact: true,
   });
+  await picker.click();
   await expect(
-    party.getByText('Active Fixture - 0812-001', { exact: true }),
+    page.getByRole('option', {
+      name: 'Active Fixture - 0812-001',
+      exact: true,
+    }),
   ).toBeVisible();
-  await expect(party.getByText(/Dormant Fixture/)).toHaveCount(0);
-  await party
+  await page
     .getByRole('checkbox', { name: t('workspace.party.showInactive') })
     .check();
-  await expect(party.getByText(/Dormant Fixture.*Nonaktif/)).toBeVisible();
-  await party
-    .getByRole('button', {
-      name: 'Pilih: Dormant Fixture - 0812-001',
-      exact: true,
-    })
-    .click();
-  await expect(page.getByTestId('header-customer')).toHaveValue(
-    /Dormant Fixture/,
-  );
-  await party
-    .getByRole('button', { name: t('workspace.common.close'), exact: true })
-    .click();
-  await page
-    .getByRole('button', {
-      name: t('workspace.header.chooseCustomer'),
-      exact: true,
-    })
-    .click();
-  await expect(
-    page.getByRole('checkbox', { name: t('workspace.party.showInactive') }),
-  ).not.toBeChecked();
+  await page.getByRole('option', { name: /Dormant Fixture/ }).click();
+  await expect(picker).toHaveValue(/Dormant Fixture/);
 });

@@ -232,3 +232,14 @@ test('a completed scan does not steal focus from a newer edit elsewhere', async 
   expect(other).toHaveFocus();
   expect(other).toHaveValue('15200');
 });
+
+test('clicking an already-focused search reopens the custom action after a scan', async () => {
+  install();
+  const user = userEvent.setup();
+  render(<Harness />);
+  const search = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.type(search, '899123{Enter}');
+  await waitFor(() => expect(search).toHaveValue(''));
+  await user.click(search);
+  expect(screen.getByRole('option', { name: 'Item kustom' })).toBeVisible();
+});

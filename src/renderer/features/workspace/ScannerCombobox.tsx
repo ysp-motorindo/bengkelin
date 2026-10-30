@@ -242,7 +242,7 @@ export function ScannerCombobox({
             scheduleSearch(event.target.value);
           }}
           onKeyDown={onKeyDown}
-          onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           className={cn(
             'w-full rounded-md border border-input bg-card pl-11 pr-3 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',

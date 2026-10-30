@@ -126,3 +126,28 @@ test('vehicle typing searches plates and supports explicit clearing', async () =
     }),
   );
 });
+
+test('ArrowUp from an unselected picker reaches its final create action', async () => {
+  install();
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.click(screen.getByRole('combobox', { name: 'Pelanggan' }));
+  await screen.findByRole('option', { name: 'Active' });
+  await user.keyboard('{ArrowUp}');
+  expect(
+    screen.getByRole('option', { name: 'Tambah pelanggan' }),
+  ).toHaveAttribute('aria-selected', 'true');
+});
+
+test('closing quick creation restores the selected label and keeps results closed', async () => {
+  install();
+  const user = userEvent.setup();
+  render(<Harness />);
+  const input = screen.getByRole('combobox', { name: 'Pelanggan' });
+  await user.click(input);
+  await user.click(screen.getByRole('option', { name: 'Tambah pelanggan' }));
+  await user.click(screen.getByRole('button', { name: 'Tutup' }));
+  expect(input).toHaveFocus();
+  expect(input).toHaveValue('Umum');
+  expect(input).toHaveAttribute('aria-expanded', 'false');
+});

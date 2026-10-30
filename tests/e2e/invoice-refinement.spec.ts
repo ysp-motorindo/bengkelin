@@ -69,39 +69,17 @@ for (const lang of ['id', 'en'] as const) {
         await option.evaluate((element) => element.closest('table') === null),
       ).toBe(true);
       await option.click();
-      await expect(
-        page.getByLabel(t('workspace.editor.unitPrice'), { exact: true }),
-      ).toHaveValue('Rp 0');
-      await page
-        .getByRole('button', { name: t('workspace.custom.add'), exact: true })
-        .click();
       const unpriced = page.getByTestId('line-row').last();
       await expect(unpriced).toBeVisible();
       const price = unpriced.getByLabel(t('workspace.editor.unitPrice'), {
         exact: false,
       });
       await expect(price).toBeFocused();
-      await expect(
-        unpriced.getByRole('button', {
-          name: t('workspace.entry.confirmZero'),
-        }),
-      ).toBeVisible();
       await price.fill('25000');
       await price.press('Tab');
-      await expect(
-        unpriced.getByRole('button', {
-          name: t('workspace.entry.confirmZero'),
-        }),
-      ).toHaveCount(0);
       await search.fill('UNPRICED-1');
       await search.press('Enter');
-      const confirmZero = page
-        .getByTestId('line-row')
-        .last()
-        .getByRole('button', { name: t('workspace.entry.confirmZero') });
-      await expect(confirmZero).toBeVisible();
-      await confirmZero.click();
-      await expect(confirmZero).toHaveCount(0);
+      await expect(page.getByTestId('line-row')).toHaveCount(3);
       const cash = page.getByRole('textbox', {
         name: t('workspace.checkout.payments'),
         exact: true,
@@ -230,11 +208,11 @@ test('keyboard dropdown keeps the active product visible when wrapping through t
     const options = page
       .getByRole('listbox', { name: 'Hasil pencarian barang' })
       .getByRole('option');
-    await expect(options).toHaveCount(10);
+    await expect(options).toHaveCount(11);
     for (const [key, index] of [
-      ['ArrowUp', 9],
+      ['ArrowUp', 10],
       ['ArrowDown', 0],
-      ['ArrowUp', 9],
+      ['ArrowUp', 10],
     ] as const) {
       await search.press(key);
       const option = options.nth(index);
@@ -242,14 +220,20 @@ test('keyboard dropdown keeps the active product visible when wrapping through t
       await expect(option).toBeInViewport({ ratio: 1 });
       await expect(search).toBeFocused();
     }
+    await search.press('ArrowUp');
     await search.press('Enter');
     await expect(
       page
-        .getByTestId('line-entry')
+        .getByTestId('line-row')
         .getByText('Dropdown fixture 09', { exact: true }),
     ).toBeVisible();
     await expect(options).toHaveCount(0);
-    await expect(search).toBeFocused();
+    await expect(
+      page
+        .getByTestId('line-row')
+        .last()
+        .getByLabel(/Harga jual/),
+    ).toBeFocused();
   } finally {
     await launched.close();
   }

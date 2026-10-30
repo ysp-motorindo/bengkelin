@@ -93,6 +93,62 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
       const search = page.getByRole('combobox', {
         name: t('workspace.search.label'),
       });
+      await step(
+        'parties',
+        'Customers and vehicles can be created and selected from search.',
+        'Pelanggan dan kendaraan dapat dibuat dan dipilih dari pencarian.',
+        async () => {
+          const customer = page.getByRole('combobox', {
+            name: t('workspace.header.customer'),
+            exact: true,
+          });
+          await customer.click();
+          await page
+            .getByRole('option', {
+              name: t('workspace.party.createCustomer'),
+              exact: true,
+            })
+            .click();
+          let dialog = page.getByRole('dialog');
+          await dialog
+            .getByLabel(t('customers.quickCustomer.name'), { exact: true })
+            .fill('Demo customer');
+          await dialog
+            .getByRole('button', {
+              name: t('customers.quickCustomer.submit'),
+              exact: true,
+            })
+            .click();
+          await expect(customer).toHaveValue('Demo customer');
+          const vehicle = page.getByRole('combobox', {
+            name: t('workspace.header.vehicleNumber'),
+            exact: true,
+          });
+          await vehicle.click();
+          await page
+            .getByRole('option', {
+              name: t('workspace.party.createVehicle'),
+              exact: true,
+            })
+            .click();
+          dialog = page.getByRole('dialog');
+          await dialog
+            .getByLabel(t('customers.quickVehicle.plate'), { exact: true })
+            .fill('TST9999');
+          await dialog
+            .getByRole('button', {
+              name: t('customers.quickVehicle.submit'),
+              exact: true,
+            })
+            .click();
+          await expect(vehicle).toHaveValue('TST9999');
+          await expect(
+            page.getByText(`${t('workspace.header.cashier')}: Siti`, {
+              exact: true,
+            }),
+          ).toBeVisible();
+        },
+      );
       for (const barcode of [OIL_BARCODE, HELMET_BARCODE]) {
         await search.fill(barcode);
         await search.press('Enter');
@@ -141,11 +197,12 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
       );
       await step(
         'custom-entry',
-        'Custom service details are entered directly in the grid.',
-        'Rincian jasa kustom diisi langsung dalam tabel.',
+        'Custom service details are entered in a dialog.',
+        'Rincian jasa kustom diisi melalui dialog.',
         async () => {
+          await search.click();
           await page
-            .getByRole('button', {
+            .getByRole('option', {
               name: t('workspace.custom.open'),
               exact: true,
             })
@@ -162,7 +219,7 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
           await custom
             .getByLabel(t('workspace.custom.mechanic'), { exact: true })
             .selectOption({ label: 'Andi' });
-          await expect(page.getByRole('dialog')).toHaveCount(0);
+          await expect(page.getByRole('dialog')).toHaveCount(1);
         },
       );
       await page
@@ -170,6 +227,34 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
         .getByRole('button', { name: t('workspace.custom.add'), exact: true })
         .click();
       await expect(page.getByTestId('line-row')).toHaveCount(3);
+      await step(
+        'zero-item',
+        'Zero-priced custom items can be reviewed together.',
+        'Item kustom dengan harga nol dapat ditinjau bersama.',
+        async () => {
+          await search.click();
+          await page
+            .getByRole('option', {
+              name: t('workspace.custom.open'),
+              exact: true,
+            })
+            .click();
+          const modal = page.getByRole('dialog');
+          await modal
+            .getByRole('combobox', { name: t('workspace.custom.itemTitle') })
+            .fill('Free inspection');
+          await modal
+            .getByLabel(t('workspace.custom.price'), { exact: true })
+            .fill('0');
+          await modal
+            .getByRole('button', {
+              name: t('workspace.custom.add'),
+              exact: true,
+            })
+            .click();
+          await expect(page.getByTestId('line-row')).toHaveCount(4);
+        },
+      );
       await step(
         'notes-payment',
         'Notes are directly editable and payment controls remain visible.',
@@ -229,6 +314,13 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
               name: t('workspace.checkout.review'),
               exact: true,
             })
+            .click();
+          const zero = page.getByRole('dialog', {
+            name: t('workspace.review.zeroTitle'),
+          });
+          await expect(zero).toContainText('Free inspection');
+          await zero
+            .getByRole('button', { name: t('workspace.review.zeroContinue') })
             .click();
           await expect(
             page.getByRole('dialog', { name: t('workspace.review.title') }),

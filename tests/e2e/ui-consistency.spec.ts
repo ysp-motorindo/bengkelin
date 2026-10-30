@@ -139,7 +139,10 @@ for (const language of ['id', 'en'] as const) {
       await nav
         .getByRole('button', { name: t('shell.nav.workspace'), exact: true })
         .click();
-      const open = page.getByRole('button', {
+      await page
+        .getByRole('combobox', { name: t('workspace.search.label') })
+        .click();
+      const open = page.getByRole('option', {
         name: t('workspace.custom.open'),
         exact: true,
       });

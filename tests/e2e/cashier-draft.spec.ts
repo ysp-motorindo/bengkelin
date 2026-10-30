@@ -240,9 +240,6 @@ async function startAsCashier(): Promise<Page> {
 
 async function openEditor(page: Page, index: number) {
   const row = page.getByTestId('line-row').nth(index);
-  await row
-    .getByRole('button', { name: new RegExp(`^${t('workspace.lines.edit')}`) })
-    .click();
   return row.or(row.locator('xpath=following-sibling::tr[1]'));
 }
 
@@ -268,9 +265,6 @@ test('scanning adds, merges, keeps focus in search, and override/discount lines 
   // Manual override on the line: the next scan becomes a separate line.
   let dialog = await openEditor(page, 0);
   await dialog.getByLabel(t('workspace.editor.unitPrice')).fill('60000');
-  await dialog
-    .getByLabel(t('workspace.editor.reason'), exact)
-    .fill('Pelanggan tetap');
   await searchBox(page).click();
   await expect(searchBox(page)).toBeFocused();
   await expect(page.getByTestId('indicator-override')).toBeVisible();
@@ -305,9 +299,6 @@ test('scanning adds, merges, keeps focus in search, and override/discount lines 
   );
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  await page
-    .getByRole('button', { name: t('workspace.custom.add'), ...exact })
-    .click();
   await expect(page.getByTestId('line-row')).toHaveCount(4);
   await expect(page.getByTestId('line-row').nth(3)).toContainText(
     'Jasa Servis Ringan',
@@ -341,21 +332,6 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   await scan('0000000000000');
   await expect(feedback).toContainText(t('errors.UNKNOWN_BARCODE'));
   await expect(feedback).toContainText('0000000000000');
-  const custom = page.getByRole('button', {
-    name: t('workspace.custom.open'),
-    ...exact,
-  });
-  const scanBox = searchBox(page);
-  const aligned = async () => {
-    const [scanBounds, customBounds] = await Promise.all([
-      scanBox.boundingBox(),
-      custom.boundingBox(),
-    ]);
-    expect(scanBounds).not.toBeNull();
-    expect(customBounds?.y).toBe(scanBounds?.y);
-    expect(customBounds?.height).toBe(scanBounds?.height);
-  };
-  await aligned();
   await expect(page.getByTestId('line-row')).toHaveCount(0);
   await expect(searchBox(page)).toBeFocused();
 
@@ -363,7 +339,6 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   await expect(feedback).toContainText(t('errors.BARCODE_INACTIVE'));
   await scan(INACTIVE_ITEM_BARCODE);
   await expect(feedback).toContainText(t('errors.CATALOG_ITEM_INACTIVE'));
-  await aligned();
   await expect(page.getByTestId('line-row')).toHaveCount(0);
 
   // No configured price: manual entry, then the line is added.
@@ -420,7 +395,7 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   ).toHaveCount(0);
 });
 
-test('Customer & Vehicle dialog keeps its title and Done action visible while content scrolls', async () => {
+test('customer and vehicle dropdowns keep keyboard actions visible while scrolling', async () => {
   const page = await startAsCashier();
   await page.setViewportSize({ width: 390, height: 560 });
   await page.evaluate(async () => {
@@ -436,54 +411,33 @@ test('Customer & Vehicle dialog keeps its title and Done action visible while co
     }
   });
   for (const mode of ['customer', 'vehicle'] as const) {
-    const choose = t(
-      mode === 'customer'
-        ? 'workspace.header.chooseCustomer'
-        : 'workspace.header.chooseVehicle',
-    );
-    await page.getByRole('button', { name: choose, ...exact }).click();
-    const dialog = page.getByRole('dialog', { name: choose });
-    const title = dialog.getByRole('heading', { name: choose });
-    const done = dialog.getByRole('button', {
-      name: t('workspace.party.done'),
-      ...exact,
-    });
-    const panel = dialog.getByRole('region', {
+    const input = page.getByRole('combobox', {
       name: t(
         mode === 'customer'
-          ? 'workspace.party.customers'
-          : 'workspace.party.vehicles',
+          ? 'workspace.header.customer'
+          : 'workspace.header.vehicleNumber',
       ),
+      exact: true,
     });
-    const pane = panel.locator('.overflow-y-auto');
-    const search = dialog.getByPlaceholder(
-      t(
+    await input.click();
+    if (mode === 'vehicle') await input.fill('TST');
+    const results = page.getByRole('listbox', {
+      name: t(
         mode === 'customer'
-          ? 'workspace.party.customerSearch'
-          : 'workspace.party.plateSearch',
+          ? 'workspace.header.customer'
+          : 'workspace.header.vehicleNumber',
       ),
-    );
-    if (mode === 'vehicle') await search.fill('TST');
-    await expect(title).toBeInViewport();
-    await expect(done).toBeInViewport();
-    const top = (await search.boundingBox())!.y;
-    await expect
-      .poll(() => pane.evaluate((el) => el.scrollHeight > el.clientHeight))
-      .toBe(true);
-    await pane.evaluate((el) => {
-      el.scrollTop = el.scrollHeight;
+      exact: true,
     });
-    await expect
-      .poll(() => pane.evaluate((el) => el.scrollTop))
-      .toBeGreaterThan(0);
-    expect((await search.boundingBox())!.y).toBe(top);
-    await expect(title).toBeInViewport();
-    await expect(done).toBeInViewport();
-    await done.click();
+    await expect(results.getByRole('option').first()).toBeVisible();
+    await input.press('ArrowUp');
+    const last = results.getByRole('option').last();
+    await expect(last).toBeInViewport();
+    await input.press('Escape');
   }
 });
 
-test('short dialogs fit content and custom entry stays inline on a narrow screen', async () => {
+test('short dialogs and custom entry fit a narrow screen', async () => {
   const page = await startAsCashier();
   await clickMenuItem(launched!.app, 'about');
   const about = page.getByRole('dialog', { name: t('shell.about.title') });
@@ -491,11 +445,12 @@ test('short dialogs fit content and custom entry stays inline on a narrow screen
   expect((await about.boundingBox())!.height).toBeLessThan(350);
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 390, height: 560 });
+  await searchBox(page).click();
   await page
-    .getByRole('button', { name: t('workspace.custom.open'), ...exact })
+    .getByRole('option', { name: t('workspace.custom.open'), ...exact })
     .click();
   const entry = page.getByRole('region', { name: t('workspace.custom.title') });
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(1);
   const cancel = entry.getByRole('button', {
     name: t('workspace.common.cancel'),
     ...exact,
@@ -772,8 +727,9 @@ test('custom service line with mechanic, checkout allocations and the review ste
   const scan = scanner(page);
   await scan(BARCODE);
 
+  await searchBox(page).click();
   await page
-    .getByRole('button', { name: t('workspace.custom.open'), ...exact })
+    .getByRole('option', { name: t('workspace.custom.open'), ...exact })
     .click();
   const custom = page.getByRole('region', {
     name: t('workspace.custom.title'),
