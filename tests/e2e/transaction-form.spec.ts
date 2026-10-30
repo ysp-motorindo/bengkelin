@@ -419,3 +419,66 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
   if (evidence) await evidence.save();
   console.log(`TRANSACTION_EVIDENCE=${directory}`);
 });
+
+test('transaction columns resize independently and survive restart', async () => {
+  test.setTimeout(120000);
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const dataDir = await mkdtemp(path.join(tmpdir(), 'bengkelin-columns-'));
+  let launched = await launchApp({ dataDir });
+  try {
+    const { page } = launched;
+    await seedWorkshop(page, 'id');
+    await loginWithKeyboard(page, 'siti', CASHIER_PASSWORD, 'id');
+    await page.setViewportSize({ width: 1366, height: 768 });
+    const search = page.getByRole('combobox', {
+      name: tr('id', 'workspace.search.label'),
+    });
+    await search.fill(OIL_BARCODE);
+    await search.press('Enter');
+    await expect(page.getByTestId('line-row')).toHaveCount(1);
+    const row = page.getByTestId('line-row').first();
+    await expect(row.locator('td').nth(1)).toHaveCSS('white-space', 'nowrap');
+    await expect(row.locator('td').nth(3)).toHaveCSS('text-align', 'center');
+    await expect(
+      search.locator('..').locator('..').locator('..'),
+    ).toBeVisible();
+    expect(await search.evaluate((el) => el.closest('td')?.colSpan)).toBe(2);
+    const table = page.getByRole('table', {
+      name: tr('id', 'workspace.lines.caption'),
+    });
+    const widths = () =>
+      table
+        .locator('th')
+        .evaluateAll((cells) =>
+          cells.map((c) => c.getBoundingClientRect().width),
+        );
+    const before = await widths();
+    const handle = table.getByRole('separator').nth(1);
+    const rect = await handle.boundingBox();
+    expect(rect).not.toBeNull();
+    await page.mouse.move(rect!.x + rect!.width / 2, rect!.y + 10);
+    await page.mouse.down();
+    await page.mouse.move(rect!.x + rect!.width / 2 + 80, rect!.y + 100);
+    await page.mouse.up();
+    const after = await widths();
+    expect(after[1]! - before[1]!).toBeCloseTo(80, 0);
+    for (let i = 0; i < 13; i++)
+      if (i !== 1) expect(after[i]).toBeCloseTo(before[i]!, 0);
+    await handle.focus();
+    await page.keyboard.press('ArrowRight');
+    const saved = await widths();
+    expect(saved[1]! - after[1]!).toBeCloseTo(8, 0);
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await expect(handle).toHaveAttribute('aria-valuenow', String(saved[1]));
+    await page.screenshot({ path: path.join(dataDir, 'columns.png') });
+    await launched.close();
+    launched = await launchApp({ dataDir });
+    await loginWithKeyboard(launched.page, 'siti', CASHIER_PASSWORD, 'id');
+    const restored = launched.page.getByRole('separator').nth(1);
+    await expect(restored).toHaveAttribute('aria-valuenow', String(saved[1]));
+  } finally {
+    await launched.close();
+    await rm(dataDir, { recursive: true, force: true });
+  }
+});
