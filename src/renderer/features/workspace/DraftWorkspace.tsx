@@ -1,43 +1,29 @@
-import {
-  Check,
-  FilePlus,
-  FolderOpen,
-  ListPlus,
-  PencilLine,
-  RefreshCcw,
-  X,
-} from 'lucide-react';
+import { FilePlus, FolderOpen, RefreshCcw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { controlClass } from '@/renderer/components/ui/input';
 import { errorMessage } from '@/renderer/lib/errors';
 import type {
-  CatalogItemDto,
   DraftLineDto,
-  DraftOperation,
   DraftSummary,
   DraftView,
   ReferenceDto,
 } from '@/shared/contracts';
-import type { Result } from '@/shared/primitives';
 import { CheckoutReviewDialog } from './checkout/CheckoutReviewDialog';
 import {
   bridgeFinalizeClient,
   type FinalizeClient,
 } from './checkout/finalize-client';
 import { CheckoutPanel } from './checkout/CheckoutPanel';
-import { CustomLineDialog } from './CustomLineDialog';
 import { DraftHeader } from './DraftHeader';
 import { DraftSwitcher } from './DraftSwitcher';
 import type { QueueNotice } from './draft-command-queue';
-import { ItemEditorDialog } from './ItemEditorDialog';
 import { LinesTable } from './LinesTable';
-import { ManualPriceDialog } from './ManualPriceDialog';
 import { RepricingDialog } from './RepricingDialog';
 import { SaveIndicator } from './SaveIndicator';
-import { ScannerCombobox, type ScanOutcome } from './ScannerCombobox';
+import { LineEntryRow, type LineEntryRowHandle } from './LineEntryRow';
+import { useSyncedValue } from './synced-field';
 import { formatWithOffset } from './shop-time';
 import { useDraftCommands } from './use-draft-commands';
 import { registerWorkspaceActions } from './workspace-actions';
@@ -65,19 +51,7 @@ interface DraftWorkspaceProps {
   finalizer?: FinalizeClient | undefined;
 }
 
-type Dialog =
-  | { kind: 'editor'; line: DraftLineDto }
-  | {
-      kind: 'manualPrice';
-      source: { barcode: string } | { catalogItemId: string };
-      label: string;
-    }
-  | { kind: 'custom' }
-  | { kind: 'repricing' }
-  | { kind: 'note' }
-  | { kind: 'switcher' }
-  | { kind: 'review' }
-  | null;
+type Dialog = { kind: 'repricing' | 'switcher' | 'review' } | null;
 
 /**
  * One open draft: toolbar (drafts, new, review prices, save state), header,
@@ -96,9 +70,8 @@ export function DraftWorkspace({
   finalizer = bridgeFinalizeClient,
 }: DraftWorkspaceProps) {
   const { t } = useTranslation();
-  const searchRef = useRef<HTMLInputElement>(null);
+  const entryRef = useRef<LineEntryRowHandle>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const leaveRef = useRef(onLeave);
@@ -133,7 +106,7 @@ export function DraftWorkspace({
   }, [active, flush, reload, t]);
 
   const focusSearch = useCallback(() => {
-    searchRef.current?.focus();
+    entryRef.current?.focusSearch();
   }, []);
 
   useEffect(() => {
@@ -155,7 +128,7 @@ export function DraftWorkspace({
       registerWorkspaceActions({
         newTransaction: onNewDraft,
         focusSearch,
-        addCustomItem: () => setDialog({ kind: 'custom' }),
+        addCustomItem: () => entryRef.current?.startCustom(),
         saveDraft: flush,
         openCheckoutReview: openReview,
       }),
@@ -163,77 +136,6 @@ export function DraftWorkspace({
   );
 
   const closeDialog = useCallback(() => setDialog(null), []);
-
-  /** Shared handling of an addCatalogLine result from scan/pick/manual price. */
-  function afterAdd(
-    result: Result<DraftView>,
-    source: { barcode: string } | { catalogItemId: string },
-    label: string,
-  ): ScanOutcome {
-    if (result.ok) {
-      setFeedback(null);
-      focusSearch();
-      return 'added';
-    }
-    const { code } = result.error;
-    if (code === 'PRICE_REQUIRED') {
-      setFeedback(null);
-      setDialog({ kind: 'manualPrice', source, label });
-      return 'other';
-    }
-    if (code === 'QUEUE_CLOSED') return 'other';
-    if (code === 'DRAFT_VERSION_CONFLICT') {
-      setFeedback(t('workspace.search.conflict'));
-      return 'other';
-    }
-    const message = errorMessage(t, result.error);
-    setFeedback(
-      'barcode' in source ? `${message} (${source.barcode})` : message,
-    );
-    return code === 'UNKNOWN_BARCODE' ? 'unknown' : 'other';
-  }
-
-  async function scan(code: string): Promise<ScanOutcome> {
-    const result = await send({ kind: 'addCatalogLine', barcode: code });
-    let label = code;
-    if (!result.ok && result.error.code === 'PRICE_REQUIRED') {
-      try {
-        const item = await window.bengkelin.catalog.lookupBarcode({ code });
-        if (item.ok) label = item.value.title;
-      } catch {
-        // The code itself is a fine label.
-      }
-    }
-    return afterAdd(result, { barcode: code }, label);
-  }
-
-  async function pick(item: CatalogItemDto): Promise<void> {
-    const result = await send({
-      kind: 'addCatalogLine',
-      catalogItemId: item.id,
-    });
-    afterAdd(result, { catalogItemId: item.id }, item.title);
-  }
-
-  async function addWithManualPrice(
-    source: { barcode: string } | { catalogItemId: string },
-    unitPrice: string,
-    reason: string,
-  ): Promise<string | null> {
-    const op: DraftOperation = {
-      kind: 'addCatalogLine',
-      ...source,
-      unitPrice,
-      ...(reason ? { reason } : {}),
-    };
-    const result = await send(op);
-    if (result.ok) {
-      setDialog(null);
-      setFeedback(null);
-      return null;
-    }
-    return errorMessage(t, result.error);
-  }
 
   async function removeLine(line: DraftLineDto) {
     const result = await send({ kind: 'removeLine', lineId: line.id });
@@ -292,16 +194,6 @@ export function DraftWorkspace({
               </span>
             ) : null}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDialog({ kind: 'note' })}
-          >
-            <PencilLine aria-hidden="true" />
-            {view.note?.trim()
-              ? t('workspace.header.updateNote')
-              : t('workspace.header.addNote')}
-          </Button>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <span>
@@ -343,36 +235,24 @@ export function DraftWorkspace({
         onError={setError}
       />
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <section
-          aria-label={t('workspace.lines.label')}
-          className="flex min-w-0 flex-col gap-3"
-        >
-          <div className="flex flex-wrap items-start gap-2">
-            <div className="min-w-0 flex-1 basis-64">
-              <ScannerCombobox
-                inputRef={searchRef}
-                onScan={scan}
-                onPick={pick}
-                feedback={feedback}
-                onClearFeedback={() => setFeedback(null)}
-              />
-            </div>
-            <Button
-              variant="outline"
-              className="mt-6 h-12"
-              onClick={() => setDialog({ kind: 'custom' })}
-            >
-              <ListPlus aria-hidden="true" />
-              {t('workspace.custom.open')}
-            </Button>
-          </div>
-          <LinesTable
-            lines={view.lines}
-            onEdit={(line) => setDialog({ kind: 'editor', line })}
-            onRemove={(line) => void removeLine(line)}
-          />
-        </section>
+      <section aria-label={t('workspace.lines.label')} className="min-w-0">
+        <LinesTable
+          lines={view.lines}
+          commands={commands}
+          mechanics={references.mechanics}
+          onRemove={(line) => void removeLine(line)}
+          entryRow={
+            <LineEntryRow
+              commands={commands}
+              units={references.units}
+              mechanics={references.mechanics}
+              entryRef={entryRef}
+            />
+          }
+        />
+      </section>
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(26rem,0.9fr)]">
+        <TransactionNote commands={commands} />
         <CheckoutPanel
           commands={commands}
           onReview={() => void openReview()}
@@ -380,52 +260,10 @@ export function DraftWorkspace({
         />
       </div>
 
-      {dialog?.kind === 'editor' ? (
-        <ItemEditorDialog
-          line={dialog.line}
-          mechanics={references.mechanics}
-          send={send}
-          onClose={closeDialog}
-          returnFocus={focusSearch}
-        />
-      ) : null}
-      {dialog?.kind === 'manualPrice' ? (
-        <ManualPriceDialog
-          itemLabel={dialog.label}
-          onSubmit={(price, reason) =>
-            addWithManualPrice(dialog.source, price, reason)
-          }
-          onClose={closeDialog}
-          returnFocus={focusSearch}
-        />
-      ) : null}
-      {dialog?.kind === 'custom' ? (
-        <CustomLineDialog
-          existingLineIds={view.lines.map((line) => line.id)}
-          units={references.units}
-          mechanics={references.mechanics}
-          send={send}
-          onClose={closeDialog}
-          returnFocus={focusSearch}
-        />
-      ) : null}
       {dialog?.kind === 'repricing' ? (
         <RepricingDialog
           commands={commands}
           timezoneLabel={formatWithOffset(view.pricingAt, timezone)}
-          onClose={closeDialog}
-        />
-      ) : null}
-      {dialog?.kind === 'note' ? (
-        <DraftNoteDialog
-          value={view.note ?? ''}
-          onSave={(note) => {
-            commands.edit('note', {
-              kind: 'updateHeader',
-              changes: { note },
-            });
-            setDialog(null);
-          }}
           onClose={closeDialog}
         />
       ) : null}
@@ -456,58 +294,32 @@ export function DraftWorkspace({
   );
 }
 
-function DraftNoteDialog({
-  value,
-  onSave,
-  onClose,
+function TransactionNote({
+  commands,
 }: {
-  value: string;
-  onSave(note: string): void;
-  onClose(): void;
+  commands: import('./use-draft-commands').DraftCommands;
 }) {
   const { t } = useTranslation();
-  const [note, setNote] = useState(value);
-
+  const [note, setNote] = useSyncedValue(commands.view.note ?? '', () =>
+    commands.isDirty('note'),
+  );
   return (
-    <Dialog
-      title={t('workspace.header.note')}
-      onClose={onClose}
-      closeLabel={t('workspace.common.close')}
-      footer={
-        <DialogActions
-          secondary={
-            <Button variant="outline" onClick={onClose}>
-              <X aria-hidden="true" />
-              {t('workspace.common.cancel')}
-            </Button>
-          }
-        >
-          <Button type="submit" form="draft-note-form">
-            <Check aria-hidden="true" />
-            {t('workspace.header.saveNote')}
-          </Button>
-        </DialogActions>
-      }
-    >
-      <form
-        id="draft-note-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSave(note);
+    <label className="grid gap-1.5 rounded-lg border border-border bg-card p-3 text-sm font-medium">
+      {t('workspace.header.note')}
+      <textarea
+        aria-label={t('workspace.header.note')}
+        rows={4}
+        maxLength={1000}
+        value={note}
+        onChange={(event) => {
+          setNote(event.target.value);
+          commands.edit('note', {
+            kind: 'updateHeader',
+            changes: { note: event.target.value },
+          });
         }}
-      >
-        <label htmlFor="draft-note" className="sr-only">
-          {t('workspace.header.note')}
-        </label>
-        <textarea
-          id="draft-note"
-          rows={5}
-          maxLength={1000}
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          className={`${controlClass} h-auto min-h-32 resize-y`}
-        />
-      </form>
-    </Dialog>
+        className={`${controlClass} h-auto min-h-24 resize-y text-sm font-normal`}
+      />
+    </label>
   );
 }

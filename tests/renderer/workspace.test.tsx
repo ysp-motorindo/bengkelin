@@ -41,20 +41,17 @@ describe('cashier workspace', () => {
     const odometer = screen.getByLabelText('Odometer (km)');
     const dueDate = screen.getByTestId('header-due-date');
     const topDays = screen.getByLabelText('TOP (hari)');
-    const headerPairs = [screen.getByLabelText('Channel'), customer].map(
-      (input) => input.closest('.max-w-144'),
-    );
     expect(dueDate).toHaveValue('30/09/2026');
     expect(dueDate).toHaveAttribute('readonly');
-    expect(headerPairs[0]).toHaveClass('flex-col', 'xl:flex-row', 'max-w-144');
-    expect(headerPairs[1]).toHaveClass(
-      'grid-cols-1',
-      'xl:grid-cols-4',
-      'max-w-144',
-    );
-    expect(headerPairs[1]?.children[0]).toHaveClass('xl:col-span-3');
-    expect(headerPairs[1]?.children[1]).toHaveClass('xl:col-span-1');
-    expect(odometer.closest('.max-w-144')).toBe(headerPairs[1]);
+    const table = screen.getByRole('table');
+    const note = screen.getByRole('textbox', { name: 'Catatan' });
+    expect(
+      customer.compareDocumentPosition(table) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      table.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       customer.compareDocumentPosition(odometer) &
         Node.DOCUMENT_POSITION_FOLLOWING,
@@ -77,6 +74,7 @@ describe('cashier workspace', () => {
     expect(command.op).toEqual({
       kind: 'addCatalogLine',
       barcode: '8991234567890',
+      quantity: 1,
     });
     expect(command.expectedVersion).toBe(1);
     expect(search).toHaveValue('');
@@ -87,10 +85,8 @@ describe('cashier workspace', () => {
     render(<CashierWorkspace />);
     const user = userEvent.setup();
     await screen.findByRole('combobox', { name: 'Cari barang' });
-    await user.click(screen.getByRole('button', { name: 'Tambah catatan' }));
     await user.click(screen.getByRole('textbox', { name: 'Catatan' }));
     await user.keyboard('8991234567890{Enter}');
-    await user.click(screen.getByRole('button', { name: 'Simpan catatan' }));
     await user.click(screen.getByLabelText('Odometer (km)'));
     await user.keyboard('12345{Enter}');
     expect(getWorkspaceActions()).not.toBeNull();
@@ -243,6 +239,7 @@ describe('scanner Enter after new input is a scan, never a highlighted pick', ()
     expect(addOps(bridge)[0]).toEqual({
       kind: 'addCatalogLine',
       barcode: '8991234567890',
+      quantity: 1,
     });
   });
 
@@ -264,6 +261,7 @@ describe('scanner Enter after new input is a scan, never a highlighted pick', ()
     expect(addOps(bridge)[1]).toEqual({
       kind: 'addCatalogLine',
       barcode: '8991234567890',
+      quantity: 1,
     });
     expect(addOps(bridge).some((op) => 'catalogItemId' in op)).toBe(false);
   });
@@ -277,10 +275,13 @@ describe('scanner Enter after new input is a scan, never a highlighted pick', ()
     await user.keyboard('servis');
     await screen.findByRole('option', { name: /Jasa Servis Ringan/ });
     await user.keyboard('{ArrowDown}{Enter}');
+    expect(addOps(bridge)).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
     await waitFor(() => expect(addOps(bridge)).toHaveLength(1));
     expect(addOps(bridge)[0]).toEqual({
       kind: 'addCatalogLine',
       catalogItemId: SERVICE.id,
+      quantity: 1,
     });
   });
 });

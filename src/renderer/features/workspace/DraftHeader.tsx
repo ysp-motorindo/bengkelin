@@ -166,84 +166,12 @@ export function DraftHeader({
   return (
     <section
       aria-label={t('workspace.header.label')}
-      className="flex flex-col gap-4 rounded-lg border border-border bg-card p-3"
+      className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 [&_input]:h-8 [&_select]:h-8 [&_input]:text-xs [&_select]:text-xs [&_label]:text-xs"
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {(['sales', 'expedition'] as const).map((entity) => {
-          const options = entity === 'sales' ? sales : expeditions;
-          const current = view[entity];
-          return (
-            <FormField key={entity} label={t(`references.entities.${entity}`)}>
-              <Select
-                value={current?.id ?? ''}
-                onChange={(event) =>
-                  void apply({
-                    kind: 'updateHeader',
-                    changes: { [`${entity}Id`]: event.target.value || null },
-                  })
-                }
-              >
-                <option value="" />
-                {current &&
-                !options.some((option) => option.id === current.id) ? (
-                  <option value={current.id}>{current.name}</option>
-                ) : null}
-                {options.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.code} · {option.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-          );
-        })}
-      </div>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <div className="flex max-w-144 flex-col gap-4 xl:flex-row xl:gap-3">
-            <div className="w-full">
-              <FormField label={t('workspace.header.channel')}>
-                <Select
-                  value={view.channelId}
-                  onChange={(event) =>
-                    void apply({
-                      kind: 'updateHeader',
-                      changes: { channelId: event.target.value },
-                    })
-                  }
-                >
-                  {channelMissing ? (
-                    <option value={view.channelId}>{view.channelLabel}</option>
-                  ) : null}
-                  {channels.map((channel) => (
-                    <option key={channel.id} value={channel.id}>
-                      {channel.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-            </div>
-
-            <div className="w-full">
-              <FormField label={t('workspace.header.invoiceDate')}>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  onBlur={commitDate}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      commitDate();
-                    }
-                  }}
-                />
-              </FormField>
-            </div>
-          </div>
-
-          <div className="grid max-w-144 grid-cols-1 gap-4 xl:grid-cols-4 xl:gap-3">
-            <div className="w-full xl:col-span-3">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(22rem,0.85fr)_minmax(0,1.15fr)]">
+        <div className="grid gap-2">
+          <div className="grid grid-cols-4 gap-2">
+            <div className="w-full col-span-3">
               <div className="flex flex-col gap-1.5">
                 <div className="flex min-h-5 items-center">
                   <Label htmlFor="header-customer-vehicle">
@@ -285,7 +213,7 @@ export function DraftHeader({
               </div>
             </div>
 
-            <div className="w-full xl:col-span-1">
+            <div className="w-full col-span-1">
               <FormField
                 label={t('workspace.header.odometer')}
                 error={fieldErrors.odometer}
@@ -314,66 +242,144 @@ export function DraftHeader({
               </FormField>
             </div>
           </div>
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-4 max-w-72 sm:flex-none">
-          <div className="flex w-full flex-col gap-1.5">
-            <Label htmlFor="header-pricing-at">
-              {t('workspace.header.pricingAt')}
-            </Label>
-            <div className="relative">
-              <Input
-                id="header-pricing-at"
-                className="tabular pr-12"
-                data-testid="header-pricing-at"
-                readOnly
-                value={formatDisplayDateTime(view.pricingAt, timezone)}
-                title={t('workspace.header.timezoneTooltip', {
-                  zone: timezone,
-                })}
-              />
-              <IconButton
-                variant="input-action"
-                size="default"
-                className="absolute right-0 top-0"
-                label={t('workspace.header.changePricingAt')}
-                onClick={() => setPending({ kind: 'pricing' })}
-              >
-                <CalendarClock aria-hidden="true" />
-              </IconButton>
-            </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {(['sales', 'expedition'] as const).map((entity) => {
+              const options = entity === 'sales' ? sales : expeditions;
+              const current = view[entity];
+              return (
+                <FormField
+                  key={entity}
+                  label={t(`references.entities.${entity}`)}
+                >
+                  <Select
+                    value={current?.id ?? ''}
+                    onChange={(event) =>
+                      void apply({
+                        kind: 'updateHeader',
+                        changes: {
+                          [`${entity}Id`]: event.target.value || null,
+                        },
+                      })
+                    }
+                  >
+                    <option value="" />
+                    {current &&
+                    !options.some((option) => option.id === current.id) ? (
+                      <option value={current.id}>{current.name}</option>
+                    ) : null}
+                    {options.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.code} · {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              );
+            })}
           </div>
-
-          <div className="flex gap-3">
-            <div className="min-w-0 w-full">
-              <FormField
-                label={t('workspace.header.topDays')}
-                error={fieldErrors.topDays}
-              >
-                <NumericInput
-                  autoComplete="off"
-                  className="tabular text-right"
-                  value={topDays}
-                  onValueChange={(value) => {
-                    setTopDays(value);
-                    textField('topDays', value, MAX_TOP_DAYS, (days) => ({
+        </div>
+        <div className="grid gap-2">
+          <div className="flex flex-col gap-4 sm:flex-row sm:gap-2">
+            <div className="w-full">
+              <FormField label={t('workspace.header.channel')}>
+                <Select
+                  value={view.channelId}
+                  onChange={(event) =>
+                    void apply({
                       kind: 'updateHeader',
-                      changes: { topDays: days },
-                    }));
+                      changes: { channelId: event.target.value },
+                    })
+                  }
+                >
+                  {channelMissing ? (
+                    <option value={view.channelId}>{view.channelLabel}</option>
+                  ) : null}
+                  {channels.map((channel) => (
+                    <option key={channel.id} value={channel.id}>
+                      {channel.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+            </div>
+
+            <div className="w-full">
+              <FormField label={t('workspace.header.invoiceDate')}>
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                  onBlur={commitDate}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      commitDate();
+                    }
                   }}
                 />
               </FormField>
             </div>
+          </div>
 
-            <div className="min-w-0 w-full">
-              <FormField label={t('workspace.header.dueDate')}>
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+            <div className="flex w-full flex-col gap-1.5">
+              <Label htmlFor="header-pricing-at">
+                {t('workspace.header.pricingAt')}
+              </Label>
+              <div className="relative">
                 <Input
-                  className="tabular text-right"
-                  data-testid="header-due-date"
+                  id="header-pricing-at"
+                  className="tabular pr-12"
+                  data-testid="header-pricing-at"
                   readOnly
-                  value={formatDisplayDate(view.dueDate)}
+                  value={formatDisplayDateTime(view.pricingAt, timezone)}
+                  title={t('workspace.header.timezoneTooltip', {
+                    zone: timezone,
+                  })}
                 />
-              </FormField>
+                <IconButton
+                  variant="input-action"
+                  size="default"
+                  className="absolute right-0 top-0"
+                  label={t('workspace.header.changePricingAt')}
+                  onClick={() => setPending({ kind: 'pricing' })}
+                >
+                  <CalendarClock aria-hidden="true" />
+                </IconButton>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="min-w-0 w-full">
+                <FormField
+                  label={t('workspace.header.topDays')}
+                  error={fieldErrors.topDays}
+                >
+                  <NumericInput
+                    autoComplete="off"
+                    className="tabular text-right"
+                    value={topDays}
+                    onValueChange={(value) => {
+                      setTopDays(value);
+                      textField('topDays', value, MAX_TOP_DAYS, (days) => ({
+                        kind: 'updateHeader',
+                        changes: { topDays: days },
+                      }));
+                    }}
+                  />
+                </FormField>
+              </div>
+
+              <div className="min-w-0 w-full">
+                <FormField label={t('workspace.header.dueDate')}>
+                  <Input
+                    className="tabular text-right"
+                    data-testid="header-due-date"
+                    readOnly
+                    value={formatDisplayDate(view.dueDate)}
+                  />
+                </FormField>
+              </div>
             </div>
           </div>
         </div>

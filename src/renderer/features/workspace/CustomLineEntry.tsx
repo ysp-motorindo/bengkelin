@@ -7,12 +7,10 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
-import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
-import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { controlClass } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Label } from '@/renderer/components/ui/label';
@@ -32,8 +30,7 @@ import {
 } from '@/shared/contracts';
 import type { Result } from '@/shared/primitives';
 
-interface CustomLineDialogProps {
-  inline?: boolean;
+interface CustomLineEntryProps {
   onDirtyChange?(dirty: boolean): void;
   /** Ids of the draft's current lines, to find the one this dialog adds. */
   existingLineIds: readonly string[];
@@ -41,7 +38,6 @@ interface CustomLineDialogProps {
   mechanics: ReferenceDto[];
   send(op: DraftOperation): Promise<Result<DraftView>>;
   onClose(): void;
-  returnFocus(): void;
 }
 
 /**
@@ -49,16 +45,14 @@ interface CustomLineDialogProps {
  * ad-hoc reference autocomplete. A mechanic (service lines only) is set with
  * a follow-up updateLine on the new line.
  */
-export function CustomLineDialog({
-  inline = false,
+export function CustomLineEntry({
   onDirtyChange,
   existingLineIds,
   units,
   mechanics,
   send,
   onClose,
-  returnFocus,
-}: CustomLineDialogProps) {
+}: CustomLineEntryProps) {
   const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const listId = useId();
@@ -225,11 +219,7 @@ export function CustomLineDialog({
       id="custom-line-form"
       onSubmit={submit}
       noValidate
-      className={
-        inline
-          ? 'grid items-end gap-2 sm:grid-cols-[8rem_minmax(12rem,1fr)_minmax(18rem,1fr)_10rem]'
-          : 'flex flex-col gap-3'
-      }
+      className="grid items-end gap-2 sm:grid-cols-[8rem_minmax(12rem,1fr)_minmax(18rem,1fr)_10rem]"
     >
       {formError ? <Alert>{formError}</Alert> : null}
       <FormField label={t('workspace.custom.type')}>
@@ -359,49 +349,22 @@ export function CustomLineDialog({
       ) : null}
     </form>
   );
-  if (inline)
-    return (
-      <section aria-label={t('workspace.custom.title')} className="grid gap-2">
-        {form}
-        <div className="flex gap-2">
-          <Button type="submit" form="custom-line-form" disabled={busy}>
-            {t('workspace.custom.add')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={busy}
-            onClick={onClose}
-          >
-            {t('workspace.common.cancel')}
-          </Button>
-        </div>
-      </section>
-    );
   return (
-    <Dialog
-      title={t('workspace.custom.title')}
-      onClose={onClose}
-      initialFocus={typeRef}
-      returnFocus={returnFocus}
-      closeLabel={t('workspace.common.close')}
-      footer={
-        <DialogActions
-          secondary={
-            <Button variant="outline" disabled={busy} onClick={onClose}>
-              <X aria-hidden="true" />
-              {t('workspace.common.cancel')}
-            </Button>
-          }
-        >
-          <Button type="submit" form="custom-line-form" disabled={busy}>
-            <Check aria-hidden="true" />
-            {t('workspace.custom.add')}
-          </Button>
-        </DialogActions>
-      }
-    >
+    <section aria-label={t('workspace.custom.title')} className="grid gap-2">
       {form}
-    </Dialog>
+      <div className="flex gap-2">
+        <Button type="submit" form="custom-line-form" disabled={busy}>
+          {t('workspace.custom.add')}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={busy}
+          onClick={onClose}
+        >
+          {t('workspace.common.cancel')}
+        </Button>
+      </div>
+    </section>
   );
 }

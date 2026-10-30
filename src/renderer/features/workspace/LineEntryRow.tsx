@@ -17,7 +17,7 @@ import {
   type CatalogItemDto,
   type ReferenceDto,
 } from '@/shared/contracts';
-import { CustomLineDialog } from './CustomLineDialog';
+import { CustomLineEntry } from './CustomLineEntry';
 import { ScannerCombobox, type ScanOutcome } from './ScannerCombobox';
 import { transactionCellClass } from './EditableLineRow';
 import type { DraftCommands } from './use-draft-commands';
@@ -154,14 +154,12 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
         }}
       >
         {custom ? (
-          <CustomLineDialog
-            inline
+          <CustomLineEntry
             existingLineIds={commands.view.lines.map((line) => line.id)}
             units={units}
             mechanics={mechanics}
             send={commands.send}
             onClose={clear}
-            returnFocus={focus}
             onDirtyChange={dirty}
           />
         ) : (

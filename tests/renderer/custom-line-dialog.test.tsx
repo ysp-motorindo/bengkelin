@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
-import { CustomLineDialog } from '@/renderer/features/workspace/CustomLineDialog';
+import { CustomLineEntry } from '@/renderer/features/workspace/CustomLineEntry';
 import type {
   DraftLineDto,
   DraftOperation,
@@ -77,14 +77,12 @@ describe('custom line dialog retry (T9)', () => {
     );
     const onClose = vi.fn();
     render(
-      <CustomLineDialog
-        inline
+      <CustomLineEntry
         existingLineIds={[]}
         units={[]}
         mechanics={[MECHANIC]}
         send={send}
         onClose={onClose}
-        returnFocus={() => undefined}
       />,
     );
     const user = userEvent.setup();
