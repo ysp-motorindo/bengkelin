@@ -181,9 +181,10 @@ export function ScannerCombobox({
       return;
     }
     if (event.key === 'Escape') {
-      if (open || text) {
+      if (open || text || feedback) {
         event.preventDefault();
         reset();
+        onClearFeedback();
         setHint(null);
       }
       return;

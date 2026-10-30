@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test } from 'vitest';
 import { LineEntryRow } from '@/renderer/features/workspace/LineEntryRow';
@@ -242,4 +242,51 @@ test('clicking an already-focused search reopens the custom action after a scan'
   await waitFor(() => expect(search).toHaveValue(''));
   await user.click(search);
   expect(screen.getByRole('option', { name: 'Item kustom' })).toBeVisible();
+});
+
+test('failed empty barcode entry can be cancelled with Escape', async () => {
+  const api = install();
+  api.drafts.apply.mockResolvedValue({
+    ok: false,
+    error: { code: 'UNKNOWN_BARCODE', messageKey: 'errors.UNKNOWN_BARCODE' },
+  });
+  const user = userEvent.setup();
+  render(<Harness />);
+  const input = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.type(input, '12345{Enter}');
+  await screen.findByRole('alert');
+  expect(await flushAll()).toBe(false);
+  await user.keyboard('{Escape}');
+  expect(input).toHaveValue('');
+  expect(await flushAll()).toBe(true);
+});
+test('custom transport exhaustion exposes an idempotent retry inside the modal', async () => {
+  const api = install();
+  api.drafts.apply.mockRejectedValue(new Error('transport'));
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.click(screen.getByRole('combobox', { name: 'Cari barang' }));
+  await user.click(screen.getByRole('option', { name: 'Item kustom' }));
+  await user.type(
+    screen.getByRole('combobox', { name: 'Nama item' }),
+    'Service',
+  );
+  await user.type(screen.getByRole('textbox', { name: 'Harga' }), '30000');
+  await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
+  const modal = screen.getByRole('dialog');
+  const retry = await within(modal).findByRole(
+    'button',
+    { name: 'Coba simpan lagi' },
+    { timeout: 2500 },
+  );
+  const request = api.drafts.apply.mock.calls[0]![0].requestId;
+  api.drafts.apply.mockResolvedValue({
+    ok: true,
+    value: draftView({ version: 2 }),
+  });
+  await user.click(retry);
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+  );
+  expect(api.drafts.apply.mock.calls.at(-1)![0].requestId).toBe(request);
 });

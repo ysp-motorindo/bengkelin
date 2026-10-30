@@ -151,3 +151,34 @@ test('closing quick creation restores the selected label and keeps results close
   expect(input).toHaveValue('Umum');
   expect(input).toHaveAttribute('aria-expanded', 'false');
 });
+
+test('a late result cannot retarget the highlighted create action', async () => {
+  const api = install();
+  let finish!: (
+    value: ReturnType<typeof ok<{ results: CustomerDto[] }>>,
+  ) => void;
+  api.customers.search.mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        finish = done;
+      }),
+  );
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.click(screen.getByRole('combobox', { name: 'Pelanggan' }));
+  await waitFor(() => expect(api.customers.search).toHaveBeenCalled());
+  await user.keyboard('{ArrowUp}');
+  await act(async () =>
+    finish(
+      ok({
+        results: [
+          { ...active, id: 'alice', name: 'Alice' },
+          { ...active, id: 'bob', name: 'Bob' },
+        ],
+      }),
+    ),
+  );
+  await user.keyboard('{Enter}');
+  expect(api.drafts.apply).not.toHaveBeenCalled();
+  expect(screen.getByRole('dialog')).toBeVisible();
+});

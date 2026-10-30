@@ -1,5 +1,5 @@
 import { Check, Clock3, X } from 'lucide-react';
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type ReactNode, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -14,6 +14,7 @@ import { formatWithOffset, nowInstant, startOfShopDay } from './shop-time';
 type Choice = 'startOfDay' | 'chooseTime' | 'keep';
 
 interface PricingTimeDialogProps {
+  feedback?: ReactNode;
   timezone: string;
   currentPricingAt: Instant;
   /**
@@ -34,6 +35,7 @@ interface PricingTimeDialogProps {
  * with their UTC offset.
  */
 export function PricingTimeDialog({
+  feedback,
   timezone,
   currentPricingAt,
   backdatedTo,
@@ -160,6 +162,7 @@ export function PricingTimeDialog({
         </DialogActions>
       }
     >
+      {feedback}
       <form
         id="pricing-time-form"
         onSubmit={submit}

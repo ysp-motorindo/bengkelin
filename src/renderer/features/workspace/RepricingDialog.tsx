@@ -8,6 +8,7 @@ import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { errorMessage } from '@/renderer/lib/errors';
 import { watchSessionError } from '@/renderer/lib/session-events';
 import type { PriceRefreshPreviewDto } from '@/shared/contracts';
+import { SaveIndicator } from './SaveIndicator';
 import { PricingTimeDialog } from './PricingTimeDialog';
 import { formatWithOffset } from './shop-time';
 import type { Instant } from '@/shared/primitives';
@@ -191,6 +192,17 @@ export function RepricingDialog({
       </div>
       {editingTime ? (
         <PricingTimeDialog
+          feedback={
+            <>
+              {error ? <Alert>{error}</Alert> : null}
+              {commands.saveState === 'failed' ? (
+                <SaveIndicator
+                  state={commands.saveState}
+                  onRetry={commands.retry}
+                />
+              ) : null}
+            </>
+          }
           timezone={timezone}
           currentPricingAt={view.pricingAt}
           onConfirm={(time) => {
@@ -206,7 +218,7 @@ export function RepricingDialog({
           {notice}
         </p>
       ) : null}
-      {error ? <Alert>{error}</Alert> : null}
+      {error && !editingTime ? <Alert>{error}</Alert> : null}
       {preview && proposals.length === 0 ? (
         <p
           className="text-sm text-muted-foreground"

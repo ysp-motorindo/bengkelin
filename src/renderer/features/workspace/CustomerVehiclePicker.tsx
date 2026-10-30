@@ -24,7 +24,7 @@ export function CustomerVehiclePicker({
   const input = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(-1);
+  const [active, setActive] = useState<string | null>(null);
   const [includeInactive, setIncludeInactive] = useState(false);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -141,12 +141,6 @@ export function CustomerVehiclePicker({
       document.removeEventListener('scroll', place, true);
     };
   }, [open]);
-  useEffect(() => {
-    if (open && active >= 0)
-      document
-        .getElementById(`${id}-${active}`)
-        ?.scrollIntoView?.({ block: 'nearest' });
-  }, [id, open, active]);
   async function choose(recordId: string | null) {
     if (busy) return;
     setBusy(true);
@@ -202,11 +196,13 @@ export function CustomerVehiclePicker({
         }));
   const actions = [
     ...options.map((record) => ({
+      key: `record:${record.id}`,
       label: record.label,
       run: () => void choose(record.id),
     })),
-    { label: cleared, run: () => void choose(null) },
+    { key: 'clear', label: cleared, run: () => void choose(null) },
     {
+      key: 'create',
       label: t(
         mode === 'customer'
           ? 'workspace.party.createCustomer'
@@ -218,6 +214,13 @@ export function CustomerVehiclePicker({
       },
     },
   ];
+  const activeIndex = actions.findIndex((action) => action.key === active);
+  useEffect(() => {
+    if (open && activeIndex >= 0)
+      document
+        .getElementById(`${id}-${activeIndex}`)
+        ?.scrollIntoView?.({ block: 'nearest' });
+  }, [id, open, activeIndex]);
   return (
     <div className="relative flex flex-col gap-1.5">
       <label htmlFor={id}>{label}</label>
@@ -230,7 +233,7 @@ export function CustomerVehiclePicker({
         aria-expanded={open}
         aria-controls={`${id}-results`}
         aria-activedescendant={
-          open && active >= 0 ? `${id}-${active}` : undefined
+          open && activeIndex >= 0 ? `${id}-${activeIndex}` : undefined
         }
         autoComplete="off"
         disabled={busy}
@@ -241,7 +244,7 @@ export function CustomerVehiclePicker({
             : 'workspace.party.plateSearch',
         )}
         onFocus={() => {
-          setActive(-1);
+          setActive(null);
         }}
         onClick={() => setOpen(true)}
         onBlur={() => {
@@ -250,7 +253,7 @@ export function CustomerVehiclePicker({
         }}
         onChange={(event) => {
           setQuery(event.target.value);
-          setActive(-1);
+          setActive(null);
           setOpen(true);
         }}
         onKeyDown={(event) => {
@@ -263,15 +266,23 @@ export function CustomerVehiclePicker({
           if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
             setOpen(true);
-            setActive((index) => {
+            setActive((current) => {
+              const index = actions.findIndex(
+                (action) => action.key === current,
+              );
               const step = event.key === 'ArrowDown' ? 1 : -1;
-              if (index < 0) return step > 0 ? 0 : actions.length - 1;
-              return (index + step + actions.length) % actions.length;
+              const next =
+                index < 0
+                  ? step > 0
+                    ? 0
+                    : actions.length - 1
+                  : (index + step + actions.length) % actions.length;
+              return actions[next]!.key;
             });
           }
           if (event.key === 'Enter') {
             event.preventDefault();
-            if (open && active >= 0) actions[active]?.run();
+            if (open && activeIndex >= 0) actions[activeIndex]?.run();
           }
         }}
       />
@@ -302,13 +313,13 @@ export function CustomerVehiclePicker({
               <ul id={`${id}-results`} role="listbox" aria-label={label}>
                 {actions.map((action, index) => (
                   <li
-                    key={index}
+                    key={action.key}
                     id={`${id}-${index}`}
                     role="option"
-                    aria-selected={active === index}
-                    onMouseEnter={() => setActive(index)}
+                    aria-selected={active === action.key}
+                    onMouseEnter={() => setActive(action.key)}
                     onClick={action.run}
-                    className={`cursor-pointer px-3 py-2 text-sm ${active === index ? 'bg-accent text-accent-foreground' : ''}`}
+                    className={`cursor-pointer px-3 py-2 text-sm ${active === action.key ? 'bg-accent text-accent-foreground' : ''}`}
                   >
                     {action.label}
                   </li>

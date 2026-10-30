@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/renderer/components/ui/dialog';
 import { errorMessage } from '@/renderer/lib/errors';
 import type { ReferenceDto } from '@/shared/contracts';
+import { SaveIndicator } from './SaveIndicator';
 import { CustomLineEntry } from './CustomLineEntry';
 import { ScannerCombobox, type ScanOutcome } from './ScannerCombobox';
 import type { DraftCommands } from './use-draft-commands';
@@ -130,6 +131,12 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
             returnFocus={focus}
             closeLabel={t('workspace.common.close')}
           >
+            {commands.saveState === 'failed' ? (
+              <SaveIndicator
+                state={commands.saveState}
+                onRetry={commands.retry}
+              />
+            ) : null}
             <CustomLineEntry
               existingLineIds={commands.view.lines.map((line) => line.id)}
               units={units}

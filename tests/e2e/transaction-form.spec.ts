@@ -305,9 +305,68 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
       }
       await page.setViewportSize({ width: 1800, height: 1040 });
       await step(
-        'review',
-        'Checkout review opens after all inline edits are saved.',
-        'Tinjauan pembayaran terbuka setelah seluruh perubahan tersimpan.',
+        'check-prices',
+        'Check prices contains the current pricing time.',
+        'Cek harga memuat waktu harga saat ini.',
+        async () => {
+          await page
+            .getByRole('button', {
+              name: t('workspace.repricing.open'),
+              exact: true,
+            })
+            .click();
+          const dialog = page.getByRole('dialog', {
+            name: t('workspace.repricing.title'),
+            exact: true,
+          });
+          await expect(
+            dialog.getByRole('button', {
+              name: t('workspace.header.changePricingAt'),
+            }),
+          ).toBeEnabled();
+        },
+      );
+      await step(
+        'pricing-time',
+        'Pricing time can be edited from Check prices.',
+        'Waktu harga dapat diubah melalui Cek harga.',
+        async () => {
+          await page
+            .getByRole('button', {
+              name: t('workspace.header.changePricingAt'),
+            })
+            .click();
+          await expect(
+            page.getByRole('dialog', {
+              name: t('workspace.pricing.title'),
+              exact: true,
+            }),
+          ).toBeVisible();
+        },
+        false,
+      );
+      await page
+        .getByRole('dialog', {
+          name: t('workspace.pricing.title'),
+          exact: true,
+        })
+        .getByRole('button', {
+          name: t('workspace.common.cancel'),
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole('dialog', {
+          name: t('workspace.repricing.title'),
+          exact: true,
+        })
+        .getByRole('button', { name: t('workspace.common.close'), exact: true })
+        .last()
+        .click();
+      await step(
+        'zero-confirmation',
+        'All zero-priced items are listed before checkout review.',
+        'Seluruh item berharga nol ditampilkan sebelum tinjauan checkout.',
         async () => {
           await page
             .getByRole('button', {
@@ -315,6 +374,16 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
               exact: true,
             })
             .click();
+          await expect(
+            page.getByRole('dialog', { name: t('workspace.review.zeroTitle') }),
+          ).toContainText('Free inspection');
+        },
+      );
+      await step(
+        'review',
+        'Checkout review opens after all inline edits are saved.',
+        'Tinjauan pembayaran terbuka setelah seluruh perubahan tersimpan.',
+        async () => {
           const zero = page.getByRole('dialog', {
             name: t('workspace.review.zeroTitle'),
           });
