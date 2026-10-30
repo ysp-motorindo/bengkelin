@@ -53,6 +53,42 @@ const commit = (token: string) =>
   h.call<ReferenceImportSummaryDto>(C.referenceTransfer.commitImport, {
     token,
   });
+test.each(['sales', 'expedition'] as const)(
+  '%s import errors identify CSV columns and malformed rows',
+  async (entity) => {
+    const columns = header.filter(
+      (x) => entity === 'sales' || x !== 'phone_number',
+    );
+    const validRow = row.filter((_, i) => entity === 'sales' || i !== 4);
+    const cases: { cells: string[]; column: string | null }[] = [
+      { cells: validRow.map((x, i) => (i === 1 ? '' : x)), column: 'name' },
+      { cells: validRow.slice(0, -1), column: null },
+      { cells: [...validRow, 'extra'], column: null },
+      { cells: [...validRow.slice(0, -1), 'yes'], column: 'is_active' },
+    ];
+    if (entity === 'sales')
+      cases.push({
+        cells: validRow.map((x, i) => (i === 4 ? 'abc' : x)),
+        column: 'phone_number',
+      });
+    for (const { cells, column } of cases) {
+      writeFileSync(file, formatCsv([columns, cells]));
+      const p = await preview(entity);
+      expect(p.canCommit).toBe(false);
+      expect(p.errors).toEqual([
+        expect.objectContaining({
+          row: 2,
+          code: '001',
+          column,
+          error: expect.objectContaining({
+            code: 'REFERENCE_IMPORT_INVALID_ROW',
+          }),
+        }),
+      ]);
+      expect(failure(await commit(p.token)).code).toBe('IMPORT_HAS_ERRORS');
+    }
+  },
+);
 test('imports text codes, preserves blanks, repeats and replays after restart', async () => {
   const p = await preview();
   expect(p.summary.creates).toBe(1);

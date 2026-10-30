@@ -99,6 +99,18 @@ export function planReferenceImport(
       return;
     }
     seen.add(code);
+    if (cells.length !== header.length) {
+      plan.errors.push(
+        referenceIssue('REFERENCE_IMPORT_INVALID_ROW', row, null, code),
+      );
+      return;
+    }
+    if (!['true', 'false'].includes(cell('is_active'))) {
+      plan.errors.push(
+        referenceIssue('REFERENCE_IMPORT_INVALID_ROW', row, 'is_active', code),
+      );
+      return;
+    }
     const parsed = saveReferenceInputSchema.safeParse({
       entity,
       code,
@@ -109,30 +121,24 @@ export function planReferenceImport(
         ? { phoneNumber: cell('phone_number') || current?.phoneNumber }
         : {}),
     });
-    if (
-      cells.length !== header.length ||
-      !['true', 'false'].includes(cell('is_active')) ||
-      !parsed.success
-    ) {
-      if (!parsed.success)
-        for (const issue of parsed.error.issues)
-          plan.errors.push(
-            referenceIssue(
-              'REFERENCE_IMPORT_INVALID_ROW',
-              row,
-              String(issue.path[0] ?? ''),
-              code,
-            ),
-          );
-      else
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const field = String(issue.path[0] ?? '');
+        const column =
+          field === 'label'
+            ? 'name'
+            : field === 'phoneNumber'
+              ? 'phone_number'
+              : field;
         plan.errors.push(
           referenceIssue(
             'REFERENCE_IMPORT_INVALID_ROW',
             row,
-            'is_active',
+            columns.includes(column) ? column : null,
             code,
           ),
         );
+      }
       return;
     }
     if (parsed.data.entity !== 'sales' && parsed.data.entity !== 'expedition')

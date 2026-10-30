@@ -144,7 +144,7 @@
   "CUSTOMER_IMPORT_DUPLICATE_PHONES": "Konfirmasi nomor telepon duplikat sebelum mengimpor.",
   "DUPLICATE_PHONE": "Nomor telepon ini dipakai beberapa pelanggan.",
   "REFERENCE_IMPORT_HEADER": "Kolom CSV tidak sesuai templat.",
-  "REFERENCE_IMPORT_INVALID_ROW": "Baris tidak valid; periksa kolom yang ditunjukkan.",
+  "REFERENCE_IMPORT_INVALID_ROW": "Baris tidak valid; periksa jumlah kolom CSV dan kolom yang ditunjukkan, jika ada.",
   "REFERENCE_IMPORT_DUPLICATE_CODE": "Kode duplikat dalam berkas.",
   "EXPORT_FAILED": "CSV gagal disimpan. Coba lokasi lain."
 }
