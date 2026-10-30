@@ -70,13 +70,6 @@ export function checkFinalization(
   if (calculation.lines.length === 0) {
     errors.push({ code: 'DRAFT_EMPTY', params: {} });
   }
-  for (const line of calculation.lines) {
-    if (line.price_entry_confirmed === 0n)
-      errors.push({
-        code: 'PRICE_CONFIRMATION_REQUIRED',
-        params: { lineId: line.id },
-      });
-  }
   if (invoice.cash_received === null || calculation.invoiceStages.length > 1)
     errors.push({ code: 'LEGACY_CHECKOUT_REVIEW_REQUIRED', params: {} });
   if (
@@ -132,6 +125,18 @@ export function checkFinalization(
 
   // ---- warnings (never block; must be acknowledged as observed) ----
   const warnings: FinalizeWarning[] = [];
+  const zeroLines = calculation.lines.filter((line) => line.unit_price === 0n);
+  if (zeroLines.length > 0)
+    warnings.push({
+      code: 'ZERO_UNIT_PRICE',
+      params: {
+        lines: zeroLines.map((line) => ({
+          lineId: line.id,
+          title: line.title_snapshot,
+          quantity: toNumber(line.quantity),
+        })),
+      },
+    });
   for (const item of demand) {
     const observedStock = stockOf(deps.db, item.catalog_item_id);
     const quantity = toNumber(item.demand);
@@ -201,7 +206,20 @@ export function sameWarnings(
 ): boolean {
   const canonical = (list: FinalizeWarning[]) =>
     canonicalJson(
-      [...list].sort((a, b) => warningKey(a).localeCompare(warningKey(b))),
+      list
+        .map((warning) =>
+          warning.code === 'ZERO_UNIT_PRICE'
+            ? {
+                ...warning,
+                params: {
+                  lines: [...warning.params.lines].sort((a, b) =>
+                    a.lineId.localeCompare(b.lineId),
+                  ),
+                },
+              }
+            : warning,
+        )
+        .sort((a, b) => warningKey(a).localeCompare(warningKey(b))),
     );
   return canonical(current) === canonical(acknowledged);
 }

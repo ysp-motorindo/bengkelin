@@ -57,6 +57,22 @@ export const ownerMismatchWarningSchema = z.strictObject({
 });
 
 export const finalizeWarningSchema = z.discriminatedUnion('code', [
+  z.strictObject({
+    code: z.literal('ZERO_UNIT_PRICE'),
+    params: z.strictObject({
+      lines: z
+        .array(
+          z.strictObject({
+            lineId: uuidSchema,
+            title: z
+              .string('validation.invalid')
+              .max(200, 'validation.tooLong'),
+            quantity: count.positive('validation.invalid'),
+          }),
+        )
+        .min(1, 'validation.required'),
+    }),
+  }),
   negativeStockWarningSchema,
   odometerWarningSchema,
   ownerMismatchWarningSchema,

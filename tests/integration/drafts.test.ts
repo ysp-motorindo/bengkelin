@@ -1918,22 +1918,32 @@ test('adding an unpriced product inserts zero immediately and requires confirmat
   expect(confirmed.lines[0]).toHaveProperty('priceEntryConfirmed', true);
 });
 
-test('finalization preview rejects an unconfirmed zero price', async () => {
+test('finalization preview groups an unconfirmed zero price for acknowledgment', async () => {
   const item = await newItem();
   const draft = value(await createDraft());
   const added = value(
     await apply(draft, { kind: 'addCatalogLine', catalogItemId: item.id }),
   );
   const preview = value(
-    await h.call<{ errors: { code: string }[] }>(
+    await h.call<{ errors: { code: string }[]; warnings: unknown[] }>(
       C.invoices.previewFinalize,
       { invoiceId: added.id },
       CASHIER,
     ),
   );
-  expect(preview.errors.map((e) => e.code)).toContain(
-    'PRICE_CONFIRMATION_REQUIRED',
-  );
+  expect(preview.errors).toEqual([]);
+  expect(preview.warnings).toContainEqual({
+    code: 'ZERO_UNIT_PRICE',
+    params: {
+      lines: [
+        {
+          lineId: added.lines[0]!.id,
+          title: added.lines[0]!.title,
+          quantity: 1,
+        },
+      ],
+    },
+  });
 });
 
 test('entry price preview resolves draft context without changing the draft', async () => {
@@ -2069,7 +2079,7 @@ test('TOP zero requires full cash and positive TOP allows credit', async () => {
   expect(credit.totals.unallocatedAmount).toBe('60000');
 });
 
-test('explicit zero on an unpriced catalog add still requires audited confirmation', async () => {
+test('explicit zero requires checkout acknowledgment even after legacy confirmation', async () => {
   const item = await newItem();
   const initial = value(await createDraft());
   const added = value(
@@ -2087,9 +2097,7 @@ test('explicit zero on an unpriced catalog add still requires audited confirmati
       CASHIER,
     ),
   );
-  expect(blocked.errors.map((error) => error.code)).toContain(
-    'PRICE_CONFIRMATION_REQUIRED',
-  );
+  expect(blocked.errors).toEqual([]);
   expect(
     failure(
       await h.call(
@@ -2103,7 +2111,7 @@ test('explicit zero on an unpriced catalog add still requires audited confirmati
         CASHIER,
       ),
     ).code,
-  ).toBe('PRICE_CONFIRMATION_REQUIRED');
+  ).toBe('FINALIZE_WARNINGS_CHANGED');
   const confirmed = value(
     await apply(added, {
       kind: 'confirmLineZeroPrice',

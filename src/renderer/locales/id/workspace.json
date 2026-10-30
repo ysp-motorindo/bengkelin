@@ -205,7 +205,10 @@
     "credit": "Sisa {{amount}} menjadi piutang, jatuh tempo {{date}}.",
     "empty": "Transaksi belum berisi barang.",
     "finalize": "Finalisasi",
-    "back": "Kembali"
+    "back": "Kembali",
+    "zeroTitle": "Konfirmasi harga Rp 0",
+    "zeroDescription": "Item berikut memiliki harga jual Rp 0.",
+    "zeroContinue": "Konfirmasi dan lanjutkan"
   },
   "repricing": {
     "open": "Cek Harga",

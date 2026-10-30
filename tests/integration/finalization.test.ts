@@ -1679,3 +1679,63 @@ test('finalization retains the number reserved when the draft was created', asyn
   const invoice = await finalizeOk(draft);
   expect(invoice.invoiceNumber).toBe(before.reserved_invoice_number);
 });
+
+test('grouped zero warning covers all sources and ignores removed and discounted positive items', async () => {
+  const unpriced = await newItem({ title: 'Unpriced' });
+  const listed = await pricedItem('0', { title: 'Listed zero' });
+  const paid = await pricedItem('100', { title: 'Discounted' });
+  let draft = await createDraft();
+  for (const catalogItemId of [unpriced.id, listed.id])
+    draft = await applyOk(draft, { kind: 'addCatalogLine', catalogItemId });
+  draft = await applyOk(draft, {
+    kind: 'addCatalogLine',
+    catalogItemId: paid.id,
+  });
+  draft = await applyOk(draft, {
+    kind: 'updateLine',
+    lineId: draft.lines.at(-1)!.id,
+    unitPrice: '0',
+  });
+  draft = await applyOk(draft, {
+    kind: 'addCustomLine',
+    type: 'SERVICE',
+    title: 'Free service',
+    quantity: 2,
+    unitPrice: '0',
+  });
+  const zeros = draft.lines.map((line) => ({
+    lineId: line.id,
+    title: line.title,
+    quantity: line.quantity,
+  }));
+  draft = await applyOk(draft, {
+    kind: 'addCatalogLine',
+    catalogItemId: paid.id,
+  });
+  draft = await applyOk(draft, {
+    kind: 'setLineDiscounts',
+    lineId: draft.lines.at(-1)!.id,
+    stages: [10000],
+  });
+  draft = await applyOk(draft, {
+    kind: 'addCustomLine',
+    type: 'SERVICE',
+    title: 'Removed',
+    unitPrice: '0',
+  });
+  draft = await applyOk(draft, {
+    kind: 'removeLine',
+    lineId: draft.lines.at(-1)!.id,
+  });
+  const shown = value(await preview(draft.id));
+  expect(shown.errors).toEqual([]);
+  expect(shown.warnings).toContainEqual({
+    code: 'ZERO_UNIT_PRICE',
+    params: { lines: zeros },
+  });
+  expect(failure(await finalize(draft)).code).toBe('FINALIZE_WARNINGS_CHANGED');
+  expect(
+    value(await finalize(draft, { acknowledgedWarnings: shown.warnings }))
+      .status,
+  ).toBe('FINALIZED');
+});

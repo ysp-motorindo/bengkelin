@@ -316,3 +316,96 @@ describe('checkout review and finalization', () => {
     });
   });
 });
+
+test('zero price confirmation precedes review and cannot finalize before acceptance', async () => {
+  const zero = {
+    code: 'ZERO_UNIT_PRICE' as const,
+    params: {
+      lines: [{ lineId: ITEM_ID, title: 'Servis gratis', quantity: 2 }],
+    },
+  };
+  const api = client([preview({ warnings: [zero] })], [ok(invoice)]);
+  const user = userEvent.setup();
+  render(
+    <CheckoutReviewDialog
+      view={draftView()}
+      finalizer={api}
+      printer={printer()}
+      onClose={vi.fn()}
+      onNewTransaction={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText('Servis gratis')).toBeVisible();
+  expect(screen.queryByTestId('finalize-button')).not.toBeInTheDocument();
+  await user.click(
+    screen.getByRole('button', { name: 'Konfirmasi dan lanjutkan' }),
+  );
+  await user.click(screen.getByTestId('finalize-button'));
+  await waitFor(() =>
+    expect(api.finalize).toHaveBeenCalledWith(
+      expect.objectContaining({ acknowledgedWarnings: [zero] }),
+    ),
+  );
+});
+
+test('zero confirmation waits for blocking validations and resets on warning changes', async () => {
+  const zero = {
+    code: 'ZERO_UNIT_PRICE' as const,
+    params: {
+      lines: [{ lineId: ITEM_ID, title: 'Zero service', quantity: 1 }],
+    },
+  };
+  const api = client(
+    [
+      preview({ warnings: [zero, negative(1)] }),
+      preview({ warnings: [zero, negative(2)] }),
+    ],
+    [
+      {
+        ok: false,
+        error: {
+          code: 'FINALIZE_WARNINGS_CHANGED',
+          messageKey: 'errors.FINALIZE_WARNINGS_CHANGED',
+        },
+      },
+    ],
+  );
+  renderReview(api);
+  const user = userEvent.setup();
+  await user.click(
+    await screen.findByRole('button', { name: 'Konfirmasi dan lanjutkan' }),
+  );
+  expect(screen.getByTestId('finalize-button')).toBeDisabled();
+  await user.click(
+    screen.getByLabelText('Saya mengerti stok akan menjadi minus'),
+  );
+  await user.click(screen.getByTestId('finalize-button'));
+  expect(
+    await screen.findByRole('button', { name: 'Konfirmasi dan lanjutkan' }),
+  ).toBeVisible();
+});
+test('blocking errors precede zero confirmation and Back returns to editing', async () => {
+  const zero = {
+    code: 'ZERO_UNIT_PRICE' as const,
+    params: {
+      lines: [{ lineId: ITEM_ID, title: 'Zero service', quantity: 1 }],
+    },
+  };
+  const api = client(
+    [
+      preview({
+        warnings: [zero],
+        errors: [{ code: 'CASH_PAYMENT_INSUFFICIENT', params: {} }],
+      }),
+    ],
+    [],
+  );
+  const { onClose } = renderReview(api);
+  const user = userEvent.setup();
+  expect(await screen.findByTestId('finalize-button')).toBeDisabled();
+  expect(
+    screen.queryByRole('button', { name: 'Konfirmasi dan lanjutkan' }),
+  ).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Kembali' }));
+  expect(onClose).toHaveBeenCalledOnce();
+});

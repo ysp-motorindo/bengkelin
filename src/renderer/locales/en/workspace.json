@@ -205,7 +205,10 @@
     "credit": "{{amount}} remains on credit, due {{date}}.",
     "empty": "The transaction has no items yet.",
     "finalize": "Finalize",
-    "back": "Back"
+    "back": "Back",
+    "zeroTitle": "Confirm zero prices",
+    "zeroDescription": "These items have a zero selling price.",
+    "zeroContinue": "Confirm and continue"
   },
   "repricing": {
     "open": "Check Prices",

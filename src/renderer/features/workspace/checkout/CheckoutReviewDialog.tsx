@@ -74,6 +74,7 @@ export function CheckoutReviewDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [zeroAcknowledged, setZeroAcknowledged] = useState(false);
   const [stockAcknowledged, setStockAcknowledged] = useState(false);
   /** One requestId per submission of the same payload, reused on retry. */
   const submission = useRef<{ key: string; requestId: string } | null>(null);
@@ -88,6 +89,7 @@ export function CheckoutReviewDialog({
         return;
       }
       setStockAcknowledged(false);
+      setZeroAcknowledged(false);
       setPhase({ kind: 'ready', preview: result.value });
     } catch {
       setPhase({ kind: 'failed', message: t('errors.INTERNAL_ERROR') });
@@ -166,9 +168,21 @@ export function CheckoutReviewDialog({
     );
   }
 
+  const zeroWarning =
+    phase.kind === 'ready' && phase.preview.errors.length === 0
+      ? phase.preview.warnings.find(
+          (warning) => warning.code === 'ZERO_UNIT_PRICE',
+        )
+      : undefined;
+  const confirmingZero = !!zeroWarning && !zeroAcknowledged;
+
   return (
     <Dialog
-      title={t('workspace.review.title')}
+      title={t(
+        confirmingZero
+          ? 'workspace.review.zeroTitle'
+          : 'workspace.review.title',
+      )}
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
       footer={
@@ -180,23 +194,29 @@ export function CheckoutReviewDialog({
             </Button>
           }
         >
-          <Button
-            data-testid="finalize-button"
-            disabled={
-              busy ||
-              phase.kind !== 'ready' ||
-              phase.preview.errors.length > 0 ||
-              (hasNegativeStock(phase.preview.warnings) && !stockAcknowledged)
-            }
-            onClick={() => {
-              if (phase.kind === 'ready') void finalize(phase.preview);
-            }}
-          >
-            <CheckCircle2 aria-hidden="true" />
-            {busy
-              ? t('workspace.finalize.finalizing')
-              : t('workspace.review.finalize')}
-          </Button>
+          {confirmingZero ? (
+            <Button onClick={() => setZeroAcknowledged(true)}>
+              {t('workspace.review.zeroContinue')}
+            </Button>
+          ) : (
+            <Button
+              data-testid="finalize-button"
+              disabled={
+                busy ||
+                phase.kind !== 'ready' ||
+                phase.preview.errors.length > 0 ||
+                (hasNegativeStock(phase.preview.warnings) && !stockAcknowledged)
+              }
+              onClick={() => {
+                if (phase.kind === 'ready') void finalize(phase.preview);
+              }}
+            >
+              <CheckCircle2 aria-hidden="true" />
+              {busy
+                ? t('workspace.finalize.finalizing')
+                : t('workspace.review.finalize')}
+            </Button>
+          )}
         </DialogActions>
       }
     >
@@ -216,7 +236,19 @@ export function CheckoutReviewDialog({
         </p>
       ) : null}
       {phase.kind === 'failed' ? <Alert>{phase.message}</Alert> : null}
-      {phase.kind === 'ready' ? (
+      {confirmingZero && zeroWarning?.code === 'ZERO_UNIT_PRICE' ? (
+        <div>
+          <p>{t('workspace.review.zeroDescription')}</p>
+          <ul>
+            {zeroWarning.params.lines.map((line) => (
+              <li key={line.lineId}>
+                <span>{line.title}</span> · {line.quantity} × Rp 0
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {phase.kind === 'ready' && !confirmingZero ? (
         <ReviewBody
           view={view}
           preview={phase.preview}
@@ -248,7 +280,9 @@ function ReviewBody({
   const { totals } = preview;
   const credit = BigInt(totals.outstandingAmount) > 0n;
   const negative = preview.warnings.filter((w) => w.code === 'NEGATIVE_STOCK');
-  const other = preview.warnings.filter((w) => w.code !== 'NEGATIVE_STOCK');
+  const other = preview.warnings.filter(
+    (w) => w.code !== 'NEGATIVE_STOCK' && w.code !== 'ZERO_UNIT_PRICE',
+  );
 
   return (
     <>
