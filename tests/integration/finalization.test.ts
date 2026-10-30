@@ -1703,10 +1703,12 @@ test('grouped zero warning covers all sources and ignores removed and discounted
     quantity: 2,
     unitPrice: '0',
   });
-  const zeros = draft.lines.map((line) => ({
+  const storedZeroPrices = [null, '0', '100', null];
+  const zeros = draft.lines.map((line, index) => ({
     lineId: line.id,
     title: line.title,
     quantity: line.quantity,
+    storedUnitPrice: storedZeroPrices[index],
   }));
   draft = await applyOk(draft, {
     kind: 'addCatalogLine',
@@ -1736,6 +1738,64 @@ test('grouped zero warning covers all sources and ignores removed and discounted
   expect(failure(await finalize(draft)).code).toBe('FINALIZE_WARNINGS_CHANGED');
   expect(
     value(await finalize(draft, { acknowledgedWarnings: shown.warnings }))
+      .status,
+  ).toBe('FINALIZED');
+});
+
+test('stored price mismatch is grouped and cannot be finalized without acknowledgment', async () => {
+  const item = await pricedItem('70000');
+  let draft = await createDraft();
+  draft = await applyOk(draft, {
+    kind: 'addCatalogLine',
+    catalogItemId: item.id,
+  });
+  draft = await applyOk(draft, {
+    kind: 'updateLine',
+    lineId: draft.lines[0]!.id,
+    unitPrice: '65000',
+  });
+  const shown = value(await preview(draft.id));
+  expect(shown.warnings).toContainEqual({
+    code: 'PRICE_DIFFERS_FROM_STORED',
+    params: {
+      lines: [
+        {
+          lineId: draft.lines[0]!.id,
+          title: draft.lines[0]!.title,
+          quantity: 1,
+          storedUnitPrice: '70000',
+          unitPrice: '65000',
+        },
+      ],
+    },
+  });
+});
+
+test('stored price changes after preview require a fresh acknowledgment', async () => {
+  const item = await pricedItem('70000');
+  let draft = await draftWith([{ itemId: item.id }]);
+  draft = await applyOk(draft, {
+    kind: 'updateLine',
+    lineId: draft.lines[0]!.id,
+    unitPrice: '65000',
+  });
+  const before = value(await preview(draft.id));
+  await setPrice(item.id, '75000', at(T0 - 1000));
+  expect(
+    failure(await finalize(draft, { acknowledgedWarnings: before.warnings }))
+      .code,
+  ).toBe('FINALIZE_WARNINGS_CHANGED');
+  const after = value(await preview(draft.id));
+  expect(after.warnings).toContainEqual(
+    expect.objectContaining({
+      code: 'PRICE_DIFFERS_FROM_STORED',
+      params: {
+        lines: [expect.objectContaining({ storedUnitPrice: '75000' })],
+      },
+    }),
+  );
+  expect(
+    value(await finalize(draft, { acknowledgedWarnings: after.warnings }))
       .status,
   ).toBe('FINALIZED');
 });

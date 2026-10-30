@@ -8,6 +8,7 @@ import {
   type InvoiceStatus,
   type LineItemType,
 } from './drafts';
+import { priceSchema } from './catalog';
 import { paymentMethodSchema, type PaymentMethod } from './payments';
 
 /**
@@ -58,6 +59,22 @@ export const ownerMismatchWarningSchema = z.strictObject({
 
 export const finalizeWarningSchema = z.discriminatedUnion('code', [
   z.strictObject({
+    code: z.literal('PRICE_DIFFERS_FROM_STORED'),
+    params: z.strictObject({
+      lines: z
+        .array(
+          z.strictObject({
+            lineId: uuidSchema,
+            title: z.string().max(200),
+            quantity: count.positive(),
+            storedUnitPrice: priceSchema,
+            unitPrice: priceSchema,
+          }),
+        )
+        .min(1),
+    }),
+  }),
+  z.strictObject({
     code: z.literal('ZERO_UNIT_PRICE'),
     params: z.strictObject({
       lines: z
@@ -68,6 +85,7 @@ export const finalizeWarningSchema = z.discriminatedUnion('code', [
               .string('validation.invalid')
               .max(200, 'validation.tooLong'),
             quantity: count.positive('validation.invalid'),
+            storedUnitPrice: priceSchema.nullable().optional(),
           }),
         )
         .min(1, 'validation.required'),

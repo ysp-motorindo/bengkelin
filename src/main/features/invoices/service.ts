@@ -1,3 +1,4 @@
+import { PriceRepository } from '@/main/features/catalog/price-repository';
 import { randomUUID } from 'node:crypto';
 import {
   withWriteTransaction,
@@ -72,6 +73,7 @@ export class InvoiceService {
     const { db } = deps;
     this.settings = new SettingsRepository(db);
     this.ctx = {
+      prices: new PriceRepository(db),
       db,
       clock: deps.clock,
       drafts: new DraftRepository(db),

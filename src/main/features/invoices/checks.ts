@@ -1,3 +1,4 @@
+import type { PriceRepository } from '@/main/features/catalog/price-repository';
 import type { AppDatabase } from '@/main/database/connection';
 import { canonicalJson } from '@/main/database/idempotency';
 import { toNumber } from '@/main/database/rows';
@@ -34,6 +35,7 @@ import type { InvoiceRepository, TrackedDemandRow } from './repository';
  */
 
 export interface CheckDeps {
+  prices: PriceRepository;
   db: AppDatabase;
   drafts: DraftRepository;
   invoices: InvoiceRepository;
@@ -125,6 +127,29 @@ export function checkFinalization(
 
   // ---- warnings (never block; must be acknowledged as observed) ----
   const warnings: FinalizeWarning[] = [];
+  const differentLines = calculation.lines.flatMap((line) => {
+    if (line.catalog_item_id === null) return [];
+    const stored = deps.prices.resolve(
+      line.catalog_item_id,
+      invoice.channel_id,
+      invoice.pricing_at,
+    );
+    if (!stored || BigInt(stored.price) === line.unit_price) return [];
+    return [
+      {
+        lineId: line.id,
+        title: line.title_snapshot,
+        quantity: toNumber(line.quantity),
+        storedUnitPrice: stored.price,
+        unitPrice: formatRupiah(line.unit_price),
+      },
+    ];
+  });
+  if (differentLines.length)
+    warnings.push({
+      code: 'PRICE_DIFFERS_FROM_STORED',
+      params: { lines: differentLines },
+    });
   const zeroLines = calculation.lines.filter((line) => line.unit_price === 0n);
   if (zeroLines.length > 0)
     warnings.push({
@@ -134,6 +159,14 @@ export function checkFinalization(
           lineId: line.id,
           title: line.title_snapshot,
           quantity: toNumber(line.quantity),
+          storedUnitPrice:
+            line.catalog_item_id === null
+              ? null
+              : (deps.prices.resolve(
+                  line.catalog_item_id,
+                  invoice.channel_id,
+                  invoice.pricing_at,
+                )?.price ?? null),
         })),
       },
     });
@@ -206,9 +239,11 @@ export function sameWarnings(
 ): boolean {
   const canonical = (list: FinalizeWarning[]) =>
     canonicalJson(
-      list
+      [...list]
+        .sort((a, b) => warningKey(a).localeCompare(warningKey(b)))
         .map((warning) =>
-          warning.code === 'ZERO_UNIT_PRICE'
+          warning.code === 'ZERO_UNIT_PRICE' ||
+          warning.code === 'PRICE_DIFFERS_FROM_STORED'
             ? {
                 ...warning,
                 params: {
@@ -218,8 +253,7 @@ export function sameWarnings(
                 },
               }
             : warning,
-        )
-        .sort((a, b) => warningKey(a).localeCompare(warningKey(b))),
+        ),
     );
   return canonical(current) === canonical(acknowledged);
 }
