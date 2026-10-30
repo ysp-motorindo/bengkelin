@@ -1,0 +1,142 @@
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { expect, test } from 'vitest';
+import { LineEntryRow } from '@/renderer/features/workspace/LineEntryRow';
+import { useDraftCommands } from '@/renderer/features/workspace/use-draft-commands';
+import { flushAll } from '@/renderer/lib/flush-registry';
+import { draftView, workspaceBridge } from './helpers/workspace-bridge';
+function install() {
+  const bridge = workspaceBridge();
+  Object.assign(window, { bengkelin: bridge });
+  return bridge;
+}
+function Harness() {
+  const commands = useDraftCommands('draft', { initialView: draftView() });
+  return (
+    <table>
+      <tbody>
+        <LineEntryRow commands={commands} units={[]} mechanics={[]} />
+      </tbody>
+    </table>
+  );
+}
+test('barcode Enter adds once and returns focus to entry', async () => {
+  const bridge = install();
+  const user = userEvent.setup();
+  render(<Harness />);
+  const search = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.type(search, '899123{Enter}');
+  await waitFor(() => expect(bridge.drafts.apply).toHaveBeenCalledOnce());
+  expect(bridge.drafts.apply.mock.calls[0]![0].op).toMatchObject({
+    kind: 'addCatalogLine',
+    barcode: '899123',
+    quantity: 1,
+  });
+  expect(search).toHaveFocus();
+});
+test('unsubmitted search blocks transitions and Escape clears it', async () => {
+  install();
+  const user = userEvent.setup();
+  render(<Harness />);
+  const search = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.type(search, 'oli');
+  expect(await flushAll()).toBe(false);
+  await user.keyboard('{Escape}');
+  expect(await flushAll()).toBe(true);
+});
+test('PRICE_REQUIRED keeps entry and accepts inline price', async () => {
+  const bridge = install();
+  const apply = bridge.drafts.apply;
+  apply.mockResolvedValueOnce({
+    ok: false,
+    error: { code: 'PRICE_REQUIRED', messageKey: 'errors.PRICE_REQUIRED' },
+  });
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.type(
+    screen.getByRole('combobox', { name: 'Cari barang' }),
+    '899123{Enter}',
+  );
+  const price = await screen.findByRole('textbox', { name: 'Harga jual' });
+  await user.type(price, '50000');
+  await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
+  await waitFor(() =>
+    expect(apply.mock.calls.at(-1)![0].op).toMatchObject({
+      barcode: '899123',
+      unitPrice: '50000',
+    }),
+  );
+});
+test('custom entry is inline and incomplete data blocks transitions', async () => {
+  install();
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.click(screen.getByRole('button', { name: 'Item kustom' }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  await user.type(
+    screen.getByRole('combobox', { name: 'Nama item' }),
+    'Servis CVT',
+  );
+  expect(await flushAll()).toBe(false);
+});
+
+test('duplicate Enter while adding does not dispatch a second add', async () => {
+  const bridge = install();
+  let resolve!: (
+    value: import('@/shared/primitives').Result<
+      import('@/shared/contracts').DraftView
+    >,
+  ) => void;
+  bridge.drafts.apply.mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  const user = userEvent.setup();
+  render(<Harness />);
+  const search = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.type(search, '899123{Enter}{Enter}');
+  expect(bridge.drafts.apply).toHaveBeenCalledOnce();
+  resolve({ ok: true, value: draftView({ version: 2 }) });
+  await waitFor(() => expect(search).not.toBeDisabled());
+});
+test('selecting catalog search result stages until Add', async () => {
+  const bridge = install();
+  bridge.catalog.search.mockResolvedValue({
+    ok: true,
+    value: {
+      results: [
+        {
+          id: 'item',
+          title: 'Oli mesin',
+          description: null,
+          sku: null,
+          unitId: 'unit',
+          unitCode: 'PCS',
+          unitLabel: 'PCS',
+          weight: null,
+          trackInventory: true,
+          isActive: true,
+          createdAt: '2026-10-30T00:00:00.000Z',
+          updatedAt: '2026-10-30T00:00:00.000Z',
+          barcodes: [],
+          type: 'STOCK_ITEM',
+        } as import('@/shared/contracts').CatalogItemDto,
+      ],
+    },
+  });
+  const user = userEvent.setup();
+  render(<Harness />);
+  const search = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.type(search, 'Oli');
+  await screen.findByRole('option');
+  await user.keyboard('{ArrowDown}{Enter}');
+  expect(bridge.drafts.apply).not.toHaveBeenCalled();
+  expect(await flushAll()).toBe(false);
+  await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
+  await waitFor(() => expect(bridge.drafts.apply).toHaveBeenCalledOnce());
+  expect(bridge.drafts.apply.mock.calls[0]![0].op).toMatchObject({
+    catalogItemId: 'item',
+  });
+});

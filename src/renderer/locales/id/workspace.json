@@ -263,5 +263,8 @@
     "UNPAID": "Belum dibayar",
     "PARTIALLY_PAID": "Dibayar sebagian",
     "PAID": "Lunas"
+  },
+  "entry": {
+    "automatic": "Otomatis"
   }
 }

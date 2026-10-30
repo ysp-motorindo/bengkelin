@@ -263,5 +263,8 @@
     "UNPAID": "Unpaid",
     "PARTIALLY_PAID": "Partially paid",
     "PAID": "Paid"
+  },
+  "entry": {
+    "automatic": "Automatic"
   }
 }

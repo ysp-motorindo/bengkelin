@@ -33,6 +33,8 @@ import {
 import type { Result } from '@/shared/primitives';
 
 interface CustomLineDialogProps {
+  inline?: boolean;
+  onDirtyChange?(dirty: boolean): void;
   /** Ids of the draft's current lines, to find the one this dialog adds. */
   existingLineIds: readonly string[];
   units: ReferenceDto[];
@@ -48,6 +50,8 @@ interface CustomLineDialogProps {
  * a follow-up updateLine on the new line.
  */
 export function CustomLineDialog({
+  inline = false,
+  onDirtyChange,
   existingLineIds,
   units,
   mechanics,
@@ -209,7 +213,171 @@ export function CustomLineDialog({
     }
   }
 
+  useEffect(() => {
+    onDirtyChange?.(
+      !!(title || price || unitId || mechanicId || quantity !== '1'),
+    );
+  }, [title, price, unitId, mechanicId, quantity, onDirtyChange]);
+
   const open = suggestions.length > 0;
+  const form = (
+    <form
+      id="custom-line-form"
+      onSubmit={submit}
+      noValidate
+      className={
+        inline
+          ? 'grid items-end gap-2 sm:grid-cols-[8rem_minmax(12rem,1fr)_minmax(18rem,1fr)_10rem]'
+          : 'flex flex-col gap-3'
+      }
+    >
+      {formError ? <Alert>{formError}</Alert> : null}
+      <FormField label={t('workspace.custom.type')}>
+        <Select
+          ref={typeRef}
+          value={type}
+          onChange={(event) => {
+            setType(event.target.value as AdHocItemType);
+            setReferenceId(null);
+          }}
+        >
+          {AD_HOC_ITEM_TYPES.map((value) => (
+            <option key={value} value={value}>
+              {t(`workspace.itemType.${value}`)}
+            </option>
+          ))}
+        </Select>
+      </FormField>
+
+      <div className="relative flex flex-col gap-1.5">
+        <Label htmlFor={titleInputId}>{t('workspace.custom.itemTitle')}</Label>
+        <input
+          id={titleInputId}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={
+            open && active >= 0 ? `${listId}-${active}` : undefined
+          }
+          aria-invalid={errors.title ? true : undefined}
+          autoComplete="off"
+          className={controlClass}
+          value={title}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            setReferenceId(null);
+          }}
+          onKeyDown={onTitleKeyDown}
+          onBlur={() => setSuggestions([])}
+        />
+        {errors.title ? (
+          <p className="text-sm text-destructive">{t(errors.title)}</p>
+        ) : null}
+        <ul
+          id={listId}
+          role="listbox"
+          aria-label={t('workspace.custom.suggestions')}
+          hidden={!open}
+          className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-auto rounded-md border border-border bg-card py-1 shadow-lg"
+        >
+          {suggestions.map((reference, index) => (
+            <li
+              key={reference.id}
+              id={`${listId}-${index}`}
+              role="option"
+              aria-selected={index === active}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                choose(reference);
+              }}
+              className={cn(
+                'flex cursor-pointer justify-between gap-2 px-3 py-2 text-sm',
+                index === active && 'bg-accent text-accent-foreground',
+              )}
+            >
+              <span>{reference.title}</span>
+              {reference.defaultPrice ? (
+                <span className="tabular text-muted-foreground">
+                  {formatIdr(reference.defaultPrice)}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <FormField label={t('workspace.custom.price')} error={errors.unitPrice}>
+          <NumericInput
+            autoComplete="off"
+            className="tabular"
+            value={price}
+            onValueChange={setPrice}
+          />
+        </FormField>
+        <FormField
+          label={t('workspace.custom.quantity')}
+          error={errors.quantity}
+        >
+          <NumericInput
+            autoComplete="off"
+            className="tabular"
+            value={quantity}
+            onValueChange={setQuantity}
+          />
+        </FormField>
+        <FormField label={t('workspace.custom.unit')}>
+          <Select
+            value={unitId}
+            onChange={(event) => setUnitId(event.target.value)}
+          >
+            <option value="">{t('workspace.custom.noUnit')}</option>
+            {units.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+      </div>
+
+      {type === 'SERVICE' ? (
+        <FormField label={t('workspace.custom.mechanic')}>
+          <Select
+            value={mechanicId}
+            onChange={(event) => setMechanicId(event.target.value)}
+          >
+            <option value="">{t('workspace.editor.noMechanic')}</option>
+            {mechanics.map((mechanic) => (
+              <option key={mechanic.id} value={mechanic.id}>
+                {mechanic.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+      ) : null}
+    </form>
+  );
+  if (inline)
+    return (
+      <section aria-label={t('workspace.custom.title')} className="grid gap-2">
+        {form}
+        <div className="flex gap-2">
+          <Button type="submit" form="custom-line-form" disabled={busy}>
+            {t('workspace.custom.add')}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={onClose}
+          >
+            {t('workspace.common.cancel')}
+          </Button>
+        </div>
+      </section>
+    );
   return (
     <Dialog
       title={t('workspace.custom.title')}
@@ -233,144 +401,7 @@ export function CustomLineDialog({
         </DialogActions>
       }
     >
-      <form
-        id="custom-line-form"
-        onSubmit={submit}
-        noValidate
-        className="flex flex-col gap-3"
-      >
-        {formError ? <Alert>{formError}</Alert> : null}
-        <FormField label={t('workspace.custom.type')}>
-          <Select
-            ref={typeRef}
-            value={type}
-            onChange={(event) => {
-              setType(event.target.value as AdHocItemType);
-              setReferenceId(null);
-            }}
-          >
-            {AD_HOC_ITEM_TYPES.map((value) => (
-              <option key={value} value={value}>
-                {t(`workspace.itemType.${value}`)}
-              </option>
-            ))}
-          </Select>
-        </FormField>
-
-        <div className="relative flex flex-col gap-1.5">
-          <Label htmlFor={titleInputId}>
-            {t('workspace.custom.itemTitle')}
-          </Label>
-          <input
-            id={titleInputId}
-            role="combobox"
-            aria-expanded={open}
-            aria-controls={listId}
-            aria-autocomplete="list"
-            aria-activedescendant={
-              open && active >= 0 ? `${listId}-${active}` : undefined
-            }
-            aria-invalid={errors.title ? true : undefined}
-            autoComplete="off"
-            className={controlClass}
-            value={title}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              setReferenceId(null);
-            }}
-            onKeyDown={onTitleKeyDown}
-            onBlur={() => setSuggestions([])}
-          />
-          {errors.title ? (
-            <p className="text-sm text-destructive">{t(errors.title)}</p>
-          ) : null}
-          <ul
-            id={listId}
-            role="listbox"
-            aria-label={t('workspace.custom.suggestions')}
-            hidden={!open}
-            className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-auto rounded-md border border-border bg-card py-1 shadow-lg"
-          >
-            {suggestions.map((reference, index) => (
-              <li
-                key={reference.id}
-                id={`${listId}-${index}`}
-                role="option"
-                aria-selected={index === active}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  choose(reference);
-                }}
-                className={cn(
-                  'flex cursor-pointer justify-between gap-2 px-3 py-2 text-sm',
-                  index === active && 'bg-accent text-accent-foreground',
-                )}
-              >
-                <span>{reference.title}</span>
-                {reference.defaultPrice ? (
-                  <span className="tabular text-muted-foreground">
-                    {formatIdr(reference.defaultPrice)}
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <FormField
-            label={t('workspace.custom.price')}
-            error={errors.unitPrice}
-          >
-            <NumericInput
-              autoComplete="off"
-              className="tabular"
-              value={price}
-              onValueChange={setPrice}
-            />
-          </FormField>
-          <FormField
-            label={t('workspace.custom.quantity')}
-            error={errors.quantity}
-          >
-            <NumericInput
-              autoComplete="off"
-              className="tabular"
-              value={quantity}
-              onValueChange={setQuantity}
-            />
-          </FormField>
-          <FormField label={t('workspace.custom.unit')}>
-            <Select
-              value={unitId}
-              onChange={(event) => setUnitId(event.target.value)}
-            >
-              <option value="">{t('workspace.custom.noUnit')}</option>
-              {units.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.label}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        </div>
-
-        {type === 'SERVICE' ? (
-          <FormField label={t('workspace.custom.mechanic')}>
-            <Select
-              value={mechanicId}
-              onChange={(event) => setMechanicId(event.target.value)}
-            >
-              <option value="">{t('workspace.editor.noMechanic')}</option>
-              {mechanics.map((mechanic) => (
-                <option key={mechanic.id} value={mechanic.id}>
-                  {mechanic.label}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        ) : null}
-      </form>
+      {form}
     </Dialog>
   );
 }

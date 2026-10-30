@@ -78,6 +78,7 @@ describe('custom line dialog retry (T9)', () => {
     const onClose = vi.fn();
     render(
       <CustomLineDialog
+        inline
         existingLineIds={[]}
         units={[]}
         mechanics={[MECHANIC]}

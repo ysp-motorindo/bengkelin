@@ -15,6 +15,9 @@ import type { CatalogItemDto } from '@/shared/contracts';
 export type ScanOutcome = 'added' | 'unknown' | 'other';
 
 interface ScannerComboboxProps {
+  compact?: boolean;
+  disabled?: boolean;
+  onTextChange?(text: string): void;
   inputRef: RefObject<HTMLInputElement | null>;
   /** Enter with free text: try it as a barcode. */
   onScan(code: string): Promise<ScanOutcome>;
@@ -35,6 +38,9 @@ const SEARCH_DELAY_MS = 150;
  * field clears on Enter so back-to-back scans never run together.
  */
 export function ScannerCombobox({
+  compact = false,
+  disabled = false,
+  onTextChange,
   inputRef,
   onScan,
   onPick,
@@ -99,6 +105,7 @@ export function ScannerCombobox({
     clearTimeout(timer.current);
     searchSeq.current += 1;
     setText('');
+    onTextChange?.('');
     setResults([]);
     setOpen(false);
     setActive(-1);
@@ -170,6 +177,7 @@ export function ScannerCombobox({
         />
         <input
           ref={inputRef}
+          disabled={disabled}
           id={`${listId}-input`}
           role="combobox"
           aria-expanded={open}
@@ -183,6 +191,7 @@ export function ScannerCombobox({
           value={text}
           onChange={(event) => {
             setText(event.target.value);
+            onTextChange?.(event.target.value);
             // New input: forget any highlighted result (see `navigated`).
             navigated.current = false;
             setActive(-1);
@@ -192,7 +201,12 @@ export function ScannerCombobox({
           }}
           onKeyDown={onKeyDown}
           onBlur={() => setOpen(false)}
-          className="h-12 w-full rounded-md border border-input bg-card pl-11 pr-3 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(
+            'w-full rounded-md border border-input bg-card pl-11 pr-3 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            compact
+              ? 'h-8 bg-amber-50 text-xs dark:bg-amber-950/40'
+              : 'h-12 text-base',
+          )}
         />
         <ul
           id={listId}

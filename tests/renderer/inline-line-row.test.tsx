@@ -122,7 +122,11 @@ test('removing an invalid row clears its checkout blocker', async () => {
 
 test('older acknowledgment does not replace newer focused quantity', async () => {
   const bridge = install();
-  let resolve!: (value: ReturnType<typeof ok>) => void;
+  let resolve!: (
+    value: import('@/shared/primitives').Result<
+      import('@/shared/contracts').DraftView
+    >,
+  ) => void;
   bridge.drafts.apply.mockImplementationOnce(
     () =>
       new Promise((done) => {
