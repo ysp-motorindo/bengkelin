@@ -134,7 +134,7 @@
     "invalid": "Tanggal atau jam tidak valid.",
     "nonexistent": "Jam ini tidak ada di zona waktu toko (pergantian jam). Pilih jam lain.",
     "ambiguous": "Jam ini terjadi dua kali. Pilih offset:",
-    "retainNote": "Harga baris yang sudah ada tidak berubah. Gunakan \"Tinjau harga\" untuk memperbaruinya.",
+    "retainNote": "Harga baris yang sudah ada tidak berubah. Gunakan \"Cek harga\" untuk memperbaruinya.",
     "apply": "Terapkan"
   },
   "party": {
@@ -214,8 +214,8 @@
     "zeroContinue": "Konfirmasi dan lanjutkan"
   },
   "repricing": {
-    "open": "Cek Harga",
-    "title": "Tinjau harga",
+    "open": "Cek harga",
+    "title": "Cek harga",
     "description": "Harga menurut channel {{channel}} pada {{time}}. Pilih baris yang akan diperbarui.",
     "select": "Perbarui",
     "current": "Harga sekarang",

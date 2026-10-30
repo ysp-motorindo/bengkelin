@@ -24,7 +24,6 @@ import { RepricingDialog } from './RepricingDialog';
 import { SaveIndicator } from './SaveIndicator';
 import { LineEntryRow, type LineEntryRowHandle } from './LineEntryRow';
 import { useSyncedValue } from './synced-field';
-import { formatWithOffset } from './shop-time';
 import { useDraftCommands } from './use-draft-commands';
 import { registerWorkspaceActions } from './workspace-actions';
 
@@ -265,7 +264,7 @@ export function DraftWorkspace({
       {dialog?.kind === 'repricing' ? (
         <RepricingDialog
           commands={commands}
-          timezoneLabel={formatWithOffset(view.pricingAt, timezone)}
+          timezone={timezone}
           onClose={closeDialog}
         />
       ) : null}

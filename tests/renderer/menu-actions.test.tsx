@@ -118,7 +118,7 @@ describe('menu action dispatch in the shell', () => {
     await screen.findByRole('combobox', { name: 'Cari barang' });
     expect(bridge.drafts.create).toHaveBeenCalledTimes(1);
     await userEvent.click(
-      screen.getByRole('button', { name: 'Pilih pelanggan' }),
+      screen.getByRole('option', { name: 'Item kustom' }),
     );
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     await fire('newTransaction');

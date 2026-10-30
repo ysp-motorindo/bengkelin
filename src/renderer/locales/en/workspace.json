@@ -134,7 +134,7 @@
     "invalid": "The date or time is not valid.",
     "nonexistent": "This time does not exist in the shop time zone (clock change). Choose another time.",
     "ambiguous": "This time occurs twice. Choose the offset:",
-    "retainNote": "Existing line prices do not change. Use \"Review prices\" to update them.",
+    "retainNote": "Existing line prices do not change. Use \"Check prices\" to update them.",
     "apply": "Apply"
   },
   "party": {
@@ -214,8 +214,8 @@
     "zeroContinue": "Confirm and continue"
   },
   "repricing": {
-    "open": "Check Prices",
-    "title": "Review prices",
+    "open": "Check prices",
+    "title": "Check prices",
     "description": "Prices for channel {{channel}} at {{time}}. Choose the lines to update.",
     "select": "Update",
     "current": "Current price",

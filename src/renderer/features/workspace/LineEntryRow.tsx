@@ -74,7 +74,10 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
           quantity: 1,
         });
         if (!result.ok) {
-          setFeedback(errorMessage(t, result.error));
+          const message = errorMessage(t, result.error);
+          setFeedback(
+            'barcode' in target ? `${message} (${target.barcode})` : message,
+          );
           return result.error.code === 'UNKNOWN_BARCODE' ? 'unknown' : 'other';
         }
         if (submittedRevision === revision.current) {

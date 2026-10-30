@@ -1,8 +1,8 @@
-import { CalendarClock, TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
-import { Button, IconButton } from '@/renderer/components/ui/button';
+import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
@@ -17,10 +17,7 @@ import type { Instant, LocalDate } from '@/shared/primitives';
 import { CustomerVehiclePicker } from './CustomerVehiclePicker';
 import { OwnershipDialog } from './OwnershipDialog';
 import { PricingTimeDialog } from './PricingTimeDialog';
-import {
-  formatDisplayDate,
-  formatDisplayDateTime,
-} from '@/renderer/lib/date-format';
+import { formatDisplayDate } from '@/renderer/lib/date-format';
 import { todayInShop } from './shop-time';
 import { useSyncedValue } from './synced-field';
 import type { DraftCommands } from './use-draft-commands';
@@ -36,7 +33,6 @@ interface DraftHeaderProps {
 }
 
 type Pending =
-  | { kind: 'pricing' }
   | { kind: 'backdate'; date: LocalDate }
   | { kind: 'ownership' }
   | null;
@@ -305,27 +301,6 @@ export function DraftHeader({
           />
         </FormField>
       </div>
-      <details className="text-xs text-muted-foreground">
-        <summary className="cursor-pointer">
-          {t('workspace.header.pricingOptions')}
-        </summary>
-        <div className="mt-2 flex items-end gap-2">
-          <FormField label={t('workspace.header.pricingAt')}>
-            <Input
-              readOnly
-              data-testid="header-pricing-at"
-              value={formatDisplayDateTime(view.pricingAt, timezone)}
-            />
-          </FormField>
-          <IconButton
-            label={t('workspace.header.changePricingAt')}
-            onClick={() => setPending({ kind: 'pricing' })}
-          >
-            <CalendarClock aria-hidden="true" />
-          </IconButton>
-        </div>
-      </details>
-
       {view.ownerMismatch ? (
         <div
           role="alert"
@@ -348,7 +323,7 @@ export function DraftHeader({
         </div>
       ) : null}
 
-      {pending?.kind === 'pricing' || pending?.kind === 'backdate' ? (
+      {pending?.kind === 'backdate' ? (
         <PricingTimeDialog
           timezone={timezone}
           currentPricingAt={view.pricingAt}

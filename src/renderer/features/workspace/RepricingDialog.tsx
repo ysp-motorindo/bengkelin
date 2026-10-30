@@ -8,11 +8,14 @@ import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { errorMessage } from '@/renderer/lib/errors';
 import { watchSessionError } from '@/renderer/lib/session-events';
 import type { PriceRefreshPreviewDto } from '@/shared/contracts';
+import { PricingTimeDialog } from './PricingTimeDialog';
+import { formatWithOffset } from './shop-time';
+import type { Instant } from '@/shared/primitives';
 import type { DraftCommands } from './use-draft-commands';
 
 interface RepricingDialogProps {
   commands: DraftCommands;
-  timezoneLabel: string;
+  timezone: string;
   onClose(): void;
 }
 
@@ -26,7 +29,7 @@ const STALE_CODES = ['DRAFT_PRICE_REFRESH_STALE', 'DRAFT_VERSION_CONFLICT'];
  */
 export function RepricingDialog({
   commands,
-  timezoneLabel,
+  timezone,
   onClose,
 }: RepricingDialogProps) {
   const { numberOptions, formatIdr } = useNumberFormat();
@@ -36,12 +39,20 @@ export function RepricingDialog({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [editingTime, setEditingTime] = useState(false);
+  const [savingTime, setSavingTime] = useState(false);
   const [busy, setBusy] = useState(true);
 
   const load = useCallback(async () => {
     setBusy(true);
+    setPreview(null);
+    setSelected(new Set());
+    setError(null);
     try {
-      await flush();
+      if (!(await flush())) {
+        setError(t('workspace.notices.unsaved'));
+        return;
+      }
       const result = await window.bengkelin.drafts.previewPriceRefresh({
         invoiceId: view.id,
       });
@@ -103,13 +114,38 @@ export function RepricingDialog({
     }
   }
 
+  async function saveTime(pricingAt: Instant | null) {
+    if (!pricingAt) {
+      setEditingTime(false);
+      return;
+    }
+    setSavingTime(true);
+    setError(null);
+    try {
+      const result = await send({
+        kind: 'updateHeader',
+        changes: { pricingAt },
+      });
+      if (!result.ok) {
+        setError(errorMessage(t, result.error));
+        return;
+      }
+      setEditingTime(false);
+      await load();
+    } catch {
+      setError(t('errors.INTERNAL_ERROR'));
+    } finally {
+      setSavingTime(false);
+    }
+  }
+
   const proposals = preview?.proposals ?? [];
   return (
     <Dialog
       title={t('workspace.repricing.title')}
       description={t('workspace.repricing.description', {
         channel: view.channelLabel,
-        time: timezoneLabel,
+        time: formatWithOffset(view.pricingAt, timezone),
       })}
       onClose={onClose}
       closeLabel={t('workspace.common.close')}
@@ -127,7 +163,7 @@ export function RepricingDialog({
             {t('workspace.repricing.refresh')}
           </Button>
           <Button
-            disabled={busy || selected.size === 0}
+            disabled={busy || editingTime || savingTime || selected.size === 0}
             onClick={() => void apply()}
           >
             <Check aria-hidden="true" />
@@ -139,6 +175,32 @@ export function RepricingDialog({
         </DialogActions>
       }
     >
+      <div className="mb-3 flex items-center gap-2 text-sm">
+        <span>
+          {t('workspace.header.pricingAt')}:{' '}
+          {formatWithOffset(view.pricingAt, timezone)}
+        </span>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy || savingTime}
+          onClick={() => setEditingTime(true)}
+        >
+          {t('workspace.header.changePricingAt')}
+        </Button>
+      </div>
+      {editingTime ? (
+        <PricingTimeDialog
+          timezone={timezone}
+          currentPricingAt={view.pricingAt}
+          onConfirm={(time) => {
+            if (!savingTime) void saveTime(time);
+          }}
+          onClose={() => {
+            if (!savingTime) setEditingTime(false);
+          }}
+        />
+      ) : null}
       {notice ? (
         <p role="status" className="text-sm text-warning">
           {notice}

@@ -1,4 +1,3 @@
-import { errorMessage } from '@/renderer/lib/errors';
 import { useEffect, useId, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
