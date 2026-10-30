@@ -1,3 +1,4 @@
+import type { ReferenceTransferService } from '@/main/features/reference-transfer/service';
 import type { CustomerTransferService } from '@/main/features/customer-transfer/service';
 import type { CashierService } from '@/main/features/auth/cashier-service';
 import type { AuthService } from '@/main/features/auth/service';
@@ -50,6 +51,7 @@ export interface ApplicationServices {
   backups: BackupService;
   restore: RestoreService;
   catalogTransfer: CatalogTransferService;
+  referenceTransfer: ReferenceTransferService;
   customerTransfer: CustomerTransferService;
   restoreNotice: RestoreNoticeService;
   app: AppService;

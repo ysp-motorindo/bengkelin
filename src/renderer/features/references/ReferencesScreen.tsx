@@ -1,3 +1,4 @@
+import { ReferenceImportDialog } from './ReferenceImportDialog';
 import {
   useCallback,
   useEffect,
@@ -100,6 +101,7 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
   const { t } = useTranslation();
   const [items, setItems] = useState<ReferenceDto[]>([]);
   const [brands, setBrands] = useState<ReferenceDto[]>([]);
+  const [importing, setImporting] = useState(false);
   const [editing, setEditing] = useState<Editing>(null);
   const { busy, error, run, check } = useAction();
 
@@ -137,8 +139,42 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {importing && (entity === 'sales' || entity === 'expedition') ? (
+        <ReferenceImportDialog
+          entity={entity}
+          onClose={() => setImporting(false)}
+          onImported={load}
+        />
+      ) : null}
       {error && !editing ? <Alert>{error}</Alert> : null}
-      <div>
+      <div className="flex gap-2">
+        {entity === 'sales' || entity === 'expedition' ? (
+          <>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setImporting(true)}
+            >
+              {t('references.import.title')}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  const result =
+                    await window.bengkelin.referenceTransfer.downloadTemplate({
+                      entity,
+                    });
+                  if (check(result) && result.value.outcome === 'FAILED')
+                    throw new Error(t('errors.EXPORT_FAILED'));
+                })
+              }
+            >
+              {t('references.import.template')}
+            </Button>
+          </>
+        ) : null}
         <Button onClick={() => setEditing({ kind: 'new' })} disabled={busy}>
           {t('references.actions.add')}
         </Button>

@@ -1,3 +1,7 @@
+import {
+  referenceTransferInputSchema,
+  commitReferenceImportInputSchema,
+} from '@/shared/contracts';
 import { CHANNELS } from '@/shared/channels';
 import {
   finalizeInputSchema,
@@ -166,6 +170,7 @@ export function buildCommands(services: ApplicationServices): Command[] {
     backups,
     restore,
     catalogTransfer,
+    referenceTransfer,
     customerTransfer,
     app,
     menu,
@@ -512,6 +517,24 @@ export function buildCommands(services: ApplicationServices): Command[] {
       ({ windowId }, input) => reports.exportCsv(session(windowId), input),
     ),
 
+    command(
+      C.referenceTransfer.previewImport,
+      referenceTransferInputSchema,
+      ({ windowId }, input) =>
+        referenceTransfer.previewImport(session(windowId), input),
+    ),
+    command(
+      C.referenceTransfer.commitImport,
+      commitReferenceImportInputSchema,
+      ({ windowId }, input) =>
+        referenceTransfer.commitImport(session(windowId), input),
+    ),
+    command(
+      C.referenceTransfer.downloadTemplate,
+      referenceTransferInputSchema,
+      ({ windowId }, input) =>
+        referenceTransfer.downloadTemplate(session(windowId), input),
+    ),
     command(C.customerTransfer.previewImport, noInput, ({ windowId }) =>
       customerTransfer.previewImport(session(windowId)),
     ),

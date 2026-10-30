@@ -1,3 +1,4 @@
+import { ReferenceTransferService } from '@/main/features/reference-transfer/service';
 import { CustomerTransferService } from '@/main/features/customer-transfer/service';
 import type { AppDatabase } from '@/main/database/connection';
 import { CashierService } from '@/main/features/auth/cashier-service';
@@ -146,6 +147,14 @@ export function createApplicationServices(
     cashiers: new CashierService({ db, clock, sessions }),
     references: new ReferenceService({ db, clock }),
     customers: new CustomerService({ db, clock }),
+    referenceTransfer: new ReferenceTransferService({
+      db,
+      clock,
+      dialogs,
+      backups,
+      logger,
+      sessions,
+    }),
     customerTransfer: new CustomerTransferService({
       db,
       clock,

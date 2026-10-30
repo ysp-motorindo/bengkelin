@@ -37,5 +37,17 @@
   "form": {
     "create": "Add entry",
     "edit": "Edit entry"
+  },
+  "import": {
+    "title": "Import CSV",
+    "open": "Import CSV...",
+    "choose": "Choose CSV...",
+    "description": "Match by code. Blank optional cells preserve existing values. Records absent from the file are kept.",
+    "total": "{{count}} rows",
+    "truncated": "Showing the first 500 rows or issues; counts include all rows.",
+    "action": "Action",
+    "done": "{{count}} reference records imported.",
+    "code": "Code",
+    "template": "Download CSV template"
   }
 }

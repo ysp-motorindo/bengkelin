@@ -19,3 +19,5 @@ export * from './catalog-transfer';
 export * from './app';
 
 export * from './customer-transfer';
+
+export * from './reference-transfer';

@@ -120,6 +120,11 @@ export const CHANNELS = {
     print: 'bengkelin:reports:print',
     exportCsv: 'bengkelin:reports:exportCsv',
   },
+  referenceTransfer: {
+    previewImport: 'bengkelin:referenceTransfer:previewImport',
+    commitImport: 'bengkelin:referenceTransfer:commitImport',
+    downloadTemplate: 'bengkelin:referenceTransfer:downloadTemplate',
+  },
   customerTransfer: {
     previewImport: 'bengkelin:customerTransfer:previewImport',
     commitImport: 'bengkelin:customerTransfer:commitImport',

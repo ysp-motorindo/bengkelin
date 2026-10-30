@@ -37,5 +37,17 @@
   "form": {
     "create": "Tambah data",
     "edit": "Ubah data"
+  },
+  "import": {
+    "title": "Impor CSV",
+    "open": "Impor CSV...",
+    "choose": "Pilih CSV...",
+    "description": "Cocokkan berdasarkan kode. Kolom opsional kosong mempertahankan nilai lama. Data yang tidak ada di berkas tetap disimpan.",
+    "total": "{{count}} baris",
+    "truncated": "Menampilkan 500 baris atau masalah pertama; jumlah mencakup seluruh baris.",
+    "action": "Tindakan",
+    "done": "{{count}} data referensi diimpor.",
+    "code": "Kode",
+    "template": "Unduh templat CSV"
   }
 }

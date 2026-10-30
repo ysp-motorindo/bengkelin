@@ -142,5 +142,8 @@
   "CUSTOMER_IMPORT_INVALID_ROW": "Invalid customer row. Check the columns, external ID, field lengths and true/false status.",
   "CUSTOMER_IMPORT_DUPLICATE_ID": "External IDs must be unique within the CSV.",
   "CUSTOMER_IMPORT_DUPLICATE_PHONES": "Acknowledge duplicate phone numbers before importing.",
-  "DUPLICATE_PHONE": "This phone number is shared by multiple customers."
+  "DUPLICATE_PHONE": "This phone number is shared by multiple customers.",
+  "REFERENCE_IMPORT_HEADER": "CSV columns must match the template.",
+  "REFERENCE_IMPORT_INVALID_ROW": "Invalid row; check the indicated column.",
+  "REFERENCE_IMPORT_DUPLICATE_CODE": "Duplicate code in the file."
 }
