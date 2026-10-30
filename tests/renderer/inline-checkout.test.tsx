@@ -211,3 +211,11 @@ test('details are collapsed until the accessible icon is toggled', async () => {
   await userEvent.click(toggle);
   expect(toggle).toHaveAttribute('aria-expanded', 'true');
 });
+
+test('invoice discount uses a separate percent suffix', () => {
+  Object.assign(window, { bengkelin: workspaceBridge() });
+  render(<Harness />);
+  const discount = screen.getByRole('textbox', { name: 'Disc' });
+  expect(discount.nextElementSibling).toHaveTextContent('%');
+  expect(discount).toHaveAccessibleDescription('%');
+});

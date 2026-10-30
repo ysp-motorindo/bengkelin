@@ -74,12 +74,59 @@ for (const lang of ['id', 'en'] as const) {
         .getByLabel(t('workspace.header.vehicleNumber'), { exact: true })
         .boundingBox();
       expect(vehicle!.y).toBe(tax!.y);
+      const invoiceBox = (await invoiceNumber.boundingBox())!;
+      expect(Math.abs(tax!.x - invoiceBox.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(tax!.width - invoiceBox.width)).toBeLessThanOrEqual(1);
+      const dateBox = (await page
+        .getByLabel(t('workspace.header.invoiceDate'), { exact: true })
+        .boundingBox())!;
+      const topBox = (await page
+        .getByLabel(t('workspace.header.topDays'), { exact: true })
+        .boundingBox())!;
+      expect(Math.abs(vehicle!.x - dateBox.x)).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(vehicle!.x + vehicle!.width - topBox.x - topBox.width),
+      ).toBeLessThanOrEqual(1);
+      const note = page.getByRole('textbox', {
+        name: t('workspace.header.note'),
+        exact: true,
+      });
+      await expect(note.locator('..')).toHaveCSS('border-top-width', '0px');
+      await expect(note.locator('..')).toHaveCSS('padding-top', '0px');
+      await note.fill('Invoice layout note');
+      const discount = page.getByRole('textbox', { name: 'Disc', exact: true });
+      const payment = page.getByLabel(t('workspace.checkout.payments'), {
+        exact: true,
+      });
+      for (const input of [discount, payment]) {
+        await expect(input).toHaveCSS('text-align', 'right');
+        await expect(input).toHaveCSS('border-top-width', '0px');
+        await expect(input).toHaveCSS('border-left-width', '0px');
+        await expect(input).toHaveCSS('border-bottom-style', 'dashed');
+        const inputRow = (await input
+          .locator('xpath=ancestor::tr')
+          .boundingBox())!;
+        const subtotalRow = (await page
+          .getByTestId('subtotal-amount')
+          .locator('..')
+          .boundingBox())!;
+        expect(
+          Math.abs(inputRow.height - subtotalRow.height),
+        ).toBeLessThanOrEqual(1);
+      }
       await page.screenshot({
         path: path.join(directory, 'initial-layout.png'),
       });
       await search.fill(OIL_BARCODE);
       await search.press('Enter');
       await expect(page.getByTestId('line-row')).toHaveCount(1);
+      for (const input of await page
+        .getByTestId('line-row')
+        .first()
+        .locator('input[inputmode]')
+        .all()) {
+        await expect(input).toHaveCSS('text-align', 'right');
+      }
       await search.fill('Unpriced');
       const option = page.getByRole('option', { name: /Unpriced inspection/ });
       await expect(option).toBeVisible();
@@ -134,6 +181,23 @@ for (const lang of ['id', 'en'] as const) {
         }),
       ).toHaveValue('TAX-42');
       await expect(cash).toHaveValue('100.000');
+      await expect(note).toHaveValue('Invoice layout note');
+      await discount.fill('101');
+      await expect(discount).toHaveAttribute('aria-invalid', 'true');
+      await expect(discount).toBeFocused();
+      await expect(discount).not.toHaveCSS('box-shadow', 'none');
+      await discount.fill('5');
+      await expect(page.getByTestId('save-state')).toHaveAttribute(
+        'data-state',
+        'saved',
+      );
+      await page.reload();
+      await expect(discount).toHaveValue('5');
+      await discount.fill('0');
+      await expect(page.getByTestId('save-state')).toHaveAttribute(
+        'data-state',
+        'saved',
+      );
       await page.evaluate(async () => {
         const b = window.bengkelin;
         const list = await b.drafts.list();
@@ -171,6 +235,7 @@ for (const lang of ['id', 'en'] as const) {
         );
         await page.reload();
         for (const size of [
+          { width: 900, height: 768 },
           { width: 1366, height: 768 },
           { width: 1920, height: 1080 },
         ]) {
@@ -178,6 +243,7 @@ for (const lang of ['id', 'en'] as const) {
           const footer = page.getByRole('complementary', {
             name: t('workspace.checkout.label'),
           });
+          if (size.width < 1024) await footer.scrollIntoViewIfNeeded();
           await expect(footer).toBeInViewport();
           await expect(
             page.getByRole('button', {
@@ -187,6 +253,7 @@ for (const lang of ['id', 'en'] as const) {
           ).toBeInViewport();
           await page.getByTestId('line-row').last().scrollIntoViewIfNeeded();
           await expect(page.getByTestId('line-row').last()).toBeInViewport();
+          if (size.width < 1024) await footer.scrollIntoViewIfNeeded();
           await expect(footer).toBeInViewport();
           await page.screenshot({
             path: path.join(

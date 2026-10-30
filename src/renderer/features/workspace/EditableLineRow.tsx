@@ -181,6 +181,7 @@ export function EditableLineRow({
         <td>
           <NumericInput
             {...common('quantity', t('workspace.editor.quantity'))}
+            className={`${transactionCellClass} text-right`}
             data-testid="line-quantity"
             value={values.quantity}
             onValueChange={(text) => change('quantity', text)}
@@ -189,6 +190,7 @@ export function EditableLineRow({
         <td>
           <NumericInput
             {...common('unitPrice', t('workspace.editor.unitPrice'))}
+            className={`${transactionCellClass} text-right`}
             data-price-input
             value={values.unitPrice}
             onValueChange={(text) => change('unitPrice', text)}
@@ -201,6 +203,7 @@ export function EditableLineRow({
                 'discounts',
                 t(`workspace.editor.discount${index + 1}`),
               )}
+              className={`${transactionCellClass} text-right`}
               decimal
               value={text}
               onValueChange={(value) => changeDiscount(index, value)}

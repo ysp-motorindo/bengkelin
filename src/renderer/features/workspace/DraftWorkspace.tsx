@@ -305,7 +305,7 @@ function TransactionNote({
     commands.isDirty('note'),
   );
   return (
-    <label className="grid gap-1.5 rounded-lg border border-border bg-card p-3 text-sm font-medium">
+    <label className="grid gap-1.5 text-sm font-medium">
       {t('workspace.header.note')}
       <textarea
         aria-label={t('workspace.header.note')}

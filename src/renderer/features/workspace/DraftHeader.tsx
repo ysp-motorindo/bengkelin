@@ -266,7 +266,7 @@ export function DraftHeader({
               />
             </FormField>
           </div>
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-2 lg:col-span-1">
             <FormField label={t('workspace.header.taxInvoiceNumber')}>
               <Input
                 maxLength={100}
@@ -281,11 +281,13 @@ export function DraftHeader({
               />
             </FormField>
           </div>
-          <CustomerVehiclePicker
-            mode="vehicle"
-            commands={commands}
-            onError={onError}
-          />
+          <div className="lg:col-span-2">
+            <CustomerVehiclePicker
+              mode="vehicle"
+              commands={commands}
+              onError={onError}
+            />
+          </div>
           <FormField
             label={t('workspace.header.odometer')}
             error={fieldErrors.odometer}

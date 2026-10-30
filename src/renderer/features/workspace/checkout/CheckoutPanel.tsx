@@ -107,14 +107,18 @@ export function CheckoutPanel({
                     </Button>
                   </span>
                 ) : (
-                  <NumericInput
-                    aria-label={t('workspace.checkout.singleDiscount')}
-                    decimal
-                    value={discount}
-                    onValueChange={changeDiscount}
-                    aria-invalid={!!errors.discount}
-                    className="h-7 w-20 text-left"
-                  />
+                  <div className="flex items-center gap-1">
+                    <NumericInput
+                      aria-label={t('workspace.checkout.singleDiscount')}
+                      aria-describedby="invoice-discount-unit"
+                      decimal
+                      value={discount}
+                      onValueChange={changeDiscount}
+                      aria-invalid={!!errors.discount}
+                      className="h-5 w-20 rounded-none border-0 border-b border-dashed border-input bg-transparent p-0 text-right"
+                    />
+                    <span id="invoice-discount-unit">%</span>
+                  </div>
                 )}
                 <span data-testid="invoice-discount-amount">
                   {formatIdr(view.totals.invoiceDiscountAmount)}
@@ -158,7 +162,7 @@ export function CheckoutPanel({
               ) : (
                 <NumericInput
                   id="invoice-cash-payment"
-                  className="h-7 text-right"
+                  className="h-5 rounded-none border-0 border-b border-dashed border-input bg-transparent p-0 text-right"
                   value={cash}
                   onValueChange={changeCash}
                   aria-invalid={!!errors.cash}
