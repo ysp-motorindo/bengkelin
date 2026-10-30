@@ -23,6 +23,8 @@ function makeView(version: number, extra: Partial<DraftView> = {}): DraftView {
     pricingAt: '2026-09-30T03:00:00.000Z',
     topDays: 0,
     dueDate: '2026-09-30',
+    sales: null,
+    expedition: null,
     customer: null,
     vehicle: null,
     ownerMismatch: false,

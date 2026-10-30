@@ -262,6 +262,12 @@ FIXTURE_ROWS[12] = FIXTURE_ROWS[11]!;
 FIXTURE_ROWS[13] = FIXTURE_ROWS[12]!;
 FIXTURE_ROWS[14] = FIXTURE_ROWS[13]!;
 FIXTURE_ROWS[15] = FIXTURE_ROWS[14]!;
+FIXTURE_ROWS[16] = {
+  ...FIXTURE_ROWS[15]!,
+  sales: 1,
+  expeditions: 1,
+  audit_log: 46,
+};
 
 const fixtures = readdirSync(FIXTURE_DIR)
   .map((file) => /^schema-v(\d{3})-populated\.sqlite$/.exec(file))
@@ -774,6 +780,16 @@ describe('progressive upgrade from an empty database', () => {
           );
           expect(report.sales.invoiceCount).toBeGreaterThan(0);
         },
+        16: async () => {
+          const a = await app();
+          for (const entity of ['sales', 'expedition']) {
+            await a.call(
+              C.references.save,
+              { entity, code: '001', label: 'Fixture' },
+              ADMIN,
+            );
+          }
+        },
         11: async () => {
           const a = await app();
           await a.call(C.backups.create, undefined, ADMIN);
@@ -941,6 +957,24 @@ function probeEveryTrigger(
     );
   }
 
+  for (const table of ['sales', 'expeditions']) {
+    expectFires(
+      `${table}_code_immutable`,
+      `UPDATE ${table} SET code = 'CHANGED'`,
+    );
+  }
+  for (const column of [
+    'sales_id',
+    'expedition_id',
+    'sales_name_snapshot',
+    'expedition_name_snapshot',
+  ]) {
+    expectFires(
+      'invoices_finalized_references_immutable',
+      `UPDATE invoices SET ${column} = 'changed' WHERE id = ?`,
+      [ids.d1],
+    );
+  }
   // Generic append-only / no-delete guards.
   for (const { name, tbl } of triggers) {
     if (name.endsWith('_no_delete')) {
@@ -1166,5 +1200,5 @@ function probeEveryTrigger(
     [ids.customerB, ids.vehicle],
   );
 
-  return fired;
+  return [...new Set(fired)];
 }

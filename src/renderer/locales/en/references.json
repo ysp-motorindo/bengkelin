@@ -5,7 +5,9 @@
     "vehicleBrand": "Vehicle brands",
     "vehicleModel": "Vehicle models",
     "channel": "Channels",
-    "unit": "Units"
+    "unit": "Units",
+    "sales": "Sales",
+    "expedition": "Expeditions"
   },
   "fields": {
     "name": "Name",
@@ -13,9 +15,14 @@
     "brand": "Brand",
     "code": "Code",
     "label": "Label",
-    "status": "Status"
+    "status": "Status",
+    "address": "Address",
+    "city": "City"
   },
-  "status": { "active": "Active", "inactive": "Inactive" },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
   "actions": {
     "label": "Actions",
     "add": "Add",
@@ -27,5 +34,8 @@
   },
   "codeHint": "The code cannot be changed after creation.",
   "empty": "No entries yet.",
-  "form": { "create": "Add entry", "edit": "Edit entry" }
+  "form": {
+    "create": "Add entry",
+    "edit": "Edit entry"
+  }
 }

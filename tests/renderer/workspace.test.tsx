@@ -321,3 +321,43 @@ describe('money helpers', () => {
     ).toBe('0');
   });
 });
+
+test('optional sales and expedition pickers show codes and queue header changes', async () => {
+  const bridge = install();
+  const master = {
+    entity: 'sales' as const,
+    id: '11111111-1111-4111-8111-111111111111',
+    code: '001',
+    label: 'Sales name',
+    phoneNumber: null,
+    brandId: null,
+    address: null,
+    city: null,
+    isActive: true,
+  };
+  bridge.references.listActive.mockImplementation(async ({ entity }) =>
+    ok(entity === 'sales' ? [master] : []),
+  );
+  // Keep the pricing channel provided by the normal fixture.
+  const normal = workspaceBridge();
+  bridge.references.listActive.mockImplementation(async ({ entity }) =>
+    entity === 'sales'
+      ? ok([master])
+      : normal.references.listActive({ entity }),
+  );
+  render(<CashierWorkspace />);
+  const sales = await screen.findByRole('combobox', { name: 'Sales' });
+  expect(sales).toHaveValue('');
+  expect(screen.getByRole('combobox', { name: 'Ekspedisi' })).toHaveValue('');
+  expect(
+    screen.getByRole('option', { name: '001 · Sales name' }),
+  ).toBeInTheDocument();
+  await userEvent.setup().selectOptions(sales, master.id);
+  await waitFor(() =>
+    expect(bridge.drafts.apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        op: { kind: 'updateHeader', changes: { salesId: master.id } },
+      }),
+    ),
+  );
+});

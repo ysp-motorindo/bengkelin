@@ -1819,7 +1819,13 @@ describe('forced-process recovery', () => {
       }
     });
     const signal = await exited;
-    expect(stderr).toBe('');
+    // macOS Electron emits this diagnostic even when the child succeeds.
+    expect(
+      stderr.replace(
+        /^\[\d+\/\d+\.\d+:ERROR:electron\/shell\/common\/mac\/codesign_util\.cc:79\] task_name_for_pid: \(os\/kern\) failure \(5\)\r?\n/gm,
+        '',
+      ),
+    ).toBe('');
     expect(signal).toBe('SIGKILL');
     expect(acks.length).toBeGreaterThanOrEqual(25);
 

@@ -7,6 +7,7 @@ import {
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { ReferencesScreen } from '@/renderer/features/references/ReferencesScreen';
 import { CashiersScreen } from '@/renderer/features/cashiers/CashiersScreen';
 import { CustomerEditForm } from '@/renderer/features/customers/CustomerEditForm';
 import { VehicleDetail } from '@/renderer/features/customers/VehicleDetail';
@@ -424,5 +425,38 @@ describe('customer and vehicle master data (T5 carry)', () => {
     expect(
       screen.queryByRole('button', { name: 'Nonaktifkan kendaraan' }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe.each(['Sales', 'Ekspedisi'])('%s reference management', (name) => {
+  test('creates a coded master with contact fields', async () => {
+    const entity = name === 'Sales' ? 'sales' : 'expedition';
+    const references = {
+      list: vi.fn(async () => ok([])),
+      save: vi.fn(async (input) =>
+        ok({ ...input, id: 'new-id', isActive: true }),
+      ),
+    };
+    install({ references });
+    render(<ReferencesScreen />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('tab', { name }));
+    await user.click(screen.getByRole('button', { name: 'Tambah' }));
+    const form = screen.getByRole('form');
+    await user.type(within(form).getByLabelText('Kode'), '001');
+    await user.type(within(form).getByLabelText('Label'), 'Master name');
+    await user.type(within(form).getByLabelText('Alamat'), 'Street');
+    await user.type(within(form).getByLabelText('Kota'), 'Bandung');
+    await user.click(within(form).getByRole('button', { name: 'Simpan' }));
+    await waitFor(() =>
+      expect(references.save).toHaveBeenCalledWith({
+        entity,
+        code: '001',
+        label: 'Master name',
+        address: 'Street',
+        city: 'Bandung',
+        ...(entity === 'sales' ? { phoneNumber: '' } : {}),
+      }),
+    );
   });
 });

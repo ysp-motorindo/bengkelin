@@ -1,3 +1,4 @@
+import { ReferenceRepository } from '@/main/features/references/repository';
 import type { AppDatabase } from '@/main/database/connection';
 import { flag } from '@/main/database/rows';
 import type {
@@ -18,6 +19,8 @@ import { assertInt64, type Instant, type LocalDate } from '@/shared/primitives';
 export interface InvoiceRow {
   id: string;
   status: InvoiceStatus;
+  sales_id: string | null;
+  expedition_id: string | null;
   customer_id: string | null;
   vehicle_id: string | null;
   channel_id: string;
@@ -115,6 +118,8 @@ export interface DraftSummaryRow {
 }
 
 export interface DraftHeader {
+  salesId: string | null;
+  expeditionId: string | null;
   channelId: string;
   invoiceDate: LocalDate;
   pricingAt: Instant;
@@ -170,12 +175,18 @@ const n = (value: number): bigint => BigInt(value);
 export class DraftRepository {
   constructor(private readonly db: AppDatabase) {}
 
+  reference(entity: 'sales' | 'expedition', id: string | null) {
+    return id === null
+      ? undefined
+      : new ReferenceRepository(this.db).find(entity, id);
+  }
+
   // ---- invoice header ----
 
   findInvoice(id: string): InvoiceRow | undefined {
     return this.db
       .prepare(
-        `SELECT id, status, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
+        `SELECT id, status, sales_id, expedition_id, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
            due_date, odometer_km, note, subtotal, item_discount_amount, invoice_discount_amount,
            discount_amount, amount, created_by_cashier_id, last_edited_by_cashier_id, version,
            discarded_at, created_at, updated_at
@@ -221,7 +232,7 @@ export class DraftRepository {
     this.db
       .prepare(
         `UPDATE invoices SET channel_id = ?, invoice_date = ?, pricing_at = ?, customer_id = ?,
-           vehicle_id = ?, odometer_km = ?, top_days = ?, due_date = ?, note = ?
+           vehicle_id = ?, odometer_km = ?, top_days = ?, due_date = ?, note = ?, sales_id = ?, expedition_id = ?
          WHERE id = ?`,
       )
       .run(
@@ -234,6 +245,8 @@ export class DraftRepository {
         n(h.topDays),
         h.dueDate,
         h.note,
+        h.salesId,
+        h.expeditionId,
         id,
       );
   }

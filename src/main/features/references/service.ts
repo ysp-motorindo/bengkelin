@@ -161,6 +161,29 @@ export class ReferenceService {
           this.repo.insertModel(id, input.brandId, input.name);
         }
         return;
+      case 'sales':
+      case 'expedition':
+        if (
+          existing &&
+          input.code !== undefined &&
+          input.code !== existing.code
+        ) {
+          throw new DomainError(
+            'REFERENCE_CODE_IMMUTABLE',
+            'The code cannot be changed after creation',
+          );
+        }
+        this.repo.saveContact(
+          input.entity,
+          id,
+          existing?.code ?? (input.code as string),
+          input.label,
+          input.address,
+          input.city,
+          input.entity === 'sales' ? input.phoneNumber : null,
+          now,
+        );
+        return;
       case 'channel':
       case 'unit':
         if (existing) {

@@ -30,6 +30,8 @@ import type { DraftCommands } from './use-draft-commands';
 
 interface DraftHeaderProps {
   commands: DraftCommands;
+  sales: ReferenceDto[];
+  expeditions: ReferenceDto[];
   channels: ReferenceDto[];
   timezone: string;
   onError(message: string | null): void;
@@ -60,6 +62,8 @@ function parseCount(text: string, max: number): number | null | undefined {
 export function DraftHeader({
   commands,
   channels,
+  sales,
+  expeditions,
   timezone,
   onError,
 }: DraftHeaderProps) {
@@ -164,6 +168,36 @@ export function DraftHeader({
       aria-label={t('workspace.header.label')}
       className="flex flex-col gap-4 rounded-lg border border-border bg-card p-3"
     >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {(['sales', 'expedition'] as const).map((entity) => {
+          const options = entity === 'sales' ? sales : expeditions;
+          const current = view[entity];
+          return (
+            <FormField key={entity} label={t(`references.entities.${entity}`)}>
+              <Select
+                value={current?.id ?? ''}
+                onChange={(event) =>
+                  void apply({
+                    kind: 'updateHeader',
+                    changes: { [`${entity}Id`]: event.target.value || null },
+                  })
+                }
+              >
+                <option value="" />
+                {current &&
+                !options.some((option) => option.id === current.id) ? (
+                  <option value={current.id}>{current.name}</option>
+                ) : null}
+                {options.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.code} · {option.label}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          );
+        })}
+      </div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <div className="flex max-w-144 flex-col gap-4 xl:flex-row xl:gap-3">

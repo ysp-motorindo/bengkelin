@@ -12,6 +12,10 @@ import type { Instant, LocalDate } from '@/shared/primitives';
 export interface FullInvoiceRow {
   id: string;
   status: InvoiceStatus;
+  sales_id: string | null;
+  expedition_id: string | null;
+  sales_name_snapshot: string | null;
+  expedition_name_snapshot: string | null;
   customer_id: string | null;
   vehicle_id: string | null;
   channel_id: string;
@@ -46,6 +50,8 @@ export interface FullInvoiceRow {
 }
 
 export interface HeaderSnapshots {
+  salesName: string | null;
+  expeditionName: string | null;
   customerName: string | null;
   customerPhone: string | null;
   /** normalizePhone(customerPhone): the history search key (008). */
@@ -73,7 +79,7 @@ export class InvoiceRepository {
   findFull(id: string): FullInvoiceRow | undefined {
     return this.db
       .prepare(
-        `SELECT i.id, i.status, i.customer_id, i.vehicle_id, i.channel_id, i.invoice_date,
+        `SELECT i.sales_id, i.expedition_id, i.sales_name_snapshot, i.expedition_name_snapshot, i.id, i.status, i.customer_id, i.vehicle_id, i.channel_id, i.invoice_date,
            i.pricing_at, i.top_days, i.due_date, i.odometer_km, i.note, i.subtotal,
            i.item_discount_amount, i.invoice_discount_amount, i.discount_amount, i.amount,
            i.created_by_cashier_id, cb.display_name AS created_by_name, i.version,
@@ -151,7 +157,7 @@ export class InvoiceRepository {
         `UPDATE invoices SET customer_name_snapshot = ?, customer_phone_snapshot = ?,
            customer_phone_normalized_snapshot = ?, plate_number_snapshot = ?,
            plate_number_normalized_snapshot = ?, vehicle_description_snapshot = ?,
-           channel_label_snapshot = ?, cashier_name_snapshot = ?, shop_identity_snapshot = ?
+           channel_label_snapshot = ?, cashier_name_snapshot = ?, shop_identity_snapshot = ?, sales_name_snapshot = ?, expedition_name_snapshot = ?
          WHERE id = ? AND status = 'DRAFT' AND discarded_at IS NULL`,
       )
       .run(
@@ -164,6 +170,8 @@ export class InvoiceRepository {
         s.channelLabel,
         s.cashierName,
         s.shopIdentity,
+        s.salesName,
+        s.expeditionName,
         invoiceId,
       ).changes;
     if (changes !== 1) throw new Error('snapshot write matched no open draft');

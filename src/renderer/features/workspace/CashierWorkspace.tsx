@@ -118,15 +118,20 @@ export function CashierWorkspace({ finalizer }: CashierWorkspaceProps) {
     setPhase({ kind: 'loading' });
     try {
       const b = window.bengkelin;
-      const [shop, channels, mechanics, units] = await Promise.all([
-        b.settings.getShop(),
-        b.references.listActive({ entity: 'channel' }),
-        b.references.listActive({ entity: 'mechanic' }),
-        b.references.listActive({ entity: 'unit' }),
-      ]);
+      const [shop, channels, mechanics, units, sales, expeditions] =
+        await Promise.all([
+          b.settings.getShop(),
+          b.references.listActive({ entity: 'channel' }),
+          b.references.listActive({ entity: 'mechanic' }),
+          b.references.listActive({ entity: 'unit' }),
+          b.references.listActive({ entity: 'sales' }),
+          b.references.listActive({ entity: 'expedition' }),
+        ]);
       context.current = {
         shop: must(shop),
         references: {
+          sales: must<ReferenceDto[]>(sales),
+          expeditions: must<ReferenceDto[]>(expeditions),
           channels: must<ReferenceDto[]>(channels),
           mechanics: must<ReferenceDto[]>(mechanics),
           units: must<ReferenceDto[]>(units),

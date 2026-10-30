@@ -174,6 +174,21 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
     version: toNumber(invoice.version),
     channelId: invoice.channel_id,
     channelLabel: repo.channel(invoice.channel_id)?.label ?? '',
+    sales:
+      invoice.sales_id === null
+        ? null
+        : {
+            id: invoice.sales_id,
+            name: repo.reference('sales', invoice.sales_id)?.label ?? '',
+          },
+    expedition:
+      invoice.expedition_id === null
+        ? null
+        : {
+            id: invoice.expedition_id,
+            name:
+              repo.reference('expedition', invoice.expedition_id)?.label ?? '',
+          },
     invoiceDate: invoice.invoice_date,
     pricingAt: invoice.pricing_at,
     topDays: toNumber(invoice.top_days),

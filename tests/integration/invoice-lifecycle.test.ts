@@ -1734,6 +1734,8 @@ describe('migration 008 on a populated version-7 database', () => {
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
       expect(db.pragma('integrity_check', { simple: true })).toBe('ok');
 
+      // Current readers require the later optional-reference columns.
+      db.exec(bundledMigrations.find((m) => m.version === 16)!.sql);
       // The upgraded database works with the new services.
       const upgraded = new InvoiceService({ db, clock });
       const session: Session = {

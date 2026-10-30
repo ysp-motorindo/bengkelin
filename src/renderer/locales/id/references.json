@@ -5,7 +5,9 @@
     "vehicleBrand": "Merek kendaraan",
     "vehicleModel": "Model kendaraan",
     "channel": "Kanal",
-    "unit": "Satuan"
+    "unit": "Satuan",
+    "sales": "Sales",
+    "expedition": "Ekspedisi"
   },
   "fields": {
     "name": "Nama",
@@ -13,9 +15,14 @@
     "brand": "Merek",
     "code": "Kode",
     "label": "Label",
-    "status": "Status"
+    "status": "Status",
+    "address": "Alamat",
+    "city": "Kota"
   },
-  "status": { "active": "Aktif", "inactive": "Nonaktif" },
+  "status": {
+    "active": "Aktif",
+    "inactive": "Nonaktif"
+  },
   "actions": {
     "label": "Tindakan",
     "add": "Tambah",
@@ -27,5 +34,8 @@
   },
   "codeHint": "Kode tidak dapat diubah setelah dibuat.",
   "empty": "Belum ada data.",
-  "form": { "create": "Tambah data", "edit": "Ubah data" }
+  "form": {
+    "create": "Tambah data",
+    "edit": "Ubah data"
+  }
 }

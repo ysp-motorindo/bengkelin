@@ -783,3 +783,64 @@ describe('history protection', () => {
     ).toThrow(/history/i);
   });
 });
+
+describe.each(['sales', 'expedition'] as const)('%s masters', (entity) => {
+  test('stores contacts, normalizes immutable codes and allows duplicate names', async () => {
+    const a = await ref({
+      entity,
+      code: '001a',
+      label: 'Same name',
+      address: ' Street ',
+      city: ' City ',
+      ...(entity === 'sales' ? { phoneNumber: '08123' } : {}),
+    });
+    expect(a).toMatchObject({ code: '001A', address: 'Street', city: 'City' });
+    await ref({ entity, code: '002', label: 'Same name' });
+    expect(
+      failure(
+        await h.call(C.references.save, {
+          entity,
+          code: '001A',
+          label: 'Other',
+        }),
+      ).code,
+    ).toBe('REFERENCE_DUPLICATE');
+    expect(
+      failure(
+        await h.call(C.references.save, {
+          entity,
+          id: a.id,
+          code: 'CHANGED',
+          label: 'Changed',
+        }),
+      ).code,
+    ).toBe('REFERENCE_CODE_IMMUTABLE');
+    const cleared = await ref({
+      entity,
+      id: a.id,
+      label: 'Updated',
+      address: null,
+      city: '',
+    });
+    expect(cleared).toMatchObject({ address: null, city: null });
+    value(await h.call(C.references.deactivate, { entity, id: a.id }));
+    const active = value(
+      await h.call<ReferenceDto[]>(
+        C.references.listActive,
+        { entity },
+        CASHIER,
+      ),
+    );
+    expect(active.map((r) => r.id)).not.toContain(a.id);
+    expect(
+      failure(
+        await h.call(
+          C.references.save,
+          { entity, code: '003', label: 'Forbidden' },
+          CASHIER,
+        ),
+      ).code,
+    ).toBe('FORBIDDEN');
+    value(await h.call(C.references.reactivate, { entity, id: a.id }));
+  });
+});

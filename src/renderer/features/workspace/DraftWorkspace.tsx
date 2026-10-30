@@ -43,6 +43,8 @@ import { useDraftCommands } from './use-draft-commands';
 import { registerWorkspaceActions } from './workspace-actions';
 
 export interface WorkspaceReferences {
+  sales: ReferenceDto[];
+  expeditions: ReferenceDto[];
   channels: ReferenceDto[];
   mechanics: ReferenceDto[];
   units: ReferenceDto[];
@@ -323,6 +325,8 @@ export function DraftWorkspace({
       <DraftHeader
         commands={commands}
         channels={references.channels}
+        sales={references.sales}
+        expeditions={references.expeditions}
         timezone={timezone}
         onError={setError}
       />

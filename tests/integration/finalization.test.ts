@@ -1623,3 +1623,135 @@ describe('authorization', () => {
     ).toBe('VALIDATION_FAILED');
   });
 });
+
+describe('optional sales and expedition selections', () => {
+  test('retains deactivated selections, resolves draft renames and freezes issued names', async () => {
+    const sales = value(
+      await h.call<ReferenceDto>(
+        C.references.save,
+        { entity: 'sales', code: '001', label: 'Sales original' },
+        ADMIN,
+      ),
+    );
+    const expedition = value(
+      await h.call<ReferenceDto>(
+        C.references.save,
+        { entity: 'expedition', code: '001', label: 'Expedition original' },
+        ADMIN,
+      ),
+    );
+    let { draft } = await stockedDraft();
+    expect(draft).toMatchObject({ sales: null, expedition: null });
+    draft = await applyOk(draft, {
+      kind: 'updateHeader',
+      changes: { salesId: sales.id, expeditionId: expedition.id },
+    });
+    expect(draft).toMatchObject({
+      sales: { id: sales.id, name: sales.label },
+      expedition: { id: expedition.id, name: expedition.label },
+    });
+    value(
+      await h.call(
+        C.references.deactivate,
+        { entity: 'sales', id: sales.id },
+        ADMIN,
+      ),
+    );
+    value(
+      await h.call(
+        C.references.save,
+        { entity: 'sales', id: sales.id, label: 'Sales at issue' },
+        ADMIN,
+      ),
+    );
+    draft = value(await h.call<DraftView>(C.drafts.get, draft.id, CASHIER));
+    expect(draft.sales?.name).toBe('Sales at issue');
+    h.reopen();
+    await login('siti', 'siti-password-1', CASHIER);
+    expect(
+      value(await h.call<DraftView>(C.drafts.get, draft.id, CASHIER)).sales?.id,
+    ).toBe(sales.id);
+    await login('admin', ADMIN_PASSWORD, ADMIN);
+    draft = await applyOk(draft, {
+      kind: 'updateHeader',
+      changes: { note: 'Retain references' },
+    });
+    const issued = await finalizeOk(draft);
+    expect(issued.sales?.name).toBe('Sales at issue');
+    expect(issued.expedition?.name).toBe('Expedition original');
+    value(
+      await h.call(
+        C.references.save,
+        { entity: 'sales', id: sales.id, label: 'Sales later' },
+        ADMIN,
+      ),
+    );
+    const reread = value(
+      await h.call<InvoiceView>(
+        C.invoices.get,
+        { invoiceId: issued.id },
+        CASHIER,
+      ),
+    );
+    expect(reread.sales?.name).toBe('Sales at issue');
+    for (const column of [
+      'sales_id',
+      'expedition_id',
+      'sales_name_snapshot',
+      'expedition_name_snapshot',
+    ]) {
+      expect(() =>
+        h.db
+          .prepare(`UPDATE invoices SET ${column} = NULL WHERE id = ?`)
+          .run(issued.id),
+      ).toThrow();
+    }
+  });
+  test('independent selection, clearing, inactive and missing IDs, stale versions', async () => {
+    const master = value(
+      await h.call<ReferenceDto>(
+        C.references.save,
+        { entity: 'sales', code: '001', label: 'Sales' },
+        ADMIN,
+      ),
+    );
+    const original = await createDraft();
+    let draft = await applyOk(original, {
+      kind: 'updateHeader',
+      changes: { salesId: master.id },
+    });
+    expect(draft.expedition).toBeNull();
+    const apply = (version: number, changes: Record<string, unknown>) =>
+      h.call<DraftView>(
+        C.drafts.apply,
+        {
+          requestId: uuid(),
+          invoiceId: draft.id,
+          expectedVersion: version,
+          op: { kind: 'updateHeader', changes },
+        },
+        CASHIER,
+      );
+    expect(failure(await apply(original.version, { salesId: null })).code).toBe(
+      'DRAFT_VERSION_CONFLICT',
+    );
+    draft = await applyOk(draft, {
+      kind: 'updateHeader',
+      changes: { salesId: null },
+    });
+    expect(draft.sales).toBeNull();
+    value(
+      await h.call(
+        C.references.deactivate,
+        { entity: 'sales', id: master.id },
+        ADMIN,
+      ),
+    );
+    expect(
+      failure(await apply(draft.version, { salesId: master.id })).code,
+    ).toBe('REFERENCE_INACTIVE');
+    expect(
+      failure(await apply(draft.version, { expeditionId: uuid() })).code,
+    ).toBe('REFERENCE_NOT_FOUND');
+  });
+});

@@ -255,6 +255,8 @@ export interface InvoiceView {
   finalizedAt: Instant;
   channel: { id: UUID; label: string };
   /** Snapshots; null for an anonymous sale. */
+  sales: { id: UUID; name: string } | null;
+  expedition: { id: UUID; name: string } | null;
   customer: {
     id: UUID;
     name: string | null;

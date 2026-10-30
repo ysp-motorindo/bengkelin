@@ -170,19 +170,25 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-muted-foreground">
-              {entity === 'channel' || entity === 'unit' ? (
+              {entity === 'channel' ||
+              entity === 'unit' ||
+              entity === 'sales' ||
+              entity === 'expedition' ? (
                 <th scope="col" className="p-2">
                   {t('references.fields.code')}
                 </th>
               ) : null}
               <th scope="col" className="p-2">
                 {t(
-                  entity === 'channel' || entity === 'unit'
+                  entity === 'channel' ||
+                    entity === 'unit' ||
+                    entity === 'sales' ||
+                    entity === 'expedition'
                     ? 'references.fields.label'
                     : 'references.fields.name',
                 )}
               </th>
-              {entity === 'mechanic' ? (
+              {entity === 'mechanic' || entity === 'sales' ? (
                 <th scope="col" className="p-2">
                   {t('references.fields.phone')}
                 </th>
@@ -203,11 +209,14 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="border-b border-border">
-                {entity === 'channel' || entity === 'unit' ? (
+                {entity === 'channel' ||
+                entity === 'unit' ||
+                entity === 'sales' ||
+                entity === 'expedition' ? (
                   <td className="p-2 font-mono">{item.code}</td>
                 ) : null}
                 <td className="p-2">{item.label}</td>
-                {entity === 'mechanic' ? (
+                {entity === 'mechanic' || entity === 'sales' ? (
                   <td className="p-2">{item.phoneNumber}</td>
                 ) : null}
                 {entity === 'vehicleModel' ? (
@@ -265,8 +274,14 @@ function EntityForm({
 }) {
   const { t } = useTranslation();
   const item = editing.kind === 'edit' ? editing.item : null;
-  const coded = entity === 'channel' || entity === 'unit';
+  const coded =
+    entity === 'channel' ||
+    entity === 'unit' ||
+    entity === 'sales' ||
+    entity === 'expedition';
   const [label, setLabel] = useState(item?.label ?? '');
+  const [address, setAddress] = useState(item?.address ?? '');
+  const [city, setCity] = useState(item?.city ?? '');
   const [phone, setPhone] = useState(item?.phoneNumber ?? '');
   const [code, setCode] = useState(item?.code ?? '');
   const [brandId, setBrandId] = useState(item?.brandId ?? '');
@@ -300,6 +315,18 @@ function EntityForm({
             ...base,
             brandId,
             name: label,
+          });
+          break;
+        case 'sales':
+        case 'expedition':
+          result = await window.bengkelin.references.save({
+            entity,
+            ...base,
+            ...(item ? {} : { code }),
+            label,
+            address,
+            city,
+            ...(entity === 'sales' ? { phoneNumber: phone } : {}),
           });
           break;
         default:
@@ -371,7 +398,7 @@ function EntityForm({
           onChange={(e) => setLabel(e.target.value)}
         />
       </FormField>
-      {entity === 'mechanic' ? (
+      {entity === 'mechanic' || entity === 'sales' ? (
         <FormField
           label={t('references.fields.phone')}
           error={fieldErrors.phoneNumber}
@@ -383,6 +410,25 @@ function EntityForm({
             onChange={(e) => setPhone(e.target.value)}
           />
         </FormField>
+      ) : null}
+      {entity === 'sales' || entity === 'expedition' ? (
+        <>
+          <FormField
+            label={t('references.fields.address')}
+            error={fieldErrors.address}
+          >
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+          </FormField>
+          <FormField
+            label={t('references.fields.city')}
+            error={fieldErrors.city}
+          >
+            <Input value={city} onChange={(e) => setCity(e.target.value)} />
+          </FormField>
+        </>
       ) : null}
       <div className="flex gap-2">
         <Button type="submit" disabled={busy}>

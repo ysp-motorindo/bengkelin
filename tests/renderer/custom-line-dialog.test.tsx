@@ -18,6 +18,8 @@ const MECHANIC: ReferenceDto = {
   code: null,
   phoneNumber: null,
   brandId: null,
+  address: null,
+  city: null,
   isActive: true,
 };
 const LINE_ID = '6e9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11';

@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { optionalPhone, requiredText, uuidSchema, type UUID } from './common';
+import {
+  optionalPhone,
+  optionalText,
+  requiredText,
+  uuidSchema,
+  type UUID,
+} from './common';
 
 export const REFERENCE_ENTITIES = [
   'mechanic',
@@ -7,6 +13,8 @@ export const REFERENCE_ENTITIES = [
   'vehicleModel',
   'channel',
   'unit',
+  'sales',
+  'expedition',
 ] as const;
 export const referenceEntitySchema = z.enum(
   REFERENCE_ENTITIES,
@@ -32,7 +40,23 @@ const requireCodeOnCreate = (value: { id?: string; code?: string }) =>
   value.id !== undefined || value.code !== undefined;
 const codeRequired = { message: 'validation.required', path: ['code'] };
 
+const contactShape = {
+  ...codedShape,
+  address: optionalText(300),
+  city: optionalText(100),
+};
+
 export const saveReferenceInputSchema = z.discriminatedUnion('entity', [
+  z
+    .strictObject({
+      entity: z.literal('sales'),
+      ...contactShape,
+      phoneNumber: optionalPhone,
+    })
+    .refine(requireCodeOnCreate, codeRequired),
+  z
+    .strictObject({ entity: z.literal('expedition'), ...contactShape })
+    .refine(requireCodeOnCreate, codeRequired),
   z.strictObject({
     entity: z.literal('mechanic'),
     id: uuidSchema.optional(),
@@ -85,5 +109,7 @@ export interface ReferenceDto {
   code: string | null;
   phoneNumber: string | null;
   brandId: UUID | null;
+  address: string | null;
+  city: string | null;
   isActive: boolean;
 }

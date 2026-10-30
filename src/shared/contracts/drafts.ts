@@ -106,6 +106,8 @@ export const updateHeaderOpSchema = z.strictObject({
       channelId: uuidSchema.optional(),
       invoiceDate: localDateSchema.optional(),
       pricingAt: instantSchema.optional(),
+      salesId: uuidSchema.nullable().optional(),
+      expeditionId: uuidSchema.nullable().optional(),
       customerId: uuidSchema.nullable().optional(),
       vehicleId: uuidSchema.nullable().optional(),
       odometerKm: z
@@ -417,6 +419,8 @@ export interface DraftView {
   pricingAt: Instant;
   topDays: number;
   dueDate: LocalDate;
+  sales: { id: UUID; name: string } | null;
+  expedition: { id: UUID; name: string } | null;
   customer: DraftCustomerDto | null;
   vehicle: DraftVehicleDto | null;
   /** The vehicle's active owner is not the selected customer (warning only). */

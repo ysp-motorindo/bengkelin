@@ -9,6 +9,8 @@ interface ReferenceRow {
   code: string | null;
   phone_number: string | null;
   brand_id: string | null;
+  address?: string | null;
+  city?: string | null;
   is_active: bigint;
 }
 
@@ -17,6 +19,8 @@ export function toReferenceDto(
   row: ReferenceRow,
 ): ReferenceDto {
   return {
+    address: row.address ?? null,
+    city: row.city ?? null,
     entity,
     id: row.id,
     label: row.label,
@@ -33,10 +37,16 @@ const TABLES: Record<ReferenceEntity, string> = {
   vehicleModel: 'vehicle_models',
   channel: 'channels',
   unit: 'units',
+  sales: 'sales',
+  expedition: 'expeditions',
 };
 
 /** Projects every entity onto the same six columns. */
 const SELECTS: Record<ReferenceEntity, string> = {
+  sales:
+    'SELECT id, label, code, phone_number, address, city, NULL AS brand_id, is_active FROM sales',
+  expedition:
+    'SELECT id, label, code, NULL AS phone_number, address, city, NULL AS brand_id, is_active FROM expeditions',
   mechanic:
     'SELECT id, name AS label, NULL AS code, phone_number, NULL AS brand_id, is_active FROM mechanics',
   vehicleBrand:
@@ -84,10 +94,14 @@ export class ReferenceRepository {
     now: Instant,
   ): void {
     // Table names come from the fixed map above, never from input.
-    if (entity === 'mechanic') {
+    if (
+      entity === 'mechanic' ||
+      entity === 'sales' ||
+      entity === 'expedition'
+    ) {
       this.db
         .prepare(
-          'UPDATE mechanics SET is_active = ?, updated_at = ? WHERE id = ?',
+          `UPDATE ${TABLES[entity]} SET is_active = ?, updated_at = ? WHERE id = ?`,
         )
         .run(flag(isActive), now, id);
       return;
@@ -95,6 +109,34 @@ export class ReferenceRepository {
     this.db
       .prepare(`UPDATE ${TABLES[entity]} SET is_active = ? WHERE id = ?`)
       .run(flag(isActive), id);
+  }
+
+  saveContact(
+    entity: 'sales' | 'expedition',
+    id: string,
+    code: string,
+    label: string,
+    address: string | null,
+    city: string | null,
+    phone: string | null,
+    now: Instant,
+  ): void {
+    const phoneColumn = entity === 'sales' ? ', phone_number' : '';
+    const phoneValue = entity === 'sales' ? ', @phone' : '';
+    const phoneUpdate = entity === 'sales' ? ', phone_number = @phone' : '';
+    this.db
+      .prepare(`INSERT INTO ${TABLES[entity]} (id, code, label, address, city, created_at, updated_at${phoneColumn})
+      VALUES (@id, @code, @label, @address, @city, @now, @now${phoneValue})
+      ON CONFLICT(id) DO UPDATE SET label = @label, address = @address, city = @city, updated_at = @now${phoneUpdate}`)
+      .run({
+        id,
+        code,
+        label,
+        address,
+        city,
+        now,
+        ...(entity === 'sales' ? { phone } : {}),
+      });
   }
 
   insertMechanic(

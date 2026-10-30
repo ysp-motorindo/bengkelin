@@ -126,6 +126,22 @@ export function InvoiceDetail({
     [t('history.detail.cashier'), invoice.cashier.displayName],
     [t('history.detail.createdBy'), invoice.createdBy.displayName],
     [t('history.detail.channel'), invoice.channel.label],
+    ...(invoice.sales
+      ? [
+          [t('references.entities.sales'), invoice.sales.name] as [
+            string,
+            string,
+          ],
+        ]
+      : []),
+    ...(invoice.expedition
+      ? [
+          [t('references.entities.expedition'), invoice.expedition.name] as [
+            string,
+            string,
+          ],
+        ]
+      : []),
     [t('history.detail.customer'), invoice.customer?.name ?? none],
     [t('history.detail.phone'), invoice.customer?.phoneNumber ?? none],
     [t('history.detail.plate'), invoice.vehicle?.plateNumber ?? none],

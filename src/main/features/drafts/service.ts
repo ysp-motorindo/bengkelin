@@ -85,6 +85,8 @@ export class DraftService {
           channelId: input.channelId,
           invoiceDate: input.invoiceDate,
           pricingAt: input.pricingAt,
+          salesId: null,
+          expeditionId: null,
           customerId: null,
           vehicleId: null,
           odometerKm: null,

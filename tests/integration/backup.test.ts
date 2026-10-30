@@ -774,6 +774,19 @@ describe('validateBackup', () => {
     });
   });
 
+  test.each(['sales', 'expeditions'])(
+    'missing new master %s rejects a v16 backup',
+    (table) => {
+      const missing = variant(`missing-${table}.sqlite`, (d) =>
+        d.exec(`DROP TABLE ${table}`),
+      );
+      expect(validateBackup(missing)).toMatchObject({
+        ok: false,
+        error: 'MISSING_TABLES',
+      });
+    },
+  );
+
   test('an older supported schema passes with only the tables it had', () => {
     const dir = mkdtempSync(path.join(scratch, 'v6-'));
     const file = path.join(dir, 'v6.sqlite');

@@ -22,6 +22,8 @@ function view(overrides: Partial<InvoiceView> = {}): InvoiceView {
     dueDate: '2026-10-07',
     finalizedAt: '2026-09-30T03:00:00.000Z',
     channel: { id: ID, label: 'Bengkel' },
+    sales: null,
+    expedition: null,
     customer: { id: ID, name: 'Andi', phoneNumber: '0812' },
     vehicle: { id: ID, plateNumber: 'B 1234 XYZ', description: 'Honda Beat' },
     odometerKm: 12000,
