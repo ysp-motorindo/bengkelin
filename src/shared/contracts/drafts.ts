@@ -370,6 +370,8 @@ export interface LinePricingDto {
 }
 
 export interface DraftLineDto {
+  itemCode: string | null;
+  currentStock: number | null;
   priceEntryConfirmed: boolean;
   id: UUID;
   position: number;

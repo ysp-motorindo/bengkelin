@@ -164,6 +164,7 @@ export function EditableLineRow({
         className="border-t border-border text-xs [&>td]:px-1 [&>td]:py-1"
       >
         <td className="text-right text-muted-foreground">{rowNumber}</td>
+        <td className="break-all">{line.itemCode ?? '—'}</td>
         <td className="min-w-48">
           {line.source === 'CUSTOM' ? (
             <Input
@@ -178,6 +179,7 @@ export function EditableLineRow({
           )}
         </td>
         <td>{line.unitLabel ?? '—'}</td>
+        <td className="text-right">{line.currentStock ?? '—'}</td>
         <td>
           <NumericInput
             {...common('quantity', t('workspace.editor.quantity'))}
@@ -252,7 +254,7 @@ export function EditableLineRow({
       {
         <tr hidden={!detailsOpen && Object.keys(errors).length === 0}>
           <td
-            colSpan={11}
+            colSpan={13}
             className="border-t border-border bg-sunken px-3 py-2"
           >
             {Object.entries(errors).map(([field, error]) => (

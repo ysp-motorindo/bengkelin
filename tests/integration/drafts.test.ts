@@ -358,6 +358,56 @@ describe('required assertions', () => {
   });
 });
 
+test('draft lines show catalog SKU and recorded stock without reserving quantity', async () => {
+  const { item } = await pricedItem('65000', '111', {
+    sku: 'OLI-1',
+    trackInventory: true,
+  });
+  value(
+    await h.call(
+      C.inventory.openBalance,
+      { requestId: uuid(), catalogItemId: item.id, quantity: 7 },
+      ADMIN,
+    ),
+  );
+  const draft = value(await createDraft());
+  const updated = await applyOk(draft, {
+    kind: 'addCatalogLine',
+    catalogItemId: item.id,
+    quantity: 3,
+  });
+  expect(updated.lines[0]).toMatchObject({
+    itemCode: 'OLI-1',
+    currentStock: 7,
+  });
+  const custom = await applyOk(updated, {
+    kind: 'addCustomLine',
+    type: 'NON_STOCK_ITEM',
+    title: 'Seal',
+    unitPrice: '5000',
+  });
+  expect(custom.lines[1]).toMatchObject({ itemCode: null, currentStock: null });
+});
+
+test('draft line stock is zero for tracked items and unavailable for untracked items', async () => {
+  const tracked = await newItem({ trackInventory: true });
+  const untracked = await newItem({ trackInventory: false, sku: 'SVC-1' });
+  let draft = value(await createDraft());
+  draft = await applyOk(draft, {
+    kind: 'addCatalogLine',
+    catalogItemId: tracked.id,
+  });
+  draft = await applyOk(draft, {
+    kind: 'addCatalogLine',
+    catalogItemId: untracked.id,
+  });
+  expect(draft.lines[0]).toMatchObject({ itemCode: null, currentStock: 0 });
+  expect(draft.lines[1]).toMatchObject({
+    itemCode: 'SVC-1',
+    currentStock: null,
+  });
+});
+
 describe('create, list, get', () => {
   test('create is idempotent and starts an empty versioned draft', async () => {
     const requestId = uuid();

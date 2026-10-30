@@ -2,6 +2,8 @@ import type { DraftLineDto } from '@/shared/contracts';
 const LINE_ID = '6e9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11';
 export function customLine(): DraftLineDto {
   return {
+    itemCode: null,
+    currentStock: null,
     priceEntryConfirmed: true,
     id: LINE_ID,
     position: 1,

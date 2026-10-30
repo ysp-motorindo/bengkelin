@@ -25,6 +25,8 @@
     "NON_STOCK_ITEM": "Barang non-stok"
   },
   "lines": {
+    "code": "Kode",
+    "stock": "Stock",
     "label": "Barang transaksi",
     "caption": "Daftar barang pada transaksi ini",
     "item": "Barang",

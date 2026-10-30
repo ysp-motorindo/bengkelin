@@ -25,6 +25,8 @@
     "NON_STOCK_ITEM": "Non-stock item"
   },
   "lines": {
+    "code": "Code",
+    "stock": "Stock",
     "label": "Transaction items",
     "caption": "Items in this transaction",
     "item": "Item",

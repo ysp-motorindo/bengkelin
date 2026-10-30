@@ -6,6 +6,7 @@ import { cashChange } from '@/renderer/features/workspace/checkout/tender';
 import { getWorkspaceActions } from '@/renderer/features/workspace/workspace-actions';
 import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
 import type { CatalogItemDto, DraftCommand } from '@/shared/contracts';
+import { customLine } from './helpers/transaction-line';
 import { draftView, ok, workspaceBridge } from './helpers/workspace-bridge';
 
 function install() {
@@ -62,6 +63,39 @@ describe('cashier workspace', () => {
       topDays.compareDocumentPosition(dueDate) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  test('places Channel before Pelanggan and shows Kode and Stock columns', async () => {
+    install();
+    render(<CashierWorkspace />);
+    await screen.findByRole('combobox', { name: 'Cari barang' });
+    const channel = screen.getByLabelText('Channel');
+    const customer = screen.getByLabelText('Pelanggan');
+    expect(
+      channel.compareDocumentPosition(customer) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    const headings = screen
+      .getAllByRole('columnheader')
+      .map((heading) => heading.textContent);
+    expect(headings).toContain('Kode');
+    expect(headings.indexOf('Stock')).toBe(headings.indexOf('Satuan') + 1);
+  });
+
+  test('keeps a long item code inside its table cell', async () => {
+    const bridge = install();
+    const code = 'A'.repeat(64);
+    bridge.drafts.create.mockResolvedValue(
+      ok(
+        draftView({
+          lines: [{ ...customLine(), itemCode: code, currentStock: 0 }],
+        }),
+      ),
+    );
+    render(<CashierWorkspace />);
+    const cell = await screen.findByText(code);
+    expect(cell).toHaveClass('break-all');
+    expect(screen.getByTestId('line-row')).toHaveTextContent('0');
   });
 
   test('scanner Enter in "Cari barang" adds by barcode and clears the field', async () => {

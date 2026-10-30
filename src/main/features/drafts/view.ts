@@ -33,6 +33,10 @@ export interface ViewDeps {
   customers: CustomerRepository;
   vehicles: VehicleRepository;
   resolvePrice: ResolvePrice;
+  itemDetails: (id: string) => {
+    itemCode: string | null;
+    currentStock: number | null;
+  };
 }
 
 const money = formatRupiah;
@@ -110,8 +114,12 @@ function toLineDto(
   stages: StageRow[],
   changes: PriceChangeRow[],
   resolvePrice: ResolvePrice,
+  itemDetails: ViewDeps['itemDetails'],
 ): DraftLineDto {
   return {
+    ...(line.catalog_item_id
+      ? itemDetails(line.catalog_item_id)
+      : { itemCode: null, currentStock: null }),
     id: line.id,
     priceEntryConfirmed: bool(line.price_entry_confirmed),
     position: toNumber(line.position),
@@ -229,6 +237,7 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
           lineStages.get(line.id) ?? [],
           changes.get(line.id) ?? [],
           deps.resolvePrice,
+          deps.itemDetails,
         ),
       ),
     invoiceDiscounts: repo.invoiceStages(invoice.id).map(toStageDto),

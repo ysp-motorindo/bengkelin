@@ -156,32 +156,34 @@ export function DraftHeader({
       aria-label={t('workspace.header.label')}
       className="flex flex-col gap-2 [&_input]:h-8 [&_select]:h-8 [&_select]:py-0 [&_select]:leading-normal [&_input]:text-xs [&_select]:text-xs [&_label]:text-xs"
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <CustomerVehiclePicker
-          mode="customer"
-          commands={commands}
-          onError={onError}
-        />
-        <FormField label={t('workspace.header.channel')}>
-          <Select
-            value={view.channelId}
-            onChange={(event) =>
-              void apply({
-                kind: 'updateHeader',
-                changes: { channelId: event.target.value },
-              })
-            }
-          >
-            {channelMissing && (
-              <option value={view.channelId}>{view.channelLabel}</option>
-            )}
-            {channels.map((channel) => (
-              <option key={channel.id} value={channel.id}>
-                {channel.label}
-              </option>
-            ))}
-          </Select>
-        </FormField>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]">
+        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr]">
+          <FormField label={t('workspace.header.channel')}>
+            <Select
+              value={view.channelId}
+              onChange={(event) =>
+                void apply({
+                  kind: 'updateHeader',
+                  changes: { channelId: event.target.value },
+                })
+              }
+            >
+              {channelMissing && (
+                <option value={view.channelId}>{view.channelLabel}</option>
+              )}
+              {channels.map((channel) => (
+                <option key={channel.id} value={channel.id}>
+                  {channel.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          <CustomerVehiclePicker
+            mode="customer"
+            commands={commands}
+            onError={onError}
+          />
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]">
         <div className="grid content-start gap-2">

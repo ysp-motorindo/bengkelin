@@ -9,6 +9,8 @@ import { toNumber } from '@/main/database/rows';
 import { AdHocReferenceRepository } from '@/main/features/ad-hoc-references/repository';
 import { requireSession } from '@/main/features/auth/authorize';
 import type { Session } from '@/main/features/auth/sessions';
+import { CatalogRepository } from '@/main/features/catalog/repository';
+import { stockOf } from '@/main/features/inventory/ledger';
 import type { CatalogService } from '@/main/features/catalog/service';
 import { CustomerRepository } from '@/main/features/customers/repository';
 import { calculateDueDate } from '@/main/features/invoices/domain';
@@ -68,7 +70,15 @@ export class DraftService {
     this.repo = new DraftRepository(deps.db);
     this.adHoc = new AdHocReferenceRepository(deps.db);
     this.newId = deps.newId ?? randomUUID;
+    const catalog = new CatalogRepository(deps.db);
     this.viewDeps = {
+      itemDetails: (id) => {
+        const item = catalog.find(id);
+        return {
+          itemCode: item?.sku ?? null,
+          currentStock: item?.trackInventory ? stockOf(deps.db, id) : null,
+        };
+      },
       repo: this.repo,
       customers: new CustomerRepository(deps.db),
       vehicles: new VehicleRepository(deps.db),

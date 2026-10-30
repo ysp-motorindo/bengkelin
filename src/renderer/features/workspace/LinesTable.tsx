@@ -20,8 +20,10 @@ export function LinesTable({
   const { t } = useTranslation();
   const headings = [
     '#',
+    t('workspace.lines.code'),
     t('workspace.lines.item'),
     t('workspace.custom.unit'),
+    t('workspace.lines.stock'),
     t('workspace.lines.quantity'),
     t('workspace.lines.unitPrice'),
     ...Array.from({ length: 4 }, (_, i) => `D${i + 1}`),
@@ -34,8 +36,10 @@ export function LinesTable({
         <caption className="sr-only">{t('workspace.lines.caption')}</caption>
         <colgroup>
           <col className="w-8" />
+          <col className="w-24" />
           <col />
           <col className="w-14" />
+          <col className="w-16" />
           <col className="w-16" />
           <col className="w-28" />
           {[1, 2, 3, 4].map((i) => (
@@ -72,7 +76,7 @@ export function LinesTable({
           {!lines.length && (
             <tr>
               <td
-                colSpan={11}
+                colSpan={13}
                 data-testid="lines-empty"
                 className="px-4 py-8 text-center text-muted-foreground"
               >
