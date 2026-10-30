@@ -50,7 +50,7 @@ export function LinesTable({
               <th
                 scope="col"
                 key={index}
-                className="border-b border-border px-2 py-2"
+                className="border-b border-border px-2 py-2 text-center"
               >
                 {label}
               </th>
@@ -58,10 +58,11 @@ export function LinesTable({
           </tr>
         </thead>
         <tbody>
-          {lines.map((line) => (
+          {lines.map((line, index) => (
             <EditableLineRow
               key={line.id}
               line={line}
+              rowNumber={index + 1}
               commands={commands}
               mechanics={mechanics}
               onRemove={onRemove}

@@ -108,7 +108,8 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
       data-testid="line-entry"
       className="border-t-2 border-amber-300 bg-amber-50/60 dark:bg-amber-950/20"
     >
-      <td colSpan={11} className="px-2 py-2">
+      <td />
+      <td className="px-2 py-2">
         <ScannerCombobox
           compact
           inputRef={search}
@@ -152,6 +153,7 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
           </Dialog>
         ) : null}
       </td>
+      <td colSpan={9} />
     </tr>
   );
 }

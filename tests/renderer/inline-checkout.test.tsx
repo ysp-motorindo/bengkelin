@@ -24,6 +24,7 @@ function Harness() {
         <tbody>
           <EditableLineRow
             line={commands.view.lines[0]!}
+            rowNumber={1}
             commands={commands}
             mechanics={[]}
             onRemove={() => true}
@@ -200,4 +201,13 @@ test('legacy checkout remains unchanged until its cash and discount replacements
     kind: 'setInvoiceDiscounts',
     stages: [],
   });
+});
+
+test('details are collapsed until the accessible icon is toggled', async () => {
+  Object.assign(window, { bengkelin: workspaceBridge() });
+  render(<Harness />);
+  const toggle = screen.getByRole('button', { name: /detail/i });
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await userEvent.click(toggle);
+  expect(toggle).toHaveAttribute('aria-expanded', 'true');
 });

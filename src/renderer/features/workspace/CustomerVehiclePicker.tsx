@@ -223,7 +223,9 @@ export function CustomerVehiclePicker({
   }, [id, open, activeIndex]);
   return (
     <div className="relative flex flex-col gap-1.5">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id} className="flex min-h-5 items-center">
+        {label}
+      </label>
       <Input
         ref={input}
         id={id}

@@ -49,6 +49,7 @@ function Harness({ removeSucceeds = true }: { removeSucceeds?: boolean }) {
     <table>
       <tbody>
         <EditableLineRow
+          rowNumber={1}
           line={commands.view.lines[0]!}
           commands={commands}
           mechanics={[]}
@@ -187,6 +188,7 @@ test('service mechanic selection is staged until blur', async () => {
       <table>
         <tbody>
           <EditableLineRow
+            rowNumber={1}
             line={line}
             commands={commands}
             mechanics={[
@@ -202,6 +204,7 @@ test('service mechanic selection is staged until blur', async () => {
     );
   }
   render(<Service />);
+  await user.click(screen.getByRole('button', { name: /Detail:/ }));
   await user.selectOptions(
     screen.getByRole('combobox', { name: 'Mekanik: Servis CVT' }),
     'mechanic',

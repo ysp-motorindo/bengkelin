@@ -210,7 +210,10 @@ export function ScannerCombobox({
 
   return (
     <div className="relative flex flex-col gap-1">
-      <label htmlFor={`${listId}-input`} className="text-sm font-medium">
+      <label
+        htmlFor={`${listId}-input`}
+        className={compact ? 'sr-only' : 'text-sm font-medium'}
+      >
         {t('workspace.search.label')}
       </label>
       <div className="relative">

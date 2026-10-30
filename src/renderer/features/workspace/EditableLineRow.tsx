@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { ChevronDown, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
@@ -19,6 +19,7 @@ import type { DraftCommands } from './use-draft-commands';
 
 interface Props {
   line: DraftLineDto;
+  rowNumber: number;
   commands: DraftCommands;
   mechanics: ReferenceDto[];
   onRemove(line: DraftLineDto): boolean | Promise<boolean>;
@@ -35,6 +36,7 @@ export const transactionCellClass =
 
 export function EditableLineRow({
   line,
+  rowNumber,
   commands,
   mechanics,
   onRemove,
@@ -42,6 +44,7 @@ export function EditableLineRow({
   const { t } = useTranslation();
   const { formatIdr } = useNumberFormat();
   const detailId = useId();
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const key = (field: string) => `line:${line.id}:${field}`;
@@ -160,7 +163,7 @@ export function EditableLineRow({
         inert={removing}
         className="border-t border-border text-xs [&>td]:px-1 [&>td]:py-1"
       >
-        <td className="text-right text-muted-foreground">{line.position}</td>
+        <td className="text-right text-muted-foreground">{rowNumber}</td>
         <td className="min-w-48">
           {line.source === 'CUSTOM' ? (
             <Input
@@ -211,28 +214,40 @@ export function EditableLineRow({
           {formatIdr(line.amount)}
         </td>
         <td className="whitespace-nowrap">
-          <IconButton
-            destructive
-            type="button"
-            label={`${t('workspace.lines.remove')}: ${line.title}`}
-            disabled={removing}
-            onClick={async () => {
-              setRemoving(true);
-              try {
-                if (await onRemove(line))
-                  for (const field of fields)
-                    commands.cancelPending(key(field));
-              } finally {
-                setRemoving(false);
-              }
-            }}
-          >
-            <Trash2 className="size-3.5" />
-          </IconButton>
+          <div className="flex items-center justify-end gap-1">
+            <IconButton
+              label={`${t('workspace.lines.details')}: ${line.title}`}
+              aria-expanded={detailsOpen}
+              aria-controls={detailId}
+              className="size-8"
+              onClick={() => setDetailsOpen(!detailsOpen)}
+            >
+              <ChevronDown className={detailsOpen ? 'rotate-180' : ''} />
+            </IconButton>
+            <IconButton
+              destructive
+              className="size-8"
+              type="button"
+              label={`${t('workspace.lines.remove')}: ${line.title}`}
+              disabled={removing}
+              onClick={async () => {
+                setRemoving(true);
+                try {
+                  if (await onRemove(line))
+                    for (const field of fields)
+                      commands.cancelPending(key(field));
+                } finally {
+                  setRemoving(false);
+                }
+              }}
+            >
+              <Trash2 className="size-3.5" />
+            </IconButton>
+          </div>
         </td>
       </tr>
       {
-        <tr>
+        <tr hidden={!detailsOpen && Object.keys(errors).length === 0}>
           <td
             colSpan={11}
             className="border-t border-border bg-sunken px-3 py-2"
@@ -250,7 +265,12 @@ export function EditableLineRow({
             {
               <div
                 id={detailId}
-                className="flex flex-wrap items-start gap-3 text-xs"
+                hidden={!detailsOpen}
+                className={
+                  detailsOpen
+                    ? 'flex flex-wrap items-start gap-3 text-xs'
+                    : 'hidden'
+                }
               >
                 {line.source === 'CUSTOM' && (
                   <span className="sr-only">{line.title}</span>

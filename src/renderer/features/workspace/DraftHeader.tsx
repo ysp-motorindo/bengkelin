@@ -156,7 +156,7 @@ export function DraftHeader({
   return (
     <section
       aria-label={t('workspace.header.label')}
-      className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 [&_input]:h-8 [&_select]:h-8 [&_input]:text-xs [&_select]:text-xs [&_label]:text-xs"
+      className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 [&_input]:h-8 [&_select]:h-8 [&_select]:py-0 [&_select]:leading-normal [&_input]:text-xs [&_select]:text-xs [&_label]:text-xs"
     >
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-semibold whitespace-nowrap">
@@ -189,8 +189,8 @@ export function DraftHeader({
         </FormField>
         <div className="ml-auto min-w-0">{toolbar}</div>
       </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(10rem,1fr)_minmax(12rem,1fr)_minmax(10rem,1fr)_minmax(16rem,1.5fr)]">
-        <div className="row-span-2 grid gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]">
+        <div className="grid content-start gap-2">
           {(['sales', 'expedition'] as const).map((entity) => {
             const options = entity === 'sales' ? sales : expeditions;
             const current = view[entity];
@@ -223,83 +223,91 @@ export function DraftHeader({
             );
           })}
         </div>
-        <FormField label={t('workspace.header.invoiceNumber')}>
-          <Input readOnly value={view.invoiceNumber ?? ''} />
-        </FormField>
-        <FormField label={t('workspace.header.invoiceDate')}>
-          <Input
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            onBlur={commitDate}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                commitDate();
-              }
-            }}
-          />
-        </FormField>
-        <div className="grid grid-cols-[5rem_1fr] gap-2">
-          <FormField
-            label={t('workspace.header.topDays')}
-            error={fieldErrors.topDays}
-          >
-            <NumericInput
-              value={topDays}
-              onValueChange={(value) => {
-                setTopDays(value);
-                textField('topDays', value, MAX_TOP_DAYS, (days) => ({
-                  kind: 'updateHeader',
-                  changes: { topDays: days },
-                }));
+        <div className="hidden lg:block" aria-hidden="true" />
+        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_.6fr_1fr]">
+          <FormField label={t('workspace.header.invoiceNumber')}>
+            <Input readOnly value={view.invoiceNumber ?? ''} />
+          </FormField>
+          <FormField label={t('workspace.header.invoiceDate')}>
+            <Input
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              onBlur={commitDate}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  commitDate();
+                }
               }}
             />
           </FormField>
-          <FormField label={t('workspace.header.dueDate')}>
-            <Input
-              readOnly
-              data-testid="header-due-date"
-              value={formatDisplayDate(view.dueDate)}
+          <div className="contents">
+            <FormField
+              label={t('workspace.header.topDays')}
+              error={fieldErrors.topDays}
+            >
+              <NumericInput
+                value={topDays}
+                onValueChange={(value) => {
+                  setTopDays(value);
+                  textField('topDays', value, MAX_TOP_DAYS, (days) => ({
+                    kind: 'updateHeader',
+                    changes: { topDays: days },
+                  }));
+                }}
+              />
+            </FormField>
+            <FormField label={t('workspace.header.dueDate')}>
+              <Input
+                readOnly
+                data-testid="header-due-date"
+                value={formatDisplayDate(view.dueDate)}
+              />
+            </FormField>
+          </div>
+          <div className="sm:col-span-2">
+            <FormField label={t('workspace.header.taxInvoiceNumber')}>
+              <Input
+                maxLength={100}
+                value={taxNumber}
+                onChange={(event) => {
+                  setTaxNumber(event.target.value);
+                  edit('taxInvoiceNumber', {
+                    kind: 'updateHeader',
+                    changes: { taxInvoiceNumber: event.target.value },
+                  });
+                }}
+              />
+            </FormField>
+          </div>
+          <CustomerVehiclePicker
+            mode="vehicle"
+            commands={commands}
+            onError={onError}
+          />
+          <FormField
+            label={t('workspace.header.odometer')}
+            error={fieldErrors.odometer}
+          >
+            <NumericInput
+              value={odometer}
+              onValueChange={(value) => {
+                setOdometer(value);
+                textField(
+                  'odometer',
+                  value,
+                  100_000_000,
+                  (km) => ({
+                    kind: 'updateHeader',
+                    changes: { odometerKm: km },
+                  }),
+                  { kind: 'updateHeader', changes: { odometerKm: null } },
+                );
+              }}
             />
           </FormField>
         </div>
-        <FormField label={t('workspace.header.taxInvoiceNumber')}>
-          <Input
-            maxLength={100}
-            value={taxNumber}
-            onChange={(event) => {
-              setTaxNumber(event.target.value);
-              edit('taxInvoiceNumber', {
-                kind: 'updateHeader',
-                changes: { taxInvoiceNumber: event.target.value },
-              });
-            }}
-          />
-        </FormField>
-        <CustomerVehiclePicker
-          mode="vehicle"
-          commands={commands}
-          onError={onError}
-        />
-        <FormField
-          label={t('workspace.header.odometer')}
-          error={fieldErrors.odometer}
-        >
-          <NumericInput
-            value={odometer}
-            onValueChange={(value) => {
-              setOdometer(value);
-              textField(
-                'odometer',
-                value,
-                100_000_000,
-                (km) => ({ kind: 'updateHeader', changes: { odometerKm: km } }),
-                { kind: 'updateHeader', changes: { odometerKm: null } },
-              );
-            }}
-          />
-        </FormField>
       </div>
       {view.ownerMismatch ? (
         <div

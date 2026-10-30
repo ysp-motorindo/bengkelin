@@ -92,7 +92,7 @@ export function CheckoutPanel({
           <tr>
             <th scope="row">{t('workspace.checkout.singleDiscount')}</th>
             <td>
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex items-center justify-between gap-2">
                 {legacyDiscount ? (
                   <span>
                     {view.invoiceDiscounts
@@ -113,7 +113,7 @@ export function CheckoutPanel({
                     value={discount}
                     onValueChange={changeDiscount}
                     aria-invalid={!!errors.discount}
-                    className="h-7 w-20 text-right"
+                    className="h-7 w-20 text-left"
                   />
                 )}
                 <span data-testid="invoice-discount-amount">
