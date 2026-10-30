@@ -201,3 +201,67 @@ test('supplied CSVs import every row and repeat unchanged', async () => {
     expect(again.summary).toEqual({ creates: 0, updates: 0, unchanged: count });
   }
 });
+
+test('stale previews reject before backup, tokens are bound to their admin', async () => {
+  const p = await preview();
+  value(
+    await h.call(C.references.save, {
+      entity: 'sales',
+      code: 'OTHER',
+      label: 'Other',
+    }),
+  );
+  const backup = vi.spyOn(h.services.backups, 'createValidatedBackup');
+  expect(failure(await commit(p.token)).code).toBe('IMPORT_PREVIEW_STALE');
+  expect(backup).not.toHaveBeenCalled();
+  const owned = await preview();
+  value(
+    await h.call(C.cashiers.create, {
+      username: 'admin2',
+      displayName: 'Admin 2',
+      password: 'another-password',
+      role: 'ADMIN',
+    }),
+  );
+  value(
+    await h.call(
+      C.auth.login,
+      { username: 'admin2', password: 'another-password' },
+      2,
+    ),
+  );
+  expect(
+    failure(
+      await h.call(C.referenceTransfer.commitImport, { token: owned.token }, 2),
+    ).code,
+  ).toBe('IMPORT_PREVIEW_EXPIRED');
+});
+test('enforces size limit, normalized duplicate codes and formula protection', async () => {
+  writeFileSync(file, 'x'.repeat(5 * 1024 * 1024 + 1));
+  expect((await preview()).errors[0]!.error.code).toBe('FILE_TOO_LARGE');
+  writeFileSync(
+    file,
+    formatCsv([
+      header,
+      ['a01', 'One', '', '', '', 'true'],
+      ['A01', 'Two', '', '', '', 'true'],
+    ]),
+  );
+  expect(
+    (await preview()).errors.some(
+      (e) => e.error.code === 'REFERENCE_IMPORT_DUPLICATE_CODE',
+    ),
+  ).toBe(true);
+  writeFileSync(
+    file,
+    formatCsv([header, ['001', '=Name', '+Address', '@City', '0812', 'true']]),
+  );
+  const p = await preview();
+  expect(p.canCommit).toBe(true);
+  value(await commit(p.token));
+  expect(h.db.prepare('SELECT label, address, city FROM sales').get()).toEqual({
+    label: '=Name',
+    address: '+Address',
+    city: '@City',
+  });
+});

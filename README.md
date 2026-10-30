@@ -4,6 +4,8 @@ Offline cashier application for an Indonesian motorcycle workshop (single
 shop, single computer). Electron + React + SQLite (better-sqlite3).
 Specification: `docs/superpowers/specs/2026-09-30-bengkelin-design.md`.
 
+[Sales dan Ekspedisi: master, impor CSV, dan transaksi opsional](docs/sales-ekspedisi.md) menjelaskan fitur tambahan beserta perilaku impor ulang dan nama historis pada faktur.
+
 ## Panduan admin
 
 [Panduan setup awal dan impor data (HTML)](docs/panduan/onboarding.html) dan

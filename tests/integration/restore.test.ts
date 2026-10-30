@@ -772,6 +772,16 @@ describe('restore', () => {
             number_format: 'ID',
           })),
         );
+      } else if (table === 'invoices') {
+        expect(restored[table], table).toEqual(
+          data.map((row) => ({
+            ...(row as object),
+            sales_id: null,
+            expedition_id: null,
+            sales_name_snapshot: null,
+            expedition_name_snapshot: null,
+          })),
+        );
       } else expect(restored[table], table).toEqual(data);
     }
     expect(shopName(h.db)).toBe(SHOP_NAME);

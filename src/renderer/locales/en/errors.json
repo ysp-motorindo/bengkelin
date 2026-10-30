@@ -145,5 +145,6 @@
   "DUPLICATE_PHONE": "This phone number is shared by multiple customers.",
   "REFERENCE_IMPORT_HEADER": "CSV columns must match the template.",
   "REFERENCE_IMPORT_INVALID_ROW": "Invalid row; check the indicated column.",
-  "REFERENCE_IMPORT_DUPLICATE_CODE": "Duplicate code in the file."
+  "REFERENCE_IMPORT_DUPLICATE_CODE": "Duplicate code in the file.",
+  "EXPORT_FAILED": "Could not save the CSV. Try another location."
 }

@@ -215,7 +215,10 @@ export function Shell({
           </div>
         ) : null}
         <div hidden={view !== 'workspace'}>
-          <CashierWorkspace finalizer={finalizer} />
+          <CashierWorkspace
+            finalizer={finalizer}
+            active={view === 'workspace'}
+          />
         </div>
         {view === 'history' ? <HistoryScreen session={session} /> : null}
         {view === 'receivables' ? <ReceivablesScreen /> : null}

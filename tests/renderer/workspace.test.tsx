@@ -6,7 +6,7 @@ import { cashChange } from '@/renderer/features/workspace/checkout/tender';
 import { getWorkspaceActions } from '@/renderer/features/workspace/workspace-actions';
 import { formatIdr, parseRupiahInput } from '@/renderer/lib/money';
 import type { CatalogItemDto, DraftCommand } from '@/shared/contracts';
-import { ok, workspaceBridge } from './helpers/workspace-bridge';
+import { draftView, ok, workspaceBridge } from './helpers/workspace-bridge';
 
 function install() {
   const bridge = workspaceBridge();
@@ -357,6 +357,55 @@ test('optional sales and expedition pickers show codes and queue header changes'
     expect(bridge.drafts.apply).toHaveBeenCalledWith(
       expect.objectContaining({
         op: { kind: 'updateHeader', changes: { salesId: master.id } },
+      }),
+    ),
+  );
+});
+
+test('refreshes imported master options when returning to the mounted workspace', async () => {
+  const bridge = install();
+  const { rerender } = render(<CashierWorkspace active={false} />);
+  await screen.findByRole('combobox', { name: 'Cari barang' });
+  const normal = workspaceBridge();
+  bridge.references.listActive.mockImplementation(async ({ entity }) =>
+    entity === 'sales'
+      ? ok([
+          {
+            entity: 'sales',
+            id: 'new',
+            code: '001',
+            label: 'Imported Sales',
+            address: null,
+            city: null,
+            phoneNumber: null,
+            brandId: null,
+            isActive: true,
+          },
+        ])
+      : normal.references.listActive({ entity }),
+  );
+  rerender(<CashierWorkspace active />);
+  expect(
+    await screen.findByRole('option', { name: '001 · Imported Sales' }),
+  ).toBeInTheDocument();
+});
+
+test('retains an inactive selection as a visible fallback and allows clearing', async () => {
+  const bridge = install();
+  bridge.drafts.create.mockResolvedValue(
+    ok(draftView({ sales: { id: 'inactive-sales', name: 'Inactive Sales' } })),
+  );
+  render(<CashierWorkspace />);
+  const sales = await screen.findByRole('combobox', { name: 'Sales' });
+  expect(sales).toHaveValue('inactive-sales');
+  expect(
+    screen.getByRole('option', { name: 'Inactive Sales' }),
+  ).toBeInTheDocument();
+  await userEvent.setup().selectOptions(sales, '');
+  await waitFor(() =>
+    expect(bridge.drafts.apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        op: { kind: 'updateHeader', changes: { salesId: null } },
       }),
     ),
   );

@@ -17,6 +17,7 @@ import { DraftWorkspace, type WorkspaceReferences } from './DraftWorkspace';
 import { nowInstant, todayInShop } from './shop-time';
 
 interface CashierWorkspaceProps {
+  active?: boolean;
   /** Finalization from the review step (default: the preload bridge). */
   finalizer?: FinalizeClient | undefined;
 }
@@ -51,7 +52,10 @@ function must<T>(result: Result<T>): T {
  * or starts a new one. Switching drafts and starting new ones always flush
  * pending input first.
  */
-export function CashierWorkspace({ finalizer }: CashierWorkspaceProps) {
+export function CashierWorkspace({
+  finalizer,
+  active = true,
+}: CashierWorkspaceProps) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [notice, setNotice] = useState<string | null>(null);
@@ -146,6 +150,31 @@ export function CashierWorkspace({ finalizer }: CashierWorkspaceProps) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    void Promise.all([
+      window.bengkelin.references.listActive({ entity: 'sales' }),
+      window.bengkelin.references.listActive({ entity: 'expedition' }),
+    ])
+      .then(([sales, expeditions]) => {
+        if (cancelled || !context.current) return;
+        const references = {
+          ...context.current.references,
+          sales: must(sales),
+          expeditions: must(expeditions),
+        };
+        context.current.references = references;
+        setPhase((current) =>
+          current.kind === 'ready' ? { ...current, references } : current,
+        );
+      })
+      .catch(fail);
+    return () => {
+      cancelled = true;
+    };
+  }, [active, fail]);
 
   const flushOrWarn = useCallback(async () => {
     const flushed = await flushAll();

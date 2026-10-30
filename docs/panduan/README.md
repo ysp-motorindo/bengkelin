@@ -5,6 +5,8 @@
 - [Buka manual operasional kasir dan admin](manual-operasional.html)
 - [Unduh PDF manual operasional](../../output/pdf/manual-operasional-bengkelin.pdf)
 
+- [Tambahan Sales dan Ekspedisi: impor dan operasional](../sales-ekspedisi.md) — kode tetap, impor ulang tanpa penghapusan, pilihan transaksi opsional, dan nama historis faktur.
+
 ## Panduan onboarding
 
 Panduan ditujukan untuk admin bengkel, mulai dari pembukaan pertama aplikasi yang sudah terpasang hingga impor katalog dan pelanggan. Contoh menggunakan `data/import-ready/catalog-mmb.csv` dan `customers-mmb.csv`.
