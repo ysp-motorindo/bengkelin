@@ -182,7 +182,6 @@ export function DraftWorkspace({
         <Button
           variant="outline"
           size="sm"
-          disabled={view.lines.every((line) => line.source !== 'CATALOG')}
           onClick={() => setDialog({ kind: 'repricing' })}
         >
           <RefreshCcw aria-hidden="true" />

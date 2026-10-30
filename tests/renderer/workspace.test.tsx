@@ -534,3 +534,29 @@ test('invoice header separates Customer and Vehicle Number and shows reserved nu
     screen.queryByRole('textbox', { name: 'Pelanggan & kendaraan' }),
   ).not.toBeInTheDocument();
 });
+
+test.each([{ lines: [] }, { lines: [customLine()] }])(
+  'allows pricing-time editing without catalog rows (%j)',
+  async ({ lines }) => {
+    const bridge = install();
+    bridge.drafts.create.mockResolvedValue(ok(draftView({ lines })));
+    bridge.drafts.previewPriceRefresh.mockResolvedValue(
+      ok({
+        invoiceId: draftView().id,
+        version: 1,
+        channelId: draftView().channelId,
+        pricingAt: draftView().pricingAt,
+        proposals: [],
+      }),
+    );
+    const user = userEvent.setup();
+    render(<CashierWorkspace />);
+    const check = await screen.findByRole('button', { name: 'Cek harga' });
+    expect(check).toBeEnabled();
+    await user.click(check);
+    expect(
+      await screen.findByRole('button', { name: 'Ubah waktu harga' }),
+    ).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Terapkan/ })).toBeDisabled();
+  },
+);
