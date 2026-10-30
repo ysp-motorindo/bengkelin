@@ -36,7 +36,8 @@
     "edit": "Ubah",
     "remove": "Hapus",
     "listed": "Harga daftar",
-    "empty": "Belum ada barang. Pindai barcode atau cari barang di atas."
+    "empty": "Belum ada barang. Pindai barcode atau cari barang di atas.",
+    "details": "Detail"
   },
   "indicators": {
     "override": "Harga manual",
@@ -209,9 +210,13 @@
     "empty": "Transaksi belum berisi barang.",
     "finalize": "Finalisasi",
     "back": "Kembali",
-    "zeroTitle": "Konfirmasi harga Rp 0",
-    "zeroDescription": "Item berikut memiliki harga jual Rp 0.",
-    "zeroContinue": "Konfirmasi dan lanjutkan"
+    "zeroTitle": "Konfirmasi Harga Barang",
+    "zeroDescription": "Periksa barang dengan harga Rp0 atau harga jual yang berbeda dari harga yang tersimpan untuk channel dan waktu harga faktur ini.",
+    "zeroContinue": "Konfirmasi dan lanjutkan",
+    "storedPrice": "Harga tersimpan",
+    "priceReason": "Perlu konfirmasi",
+    "zeroReason": "Harga Rp0",
+    "differentReason": "Harga berbeda"
   },
   "repricing": {
     "open": "Cek harga",

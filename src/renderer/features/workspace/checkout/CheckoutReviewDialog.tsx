@@ -70,11 +70,12 @@ export function CheckoutReviewDialog({
   onNewTransaction,
 }: CheckoutReviewDialogProps) {
   const { t } = useTranslation();
+  const { formatIdr } = useNumberFormat();
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [zeroAcknowledged, setZeroAcknowledged] = useState(false);
+  const [pricesAcknowledged, setPricesAcknowledged] = useState(false);
   const [stockAcknowledged, setStockAcknowledged] = useState(false);
   /** One requestId per submission of the same payload, reused on retry. */
   const submission = useRef<{ key: string; requestId: string } | null>(null);
@@ -89,7 +90,7 @@ export function CheckoutReviewDialog({
         return;
       }
       setStockAcknowledged(false);
-      setZeroAcknowledged(false);
+      setPricesAcknowledged(false);
       setPhase({ kind: 'ready', preview: result.value });
     } catch {
       setPhase({ kind: 'failed', message: t('errors.INTERNAL_ERROR') });
@@ -168,18 +169,65 @@ export function CheckoutReviewDialog({
     );
   }
 
-  const zeroWarning =
+  const priceWarning =
     phase.kind === 'ready' && phase.preview.errors.length === 0
       ? phase.preview.warnings.find(
-          (warning) => warning.code === 'ZERO_UNIT_PRICE',
+          (warning) =>
+            warning.code === 'ZERO_UNIT_PRICE' ||
+            warning.code === 'PRICE_DIFFERS_FROM_STORED',
         )
       : undefined;
-  const confirmingZero = !!zeroWarning && !zeroAcknowledged;
+  const priceLines = new Map<
+    string,
+    {
+      lineId: string;
+      title: string;
+      quantity: number;
+      unitPrice: string;
+      storedUnitPrice: string | null;
+      zero: boolean;
+      differs: boolean;
+    }
+  >();
+  if (phase.kind === 'ready') {
+    for (const warning of phase.preview.warnings) {
+      if (
+        warning.code !== 'ZERO_UNIT_PRICE' &&
+        warning.code !== 'PRICE_DIFFERS_FROM_STORED'
+      )
+        continue;
+      for (const line of warning.params.lines) {
+        const draftLine = view.lines.find((item) => item.id === line.lineId);
+        const entry = priceLines.get(line.lineId) ?? {
+          ...line,
+          unitPrice: '0',
+          storedUnitPrice: draftLine?.pricing.currentListedPrice ?? null,
+          zero: false,
+          differs: false,
+        };
+        if (warning.code === 'ZERO_UNIT_PRICE') entry.zero = true;
+        if ('storedUnitPrice' in line) {
+          entry.storedUnitPrice = line.storedUnitPrice ?? null;
+        }
+        if ('unitPrice' in line) {
+          entry.unitPrice = line.unitPrice;
+          entry.differs = true;
+        }
+        priceLines.set(line.lineId, entry);
+      }
+    }
+  }
+  const orderedPriceLines = [...priceLines.values()].sort(
+    (a, b) =>
+      view.lines.findIndex((l) => l.id === a.lineId) -
+      view.lines.findIndex((l) => l.id === b.lineId),
+  );
+  const confirmingPrices = !!priceWarning && !pricesAcknowledged;
 
   return (
     <Dialog
       title={t(
-        confirmingZero
+        confirmingPrices
           ? 'workspace.review.zeroTitle'
           : 'workspace.review.title',
       )}
@@ -194,8 +242,8 @@ export function CheckoutReviewDialog({
             </Button>
           }
         >
-          {confirmingZero ? (
-            <Button onClick={() => setZeroAcknowledged(true)}>
+          {confirmingPrices ? (
+            <Button onClick={() => setPricesAcknowledged(true)}>
               {t('workspace.review.zeroContinue')}
             </Button>
           ) : (
@@ -236,19 +284,45 @@ export function CheckoutReviewDialog({
         </p>
       ) : null}
       {phase.kind === 'failed' ? <Alert>{phase.message}</Alert> : null}
-      {confirmingZero && zeroWarning?.code === 'ZERO_UNIT_PRICE' ? (
+      {confirmingPrices ? (
         <div>
           <p>{t('workspace.review.zeroDescription')}</p>
-          <ul>
-            {zeroWarning.params.lines.map((line) => (
-              <li key={line.lineId}>
-                <span>{line.title}</span> · {line.quantity} × Rp 0
-              </li>
-            ))}
-          </ul>
+          <table className="mt-3 w-full text-left text-sm">
+            <thead>
+              <tr>
+                <th>{t('workspace.lines.item')}</th>
+                <th>{t('workspace.review.storedPrice')}</th>
+                <th>{t('workspace.lines.unitPrice')}</th>
+                <th>{t('workspace.review.priceReason')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orderedPriceLines.map((line) => (
+                <tr key={line.lineId}>
+                  <td>
+                    <span>{line.title}</span> · {line.quantity}
+                  </td>
+                  <td>
+                    {line.storedUnitPrice === null
+                      ? '—'
+                      : formatIdr(line.storedUnitPrice)}
+                  </td>
+                  <td>{formatIdr(line.unitPrice)}</td>
+                  <td>
+                    {[
+                      line.zero ? t('workspace.review.zeroReason') : '',
+                      line.differs ? t('workspace.review.differentReason') : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : null}
-      {phase.kind === 'ready' && !confirmingZero ? (
+      {phase.kind === 'ready' && !confirmingPrices ? (
         <ReviewBody
           view={view}
           preview={phase.preview}
@@ -281,7 +355,10 @@ function ReviewBody({
   const credit = BigInt(totals.outstandingAmount) > 0n;
   const negative = preview.warnings.filter((w) => w.code === 'NEGATIVE_STOCK');
   const other = preview.warnings.filter(
-    (w) => w.code !== 'NEGATIVE_STOCK' && w.code !== 'ZERO_UNIT_PRICE',
+    (w) =>
+      w.code !== 'NEGATIVE_STOCK' &&
+      w.code !== 'ZERO_UNIT_PRICE' &&
+      w.code !== 'PRICE_DIFFERS_FROM_STORED',
   );
 
   return (

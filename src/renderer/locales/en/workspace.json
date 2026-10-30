@@ -36,7 +36,8 @@
     "edit": "Edit",
     "remove": "Remove",
     "listed": "Listed price",
-    "empty": "No items yet. Scan a barcode or search for an item above."
+    "empty": "No items yet. Scan a barcode or search for an item above.",
+    "details": "Details"
   },
   "indicators": {
     "override": "Manual price",
@@ -209,9 +210,13 @@
     "empty": "The transaction has no items yet.",
     "finalize": "Finalize",
     "back": "Back",
-    "zeroTitle": "Confirm zero prices",
-    "zeroDescription": "These items have a zero selling price.",
-    "zeroContinue": "Confirm and continue"
+    "zeroTitle": "Confirm Item Prices",
+    "zeroDescription": "Review items with zero prices or selling prices different from the stored prices for this invoice channel and pricing time.",
+    "zeroContinue": "Confirm and continue",
+    "storedPrice": "Stored price",
+    "priceReason": "Confirmation reason",
+    "zeroReason": "Zero price",
+    "differentReason": "Different price"
   },
   "repricing": {
     "open": "Check prices",

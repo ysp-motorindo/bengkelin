@@ -11,6 +11,7 @@ import type {
   InvoiceView,
 } from '@/shared/contracts';
 import type { Result } from '@/shared/primitives';
+import { customLine } from './helpers/transaction-line';
 import { DRAFT_ID, draftView, ok } from './helpers/workspace-bridge';
 
 const ITEM_ID = '2b1c7a3e-1c2b-4a55-9c5b-0a8f3f0b9d22';
@@ -408,4 +409,85 @@ test('blocking errors precede zero confirmation and Back returns to editing', as
   ).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Kembali' }));
   expect(onClose).toHaveBeenCalledOnce();
+});
+
+test('different prices and zero prices share one confirmation with deduplicated items', async () => {
+  const api = client(
+    [
+      preview({
+        warnings: [
+          {
+            code: 'ZERO_UNIT_PRICE',
+            params: {
+              lines: [{ lineId: ITEM_ID, title: 'Free oil', quantity: 1 }],
+            },
+          },
+          {
+            code: 'PRICE_DIFFERS_FROM_STORED',
+            params: {
+              lines: [
+                {
+                  lineId: ITEM_ID,
+                  title: 'Free oil',
+                  quantity: 1,
+                  storedUnitPrice: '70000',
+                  unitPrice: '0',
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    ],
+    [],
+  );
+  renderReview(api);
+  expect(
+    await screen.findByRole('heading', { name: 'Konfirmasi Harga Barang' }),
+  ).toBeVisible();
+  expect(screen.getAllByText('Free oil')).toHaveLength(1);
+  expect(screen.getByText(/70.000/)).toBeVisible();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Konfirmasi dan lanjutkan' }),
+  );
+  expect(screen.getByTestId('finalize-button')).toBeVisible();
+});
+
+test('zero confirmation displays authoritative stored zero instead of the stale draft price', async () => {
+  const oldLine = customLine();
+  oldLine.id = ITEM_ID;
+  oldLine.pricing.currentListedPrice = '70000';
+  const api = client(
+    [
+      preview({
+        warnings: [
+          {
+            code: 'ZERO_UNIT_PRICE',
+            params: {
+              lines: [
+                {
+                  lineId: ITEM_ID,
+                  title: 'Free oil',
+                  quantity: 1,
+                  storedUnitPrice: '0',
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    ],
+    [],
+  );
+  render(
+    <CheckoutReviewDialog
+      view={draftView({ lines: [oldLine] })}
+      finalizer={api}
+      printer={printer()}
+      onClose={() => {}}
+      onNewTransaction={() => {}}
+    />,
+  );
+  await screen.findByText('Free oil');
+  expect(screen.queryByText(/70.000/)).not.toBeInTheDocument();
 });

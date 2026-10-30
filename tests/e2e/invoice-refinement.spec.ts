@@ -47,6 +47,14 @@ for (const lang of ['id', 'en'] as const) {
       const search = page.getByRole('combobox', {
         name: t('workspace.search.label'),
       });
+      const itemTable = page.getByRole('table', {
+        name: t('workspace.lines.caption'),
+      });
+      for (const heading of await itemTable.getByRole('columnheader').all()) {
+        await expect(heading).toHaveCSS('text-align', 'center');
+      }
+      const searchCell = search.locator('xpath=ancestor::td');
+      await expect(searchCell).not.toHaveAttribute('colspan', '11');
       const invoiceNumber = page.getByLabel(
         t('workspace.header.invoiceNumber'),
         { exact: true },
@@ -59,6 +67,16 @@ for (const lang of ['id', 'en'] as const) {
       await expect(
         page.getByLabel(t('workspace.header.vehicleNumber'), { exact: true }),
       ).toBeVisible();
+      const tax = await page
+        .getByLabel(t('workspace.header.taxInvoiceNumber'), { exact: true })
+        .boundingBox();
+      const vehicle = await page
+        .getByLabel(t('workspace.header.vehicleNumber'), { exact: true })
+        .boundingBox();
+      expect(vehicle!.y).toBe(tax!.y);
+      await page.screenshot({
+        path: path.join(directory, 'initial-layout.png'),
+      });
       await search.fill(OIL_BARCODE);
       await search.press('Enter');
       await expect(page.getByTestId('line-row')).toHaveCount(1);
@@ -75,6 +93,12 @@ for (const lang of ['id', 'en'] as const) {
         exact: false,
       });
       await expect(price).toBeFocused();
+      const toggle = unpriced.getByRole('button', { name: /Detail/ });
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      await expect(toggle).toHaveCSS('border-top-width', '0px');
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      await toggle.click();
       await price.fill('25000');
       await price.press('Tab');
       await search.fill('UNPRICED-1');
@@ -172,6 +196,48 @@ for (const lang of ['id', 'en'] as const) {
           });
         }
       }
+      await page
+        .getByTestId('line-row')
+        .nth(1)
+        .getByRole('button', { name: new RegExp(t('workspace.lines.remove')) })
+        .click();
+      await expect(page.getByTestId('line-row')).toHaveCount(18);
+      for (let index = 0; index < 18; index++) {
+        await expect(
+          page.getByTestId('line-row').nth(index).locator('td').first(),
+        ).toHaveText(String(index + 1));
+      }
+      const oil = page.getByTestId('line-row').first();
+      await oil.locator('[data-price-input]').fill('0');
+      await oil.locator('[data-price-input]').press('Tab');
+      await page
+        .getByRole('button', {
+          name: t('workspace.checkout.review'),
+          exact: true,
+        })
+        .click();
+      await expect(
+        page.getByRole('dialog', { name: t('workspace.review.zeroTitle') }),
+      ).toBeVisible();
+      await expect(
+        page.getByText(t('workspace.review.differentReason'), { exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole('cell', {
+          name: `${t('workspace.review.zeroReason')} · ${t('workspace.review.differentReason')}`,
+          exact: true,
+        }),
+      ).toBeVisible();
+      await page.screenshot({
+        path: path.join(directory, 'combined-price-confirmation.png'),
+      });
+      await page
+        .getByRole('button', { name: t('workspace.review.zeroContinue') })
+        .click();
+      await page.getByTestId('finalize-button').click();
+      await expect(page.getByTestId('finalized-invoice-number')).toHaveText(
+        number,
+      );
       expect(errors).toEqual([]);
     } finally {
       await launched.close();
@@ -204,6 +270,7 @@ test('keyboard dropdown keeps the active product visible when wrapping through t
     await page.reload();
     await loginWithKeyboard(page, 'siti', CASHIER_PASSWORD, 'id');
     const search = page.getByRole('combobox', { name: 'Cari barang' });
+    await page.mouse.move(0, 0);
     await search.fill('Dropdown fixture');
     const options = page
       .getByRole('listbox', { name: 'Hasil pencarian barang' })
