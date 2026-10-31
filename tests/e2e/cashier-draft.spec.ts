@@ -267,7 +267,17 @@ test('scanning adds, merges, keeps focus in search, and override/discount lines 
   await dialog.getByLabel(t('workspace.editor.unitPrice')).fill('60000');
   await searchBox(page).click();
   await expect(searchBox(page)).toBeFocused();
-  await expect(page.getByTestId('indicator-override')).toBeVisible();
+  await page
+    .getByTestId('line-row')
+    .nth(0)
+    .getByRole('button', {
+      name: new RegExp(`^${t('workspace.lines.details')}`),
+    })
+    .click();
+  await expect(
+    page.getByTestId('indicator-override').locator('..'),
+  ).toContainText(t('workspace.indicators.override'));
+  await searchBox(page).focus();
   await scan(BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(2);
   await expect(page.getByTestId('line-quantity').nth(0)).toHaveValue('2');
@@ -352,7 +362,13 @@ test('unknown and inactive barcodes give inline feedback; a missing price asks f
   await price.press('Tab');
   await expect(page.getByTestId('line-row')).toHaveCount(1);
   await expect(page.getByTestId('line-row')).toContainText('Filter Udara');
-  await openEditor(page, 0);
+  await page
+    .getByTestId('line-row')
+    .nth(0)
+    .getByRole('button', {
+      name: new RegExp(`^${t('workspace.lines.details')}`),
+    })
+    .click();
   await expect(page.getByTestId('indicator-missing-price')).toBeVisible();
   await searchBox(page).focus();
   await expect(searchBox(page)).toBeFocused();

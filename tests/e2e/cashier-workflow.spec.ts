@@ -95,14 +95,6 @@ async function expectNoPageNetwork(app: LaunchedApp['app']): Promise<void> {
   expect(await networkRequests(app)).toEqual([]);
 }
 
-async function openLineEditor(page: Page, index: number) {
-  const row = page.getByTestId('line-row').nth(index);
-  await row
-    .getByRole('button', { name: new RegExp(`^${t('workspace.lines.edit')}`) })
-    .click();
-  return row.or(row.locator('xpath=following-sibling::tr[1]'));
-}
-
 test('full cashier workflow: scan, service, discounts, restart, split payment, F8 review, finalize, print, later payment', async () => {
   test.setTimeout(180_000);
   launched = await launch();
@@ -196,7 +188,9 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   await page
     .getByTestId('line-row')
     .nth(1)
-    .getByRole('button', { name: new RegExp(t('workspace.lines.edit')) })
+    .getByRole('button', {
+      name: new RegExp(`^${t('workspace.lines.details')}`),
+    })
     .click();
   await expect(page.getByTestId('indicator-mechanic')).toContainText('Andi');
 
@@ -205,7 +199,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
   await expect(searchBox(page)).toBeFocused();
   await scan(page, HELMET_BARCODE);
   await expect(page.getByTestId('line-row')).toHaveCount(3);
-  const editor = await openLineEditor(page, 2);
+  const editor = page.getByTestId('line-row').nth(2);
   await editor.getByLabel(t('workspace.editor.discount1')).fill('30');
   await editor.getByLabel(t('workspace.editor.discount2')).fill('50');
   await editor.getByLabel(t('workspace.editor.discount3')).fill('10');
