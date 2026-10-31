@@ -100,6 +100,7 @@ export class CatalogService {
         (input.query ?? '').trim(),
         input.includeInactive === true,
         Math.min(input.limit ?? DEFAULT_LIMIT, 50),
+        input.offset ?? 0,
       ),
     };
   }

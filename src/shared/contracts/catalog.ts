@@ -97,6 +97,7 @@ export const searchCatalogInputSchema = z.strictObject({
   query: z.string('validation.required').trim().max(100, 'validation.tooLong'),
   includeInactive: z.boolean('validation.invalid').optional(),
   limit: z.number('validation.invalid').int().min(1).max(50).optional(),
+  offset: z.number('validation.invalid').int().min(0).optional(),
 });
 export type SearchCatalogInput = z.input<typeof searchCatalogInputSchema>;
 

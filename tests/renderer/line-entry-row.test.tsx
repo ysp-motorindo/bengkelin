@@ -298,3 +298,45 @@ test('search spans code and item columns', () => {
     screen.getByRole('combobox', { name: 'Cari barang' }).closest('td'),
   ).toHaveAttribute('colspan', '2');
 });
+
+test('keyboard navigation loads and selects an item beyond the first page', async () => {
+  const bridge = install();
+  const items = Array.from({ length: 51 }, (_, i) => ({
+    id: `item-${i}`,
+    title: `Item ${i}`,
+    description: null,
+    sku: null,
+    unitId: 'unit',
+    unitCode: 'PCS',
+    unitLabel: 'PCS',
+    weight: null,
+    trackInventory: true,
+    isActive: true,
+    createdAt: '',
+    updatedAt: '',
+    barcodes: [],
+    type: 'STOCK_ITEM' as const,
+  }));
+  bridge.catalog.search.mockImplementation(
+    async (input?: { offset?: number }) => ({
+      ok: true,
+      value: {
+        results: items.slice(input?.offset ?? 0, (input?.offset ?? 0) + 50),
+      },
+    }),
+  );
+  const user = userEvent.setup();
+  render(<Harness />);
+  const search = screen.getByRole('combobox', { name: 'Cari barang' });
+  await user.type(search, 'Item');
+  await screen.findByRole('option', { name: /Item 0/ });
+  await user.keyboard('{ArrowDown>50/}');
+  await user.keyboard('{ArrowDown}');
+  await screen.findByRole('option', { name: /Item 50/ });
+  await user.keyboard('{ArrowDown}{Enter}');
+  await waitFor(() =>
+    expect(bridge.drafts.apply.mock.calls[0]?.[0].op).toMatchObject({
+      catalogItemId: 'item-50',
+    }),
+  );
+});

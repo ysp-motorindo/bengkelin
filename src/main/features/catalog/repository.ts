@@ -123,6 +123,7 @@ export class CatalogRepository {
     query: string,
     includeInactive: boolean,
     limit: number,
+    offset: number,
   ): CatalogItemDto[] {
     const clauses: string[] = [];
     const params: unknown[] = [];
@@ -140,9 +141,9 @@ export class CatalogRepository {
     const rows = this.db
       .prepare(
         `${ITEM_SELECT} ${where}
-         ORDER BY i.title COLLATE NOCASE, i.created_at, i.id LIMIT ?`,
+         ORDER BY i.title COLLATE NOCASE, i.created_at, i.id LIMIT ? OFFSET ?`,
       )
-      .all(...params, BigInt(limit)) as ItemRow[];
+      .all(...params, BigInt(limit), BigInt(offset)) as ItemRow[];
     return this.hydrate(rows);
   }
 

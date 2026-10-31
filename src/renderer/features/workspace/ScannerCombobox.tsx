@@ -57,6 +57,10 @@ export function ScannerCombobox({
   const [text, setText] = useState('');
   const [results, setResults] = useState<CatalogItemDto[]>([]);
   const [open, setOpen] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [pageError, setPageError] = useState(false);
+  const queryRef = useRef('');
+  const loadingPage = useRef(false);
   const [active, setActive] = useState(-1);
   const [hint, setHint] = useState<string | null>(null);
   const [popup, setPopup] = useState({
@@ -104,26 +108,36 @@ export function ScannerCombobox({
         ?.scrollIntoView?.({ block: 'nearest' });
   }, [open, active, listId]);
 
-  async function search(query: string): Promise<CatalogItemDto[]> {
+  async function search(
+    query: string,
+    offset = 0,
+  ): Promise<CatalogItemDto[] | null> {
     const seq = ++searchSeq.current;
     try {
       const result = await window.bengkelin.catalog.search({
         query,
-        limit: 10,
+        limit: 50,
+        offset,
       });
-      if (seq !== searchSeq.current) return [];
+      if (seq !== searchSeq.current) return null;
       if (!result.ok) {
         watchSessionError(result.error);
-        return [];
+        return null;
       }
       return result.value.results;
     } catch {
-      return [];
+      return null;
     }
   }
 
   function scheduleSearch(query: string) {
     clearTimeout(timer.current);
+    searchSeq.current += 1;
+    queryRef.current = query.trim();
+    loadingPage.current = false;
+    setResults([]);
+    setHasMore(false);
+    setPageError(false);
     if (!query.trim()) {
       searchSeq.current += 1;
       setResults([]);
@@ -134,16 +148,43 @@ export function ScannerCombobox({
     timer.current = setTimeout(() => {
       void search(query.trim()).then((found) => {
         if (inputRef.current?.value !== query) return; // typed on / cleared
+        if (!found) return;
         setResults(found);
+        setHasMore(found.length === 50);
         setOpen(true);
         setActive(-1);
       });
     }, SEARCH_DELAY_MS);
   }
 
+  async function loadMore() {
+    if (!hasMore || loadingPage.current || !queryRef.current) return;
+    loadingPage.current = true;
+    setPageError(false);
+    const query = queryRef.current;
+    const request = search(query, results.length);
+    const seq = searchSeq.current;
+    const found = await request;
+    if (seq !== searchSeq.current) return;
+    loadingPage.current = false;
+    if (!found) {
+      setPageError(true);
+      return;
+    }
+    setActive((current) =>
+      current === results.length ? current + found.length : current,
+    );
+    setResults((current) => [...current, ...found]);
+    setHasMore(found.length === 50);
+  }
+
   function reset() {
     clearTimeout(timer.current);
     searchSeq.current += 1;
+    queryRef.current = '';
+    loadingPage.current = false;
+    setHasMore(false);
+    setPageError(false);
     setText('');
     onTextChange?.('');
     setResults([]);
@@ -157,7 +198,9 @@ export function ScannerCombobox({
     if (outcome !== 'unknown' || /^\d+$/.test(code)) return;
     // Not a barcode: offer the search results for keyboard selection.
     const found = await search(code);
-    if (found.length === 0 || inputRef.current?.value !== '') return;
+    if (!found || found.length === 0 || inputRef.current?.value !== '') return;
+    queryRef.current = code;
+    setHasMore(found.length === 50);
     onClearFeedback();
     // The field stays empty so the next scan starts clean; the results
     // stay reachable with the arrow keys.
@@ -172,11 +215,21 @@ export function ScannerCombobox({
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       setOpen(true);
+      if (
+        event.key === 'ArrowDown' &&
+        active === results.length - 1 &&
+        hasMore &&
+        !pageError
+      ) {
+        void loadMore();
+        return;
+      }
       navigated.current = true;
       setActive((index) => {
         const step = event.key === 'ArrowDown' ? 1 : -1;
         if (index < 0) return step > 0 ? 0 : results.length;
-        return (index + step + results.length + 1) % (results.length + 1);
+        const count = results.length + 1 + (pageError ? 1 : 0);
+        return (index + step + count) % count;
       });
       return;
     }
@@ -191,6 +244,15 @@ export function ScannerCombobox({
     }
     if (event.key !== 'Enter') return;
     event.preventDefault();
+    if (
+      navigated.current &&
+      open &&
+      pageError &&
+      active === results.length + 1
+    ) {
+      void loadMore();
+      return;
+    }
     const customPicked = navigated.current && open && active === results.length;
     const picked =
       navigated.current && open && active >= 0 ? results[active] : undefined;
@@ -262,6 +324,14 @@ export function ScannerCombobox({
             aria-label={t('workspace.search.results')}
             hidden={!open}
             style={popup}
+            onScroll={(event) => {
+              const el = event.currentTarget;
+              if (
+                !pageError &&
+                el.scrollHeight - el.scrollTop - el.clientHeight < 80
+              )
+                void loadMore();
+            }}
             className="fixed z-40 overflow-auto rounded-md border border-border bg-card py-1 shadow-lg"
           >
             {results.map((item, index) => (
@@ -310,11 +380,31 @@ export function ScannerCombobox({
             >
               {t('workspace.custom.open')}
             </li>
+            {pageError && (
+              <li
+                id={`${listId}-${results.length + 1}`}
+                role="option"
+                aria-selected={active === results.length + 1}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  void loadMore();
+                }}
+                onMouseEnter={() => setActive(results.length + 1)}
+                className={cn(
+                  'cursor-pointer px-3 py-2 text-sm underline',
+                  active === results.length + 1 &&
+                    'bg-accent text-accent-foreground',
+                )}
+              >
+                {t('common.retry')}
+              </li>
+            )}
           </ul>,
           document.body,
         )}
       </div>
       <div id={hintId} aria-live="polite" className="empty:hidden">
+        {pageError && <p>{t('common.retry')}</p>}
         {feedback ? (
           <p
             role="alert"

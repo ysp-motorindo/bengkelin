@@ -1148,6 +1148,11 @@ describe('search', () => {
     for (let i = 0; i < 60; i += 1) await newItem({ title: `Filler ${i}` });
     expect((await search('Filler', {}, ADMIN)).length).toBe(25);
     expect((await search('Filler', { limit: 50 })).length).toBe(50);
+    expect((await search('Filler', { limit: 50, offset: 50 })).length).toBe(10);
+    expect(await search('Filler', { limit: 50, offset: 100 })).toEqual([]);
+    expect(
+      failure(await h.call(C.catalog.search, { query: 'x', offset: -1 })).code,
+    ).toBe('VALIDATION_FAILED');
     expect(
       failure(await h.call(C.catalog.search, { query: 'x', limit: 51 })).code,
     ).toBe('VALIDATION_FAILED');
