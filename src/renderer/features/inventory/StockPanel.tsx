@@ -110,10 +110,9 @@ export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
     <section
       aria-label={item.title}
       data-testid="stock-detail"
-      className="flex flex-col gap-4 border-t border-border pt-4"
+      className="flex flex-col gap-4"
     >
       <div>
-        <h2 className="wrap-anywhere text-lg font-semibold">{item.title}</h2>
         <p
           data-testid="stock-current"
           className={cn(

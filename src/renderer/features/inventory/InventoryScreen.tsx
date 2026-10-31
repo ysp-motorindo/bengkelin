@@ -5,6 +5,8 @@ import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
+import { X } from 'lucide-react';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
 import type { Role, StockListItemDto } from '@/shared/contracts';
@@ -193,12 +195,28 @@ export function InventoryScreen({ role }: { role: Role }) {
       ) : null}
 
       {selected ? (
-        <StockPanel
-          key={selected.catalogItemId}
-          item={selected}
-          admin={admin}
-          onChanged={() => load(query, negativeOnly)}
-        />
+        <Dialog
+          title={selected.title}
+          closeLabel={t('workspace.common.close')}
+          onClose={() => setPicked(null)}
+          footer={
+            <DialogActions
+              secondary={
+                <Button variant="outline" onClick={() => setPicked(null)}>
+                  <X aria-hidden="true" />
+                  {t('workspace.common.close')}
+                </Button>
+              }
+            />
+          }
+        >
+          <StockPanel
+            key={selected.catalogItemId}
+            item={selected}
+            admin={admin}
+            onChanged={() => load(query, negativeOnly)}
+          />
+        </Dialog>
       ) : null}
     </div>
   );

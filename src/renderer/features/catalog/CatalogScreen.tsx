@@ -5,6 +5,8 @@ import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
+import { X } from 'lucide-react';
 import { useAction } from '@/renderer/lib/use-action';
 import type { CatalogItemDto, Role } from '@/shared/contracts';
 import { BarcodeEditor } from './BarcodeEditor';
@@ -258,38 +260,64 @@ export function CatalogScreen({ role }: { role: Role }) {
           }}
         />
       ) : null}
-
       {selected ? (
-        <div className="flex min-w-0 flex-col gap-6 border-t border-border pt-4">
-          {admin && panel.kind === 'item' && panel.editing ? (
-            <ItemForm
-              item={selected}
-              onCancel={() =>
-                setPanel({ kind: 'item', id: selected.id, editing: false })
-              }
-              onSaved={(item) => {
-                replace(item);
-                setPanel({ kind: 'item', id: item.id, editing: false });
-              }}
-            />
-          ) : (
-            <ItemSummary
-              item={selected}
-              onEdit={
-                admin
-                  ? () =>
-                      setPanel({ kind: 'item', id: selected.id, editing: true })
-                  : undefined
+        <Dialog
+          title={t('catalog.detail.title')}
+          closeLabel={t('workspace.common.close')}
+          onClose={() => setPanel({ kind: 'none' })}
+          footer={
+            <DialogActions
+              secondary={
+                <Button
+                  variant="outline"
+                  onClick={() => setPanel({ kind: 'none' })}
+                >
+                  <X aria-hidden="true" />
+                  {t('workspace.common.close')}
+                </Button>
               }
             />
-          )}
-          {admin ? <BarcodeEditor item={selected} onChanged={replace} /> : null}
-          <PricingPanel
-            key={selected.id}
-            catalogItemId={selected.id}
-            canEdit={admin}
-          />
-        </div>
+          }
+        >
+          {selected ? (
+            <div className="flex min-w-0 flex-col gap-6">
+              {admin && panel.kind === 'item' && panel.editing ? (
+                <ItemForm
+                  item={selected}
+                  onCancel={() =>
+                    setPanel({ kind: 'item', id: selected.id, editing: false })
+                  }
+                  onSaved={(item) => {
+                    replace(item);
+                    setPanel({ kind: 'item', id: item.id, editing: false });
+                  }}
+                />
+              ) : (
+                <ItemSummary
+                  item={selected}
+                  onEdit={
+                    admin
+                      ? () =>
+                          setPanel({
+                            kind: 'item',
+                            id: selected.id,
+                            editing: true,
+                          })
+                      : undefined
+                  }
+                />
+              )}
+              {admin ? (
+                <BarcodeEditor item={selected} onChanged={replace} />
+              ) : null}
+              <PricingPanel
+                key={selected.id}
+                catalogItemId={selected.id}
+                canEdit={admin}
+              />
+            </div>
+          ) : null}
+        </Dialog>
       ) : null}
     </div>
   );

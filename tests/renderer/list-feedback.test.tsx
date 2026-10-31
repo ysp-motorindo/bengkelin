@@ -103,3 +103,24 @@ describe.each(['catalog', 'inventory'] as const)('%s list feedback', (kind) => {
     expect(submit).toBeEnabled();
   });
 });
+
+test('catalog new item opens in a dialog and closes', async () => {
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    catalog: {
+      search: vi.fn(async () => ({ ok: true, value: { results: [] } })),
+    },
+  };
+  render(<CatalogScreen role="ADMIN" />);
+  await userEvent.click(
+    screen.getByRole('button', { name: i18n.t('catalog.new') }),
+  );
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: i18n.t('catalog.form.save') }),
+  ).toHaveAttribute('form', 'catalog-item-form');
+  expect(
+    screen.getAllByRole('heading', { name: i18n.t('catalog.new') }),
+  ).toHaveLength(1);
+  await userEvent.keyboard('{Escape}');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});

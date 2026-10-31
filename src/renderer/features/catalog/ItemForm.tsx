@@ -1,9 +1,11 @@
+import { Check, X } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Select } from '@/renderer/components/ui/select';
 import { useAction } from '@/renderer/lib/use-action';
@@ -94,8 +96,9 @@ export function ItemForm({ item, onSaved, onCancel }: ItemFormProps) {
           } as ReferenceDto,
         ];
 
-  return (
+  const form = (
     <form
+      id="catalog-item-form"
       onSubmit={submit}
       noValidate
       aria-label={
@@ -103,9 +106,9 @@ export function ItemForm({ item, onSaved, onCancel }: ItemFormProps) {
       }
       className="flex max-w-xl flex-col gap-3"
     >
-      <h2 className="text-lg font-semibold">
-        {item ? t('catalog.form.editTitle') : t('catalog.form.createTitle')}
-      </h2>
+      {item ? (
+        <h2 className="text-lg font-semibold">{t('catalog.form.editTitle')}</h2>
+      ) : null}
       {error ? <Alert>{error}</Alert> : null}
       <FormField label={t('catalog.form.type')} error={fieldErrors.type}>
         <Select
@@ -188,14 +191,47 @@ export function ItemForm({ item, onSaved, onCancel }: ItemFormProps) {
         />
         {t('catalog.form.active')}
       </label>
-      <div className="flex gap-2">
-        <Button type="submit" disabled={busy}>
-          {busy ? t('common.saving') : t('catalog.form.save')}
-        </Button>
-        <Button variant="outline" disabled={busy} onClick={onCancel}>
-          {t('catalog.form.cancel')}
-        </Button>
-      </div>
+      {item ? (
+        <div className="flex gap-2">
+          <Button type="submit" disabled={busy}>
+            {busy ? t('common.saving') : t('catalog.form.save')}
+          </Button>
+          <Button variant="outline" disabled={busy} onClick={onCancel}>
+            {t('catalog.form.cancel')}
+          </Button>
+        </div>
+      ) : null}
     </form>
+  );
+
+  if (item) return form;
+  return (
+    <Dialog
+      title={t('catalog.new')}
+      onClose={onCancel}
+      closeLabel={t('workspace.common.close')}
+      footer={
+        <DialogActions
+          secondary={
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={onCancel}
+            >
+              <X aria-hidden="true" />
+              {t('catalog.form.cancel')}
+            </Button>
+          }
+        >
+          <Button type="submit" form="catalog-item-form" disabled={busy}>
+            <Check aria-hidden="true" />
+            {busy ? t('common.saving') : t('catalog.form.save')}
+          </Button>
+        </DialogActions>
+      }
+    >
+      {form}
+    </Dialog>
   );
 }

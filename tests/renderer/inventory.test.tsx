@@ -45,6 +45,22 @@ async function openItem() {
 describe('inventory screen', () => {
   beforeEach(() => vi.restoreAllMocks());
 
+  test('opens stock in a dialog and closes it', async () => {
+    bridge(vi.fn());
+    render(<InventoryScreen role="CASHIER" />);
+    await openItem();
+    expect(
+      within(screen.getByRole('dialog')).getAllByRole('heading', {
+        name: 'Oli MPX2',
+      }),
+    ).toHaveLength(1);
+    expect(
+      within(screen.getByRole('dialog')).getByTestId('stock-current'),
+    ).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   test('a CASHIER sees stock but no stock actions', async () => {
     bridge(vi.fn());
     render(<InventoryScreen role="CASHIER" />);
