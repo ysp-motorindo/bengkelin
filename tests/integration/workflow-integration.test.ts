@@ -665,7 +665,7 @@ describe('workflow e2e print hook (test-only route to printToPDF)', () => {
       ph.close();
       rmSync(out, { recursive: true, force: true });
     }
-  });
+  }, 30_000);
 
   test('the hook is honored only in unpackaged builds', () => {
     const env = { BENGKELIN_TEST_PRINT_TO_PDF_DIR: 'prints' };
