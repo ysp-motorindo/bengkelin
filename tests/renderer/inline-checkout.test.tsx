@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test } from 'vitest';
 import { EditableLineRow } from '@/renderer/features/workspace/EditableLineRow';
@@ -39,10 +39,9 @@ function Harness() {
     </>
   );
 }
-test('Pay Full uses the acknowledged total after an inline quantity save', async () => {
+test('opening payments flushes pending quantity edits and uses the acknowledged total', async () => {
   const bridge = workspaceBridge();
   Object.assign(window, { bengkelin: bridge });
-  bridge.drafts.apply.mockImplementation(async () => ok(initial));
   let resolve!: (
     value: import('@/shared/primitives').Result<DraftView>,
   ) => void;
@@ -57,9 +56,8 @@ test('Pay Full uses the acknowledged total after an inline quantity save', async
   const qty = screen.getByRole('textbox', { name: 'Jumlah: Servis CVT' });
   await user.clear(qty);
   await user.type(qty, '2');
-  const cash = screen.getByRole('textbox', { name: 'Pembayaran' });
-  await user.clear(cash);
-  await user.type(cash, '100000');
+  await user.click(screen.getByRole('button', { name: 'Pembayaran' }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   resolve(
     ok({
       ...initial,
@@ -73,96 +71,42 @@ test('Pay Full uses the acknowledged total after an inline quantity save', async
       },
     }),
   );
-  await waitFor(() =>
-    expect(bridge.drafts.apply.mock.calls.at(-1)![0].op).toMatchObject({
-      kind: 'setCashPayment',
-      amount: '100000',
-    }),
-  );
+  const dialog = await screen.findByRole('dialog');
+  expect(within(dialog).getByText('Rp 100.000')).toBeVisible();
+  expect(bridge.drafts.apply.mock.calls[0]![0].op).toMatchObject({
+    kind: 'updateLine',
+    quantity: 2,
+  });
 });
 
-test('nominal cash input shows change and hides down payment at TOP zero', async () => {
+test('a failed flush leaves payments closed', async () => {
   const bridge = workspaceBridge();
   Object.assign(window, { bengkelin: bridge });
+  bridge.drafts.apply.mockResolvedValueOnce({
+    ok: false,
+    error: { code: 'INTERNAL_ERROR', messageKey: 'errors.INTERNAL_ERROR' },
+  });
+  const user = userEvent.setup();
   render(<Harness />);
-  const cash = screen.getByRole('textbox', { name: 'Pembayaran' });
-  await userEvent.clear(cash);
-  await userEvent.type(cash, '60000');
-  expect(screen.getByTestId('cash-change')).toHaveTextContent('10.000');
-  expect(screen.queryByText('Uang Muka')).not.toBeInTheDocument();
+  const qty = screen.getByRole('textbox', { name: 'Jumlah: Servis CVT' });
+  await user.clear(qty);
+  await user.type(qty, '2');
+  await user.click(screen.getByRole('button', { name: 'Pembayaran' }));
+  await waitFor(() => expect(bridge.drafts.apply).toHaveBeenCalledTimes(1));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
-test('legacy checkout remains unchanged until its cash and discount replacements are chosen', async () => {
-  const legacy: DraftView = {
+test('legacy sequential discounts still require explicit replacement', async () => {
+  const legacy = draftView({
     ...initial,
-    cashReceived: null,
     invoiceDiscounts: [
       { sequence: 1, percentageBps: 5000, amount: '25000' },
       { sequence: 2, percentageBps: 5000, amount: '12500' },
     ],
-    checkoutAllocations: [
-      {
-        sequence: 1,
-        method: 'CASH',
-        amount: '5000',
-        reference: null,
-        note: null,
-      },
-      {
-        sequence: 2,
-        method: 'QRIS',
-        amount: '7500',
-        reference: 'QR-1',
-        note: null,
-      },
-    ],
-    totals: {
-      ...initial.totals,
-      invoiceDiscountAmount: '37500',
-      amount: '12500',
-      allocatedAmount: '12500',
-      unallocatedAmount: '0',
-    },
-  };
+  });
   const bridge = workspaceBridge();
   bridge.drafts.apply.mockResolvedValueOnce(
-    ok({
-      ...legacy,
-      version: 2,
-      cashReceived: '12500',
-      checkoutAllocations: [
-        {
-          sequence: 1,
-          method: 'CASH',
-          amount: '12500',
-          reference: null,
-          note: null,
-        },
-      ],
-    }),
-  );
-  bridge.drafts.apply.mockResolvedValueOnce(
-    ok({
-      ...legacy,
-      version: 3,
-      cashReceived: '12500',
-      invoiceDiscounts: [],
-      checkoutAllocations: [
-        {
-          sequence: 1,
-          method: 'CASH',
-          amount: '12500',
-          reference: null,
-          note: null,
-        },
-      ],
-      totals: {
-        ...legacy.totals,
-        invoiceDiscountAmount: '0',
-        amount: '50000',
-        unallocatedAmount: '37500',
-      },
-    }),
+    ok({ ...legacy, version: 2, invoiceDiscounts: [] }),
   );
   Object.assign(window, { bengkelin: bridge });
   function LegacyHarness() {
@@ -176,28 +120,12 @@ test('legacy checkout remains unchanged until its cash and discount replacements
     );
   }
   render(<LegacyHarness />);
-  expect(screen.getByTestId('total-amount')).toHaveTextContent('12.500');
-  expect(
-    screen.queryByRole('textbox', { name: 'Pembayaran' }),
-  ).not.toBeInTheDocument();
   expect(bridge.drafts.apply).not.toHaveBeenCalled();
-  await userEvent.click(
-    screen.getByRole('button', { name: 'Ganti dengan tunai' }),
-  );
-  await waitFor(() =>
-    expect(screen.getByRole('textbox', { name: 'Pembayaran' })).toHaveValue(
-      '12.500',
-    ),
-  );
-  expect(bridge.drafts.apply.mock.calls[0]![0].op).toEqual({
-    kind: 'setCashPayment',
-    amount: '12500',
-  });
   await userEvent.click(screen.getByRole('button', { name: 'Ganti diskon' }));
   await waitFor(() =>
-    expect(screen.getByTestId('total-amount')).toHaveTextContent('50.000'),
+    expect(screen.getByRole('textbox', { name: 'Disc' })).toBeVisible(),
   );
-  expect(bridge.drafts.apply.mock.calls[1]![0].op).toEqual({
+  expect(bridge.drafts.apply.mock.calls[0]![0].op).toEqual({
     kind: 'setInvoiceDiscounts',
     stages: [],
   });

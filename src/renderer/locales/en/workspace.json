@@ -176,6 +176,8 @@
     "invoiceDiscount3": "Invoice discount 3 (%)",
     "invoiceDiscount4": "Invoice discount 4 (%)",
     "payments": "Payments",
+    "received": "Total received",
+    "apply": "Apply",
     "payFullCash": "Pay Full in Cash",
     "payFullQris": "Pay Full with QRIS",
     "method": "Method",

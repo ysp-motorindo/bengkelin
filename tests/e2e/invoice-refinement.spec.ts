@@ -86,12 +86,12 @@ for (const lang of ['id', 'en'] as const) {
       const dateBox = (await page
         .getByLabel(t('workspace.header.invoiceDate'), { exact: true })
         .boundingBox())!;
-      const topBox = (await page
-        .getByLabel(t('workspace.header.topDays'), { exact: true })
-        .boundingBox())!;
       expect(Math.abs(vehicle!.x - dateBox.x)).toBeLessThanOrEqual(1);
+      const odometerBox = (await page
+        .getByLabel(t('workspace.header.odometer'), { exact: true })
+        .boundingBox())!;
       expect(
-        Math.abs(vehicle!.x + vehicle!.width - topBox.x - topBox.width),
+        Math.abs(odometerBox.x + odometerBox.width - dateBox.x - dateBox.width),
       ).toBeLessThanOrEqual(1);
       const note = page.getByRole('textbox', {
         name: t('workspace.header.note'),
@@ -101,7 +101,8 @@ for (const lang of ['id', 'en'] as const) {
       await expect(note.locator('..')).toHaveCSS('padding-top', '0px');
       await note.fill('Invoice layout note');
       const discount = page.getByRole('textbox', { name: 'Disc', exact: true });
-      const payment = page.getByLabel(t('workspace.checkout.payments'), {
+      const payment = page.getByRole('button', {
+        name: t('workspace.checkout.payments'),
         exact: true,
       });
       for (const input of [discount, payment]) {
@@ -157,11 +158,25 @@ for (const lang of ['id', 'en'] as const) {
       await search.fill('UNPRICED-1');
       await search.press('Enter');
       await expect(page.getByTestId('line-row')).toHaveCount(3);
-      const cash = page.getByRole('textbox', {
+      const cash = page.getByRole('button', {
         name: t('workspace.checkout.payments'),
         exact: true,
       });
-      await cash.fill('100000');
+      await cash.click();
+      const payments = page.getByRole('dialog', {
+        name: t('workspace.checkout.payments'),
+        exact: true,
+      });
+      await payments
+        .getByLabel(`${t('workspace.checkout.amount')} 1`, { exact: true })
+        .fill('100000');
+      await payments
+        .getByRole('button', {
+          name: t('workspace.checkout.apply'),
+          exact: true,
+        })
+        .click();
+      await expect(payments).toHaveCount(0);
       await expect(page.getByTestId('cash-change')).toContainText('10.000');
       await expect(
         page.getByText(t('workspace.checkout.downPayment'), { exact: true }),
@@ -186,7 +201,7 @@ for (const lang of ['id', 'en'] as const) {
           exact: true,
         }),
       ).toHaveValue('TAX-42');
-      await expect(cash).toHaveValue('100.000');
+      await expect(cash).toHaveText('Rp 100.000');
       await expect(note).toHaveValue('Invoice layout note');
       await discount.fill('101');
       await expect(discount).toHaveAttribute('aria-invalid', 'true');

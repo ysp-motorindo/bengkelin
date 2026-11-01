@@ -152,11 +152,22 @@ test('scan, split payment, review, finalize, see the number, new transaction', a
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 65.000');
 
   await page
-    .getByRole('textbox', {
+    .getByRole('button', {
       name: t('workspace.checkout.payments'),
       exact: true,
     })
+    .click();
+  const payments = page.getByRole('dialog', {
+    name: t('workspace.checkout.payments'),
+    exact: true,
+  });
+  await payments
+    .getByLabel(`${t('workspace.checkout.amount')} 1`, exact)
     .fill('65000');
+  await payments
+    .getByRole('button', { name: t('workspace.checkout.apply'), exact: true })
+    .click();
+  await expect(payments).toHaveCount(0);
 
   // Review (flushes first), then finalize.
   await page

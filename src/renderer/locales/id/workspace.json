@@ -176,6 +176,8 @@
     "invoiceDiscount3": "Diskon faktur 3 (%)",
     "invoiceDiscount4": "Diskon faktur 4 (%)",
     "payments": "Pembayaran",
+    "received": "Total diterima",
+    "apply": "Terapkan",
     "payFullCash": "Bayar Penuh Tunai",
     "payFullQris": "Bayar Penuh QRIS",
     "method": "Metode",

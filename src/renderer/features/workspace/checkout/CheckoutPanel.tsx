@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { useNumberFormat } from '@/renderer/lib/number-format';
-import { parseRupiahInput } from '@/renderer/lib/money';
 import { errorMessage } from '@/renderer/lib/errors';
 import { parseStageTexts } from '../discount-inputs';
 import { useSyncedValue } from '../synced-field';
 import type { DraftCommands } from '../use-draft-commands';
+import { CheckoutPaymentsDialog } from './CheckoutPaymentsDialog';
 
 interface CheckoutPanelProps {
   commands: DraftCommands;
@@ -29,33 +29,19 @@ export function CheckoutPanel({
   const [discount, setDiscount] = useSyncedValue(serverDiscount, () =>
     isDirty('invoiceDiscounts'),
   );
-  const [cash, setCash] = useSyncedValue(view.cashReceived ?? '', () =>
-    isDirty('cashPayment'),
-  );
+  const [paymentsOpen, setPaymentsOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const received = parseRupiahInput(cash);
-  const total = BigInt(view.totals.amount);
-  const difference = received === null ? 0n : BigInt(received) - total;
-  const change = difference > 0n ? difference : 0n;
+  const difference = BigInt(view.totals.unallocatedAmount);
   const legacyDiscount = view.invoiceDiscounts.length > 1;
-  const legacyPayment = view.cashReceived === null;
-  async function replace(kind: 'discount' | 'payment') {
-    const result = await commands.send(
-      kind === 'discount'
-        ? { kind: 'setInvoiceDiscounts', stages: [] }
-        : { kind: 'setCashPayment', amount: view.totals.allocatedAmount },
-    );
+  async function replaceDiscount() {
+    const result = await commands.send({
+      kind: 'setInvoiceDiscounts',
+      stages: [],
+    });
     if (!result.ok) onError(errorMessage(t, result.error));
   }
-  function changeCash(text: string) {
-    setCash(text);
-    const amount = parseRupiahInput(text);
-    setErrors((old) => ({
-      ...old,
-      cash: amount === null ? 'workspace.validation.money' : '',
-    }));
-    if (amount === null) markInvalid('cashPayment', true);
-    else edit('cashPayment', { kind: 'setCashPayment', amount });
+  async function openPayments() {
+    if (await commands.flush()) setPaymentsOpen(true);
   }
   function changeDiscount(text: string) {
     setDiscount(text);
@@ -101,7 +87,7 @@ export function CheckoutPanel({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => void replace('discount')}
+                      onClick={() => void replaceDiscount()}
                     >
                       {t('workspace.checkout.replaceDiscount')}
                     </Button>
@@ -137,44 +123,28 @@ export function CheckoutPanel({
             <td data-testid="total-amount">{formatIdr(view.totals.amount)}</td>
           </tr>
           <tr>
-            <th scope="row">
-              <label htmlFor="invoice-cash-payment">
-                {t('workspace.checkout.payments')}
-              </label>
-            </th>
+            <th scope="row">{t('workspace.checkout.payments')}</th>
             <td>
-              {legacyPayment ? (
-                <div>
-                  {view.checkoutAllocations
-                    .map(
-                      (allocation) =>
-                        `${t(`workspace.paymentMethod.${allocation.method}`)} ${formatIdr(allocation.amount)}`,
-                    )
-                    .join(' · ')}{' '}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => void replace('payment')}
-                  >
-                    {t('workspace.checkout.replacePayment')}
-                  </Button>
-                </div>
-              ) : (
-                <NumericInput
-                  id="invoice-cash-payment"
-                  className="h-5 rounded-none border-0 border-b border-dashed border-input bg-transparent p-0 text-right"
-                  value={cash}
-                  onValueChange={changeCash}
-                  aria-invalid={!!errors.cash}
-                />
-              )}
+              <button
+                type="button"
+                aria-label={t('workspace.checkout.payments')}
+                aria-haspopup="dialog"
+                className="h-5 w-full rounded-none border-0 border-b border-dashed border-input bg-transparent p-0 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() => void openPayments()}
+              >
+                {formatIdr(view.paymentSummary.receivedAmount)}
+              </button>
             </td>
           </tr>
           <tr>
             <th scope="row">{t('workspace.checkout.change')}</th>
-            <td data-testid="cash-change">{formatIdr(change.toString())}</td>
+            <td data-testid="cash-change">
+              {view.paymentSummary.changeAmount === null
+                ? '—'
+                : formatIdr(view.paymentSummary.changeAmount)}
+            </td>
           </tr>
-          {difference < 0n && !legacyPayment && (
+          {difference > 0n && (
             <tr>
               <th scope="row">
                 {t(
@@ -183,11 +153,24 @@ export function CheckoutPanel({
                     : 'workspace.checkout.short',
                 )}
               </th>
-              <td>{formatIdr((-difference).toString())}</td>
+              <td>{formatIdr(difference.toString())}</td>
             </tr>
           )}
         </tbody>
       </table>
+      {BigInt(view.paymentSummary.nonCashExcess) > 0n ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t('errors.NON_CASH_PAYMENT_EXCEEDS_AMOUNT', {
+            excessAmount: view.paymentSummary.nonCashExcess,
+          })}
+        </p>
+      ) : null}
+      {paymentsOpen ? (
+        <CheckoutPaymentsDialog
+          commands={commands}
+          onClose={() => setPaymentsOpen(false)}
+        />
+      ) : null}
       {Object.entries(errors)
         .filter(([, key]) => key)
         .map(([field, key]) => (

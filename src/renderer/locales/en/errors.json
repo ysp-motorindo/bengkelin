@@ -150,7 +150,8 @@
   "PRICE_CONFIRMATION_REQUIRED": "Enter a selling price or explicitly confirm zero for unpriced items.",
   "CHECKOUT_CASH_ONLY": "Use the cash payment amount for this invoice.",
   "CASH_PAYMENT_INSUFFICIENT": "Payment is short. Complete payment or use a positive credit term.",
-  "LEGACY_CHECKOUT_REVIEW_REQUIRED": "Replace the legacy discount or payment plan before checkout.",
+  "NON_CASH_PAYMENT_EXCEEDS_AMOUNT": "Non-cash payments exceed the total by Rp {{excessAmount}}. Reduce non-cash payments before finalizing.",
+  "LEGACY_CHECKOUT_REVIEW_REQUIRED": "Replace the legacy sequential discount before checkout.",
   "STOCK_LOCATION_NOT_FOUND": "Stock location not found. Choose an active location.",
   "STOCK_LOCATION_INACTIVE": "Stock location is inactive. Choose an active location.",
   "STOCK_LOCATION_REQUIRED": "Set up an active stock location in Reference Data before continuing."

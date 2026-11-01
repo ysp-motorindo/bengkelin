@@ -156,89 +156,30 @@ describe('cashier workspace', () => {
   });
 });
 
-describe('invalid unsent input is never labelled saved (C1)', () => {
-  test('clearing a saved amount marks it unsaved and blocks checkout review', async () => {
+describe('invalid unsent input is never labelled saved', () => {
+  test('invalid discount blocks checkout and payment dialogs until corrected', async () => {
     const bridge = install();
     render(<CashierWorkspace />);
     const user = userEvent.setup();
     await screen.findByRole('combobox', { name: 'Cari barang' });
-    const amount = screen.getByRole('textbox', { name: 'Pembayaran' });
-    await user.type(amount, '150');
-    await waitFor(() =>
-      expect(screen.getByTestId('save-state')).toHaveAttribute(
-        'data-state',
-        'saved',
-      ),
-    );
-    const allocationOps = () =>
-      bridge.drafts.apply.mock.calls
-        .map((call) => (call[0] as DraftCommand).op)
-        .filter((op) => op.kind === 'setCashPayment');
-    expect(allocationOps().at(-1)).toMatchObject({
-      amount: '150',
-    });
-
-    await user.clear(amount);
+    const discount = screen.getByRole('textbox', { name: 'Disc' });
+    await user.type(discount, '101');
     expect(screen.getByTestId('save-state')).toHaveAttribute(
       'data-state',
       'unsaved',
     );
-    expect(screen.getByTestId('save-state')).not.toHaveTextContent('Tersimpan');
-    const sent = allocationOps().length;
+    await user.click(screen.getByRole('button', { name: 'Pembayaran' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     await getWorkspaceActions()!.openCheckoutReview();
-    await waitFor(() =>
-      expect(
-        screen
-          .getAllByRole('alert')
-          .some((alert) =>
-            alert.textContent?.includes('Perubahan belum tersimpan'),
-          ),
-      ).toBe(true),
-    );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(await getWorkspaceActions()!.saveDraft()).toBe(false);
-    expect(allocationOps()).toHaveLength(sent);
-
-    // Fixing the value sends it; then the state is Saved again.
-    await user.clear(amount);
-    await user.type(amount, '150.000');
+    await user.clear(discount);
+    await user.type(discount, '10');
     expect(await getWorkspaceActions()!.saveDraft()).toBe(true);
-    expect(allocationOps().at(-1)).toMatchObject({
-      amount: '150000',
+    expect(bridge.drafts.apply.mock.calls.at(-1)![0].op).toMatchObject({
+      kind: 'setInvoiceDiscounts',
+      stages: [1000],
     });
-    await waitFor(() =>
-      expect(screen.getByTestId('save-state')).toHaveAttribute(
-        'data-state',
-        'saved',
-      ),
-    );
-  });
-});
-
-describe('Pay Full replaces invalid allocation input (C1)', () => {
-  test('an invalid amount, then "Bayar Penuh Tunai": the rows follow the server and the state is Saved', async () => {
-    install();
-    render(<CashierWorkspace />);
-    const user = userEvent.setup();
-    await screen.findByRole('combobox', { name: 'Cari barang' });
-    const amount = screen.getByRole('textbox', { name: 'Pembayaran' });
-    await user.type(amount, '1');
-    await user.clear(amount);
-    expect(screen.getByTestId('save-state')).toHaveAttribute(
-      'data-state',
-      'unsaved',
-    );
-    await user.type(amount, '0');
-    await waitFor(() =>
-      expect(screen.getByTestId('save-state')).toHaveAttribute(
-        'data-state',
-        'saved',
-      ),
-    );
-    // The draft total is 0, so Pay Full plans no allocation: the invalid
-    // row is gone with it.
-    expect(screen.queryAllByTestId('allocation-row')).toHaveLength(0);
-    expect(await getWorkspaceActions()!.saveDraft()).toBe(true);
   });
 });
 

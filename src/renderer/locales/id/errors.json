@@ -150,7 +150,8 @@
   "PRICE_CONFIRMATION_REQUIRED": "Isi harga jual atau konfirmasi harga Rp0 pada barang yang belum memiliki harga.",
   "CHECKOUT_CASH_ONLY": "Gunakan nominal pembayaran tunai pada faktur ini.",
   "CASH_PAYMENT_INSUFFICIENT": "Pembayaran belum cukup. Lengkapi pembayaran atau gunakan TOP di atas nol.",
-  "LEGACY_CHECKOUT_REVIEW_REQUIRED": "Ganti diskon bertahap atau rencana pembayaran lama sebelum checkout.",
+  "NON_CASH_PAYMENT_EXCEEDS_AMOUNT": "Pembayaran non-tunai melebihi total sebesar Rp {{excessAmount}}. Kurangi pembayaran non-tunai sebelum menyelesaikan faktur.",
+  "LEGACY_CHECKOUT_REVIEW_REQUIRED": "Ganti diskon bertahap lama sebelum checkout.",
   "STOCK_LOCATION_NOT_FOUND": "Lokasi stok tidak ditemukan. Pilih lokasi aktif.",
   "STOCK_LOCATION_INACTIVE": "Lokasi stok nonaktif. Pilih lokasi aktif.",
   "STOCK_LOCATION_REQUIRED": "Siapkan lokasi stok aktif di Data Referensi sebelum melanjutkan."

@@ -41,6 +41,13 @@ function makeView(version: number, extra: Partial<DraftView> = {}): DraftView {
     lines: [],
     invoiceDiscounts: [],
     checkoutAllocations: [],
+    checkoutTenders: [],
+    paymentSummary: {
+      receivedAmount: '0',
+      cashReceived: '0',
+      changeAmount: '0',
+      nonCashExcess: '0',
+    },
     totals: {
       subtotal: '0',
       itemDiscountAmount: '0',
