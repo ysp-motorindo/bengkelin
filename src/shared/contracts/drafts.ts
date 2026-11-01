@@ -409,6 +409,14 @@ export interface CheckoutAllocationDto {
   note: string | null;
 }
 
+export interface CheckoutPaymentSummary {
+  receivedAmount: Rupiah;
+  cashReceived: Rupiah;
+  /** Unavailable when non-cash received exceeds the total. */
+  changeAmount: Rupiah | null;
+  nonCashExcess: Rupiah;
+}
+
 export interface DraftTotalsDto {
   /** Before all discounts. */
   subtotal: Rupiah;
@@ -464,6 +472,8 @@ export interface DraftView {
   lines: DraftLineDto[];
   invoiceDiscounts: DiscountStageDto[];
   checkoutAllocations: CheckoutAllocationDto[];
+  checkoutTenders: CheckoutAllocationDto[];
+  paymentSummary: CheckoutPaymentSummary;
   totals: DraftTotalsDto;
   /** Later edits lowered the amount below the planned allocations. */
   allocationsExceedAmount: boolean;
