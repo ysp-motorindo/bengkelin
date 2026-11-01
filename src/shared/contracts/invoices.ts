@@ -109,6 +109,7 @@ export type FinalizeErrorCode =
   | 'INVOICE_DATE_IN_FUTURE'
   /** The draft's pricing time is later than the finalize instant. */
   | 'PRICING_AT_IN_FUTURE'
+  | 'NON_CASH_PAYMENT_EXCEEDS_AMOUNT'
   | 'ALLOCATION_EXCEEDS_AMOUNT'
   | 'ZERO_TOTAL_WITH_ALLOCATIONS'
   | 'STOCK_LOCATION_INACTIVE'

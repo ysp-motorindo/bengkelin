@@ -248,9 +248,8 @@ export const checkoutAllocationInputSchema = z.strictObject({
 });
 
 /**
- * Replaces the planned payment split. The sum may be below the amount (the
- * rest is credit) but never above it (ALLOCATION_EXCEEDS_AMOUNT). These are
- * plans only; no payment exists until finalization.
+ * Replaces received payment rows. Excess cash is change; non-cash excess
+ * is saved for correction but blocks finalization. No payment exists until finalization.
  */
 export const setCheckoutAllocationsOpSchema = z.strictObject({
   kind: z.literal('setCheckoutAllocations'),

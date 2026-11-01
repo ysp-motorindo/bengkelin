@@ -196,7 +196,7 @@ export class DraftRepository {
     return requireActiveStockLocation(this.db, id);
   }
 
-  saveCashReceived(id: string, amount: bigint): void {
+  saveCashReceived(id: string, amount: bigint | null): void {
     this.db
       .prepare('UPDATE invoices SET cash_received = ? WHERE id = ?')
       .run(amount, id);

@@ -94,6 +94,10 @@ export function finalizeDraft(
 
   const plan = check.allocations;
   const receiverName = ctx.drafts.cashierName(actor.cashierId);
+  ctx.drafts.saveCashReceived(
+    invoice.id,
+    BigInt(check.paymentSummary.cashReceived),
+  );
   ctx.invoices.clearAllocations(invoice.id);
   step('allocationsCleared');
 

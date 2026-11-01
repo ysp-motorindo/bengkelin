@@ -1,3 +1,5 @@
+import { calculateCheckoutPayments } from '@/shared/checkout-payments';
+import { readCheckoutTenders } from '@/main/features/drafts/checkout-tenders';
 import type { PriceRepository } from '@/main/features/catalog/price-repository';
 import type { AppDatabase } from '@/main/database/connection';
 import { canonicalJson } from '@/main/database/idempotency';
@@ -18,6 +20,7 @@ import type {
   FinalizeIssue,
   FinalizeWarning,
   PaymentStatus,
+  CheckoutPaymentSummary,
 } from '@/shared/contracts';
 import { detectOwnerMismatch } from '@/shared/ownership';
 import {
@@ -46,6 +49,7 @@ export interface CheckDeps {
 export interface FinalizationCheck {
   calculation: DraftCalculation;
   allocations: AllocationRow[];
+  paymentSummary: CheckoutPaymentSummary;
   allocatedAmount: bigint;
   demand: TrackedDemandRow[];
   errors: FinalizeIssue[];
@@ -63,7 +67,16 @@ export function checkFinalization(
 ): FinalizationCheck {
   const calculation = calculateDraftTotals(deps.drafts, invoice.id);
   const amount = calculation.calc.amount;
-  const allocations = deps.drafts.allocations(invoice.id);
+  const { allocations: applied, summary: paymentSummary } =
+    calculateCheckoutPayments(
+      formatRupiah(amount),
+      readCheckoutTenders(deps.drafts, invoice),
+    );
+  const allocations: AllocationRow[] = applied.map((a) => ({
+    ...a,
+    sequence: BigInt(a.sequence),
+    amount: BigInt(a.amount),
+  }));
   const allocatedAmount = allocations.reduce((sum, a) => sum + a.amount, 0n);
   const demand = deps.invoices.trackedDemand(invoice.id);
 
@@ -79,13 +92,9 @@ export function checkFinalization(
   if (calculation.lines.length === 0) {
     errors.push({ code: 'DRAFT_EMPTY', params: {} });
   }
-  if (invoice.cash_received === null || calculation.invoiceStages.length > 1)
+  if (calculation.invoiceStages.length > 1)
     errors.push({ code: 'LEGACY_CHECKOUT_REVIEW_REQUIRED', params: {} });
-  if (
-    invoice.cash_received !== null &&
-    invoice.top_days === 0n &&
-    allocatedAmount < amount
-  )
+  if (invoice.top_days === 0n && allocatedAmount < amount)
     errors.push({ code: 'CASH_PAYMENT_INSUFFICIENT', params: {} });
   // LocalDate strings compare chronologically.
   if (invoice.invoice_date > today) {
@@ -117,18 +126,10 @@ export function checkFinalization(
       params: { catalogItemId: item.catalog_item_id, title: item.title },
     });
   }
-  if (amount === 0n && allocations.length > 0) {
+  if (BigInt(paymentSummary.nonCashExcess) > 0n) {
     errors.push({
-      code: 'ZERO_TOTAL_WITH_ALLOCATIONS',
-      params: { allocatedAmount: formatRupiah(allocatedAmount) },
-    });
-  } else if (allocatedAmount > amount) {
-    errors.push({
-      code: 'ALLOCATION_EXCEEDS_AMOUNT',
-      params: {
-        allocatedAmount: formatRupiah(allocatedAmount),
-        amount: formatRupiah(amount),
-      },
+      code: 'NON_CASH_PAYMENT_EXCEEDS_AMOUNT',
+      params: { excessAmount: paymentSummary.nonCashExcess },
     });
   }
 
@@ -225,6 +226,7 @@ export function checkFinalization(
   return {
     calculation,
     allocations,
+    paymentSummary,
     allocatedAmount,
     demand,
     errors,

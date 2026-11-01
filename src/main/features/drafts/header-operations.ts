@@ -88,30 +88,19 @@ export function setInvoiceDiscounts(
 }
 
 /**
- * Planned payment split (not payments). The sum may leave part of the amount
- * as credit but may not exceed the draft's current amount.
+ * Received payment rows (not payments); finalization validates non-cash excess.
  */
 export function setCheckoutAllocations(
   ctx: OperationContext,
   op: Op<'setCheckoutAllocations'>,
 ): void {
-  if (ctx.invoice.cash_received !== null)
-    throw new DomainError(
-      'CHECKOUT_CASH_ONLY',
-      'Use cash payment for this draft',
-    );
   const allocations = op.allocations.map((a) => ({
     method: a.method,
     amount: parseRupiah(a.amount),
     reference: a.reference ?? null,
     note: a.note ?? null,
   }));
-  const total = allocations.reduce((sum, a) => assertInt64(sum + a.amount), 0n);
-  if (total > ctx.invoice.amount) {
-    throw new DomainError(
-      'ALLOCATION_EXCEEDS_AMOUNT',
-      'Planned payments exceed the invoice amount',
-    );
-  }
+  allocations.reduce((sum, a) => assertInt64(sum + a.amount), 0n);
   ctx.repo.replaceAllocations(ctx.invoice.id, allocations, ctx.newId);
+  ctx.repo.saveCashReceived(ctx.invoice.id, null);
 }

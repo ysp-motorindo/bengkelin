@@ -1361,8 +1361,11 @@ describe('fault injection', () => {
       stages: [500],
     });
     draft = await applyOk(draft, {
-      kind: 'setCashPayment',
-      amount: '150000',
+      kind: 'setCheckoutAllocations',
+      allocations: [
+        { method: 'QRIS', amount: '60000', reference: 'QR-rollback' },
+        { method: 'CASH', amount: '150000' },
+      ],
     });
     return draft;
   }
@@ -1404,6 +1407,7 @@ describe('fault injection', () => {
         expect.objectContaining({
           version: draft.version,
           checkoutAllocations: draft.checkoutAllocations,
+          checkoutTenders: draft.checkoutTenders,
           lines: draft.lines.map((l) =>
             expect.objectContaining({
               id: l.id,
@@ -1419,7 +1423,11 @@ describe('fault injection', () => {
         await h.call<InvoiceView>(C.invoices.finalize, input, CASHIER),
       );
       expect(view.invoiceNumber).toBe('INV-20260930-0001');
-      expect(view.payments).toHaveLength(1);
+      expect(view.payments).toHaveLength(2);
+      expect(
+        value(await h.call<InvoiceView>(C.invoices.finalize, input, CASHIER)),
+      ).toEqual(view);
+      expect(paymentRows(draft.id)).toHaveLength(2);
     },
   );
 
@@ -1815,3 +1823,60 @@ test('stored price changes after preview require a fresh acknowledgment', async 
 });
 
 const TEST_STOCK_LOCATION_ID = '11111111-1111-4111-8111-111111111119';
+
+test('mixed checkout finalizes only applied amounts and retries without duplicate payments', async () => {
+  const item = await pricedItem('100000');
+  let draft = await draftWith([{ itemId: item.id }]);
+  draft = await applyOk(draft, {
+    kind: 'setCheckoutAllocations',
+    allocations: [
+      { method: 'QRIS', amount: '60000', reference: 'QR-1', note: 'scan' },
+      { method: 'CASH', amount: '50000', note: 'cash' },
+      { method: 'CASH', amount: '10000' },
+    ],
+  });
+  const requestId = uuid();
+  const shown = value(await preview(draft.id));
+  const issued = value(
+    await finalize(draft, { requestId, acknowledgedWarnings: shown.warnings }),
+  );
+  expect(issued.cashReceived).toBe('60000');
+  expect(issued.payments).toMatchObject([
+    { method: 'QRIS', amount: '60000', reference: 'QR-1', note: 'scan' },
+    { method: 'CASH', amount: '40000', note: 'cash' },
+  ]);
+  expect(issued.payments).toHaveLength(2);
+  expect(
+    value(
+      await finalize(draft, {
+        requestId,
+        acknowledgedWarnings: shown.warnings,
+      }),
+    ),
+  ).toEqual(issued);
+  expect(paymentRows(draft.id)).toHaveLength(2);
+});
+
+test('non-cash excess saves but blocks preview/finalization with the excess and no side effects', async () => {
+  const item = await pricedItem('100000');
+  let draft = await draftWith([{ itemId: item.id }]);
+  draft = await applyOk(draft, {
+    kind: 'setCheckoutAllocations',
+    allocations: [
+      { method: 'QRIS', amount: '60000' },
+      { method: 'QRIS', amount: '50000' },
+      { method: 'CASH', amount: '20000' },
+    ],
+  });
+  expect(draft.paymentSummary.changeAmount).toBeNull();
+  const before = dump();
+  expect(value(await preview(draft.id)).errors).toContainEqual({
+    code: 'NON_CASH_PAYMENT_EXCEEDS_AMOUNT',
+    params: { excessAmount: '10000' },
+  });
+  expect(failure(await finalize(draft))).toMatchObject({
+    code: 'NON_CASH_PAYMENT_EXCEEDS_AMOUNT',
+    params: { excessAmount: '10000' },
+  });
+  expect(dump()).toEqual(before);
+});

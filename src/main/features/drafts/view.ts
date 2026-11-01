@@ -1,8 +1,9 @@
+import { calculateCheckoutPayments } from '@/shared/checkout-payments';
+import { readCheckoutTenders } from './checkout-tenders';
 import { bool, toNumber } from '@/main/database/rows';
 import type { CustomerRepository } from '@/main/features/customers/repository';
 import type { VehicleRepository } from '@/main/features/vehicles/repository';
 import type {
-  CheckoutAllocationDto,
   DiscountStageDto,
   DraftLineDto,
   DraftSummary,
@@ -158,15 +159,12 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
     repo.priceChanges(invoice.id),
     (c) => c.invoice_item_id,
   );
-  const allocationRows = repo.allocations(invoice.id);
-  const allocations: CheckoutAllocationDto[] = allocationRows.map((a) => ({
-    sequence: toNumber(a.sequence),
-    method: a.method,
-    amount: money(a.amount),
-    reference: a.reference,
-    note: a.note,
-  }));
-  const allocated = allocationRows.reduce((sum, a) => sum + a.amount, 0n);
+  const checkoutTenders = readCheckoutTenders(repo, invoice);
+  const { allocations, summary: paymentSummary } = calculateCheckoutPayments(
+    money(invoice.amount),
+    checkoutTenders,
+  );
+  const allocated = allocations.reduce((sum, a) => sum + BigInt(a.amount), 0n);
 
   const customer =
     invoice.customer_id === null
@@ -250,6 +248,8 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
       ),
     invoiceDiscounts: repo.invoiceStages(invoice.id).map(toStageDto),
     checkoutAllocations: allocations,
+    checkoutTenders,
+    paymentSummary,
     totals: {
       subtotal: money(invoice.subtotal),
       itemDiscountAmount: money(invoice.item_discount_amount),

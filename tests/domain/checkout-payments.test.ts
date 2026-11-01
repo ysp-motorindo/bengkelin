@@ -45,7 +45,7 @@ describe('checkout received and applied payments', () => {
       rows[1],
       { ...rows[2], amount: '10000' },
     ]);
-    expect(rows[2].amount).toBe('30000');
+    expect(rows[2]!.amount).toBe('30000');
   });
   test('combined non-cash excess makes change unavailable and omits all cash', () => {
     const rows = [

@@ -1567,7 +1567,7 @@ describe('header, customer and vehicle', () => {
 });
 
 describe('legacy checkout allocations', () => {
-  test('legacy split plans remain intact until explicitly replaced with cash', async () => {
+  test('stored split plans can finalize without cash-only conversion', async () => {
     const { draft } = await draftWithLine('65000');
     h.db
       .prepare('UPDATE invoices SET cash_received = NULL WHERE id = ?')
@@ -1593,7 +1593,7 @@ describe('legacy checkout allocations', () => {
         CASHIER,
       ),
     );
-    expect(preview.errors.map((e) => e.code)).toContain(
+    expect(preview.errors.map((e) => e.code)).not.toContain(
       'LEGACY_CHECKOUT_REVIEW_REQUIRED',
     );
     const replaced = value(
@@ -1603,13 +1603,13 @@ describe('legacy checkout allocations', () => {
       { method: 'CASH', amount: '65000' },
     ]);
     expect(
-      failure(
-        await apply(replaced, {
+      (
+        await applyOk(replaced, {
           kind: 'setCheckoutAllocations',
           allocations: [],
-        }),
-      ).code,
-    ).toBe('CHECKOUT_CASH_ONLY');
+        })
+      ).checkoutTenders,
+    ).toEqual([]);
   });
 });
 
@@ -2199,3 +2199,75 @@ test('explicit zero requires checkout acknowledgment even after legacy confirmat
 });
 
 const TEST_STOCK_LOCATION_ID = '11111111-1111-4111-8111-111111111119';
+
+test('received mixed rows survive reload and item/discount edits without losing metadata or order', async () => {
+  const { draft, line } = await draftWithLine('100000');
+  const paid = await applyOk(draft, {
+    kind: 'setCheckoutAllocations',
+    allocations: [
+      { method: 'CASH', amount: '30000', reference: 'cash-ref', note: 'first' },
+      { method: 'QRIS', amount: '60000', reference: 'QR-1', note: 'scan' },
+      { method: 'CASH', amount: '20000', note: 'second' },
+    ],
+  });
+  expect(paid.cashReceived).toBeNull();
+  expect(paid.paymentSummary).toEqual({
+    receivedAmount: '110000',
+    cashReceived: '50000',
+    changeAmount: '10000',
+    nonCashExcess: '0',
+  });
+  expect(paid.checkoutTenders.map((a) => a.amount)).toEqual([
+    '30000',
+    '60000',
+    '20000',
+  ]);
+  expect(paid.checkoutAllocations.map((a) => a.amount)).toEqual([
+    '30000',
+    '60000',
+    '10000',
+  ]);
+  h.reopen();
+  await login('siti', 'siti-password-1', CASHIER);
+  expect(value(await getDraft(draft.id))).toEqual(paid);
+  const changed = await applyOk(paid, {
+    kind: 'updateLine',
+    lineId: line.id,
+    quantity: 2,
+  });
+  expect(changed.checkoutTenders).toEqual(paid.checkoutTenders);
+  expect(changed.paymentSummary.changeAmount).toBe('0');
+  const discounted = await applyOk(changed, {
+    kind: 'setInvoiceDiscounts',
+    stages: [5000],
+  });
+  expect(discounted.checkoutTenders).toEqual(paid.checkoutTenders);
+  expect(discounted.paymentSummary.changeAmount).toBe('10000');
+  expect(
+    (
+      await applyOk(discounted, {
+        kind: 'setCheckoutAllocations',
+        allocations: [],
+      })
+    ).checkoutTenders,
+  ).toEqual([]);
+});
+
+test('older cash drafts expose full tender instead of their capped allocation', async () => {
+  const { draft } = await draftWithLine('100000');
+  const paid = await applyOk(draft, {
+    kind: 'setCashPayment',
+    amount: '120000',
+  });
+  expect(paid.checkoutTenders).toEqual([
+    {
+      sequence: 1,
+      method: 'CASH',
+      amount: '120000',
+      reference: null,
+      note: null,
+    },
+  ]);
+  expect(paid.paymentSummary.changeAmount).toBe('20000');
+  expect(paid.checkoutAllocations[0]?.amount).toBe('100000');
+});
