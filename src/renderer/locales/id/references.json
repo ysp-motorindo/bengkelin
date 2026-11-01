@@ -7,7 +7,8 @@
     "channel": "Kanal",
     "unit": "Satuan",
     "sales": "Sales",
-    "expedition": "Ekspedisi"
+    "expedition": "Ekspedisi",
+    "stockLocation": "Lokasi stok"
   },
   "fields": {
     "name": "Nama",
@@ -17,7 +18,8 @@
     "label": "Label",
     "status": "Status",
     "address": "Alamat",
-    "city": "Kota"
+    "city": "Kota",
+    "isDefault": "Default"
   },
   "status": {
     "active": "Aktif",

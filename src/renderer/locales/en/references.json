@@ -7,7 +7,8 @@
     "channel": "Channels",
     "unit": "Units",
     "sales": "Sales",
-    "expedition": "Expeditions"
+    "expedition": "Expeditions",
+    "stockLocation": "Stock locations"
   },
   "fields": {
     "name": "Name",
@@ -17,7 +18,8 @@
     "label": "Label",
     "status": "Status",
     "address": "Address",
-    "city": "City"
+    "city": "City",
+    "isDefault": "Default"
   },
   "status": {
     "active": "Active",

@@ -10,10 +10,10 @@ import type { ReferenceTransferRepository } from './repository';
 export const referenceColumns = (entity: ReferenceImportEntity) => [
   'code',
   'name',
-  'address',
-  'city',
+  ...(entity === 'stockLocation' ? [] : ['address', 'city']),
   ...(entity === 'sales' ? ['phone_number'] : []),
   'is_active',
+  ...(entity === 'stockLocation' ? ['is_default'] : []),
 ];
 export function referenceIssue(
   code: string,
@@ -41,6 +41,7 @@ export interface ReferencePlanItem {
     city: string | null;
     phoneNumber: string | null;
     isActive: boolean;
+    isDefault: boolean;
   };
   dto: ReferenceImportRowDto;
 }
@@ -111,12 +112,25 @@ export function planReferenceImport(
       );
       return;
     }
+    if (
+      entity === 'stockLocation' &&
+      !['true', 'false'].includes(cell('is_default'))
+    ) {
+      plan.errors.push(
+        referenceIssue('REFERENCE_IMPORT_INVALID_ROW', row, 'is_default', code),
+      );
+      return;
+    }
     const parsed = saveReferenceInputSchema.safeParse({
       entity,
       code,
       label: cell('name'),
-      address: cell('address') || current?.address,
-      city: cell('city') || current?.city,
+      ...(entity === 'stockLocation'
+        ? { isDefault: cell('is_default') === 'true' }
+        : {
+            address: cell('address') || current?.address,
+            city: cell('city') || current?.city,
+          }),
       ...(entity === 'sales'
         ? { phoneNumber: cell('phone_number') || current?.phoneNumber }
         : {}),
@@ -141,16 +155,21 @@ export function planReferenceImport(
       }
       return;
     }
-    if (parsed.data.entity !== 'sales' && parsed.data.entity !== 'expedition')
+    if (
+      parsed.data.entity !== 'sales' &&
+      parsed.data.entity !== 'expedition' &&
+      parsed.data.entity !== 'stockLocation'
+    )
       throw new Error('Unexpected reference entity');
     const data = parsed.data;
     const fields = {
       code,
       label: data.label,
-      address: data.address,
-      city: data.city,
+      address: data.entity === 'stockLocation' ? null : data.address,
+      city: data.entity === 'stockLocation' ? null : data.city,
       phoneNumber: data.entity === 'sales' ? data.phoneNumber : null,
       isActive: cell('is_active') === 'true',
+      isDefault: data.entity === 'stockLocation' ? data.isDefault : false,
     };
     dto.changedFields = (Object.keys(fields) as (keyof typeof fields)[]).filter(
       (key) => !current || current[key] !== fields[key],

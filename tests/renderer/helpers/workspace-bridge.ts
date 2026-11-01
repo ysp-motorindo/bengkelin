@@ -22,6 +22,7 @@ const CHANNEL: ReferenceDto = {
   address: null,
   city: null,
   isActive: true,
+  isDefault: false,
 };
 
 export function draftView(extra: Partial<DraftView> = {}): DraftView {

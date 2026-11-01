@@ -21,6 +21,7 @@ const MECHANIC: ReferenceDto = {
   address: null,
   city: null,
   isActive: true,
+  isDefault: false,
 };
 const LINE_ID = '6e9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11';
 

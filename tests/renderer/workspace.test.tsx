@@ -397,6 +397,7 @@ test('optional sales and expedition pickers show codes and queue header changes'
     address: null,
     city: null,
     isActive: true,
+    isDefault: false,
   };
   bridge.references.listActive.mockImplementation(async ({ entity }) =>
     ok(entity === 'sales' ? [master] : []),
@@ -443,6 +444,7 @@ test('refreshes imported master options when returning to the mounted workspace'
             phoneNumber: null,
             brandId: null,
             isActive: true,
+            isDefault: false,
           },
         ])
       : normal.references.listActive({ entity }),

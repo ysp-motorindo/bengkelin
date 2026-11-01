@@ -8,6 +8,7 @@ import { Button } from '@/renderer/components/ui/button';
 import { useAction } from '@/renderer/lib/use-action';
 import { errorMessage } from '@/renderer/lib/errors';
 import type {
+  ReferenceImportEntity,
   ReferenceImportReadyDto,
   ReferenceImportSummaryDto,
 } from '@/shared/contracts';
@@ -16,7 +17,7 @@ export function ReferenceImportDialog({
   onClose,
   onImported,
 }: {
-  entity: 'sales' | 'expedition';
+  entity: ReferenceImportEntity;
   onClose(): void;
   onImported(): void;
 }) {

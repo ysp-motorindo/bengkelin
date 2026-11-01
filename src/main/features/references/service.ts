@@ -88,7 +88,9 @@ export class ReferenceService {
         existing ? 'REFERENCE_UPDATED' : 'REFERENCE_CREATED',
         input.entity,
         id,
-        input.entity === 'channel' || input.entity === 'unit'
+        input.entity === 'channel' ||
+          input.entity === 'unit' ||
+          input.entity === 'stockLocation'
           ? { code: existing?.code ?? input.code }
           : {},
       );
@@ -160,6 +162,24 @@ export class ReferenceService {
           }
           this.repo.insertModel(id, input.brandId, input.name);
         }
+        return;
+      case 'stockLocation':
+        if (
+          existing &&
+          input.code !== undefined &&
+          input.code !== existing.code
+        ) {
+          throw new DomainError(
+            'REFERENCE_CODE_IMMUTABLE',
+            'The code cannot be changed after creation',
+          );
+        }
+        this.repo.saveStockLocation(
+          id,
+          existing?.code ?? input.code!,
+          input.label,
+          input.isDefault,
+        );
         return;
       case 'sales':
       case 'expedition':

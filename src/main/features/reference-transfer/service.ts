@@ -226,16 +226,24 @@ export class ReferenceTransferService {
           for (const item of pending.plan.items) {
             if (item.dto.action === 'UNCHANGED') continue;
             const id = item.existing?.id ?? (this.deps.newId ?? randomUUID)();
-            this.repo.references.saveContact(
-              pending.entity,
-              id,
-              item.fields.code,
-              item.fields.label,
-              item.fields.address,
-              item.fields.city,
-              item.fields.phoneNumber,
-              at,
-            );
+            if (pending.entity === 'stockLocation') {
+              this.repo.references.saveStockLocation(
+                id,
+                item.fields.code,
+                item.fields.label,
+                item.fields.isDefault,
+              );
+            } else
+              this.repo.references.saveContact(
+                pending.entity,
+                id,
+                item.fields.code,
+                item.fields.label,
+                item.fields.address,
+                item.fields.city,
+                item.fields.phoneNumber,
+                at,
+              );
             this.repo.references.setActive(
               pending.entity,
               id,

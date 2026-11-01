@@ -139,7 +139,10 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {importing && (entity === 'sales' || entity === 'expedition') ? (
+      {importing &&
+      (entity === 'sales' ||
+        entity === 'expedition' ||
+        entity === 'stockLocation') ? (
         <ReferenceImportDialog
           entity={entity}
           onClose={() => setImporting(false)}
@@ -148,7 +151,9 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
       ) : null}
       {error && !editing ? <Alert>{error}</Alert> : null}
       <div className="flex gap-2">
-        {entity === 'sales' || entity === 'expedition' ? (
+        {entity === 'sales' ||
+        entity === 'expedition' ||
+        entity === 'stockLocation' ? (
           <>
             <Button
               variant="outline"
@@ -210,7 +215,8 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
               {entity === 'channel' ||
               entity === 'unit' ||
               entity === 'sales' ||
-              entity === 'expedition' ? (
+              entity === 'expedition' ||
+              entity === 'stockLocation' ? (
                 <th scope="col" className="p-2">
                   {t('references.fields.code')}
                 </th>
@@ -220,7 +226,8 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
                   entity === 'channel' ||
                     entity === 'unit' ||
                     entity === 'sales' ||
-                    entity === 'expedition'
+                    entity === 'expedition' ||
+                    entity === 'stockLocation'
                     ? 'references.fields.label'
                     : 'references.fields.name',
                 )}
@@ -249,10 +256,16 @@ function EntityPanel({ entity }: { entity: ReferenceEntity }) {
                 {entity === 'channel' ||
                 entity === 'unit' ||
                 entity === 'sales' ||
-                entity === 'expedition' ? (
+                entity === 'expedition' ||
+                entity === 'stockLocation' ? (
                   <td className="p-2 font-mono">{item.code}</td>
                 ) : null}
-                <td className="p-2">{item.label}</td>
+                <td className="p-2">
+                  {item.label}
+                  {item.isDefault
+                    ? ` (${t('references.fields.isDefault')})`
+                    : ''}
+                </td>
                 {entity === 'mechanic' || entity === 'sales' ? (
                   <td className="p-2">{item.phoneNumber}</td>
                 ) : null}
@@ -315,7 +328,9 @@ function EntityForm({
     entity === 'channel' ||
     entity === 'unit' ||
     entity === 'sales' ||
-    entity === 'expedition';
+    entity === 'expedition' ||
+    entity === 'stockLocation';
+  const [isDefault, setIsDefault] = useState(item?.isDefault ?? false);
   const [label, setLabel] = useState(item?.label ?? '');
   const [address, setAddress] = useState(item?.address ?? '');
   const [city, setCity] = useState(item?.city ?? '');
@@ -352,6 +367,15 @@ function EntityForm({
             ...base,
             brandId,
             name: label,
+          });
+          break;
+        case 'stockLocation':
+          result = await window.bengkelin.references.save({
+            entity,
+            ...base,
+            ...(item ? {} : { code }),
+            label,
+            isDefault,
           });
           break;
         case 'sales':
@@ -466,6 +490,16 @@ function EntityForm({
             <Input value={city} onChange={(e) => setCity(e.target.value)} />
           </FormField>
         </>
+      ) : null}
+      {entity === 'stockLocation' ? (
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={isDefault}
+            onChange={(e) => setIsDefault(e.target.checked)}
+          />
+          {t('references.fields.isDefault')}
+        </label>
       ) : null}
       <div className="flex gap-2">
         <Button type="submit" disabled={busy}>

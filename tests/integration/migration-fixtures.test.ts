@@ -301,6 +301,8 @@ FIXTURE_ROWS[17] = {
   vehicles: 2,
 };
 
+FIXTURE_ROWS[18] = { ...FIXTURE_ROWS[17]!, stock_locations: 1, audit_log: 47 };
+
 const fixtures = readdirSync(FIXTURE_DIR)
   .map((file) => /^schema-v(\d{3})-populated\.sqlite$/.exec(file))
   .filter((m): m is RegExpExecArray => m !== null)
@@ -844,6 +846,19 @@ describe('progressive upgrade from an empty database', () => {
           );
           expect(report.sales.invoiceCount).toBeGreaterThan(0);
         },
+        18: async () => {
+          const a = await app();
+          await a.call(
+            C.references.save,
+            {
+              entity: 'stockLocation',
+              code: '01',
+              label: 'Gudang',
+              isDefault: true,
+            },
+            ADMIN,
+          );
+        },
         16: async () => {
           const a = await app();
           for (const entity of ['sales', 'expedition']) {
@@ -1021,7 +1036,7 @@ function probeEveryTrigger(
     );
   }
 
-  for (const table of ['sales', 'expeditions']) {
+  for (const table of ['sales', 'expeditions', 'stock_locations']) {
     expectFires(
       `${table}_code_immutable`,
       `UPDATE ${table} SET code = 'CHANGED'`,

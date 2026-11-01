@@ -15,6 +15,7 @@ export const REFERENCE_ENTITIES = [
   'unit',
   'sales',
   'expedition',
+  'stockLocation',
 ] as const;
 export const referenceEntitySchema = z.enum(
   REFERENCE_ENTITIES,
@@ -78,6 +79,13 @@ export const saveReferenceInputSchema = z.discriminatedUnion('entity', [
     .strictObject({ entity: z.literal('channel'), ...codedShape })
     .refine(requireCodeOnCreate, codeRequired),
   z
+    .strictObject({
+      entity: z.literal('stockLocation'),
+      ...codedShape,
+      isDefault: z.boolean().default(false),
+    })
+    .refine(requireCodeOnCreate, codeRequired),
+  z
     .strictObject({ entity: z.literal('unit'), ...codedShape })
     .refine(requireCodeOnCreate, codeRequired),
 ]);
@@ -112,4 +120,11 @@ export interface ReferenceDto {
   address: string | null;
   city: string | null;
   isActive: boolean;
+  isDefault: boolean;
+}
+
+export interface StockLocationDto {
+  id: UUID;
+  code: string;
+  label: string;
 }

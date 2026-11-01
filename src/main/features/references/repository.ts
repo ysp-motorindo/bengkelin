@@ -12,6 +12,7 @@ interface ReferenceRow {
   address?: string | null;
   city?: string | null;
   is_active: bigint;
+  is_default?: bigint;
 }
 
 export function toReferenceDto(
@@ -28,6 +29,7 @@ export function toReferenceDto(
     phoneNumber: textOrNull(row.phone_number),
     brandId: textOrNull(row.brand_id),
     isActive: bool(row.is_active),
+    isDefault: row.is_default === 1n,
   };
 }
 
@@ -39,10 +41,13 @@ const TABLES: Record<ReferenceEntity, string> = {
   unit: 'units',
   sales: 'sales',
   expedition: 'expeditions',
+  stockLocation: 'stock_locations',
 };
 
 /** Projects every entity onto the same six columns. */
 const SELECTS: Record<ReferenceEntity, string> = {
+  stockLocation:
+    'SELECT id, label, code, NULL AS phone_number, NULL AS brand_id, is_active, is_default FROM stock_locations',
   sales:
     'SELECT id, label, code, phone_number, address, city, NULL AS brand_id, is_active FROM sales',
   expedition:
@@ -82,7 +87,9 @@ export class ReferenceRepository {
     const clause = where.length > 0 ? ` WHERE ${where.join(' AND ')}` : '';
     return (
       this.db
-        .prepare(`${SELECTS[entity]}${clause} ORDER BY label COLLATE NOCASE`)
+        .prepare(
+          `${SELECTS[entity]}${clause} ORDER BY label COLLATE NOCASE, code, id`,
+        )
         .all(...params) as ReferenceRow[]
     ).map((row) => toReferenceDto(entity, row));
   }
@@ -109,6 +116,18 @@ export class ReferenceRepository {
     this.db
       .prepare(`UPDATE ${TABLES[entity]} SET is_active = ? WHERE id = ?`)
       .run(flag(isActive), id);
+  }
+
+  saveStockLocation(
+    id: string,
+    code: string,
+    label: string,
+    isDefault: boolean,
+  ): void {
+    this.db
+      .prepare(`INSERT INTO stock_locations (id, code, label, is_default) VALUES (?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET label = excluded.label, is_default = excluded.is_default`)
+      .run(id, code, label, flag(isDefault));
   }
 
   saveContact(

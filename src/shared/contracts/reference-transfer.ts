@@ -50,7 +50,7 @@ export interface ReferenceImportSummaryDto extends ReferenceImportCounts {
 }
 
 export const referenceTransferInputSchema = z.strictObject({
-  entity: z.enum(['sales', 'expedition']),
+  entity: z.enum(['sales', 'expedition', 'stockLocation']),
 });
 export type ReferenceTransferInput = z.infer<
   typeof referenceTransferInputSchema
