@@ -286,7 +286,6 @@ export const discardOpSchema = z.strictObject({
 
 export const draftOperationSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('setCashPayment'), amount: priceSchema }),
-  z.strictObject({ kind: z.literal('reserveInvoiceNumber') }),
   z.strictObject({
     kind: z.literal('confirmLineZeroPrice'),
     lineId: uuidSchema,

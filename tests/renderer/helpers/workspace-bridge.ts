@@ -3,6 +3,7 @@ import type {
   CreateDraftInput,
   DraftCommand,
   DraftView,
+  DraftSummary,
   ReferenceDto,
   SearchCatalogResult,
 } from '@/shared/contracts';
@@ -105,7 +106,7 @@ export function workspaceBridge() {
       lookupBarcode: vi.fn(),
     },
     drafts: {
-      list: vi.fn(async () => ok([])),
+      list: vi.fn(async () => ok<DraftSummary[]>([])),
       create: vi.fn(async (_input: CreateDraftInput) => ok(current)),
       get: vi.fn(async () => ok(current)),
       apply,

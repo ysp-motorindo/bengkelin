@@ -59,8 +59,7 @@ for (const lang of ['id', 'en'] as const) {
         t('workspace.header.invoiceNumber'),
         { exact: true },
       );
-      await expect(invoiceNumber).toHaveValue(/^INV-\d{8}-\d{4,}$/);
-      const number = await invoiceNumber.inputValue();
+      await expect(invoiceNumber).toHaveValue('');
       await expect(
         page.getByLabel(t('workspace.header.customer'), { exact: true }),
       ).toBeVisible();
@@ -174,7 +173,7 @@ for (const lang of ['id', 'en'] as const) {
         'saved',
       );
       await page.reload();
-      await expect(invoiceNumber).toHaveValue(number);
+      await expect(invoiceNumber).toHaveValue('');
       await expect(
         page.getByLabel(t('workspace.header.taxInvoiceNumber'), {
           exact: true,
@@ -303,7 +302,7 @@ for (const lang of ['id', 'en'] as const) {
         .click();
       await page.getByTestId('finalize-button').click();
       await expect(page.getByTestId('finalized-invoice-number')).toHaveText(
-        number,
+        /^INV-\d{8}-\d{4,}$/,
       );
       expect(errors).toEqual([]);
     } finally {

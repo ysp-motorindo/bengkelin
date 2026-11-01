@@ -206,22 +206,6 @@ export class DraftRepository {
       .run(number, id);
   }
 
-  reserveNumber(id: string, number: string): void {
-    this.db
-      .prepare(
-        'UPDATE invoices SET reserved_invoice_number = ? WHERE id = ? AND reserved_invoice_number IS NULL',
-      )
-      .run(number, id);
-  }
-
-  shopTimezone(): string {
-    return (
-      this.db.prepare('SELECT timezone FROM settings WHERE id = 1').get() as {
-        timezone: string;
-      }
-    ).timezone;
-  }
-
   // ---- invoice header ----
 
   findInvoice(id: string): InvoiceRow | undefined {

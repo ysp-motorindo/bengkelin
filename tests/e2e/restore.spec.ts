@@ -159,8 +159,8 @@ test('ADMIN restores backup A over data B; the app restarts to login with A and 
   });
   copyFileSync(path.join(dataDir, 'backups', backupName), pick);
   const numberB = await issueInvoice(page, 'Servis B');
-  expect(numberA).toMatch(/^INV-\d{8}-0002$/);
-  expect(numberB).toMatch(/^INV-\d{8}-0003$/);
+  expect(numberA).toMatch(/^INV-\d{8}-0001$/);
+  expect(numberB).toMatch(/^INV-\d{8}-0002$/);
   expect(await issuedNumbers(page)).toEqual([numberA, numberB]);
 
   // Settings -> Restore: choose, preview, type the phrase, restore.
@@ -231,7 +231,7 @@ test('ADMIN restores backup A over data B; the app restarts to login with A and 
     .poll(() => existsSync(path.join(dataDir, 'restore-notice.json')))
     .toBe(false);
   expect(await issuedNumbers(page)).toEqual([numberA]);
-  // The workspace reserved -0001; B's -0003 stays used after restore.
+  // B's -0002 stays used after restore.
   const next = await issueInvoice(page, 'Servis setelah pemulihan');
-  expect(next).toBe(numberB.replace(/-0003$/, '-0004'));
+  expect(next).toBe(numberB.replace(/-0002$/, '-0003'));
 });

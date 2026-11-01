@@ -1890,14 +1890,14 @@ describe('forced-process recovery', () => {
 });
 
 describe('invoice number reservation', () => {
-  test('creation reserves a stable number and retries consume no extra number', async () => {
+  test('creation and retries do not reserve numbers', async () => {
     const requestId = uuid();
     const first = value(await createDraft({}, CASHIER, requestId));
     const replay = value(await createDraft({}, CASHIER, requestId));
-    expect(first).toHaveProperty('invoiceNumber', 'INV-20260930-0001');
-    expect(replay).toHaveProperty('invoiceNumber', 'INV-20260930-0001');
+    expect(first).toHaveProperty('invoiceNumber', null);
+    expect(replay).toHaveProperty('invoiceNumber', null);
     const second = value(await createDraft());
-    expect(second).toHaveProperty('invoiceNumber', 'INV-20260930-0002');
+    expect(second).toHaveProperty('invoiceNumber', null);
   });
 });
 
@@ -1910,10 +1910,10 @@ test('tax number is trimmed and persisted without changing the reservation', asy
     } as DraftOperation),
   );
   expect(updated).toHaveProperty('taxInvoiceNumber', 'TAX-123');
-  expect(updated).toHaveProperty('invoiceNumber', 'INV-20260930-0001');
+  expect(updated).toHaveProperty('invoiceNumber', null);
 });
 
-test('discarded reservations leave a gap and reopening or backdating retains the number', async () => {
+test('discarded and reopened drafts do not reserve numbers', async () => {
   const first = value(await createDraft());
   value(await apply(first, { kind: 'discard' }));
   const second = value(await createDraft());
@@ -1923,30 +1923,11 @@ test('discarded reservations leave a gap and reopening or backdating retains the
       changes: { invoiceDate: '2026-09-29' },
     }),
   );
-  expect(updated.invoiceNumber).toBe('INV-20260930-0002');
+  expect(updated.invoiceNumber).toBeNull();
   expect(
     value(await h.call<DraftView>(C.drafts.get, updated.id, CASHIER))
       .invoiceNumber,
   ).toBe(updated.invoiceNumber);
-});
-
-test('legacy reservation command is idempotent and read-only get does not reserve', async () => {
-  const draft = value(await createDraft());
-  h.db.exec('DROP TRIGGER invoices_reservation_immutable');
-  h.db
-    .prepare('UPDATE invoices SET reserved_invoice_number = NULL WHERE id = ?')
-    .run(draft.id);
-  const read = value(await h.call<DraftView>(C.drafts.get, draft.id, CASHIER));
-  expect(read.invoiceNumber).toBeNull();
-  const requestId = uuid();
-  const reserved = value(
-    await apply(read, { kind: 'reserveInvoiceNumber' }, { requestId }),
-  );
-  const replay = value(
-    await apply(read, { kind: 'reserveInvoiceNumber' }, { requestId }),
-  );
-  expect(reserved.invoiceNumber).toBe('INV-20260930-0002');
-  expect(replay.invoiceNumber).toBe(reserved.invoiceNumber);
 });
 
 test('adding an unpriced product inserts zero immediately and requires confirmation', async () => {
@@ -2201,5 +2182,5 @@ test('explicit zero requires checkout acknowledgment even after legacy confirmat
         CASHIER,
       ),
     ).invoiceNumber,
-  ).toBe(confirmed.invoiceNumber);
+  ).toBe('INV-20260930-0001');
 });

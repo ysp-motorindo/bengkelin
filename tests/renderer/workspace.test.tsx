@@ -33,6 +33,29 @@ describe('cashier workspace', () => {
     expect(screen.getByTestId('header-customer')).toHaveValue('Umum');
   });
 
+  test('resumes an unnumbered draft without reserving a number', async () => {
+    const bridge = install();
+    const draft = draftView({ invoiceNumber: null });
+    bridge.drafts.list.mockResolvedValue(
+      ok([
+        {
+          ...draft,
+          customerLabel: null,
+          plateNumber: null,
+          amount: '0',
+          lineCount: 0,
+        },
+      ]),
+    );
+    bridge.drafts.get.mockResolvedValue(ok(draft));
+    render(<CashierWorkspace />);
+    await screen.findByRole('combobox', { name: 'Cari barang' });
+    expect(screen.getByLabelText('No. Faktur')).toHaveValue('');
+    expect(bridge.drafts.get).toHaveBeenCalledWith(draft.id);
+    expect(bridge.drafts.create).not.toHaveBeenCalled();
+    expect(bridge.drafts.apply).not.toHaveBeenCalled();
+  });
+
   test('keeps the due date compact and places odometer after the customer field', async () => {
     install();
     render(<CashierWorkspace />);

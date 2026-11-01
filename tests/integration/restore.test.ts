@@ -399,6 +399,22 @@ class SimulatedCrash extends Error {}
 
 describe('required assertions', () => {
   // Backup, restore and restart can exceed five seconds on Windows CI.
+  test('restore keeps the counter ahead of a reservation in the replaced database', async () => {
+    const backupFile = await backupNow();
+    const draft = value(await draftAsCashier());
+    h.db
+      .prepare(
+        "UPDATE invoices SET reserved_invoice_number = 'INV-20260930-0042' WHERE id = ?",
+      )
+      .run(draft.id);
+    value(await restore(backupFile));
+    expect((await restart()).outcome).toBe('RESTORED');
+    expect(counters(h.db)[DAY1]).toBe(42n);
+    expect(
+      (await serviceInvoice('Servis setelah pemulihan')).invoiceNumber,
+    ).toBe('INV-20260930-0043');
+  });
+
   test('restores the exact backed-up state, keeps counters ahead and rejects a newer schema', async () => {
     await criticalInvoice(shop, priceStart());
     const backupFile = await backupNow();
