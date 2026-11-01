@@ -75,6 +75,7 @@ beforeEach(async () => {
   scripted = null;
   counter = 0;
   h = createHarness({
+    stockLocation: true,
     clock: {
       now: () =>
         toInstant(
@@ -158,7 +159,12 @@ async function openBalance(itemId: string, quantity: number) {
   value(
     await h.call(
       C.inventory.openBalance,
-      { requestId: uuid(), catalogItemId: itemId, quantity },
+      {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
+        requestId: uuid(),
+        catalogItemId: itemId,
+        quantity,
+      },
       ADMIN,
     ),
   );
@@ -168,7 +174,12 @@ async function receive(itemId: string, quantity: number) {
   value(
     await h.call(
       C.inventory.receive,
-      { requestId: uuid(), catalogItemId: itemId, quantity },
+      {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
+        requestId: uuid(),
+        catalogItemId: itemId,
+        quantity,
+      },
       ADMIN,
     ),
   );
@@ -786,7 +797,7 @@ describe('stock', () => {
       value(
         await h.call<{ quantity: number }>(
           C.inventory.getStock,
-          { catalogItemId: item.id },
+          { stockLocationId: TEST_STOCK_LOCATION_ID, catalogItemId: item.id },
           CASHIER,
         ),
       ).quantity,
@@ -835,6 +846,7 @@ describe('stock', () => {
     const warning: FinalizeWarning = {
       code: 'NEGATIVE_STOCK',
       params: {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         catalogItemId: item.id,
         title: 'Kampas Rem',
         observedStock: 1,
@@ -873,7 +885,7 @@ describe('stock', () => {
       value(
         await h.call<{ quantity: number }>(
           C.inventory.getStock,
-          { catalogItemId: item.id },
+          { stockLocationId: TEST_STOCK_LOCATION_ID, catalogItemId: item.id },
           CASHIER,
         ),
       ).quantity,
@@ -1313,7 +1325,7 @@ describe('database guards', () => {
         .prepare(
           `UPDATE invoices SET status = 'FINALIZED', invoice_number = 'X-1', cashier_id = ?,
              finalized_at = ?, channel_label_snapshot = 'B', cashier_name_snapshot = 'S',
-             shop_identity_snapshot = '{}' WHERE id = ?`,
+             shop_identity_snapshot = '{}', stock_location_code_snapshot='01', stock_location_label_snapshot='Gudang' WHERE id = ?`,
         )
         .run(cashierId, at(T0), draft.id),
     ).toThrow(/INV-YYYYMMDD-NNNN/);
@@ -1801,3 +1813,5 @@ test('stored price changes after preview require a fresh acknowledgment', async 
       .status,
   ).toBe('FINALIZED');
 });
+
+const TEST_STOCK_LOCATION_ID = '11111111-1111-4111-8111-111111111119';

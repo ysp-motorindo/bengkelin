@@ -124,18 +124,27 @@ export function CashierWorkspace({
     setPhase({ kind: 'loading' });
     try {
       const b = window.bengkelin;
-      const [shop, channels, mechanics, units, sales, expeditions] =
-        await Promise.all([
-          b.settings.getShop(),
-          b.references.listActive({ entity: 'channel' }),
-          b.references.listActive({ entity: 'mechanic' }),
-          b.references.listActive({ entity: 'unit' }),
-          b.references.listActive({ entity: 'sales' }),
-          b.references.listActive({ entity: 'expedition' }),
-        ]);
+      const [
+        shop,
+        channels,
+        mechanics,
+        units,
+        sales,
+        expeditions,
+        stockLocations,
+      ] = await Promise.all([
+        b.settings.getShop(),
+        b.references.listActive({ entity: 'channel' }),
+        b.references.listActive({ entity: 'mechanic' }),
+        b.references.listActive({ entity: 'unit' }),
+        b.references.listActive({ entity: 'sales' }),
+        b.references.listActive({ entity: 'expedition' }),
+        b.references.listActive({ entity: 'stockLocation' }),
+      ]);
       context.current = {
         shop: must(shop),
         references: {
+          stockLocations: must<ReferenceDto[]>(stockLocations),
           sales: must<ReferenceDto[]>(sales),
           expeditions: must<ReferenceDto[]>(expeditions),
           channels: must<ReferenceDto[]>(channels),
@@ -159,11 +168,13 @@ export function CashierWorkspace({
     void Promise.all([
       window.bengkelin.references.listActive({ entity: 'sales' }),
       window.bengkelin.references.listActive({ entity: 'expedition' }),
+      window.bengkelin.references.listActive({ entity: 'stockLocation' }),
     ])
-      .then(([sales, expeditions]) => {
+      .then(([sales, expeditions, stockLocations]) => {
         if (cancelled || !context.current) return;
         const references = {
           ...context.current.references,
+          stockLocations: must(stockLocations),
           sales: must(sales),
           expeditions: must(expeditions),
         };

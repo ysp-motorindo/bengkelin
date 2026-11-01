@@ -37,6 +37,7 @@ export function validSetup(overrides: Record<string, unknown> = {}) {
 export function createHarness(
   options: {
     clock?: Clock;
+    stockLocation?: boolean;
     systemNumberLocale?: string;
     printDriver?: PrintDriver;
     dialogs?: FileDialogs;
@@ -58,6 +59,10 @@ export function createHarness(
   function build() {
     const db: AppDatabase = openDatabase(file);
     migrateDatabase(db);
+    if (options.stockLocation)
+      db.prepare(
+        `INSERT INTO stock_locations (id, code, label, is_default) VALUES ('11111111-1111-4111-8111-111111111119', '01', 'Gudang', 1) ON CONFLICT(code) DO NOTHING`,
+      ).run();
     const services = createApplicationServices({
       db,
       clock,

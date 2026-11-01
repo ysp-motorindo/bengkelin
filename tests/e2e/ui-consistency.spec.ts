@@ -42,6 +42,12 @@ for (const language of ['id', 'en'] as const) {
           });
           if (!item.ok) throw new Error(JSON.stringify(item.error));
           const balance = await b.inventory.openBalance({
+            stockLocationId: await b.references
+              .listActive({ entity: 'stockLocation' })
+              .then((r) => {
+                if (!r.ok || !r.value[0]) throw new Error('location');
+                return r.value[0].id;
+              }),
             requestId: crypto.randomUUID(),
             catalogItemId: item.value.id,
             quantity: 123456789,

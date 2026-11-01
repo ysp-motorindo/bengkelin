@@ -1,5 +1,5 @@
-﻿sku,title,type,unit,barcode,barcode_2,price_bengkel,price_online,price_marketplace,opening_stock,is_active,description
-OLI-MPX2-1L,Oli MPX 2 1L,STOCK_ITEM,BOTTLE,8991234567890,,65000,70000,58000,12,true,Oli mesin 4T
+sku,title,type,unit,barcode,barcode_2,price_bengkel,price_online,price_marketplace,opening_stock,is_active,description,stock_location
+OLI-MPX2-1L,Oli MPX 2 1L,STOCK_ITEM,BOTTLE,8991234567890,,65000,70000,58000,12,true,Oli mesin 4T,01
 007-KAMPAS,"Kampas Rem, Depan ""Honda""",STOCK_ITEM,SET,0089686010947,0089686010954,45000,,,0,true,"Baris satu
-Baris dua"
-JASA-GANTI-OLI,Jasa Ganti Oli,SERVICE,SERVICE,,,20000,,,,true,
+Baris dua",01
+JASA-GANTI-OLI,Jasa Ganti Oli,SERVICE,SERVICE,,,20000,,,,true,,01

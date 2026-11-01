@@ -21,6 +21,7 @@ import type {
   RestoreNoticeDto,
   UpdateAdHocReferenceInput,
   CatalogFileOutcomeDto,
+  ExportCatalogInput,
   CommitImportInput,
   ImportPreviewDto,
   ImportSummaryDto,
@@ -339,7 +340,9 @@ export interface BengkelinApi {
   readonly catalogTransfer: {
     previewImport(): Promise<Result<ImportPreviewDto>>;
     commitImport(input: CommitImportInput): Promise<Result<ImportSummaryDto>>;
-    exportCatalog(): Promise<Result<CatalogFileOutcomeDto>>;
+    exportCatalog(
+      input: ExportCatalogInput,
+    ): Promise<Result<CatalogFileOutcomeDto>>;
     downloadTemplate(): Promise<Result<CatalogFileOutcomeDto>>;
   };
   /**

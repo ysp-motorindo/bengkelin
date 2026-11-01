@@ -38,6 +38,13 @@ test('ADMIN creates an item with a barcode and two price points, sees the timeli
         preferences: { language: 'id', appearance: 'LIGHT' },
       });
       await b.auth.login({ username: 'admin', password: adminPassword });
+      await b.references.save({
+        entity: 'stockLocation',
+        code: '01',
+        label: 'Gudang',
+        isDefault: true,
+      });
+
       await b.cashiers.create({
         username: 'siti',
         displayName: 'Siti',

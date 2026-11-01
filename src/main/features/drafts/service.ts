@@ -1,3 +1,4 @@
+import { resolveStockLocation } from '@/main/features/references/stock-locations';
 import { randomUUID } from 'node:crypto';
 import { appendAudit } from '@/main/database/audit';
 import {
@@ -70,11 +71,13 @@ export class DraftService {
     this.newId = deps.newId ?? randomUUID;
     const catalog = new CatalogRepository(deps.db);
     this.viewDeps = {
-      itemDetails: (id) => {
+      itemDetails: (id, stockLocationId) => {
         const item = catalog.find(id);
         return {
           itemCode: item?.sku ?? null,
-          currentStock: item?.trackInventory ? stockOf(deps.db, id) : null,
+          currentStock: item?.trackInventory
+            ? stockOf(deps.db, id, stockLocationId)
+            : null,
         };
       },
       repo: this.repo,
@@ -90,10 +93,15 @@ export class DraftService {
     const { requestId, ...payload } = input;
     return this.transaction(actor, 'drafts.create', requestId, payload, () => {
       requireActiveChannel(this.repo, input.channelId);
+      const stockLocation = resolveStockLocation(
+        this.deps.db,
+        input.stockLocationId,
+      );
       const id = this.newId();
       this.repo.insertDraft({
         id,
         header: {
+          stockLocationId: stockLocation.id,
           channelId: input.channelId,
           invoiceDate: input.invoiceDate,
           pricingAt: input.pricingAt,

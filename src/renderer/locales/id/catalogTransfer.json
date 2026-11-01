@@ -1,7 +1,7 @@
 {
   "title": "Impor/Ekspor Katalog",
   "description": "Unduh template, ekspor katalog saat ini, atau impor katalog dari berkas CSV. SKU menjadi kunci impor.",
-  "spreadsheetNote": "Mengedit di Excel: simpan sebagai \"CSV UTF-8 (comma delimited)\". Bila Windows memakai titik koma sebagai pemisah daftar (umum pada pengaturan regional Indonesia), Excel menyimpan dengan titik koma dan impor ini akan menolaknya. Atur kolom SKU dan barcode sebagai Teks agar angka panjang dan nol di depan tidak berubah.",
+  "spreadsheetNote": "Mengedit di Excel: simpan sebagai \"CSV UTF-8 (comma delimited)\". Bila Windows memakai titik koma sebagai pemisah daftar (umum pada pengaturan regional Indonesia), Excel menyimpan dengan titik koma dan impor ini akan menolaknya. Atur kolom SKU dan barcode sebagai Teks agar angka panjang dan nol di depan tidak berubah. Baris dengan pelacakan stok memerlukan stock_location. Atur kode lokasi sebagai Teks agar nol di depan tetap utuh.",
   "downloadTemplate": "Unduh template",
   "export": "Ekspor katalog",
   "import": "Impor CSV...",

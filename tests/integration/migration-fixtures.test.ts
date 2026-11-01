@@ -303,6 +303,8 @@ FIXTURE_ROWS[17] = {
 
 FIXTURE_ROWS[18] = { ...FIXTURE_ROWS[17]!, stock_locations: 1, audit_log: 47 };
 
+FIXTURE_ROWS[19] = FIXTURE_ROWS[18]!;
+
 const fixtures = readdirSync(FIXTURE_DIR)
   .map((file) => /^schema-v(\d{3})-populated\.sqlite$/.exec(file))
   .filter((m): m is RegExpExecArray => m !== null)
@@ -588,6 +590,7 @@ describe('progressive upgrade from an empty database', () => {
             await a.call(channel, {
               requestId: requestId(),
               catalogItemId: item,
+              stockLocationId: '11111111-1111-4111-8111-111111111119',
               quantity,
             });
           }
@@ -1231,7 +1234,7 @@ function probeEveryTrigger(
   expectFires(
     'invoices_search_snapshots_on_finalize',
     `UPDATE invoices SET status = 'FINALIZED', customer_phone_snapshot = '0812',
-       customer_phone_normalized_snapshot = NULL WHERE id = ?`,
+       customer_phone_normalized_snapshot = NULL, stock_location_code_snapshot = '01', stock_location_label_snapshot = 'Gudang' WHERE id = ?`,
     [open],
   );
 
@@ -1277,6 +1280,68 @@ function probeEveryTrigger(
       id: null, // INTEGER PRIMARY KEY
       invoice_id: open,
     },
+  );
+
+  // Location guards: exercise each independently of older guards.
+  cloneInsert(
+    'invoices_location_required_insert',
+    'invoices',
+    'id = ?',
+    [open],
+    { id: newId, reserved_invoice_number: null, stock_location_id: null },
+  );
+  expectFires(
+    'invoices_location_required_update',
+    'UPDATE invoices SET stock_location_id = NULL WHERE id = ?',
+    [open],
+  );
+  expectFires(
+    'invoices_issued_location_immutable',
+    "UPDATE invoices SET stock_location_label_snapshot = 'changed' WHERE id = ?",
+    [credit],
+  );
+  expectFires(
+    'invoices_location_snapshot_required',
+    "UPDATE invoices SET status = 'FINALIZED', stock_location_code_snapshot = NULL WHERE id = ?",
+    [open],
+  );
+  cloneInsert(
+    'invoices_location_snapshot_required_insert',
+    'invoices',
+    'id = ?',
+    [credit],
+    {
+      id: newId,
+      invoice_number: 'INV-20260930-9999',
+      reserved_invoice_number: null,
+      stock_location_code_snapshot: null,
+    },
+  );
+  expectFires(
+    'invoices_sale_location_matches',
+    "UPDATE invoices SET stock_location_id = 'different' WHERE id = ?",
+    [credit],
+  );
+  cloneInsert(
+    'stock_ledger_location_required',
+    'stock_ledger_entries',
+    "movement_type = 'STOCK_IN'",
+    [],
+    { id: newId, stock_location_id: null },
+  );
+  cloneInsert(
+    'stock_ledger_sale_location_matches_invoice',
+    'stock_ledger_entries',
+    "movement_type = 'SALE'",
+    [],
+    { id: newId, stock_location_id: 'different' },
+  );
+  cloneInsert(
+    'stock_ledger_reversal_location_matches_sale',
+    'stock_ledger_entries',
+    "movement_type = 'VOID_REVERSAL'",
+    [],
+    { id: newId, stock_location_id: 'different' },
   );
 
   // Stock ledger.

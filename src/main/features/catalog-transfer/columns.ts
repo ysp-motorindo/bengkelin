@@ -49,6 +49,7 @@ export interface ColumnMap {
   type: number | null;
   unit: number | null;
   openingStock: number | null;
+  stockLocation: number | null;
   isActive: number | null;
   description: number | null;
   currentStock: number | null;
@@ -64,6 +65,7 @@ const FIXED = {
   type: 'type',
   unit: 'unit',
   opening_stock: 'openingStock',
+  stock_location: 'stockLocation',
   is_active: 'isActive',
   description: 'description',
   current_stock: 'currentStock',
@@ -106,6 +108,7 @@ export function mapHeader(
     type: null,
     unit: null,
     openingStock: null,
+    stockLocation: null,
     isActive: null,
     description: null,
     currentStock: null,

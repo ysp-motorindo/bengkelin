@@ -36,6 +36,13 @@ test('ADMIN sets an opening balance, sets stock 30 -> 25 and sees delta -5, then
       preferences: { language: 'id', appearance: 'LIGHT' },
     });
     await b.auth.login({ username: 'admin', password: adminPassword });
+    await b.references.save({
+      entity: 'stockLocation',
+      code: '01',
+      label: 'Gudang',
+      isDefault: true,
+    });
+
     const units = await b.references.list({ entity: 'unit' });
     if (!units.ok) throw new Error('units');
     const pcs = units.value.find((u) => u.code === 'PCS');
@@ -126,6 +133,7 @@ test('ADMIN sets an opening balance, sets stock 30 -> 25 and sees delta -5, then
   await expect(row.getByTestId('negative-flag')).toBeVisible();
   await expect(page.getByTestId('negative-banner')).toBeVisible();
 
+  await page.keyboard.press('Escape');
   await page.getByLabel(t('inventory.filter.negativeOnly'), exact).check();
   await expect(page.getByTestId('stock-row')).toHaveCount(1);
 });

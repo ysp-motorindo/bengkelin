@@ -162,6 +162,7 @@ export interface PrintPayment {
  * Templates format these; they never recompute money.
  */
 export interface InvoicePrintModel {
+  stockLocation: import('./references').StockLocationDto;
   salesName: string | null;
   expeditionName: string | null;
   language: Language;

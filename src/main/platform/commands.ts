@@ -26,6 +26,7 @@ import {
   searchAdHocReferencesInputSchema,
   catalogIdInputSchema,
   commitImportInputSchema,
+  exportCatalogInputSchema,
   commitCustomerImportInputSchema,
   cancelRestoreInputSchema,
   restoreInputSchema,
@@ -561,8 +562,11 @@ export function buildCommands(services: ApplicationServices): Command[] {
       ({ windowId }, input) =>
         catalogTransfer.commitImport(session(windowId), input),
     ),
-    command(C.catalogTransfer.exportCatalog, noInput, ({ windowId }) =>
-      catalogTransfer.exportCatalog(session(windowId)),
+    command(
+      C.catalogTransfer.exportCatalog,
+      exportCatalogInputSchema,
+      ({ windowId }, input) =>
+        catalogTransfer.exportCatalog(session(windowId), input),
     ),
     command(C.catalogTransfer.downloadTemplate, noInput, ({ windowId }) =>
       catalogTransfer.downloadTemplate(session(windowId)),

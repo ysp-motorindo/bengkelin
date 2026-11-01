@@ -447,6 +447,12 @@ function ReviewBody({
         </dt>
         <dd>{view.channelLabel}</dd>
         <dt className="text-muted-foreground">
+          {t('references.entities.stockLocation')}
+        </dt>
+        <dd>
+          {view.stockLocation.code} · {view.stockLocation.label}
+        </dd>
+        <dt className="text-muted-foreground">
           {t('workspace.header.invoiceDate')}
         </dt>
         <dd>{formatDisplayDate(view.invoiceDate)}</dd>

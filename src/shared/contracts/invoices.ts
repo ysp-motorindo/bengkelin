@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { StockLocationDto } from './references';
 import type { Instant, LocalDate, Rupiah } from '../primitives';
 import { optionalText, uuidSchema, type UUID } from './common';
 import {
@@ -35,6 +36,7 @@ const count = z.number('validation.invalid').int('validation.invalid');
 export const negativeStockWarningSchema = z.strictObject({
   code: z.literal('NEGATIVE_STOCK'),
   params: z.strictObject({
+    stockLocationId: uuidSchema,
     catalogItemId: uuidSchema,
     title: z.string('validation.invalid').max(200, 'validation.tooLong'),
     /** SUM of the ledger when the check ran. */
@@ -109,6 +111,8 @@ export type FinalizeErrorCode =
   | 'PRICING_AT_IN_FUTURE'
   | 'ALLOCATION_EXCEEDS_AMOUNT'
   | 'ZERO_TOTAL_WITH_ALLOCATIONS'
+  | 'STOCK_LOCATION_INACTIVE'
+  | 'STOCK_LOCATION_NOT_FOUND'
   | 'CHANNEL_INACTIVE'
   /** A live line's catalog item was deactivated after it was added. */
   | 'CATALOG_ITEM_INACTIVE';
@@ -281,6 +285,7 @@ export interface InvoiceVoidDto {
  * printing (T12) and history.
  */
 export interface InvoiceView {
+  stockLocation: StockLocationDto;
   id: UUID;
   invoiceNumber: string;
   taxInvoiceNumber: string | null;

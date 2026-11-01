@@ -1,3 +1,4 @@
+import { ReferenceRepository } from '@/main/features/references/repository';
 import { createHash, type Hash } from 'node:crypto';
 import type { AppDatabase } from '@/main/database/connection';
 import { bool, textOrNull, toNumber } from '@/main/database/rows';
@@ -56,6 +57,15 @@ export interface ExportItem {
  */
 export class CatalogTransferRepository implements PlannerSource {
   constructor(private readonly db: AppDatabase) {}
+
+  stockLocationByCode(code: string) {
+    const row = this.db
+      .prepare('SELECT id FROM stock_locations WHERE code = ?')
+      .get(code) as { id: string } | undefined;
+    return row
+      ? new ReferenceRepository(this.db).find('stockLocation', row.id)
+      : undefined;
+  }
 
   units(): RefUnit[] {
     const rows = this.db
@@ -163,6 +173,7 @@ export class CatalogTransferRepository implements PlannerSource {
       ['prices', 'SELECT * FROM catalog_item_prices ORDER BY id'],
       ['units', 'SELECT * FROM units ORDER BY id'],
       ['channels', 'SELECT * FROM channels ORDER BY id'],
+      ['locations', 'SELECT * FROM stock_locations ORDER BY id'],
     ];
     for (const [name, sql] of tables) {
       hash.update(`#${name}\n`);
@@ -229,13 +240,13 @@ export class CatalogTransferRepository implements PlannerSource {
   }
 
   /** SUM(quantity_delta) per item that has ledger entries. */
-  stockLevels(): Map<string, bigint> {
+  stockLevels(stockLocationId: string): Map<string, bigint> {
     const rows = this.db
       .prepare(
         `SELECT catalog_item_id, SUM(quantity_delta) AS quantity
-         FROM stock_ledger_entries GROUP BY catalog_item_id`,
+         FROM stock_ledger_entries WHERE stock_location_id = ? GROUP BY catalog_item_id`,
       )
-      .all() as { catalog_item_id: string; quantity: bigint }[];
+      .all(stockLocationId) as { catalog_item_id: string; quantity: bigint }[];
     return new Map(rows.map((r) => [r.catalog_item_id, r.quantity]));
   }
 

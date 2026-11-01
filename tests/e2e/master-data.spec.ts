@@ -38,6 +38,13 @@ async function seed(page: Page, as: 'admin' | 'siti') {
         preferences: { language: 'id', appearance: 'LIGHT' },
       });
       await b.auth.login({ username: 'admin', password: adminPassword });
+      await b.references.save({
+        entity: 'stockLocation',
+        code: '01',
+        label: 'Gudang',
+        isDefault: true,
+      });
+
       const brand = await b.references.save({
         entity: 'vehicleBrand',
         name: 'Honda',

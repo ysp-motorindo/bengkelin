@@ -1,3 +1,7 @@
+import {
+  requireActiveStockLocation,
+  resolveStockLocation,
+} from '@/main/features/references/stock-locations';
 import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -20,6 +24,7 @@ import {
   type BackupSummary,
   type CatalogFileOutcomeDto,
   type CommitImportInput,
+  type ExportCatalogInput,
   type ImportPreviewDto,
   type ImportRowDto,
   type ImportSummaryDto,
@@ -205,8 +210,10 @@ export class CatalogTransferService {
 
   async exportCatalog(
     session: Session | undefined,
+    input: ExportCatalogInput,
   ): Promise<CatalogFileOutcomeDto> {
     requireAdmin(session);
+    requireActiveStockLocation(this.deps.db, input.stockLocationId);
     const day = businessDay(this.deps.clock.now(), this.repo.shopTimezone());
     const target = await this.deps.dialogs.chooseCsvDestination(
       `katalog-${day.replaceAll('-', '')}.csv`,
@@ -214,7 +221,11 @@ export class CatalogTransferService {
     if (target === null) return { outcome: 'CANCELLED' };
     const actor = requireAdmin(session);
     // Read after the dialog: the file is the state at the moment it is saved.
-    const exported = buildCatalogExport(this.repo, this.deps.clock.now());
+    const exported = buildCatalogExport(
+      this.repo,
+      this.deps.clock.now(),
+      requireActiveStockLocation(this.deps.db, input.stockLocationId),
+    );
     if (!(await this.write(target, exported.rows))) {
       return { outcome: 'FAILED', code: 'EXPORT_FAILED' };
     }
@@ -247,7 +258,11 @@ export class CatalogTransferService {
       await this.deps.dialogs.chooseCsvDestination(TEMPLATE_FILE_NAME);
     if (target === null) return { outcome: 'CANCELLED' };
     requireAdmin(session);
-    const rows = buildCatalogTemplate(this.repo.channels(), this.repo.units());
+    const rows = buildCatalogTemplate(
+      this.repo.channels(),
+      this.repo.units(),
+      resolveStockLocation(this.deps.db),
+    );
     if (!(await this.write(target, rows))) {
       return { outcome: 'FAILED', code: 'EXPORT_FAILED' };
     }
@@ -500,6 +515,7 @@ function toRowDtos(analysis: Analysis): ImportRowDto[] {
         barcodesAdded: [],
         barcodesActivated: [],
         openingStock: null,
+        stockLocation: null,
       };
     }
     return {
@@ -516,6 +532,7 @@ function toRowDtos(analysis: Analysis): ImportRowDto[] {
       barcodesAdded: item.barcodesToAdd,
       barcodesActivated: item.barcodesToActivate.map((b) => b.barcode),
       openingStock: item.openingStock,
+      stockLocation: item.stockLocation,
     };
   });
 }

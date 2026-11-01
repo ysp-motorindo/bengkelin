@@ -26,6 +26,13 @@ for (const lang of ['id', 'en'] as const) {
       await page.evaluate(async (password) => {
         const b = window.bengkelin;
         const session = await b.auth.login({ username: 'admin', password });
+        await b.references.save({
+          entity: 'stockLocation',
+          code: '01',
+          label: 'Gudang',
+          isDefault: true,
+        });
+
         if (!session.ok) throw new Error(JSON.stringify(session.error));
         const units = await b.references.listActive({ entity: 'unit' });
         if (!units.ok) throw new Error(JSON.stringify(units.error));
@@ -320,6 +327,13 @@ test('keyboard dropdown keeps the active product visible when wrapping through t
     await page.evaluate(async (password) => {
       const b = window.bengkelin;
       const login = await b.auth.login({ username: 'admin', password });
+      await b.references.save({
+        entity: 'stockLocation',
+        code: '01',
+        label: 'Gudang',
+        isDefault: true,
+      });
+
       if (!login.ok) throw new Error(JSON.stringify(login.error));
       const units = await b.references.listActive({ entity: 'unit' });
       if (!units.ok) throw new Error(JSON.stringify(units.error));

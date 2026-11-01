@@ -61,6 +61,7 @@ export function voidIssuedInvoice(
     entityType: 'invoice',
     entityId: invoice.id,
     metadata: {
+      stockLocationId: invoice.stock_location_id,
       invoiceId: invoice.id,
       invoiceNumber: invoice.invoice_number,
       finalizedAt: invoice.finalized_at,

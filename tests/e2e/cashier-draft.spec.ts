@@ -65,6 +65,13 @@ async function seed(page: Page): Promise<void> {
         await b.auth.login({ username: 'admin', password: adminPassword }),
         'login',
       );
+      await b.references.save({
+        entity: 'stockLocation',
+        code: '01',
+        label: 'Gudang',
+        isDefault: true,
+      });
+
       must(
         await b.cashiers.create({
           username: 'siti',

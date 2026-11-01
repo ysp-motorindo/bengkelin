@@ -1,3 +1,4 @@
+import { addCurrentStockLocationColumns } from './helpers/legacy-customers';
 import {
   addCurrentCustomerColumns,
   removeCurrentCustomerColumns,
@@ -97,7 +98,10 @@ beforeEach(async () => {
   counter = 0;
   itemSeq = 0;
   defaultItem = undefined;
-  h = createHarness({ clock: { now: () => toInstant(nowMs) } });
+  h = createHarness({
+    stockLocation: true,
+    clock: { now: () => toInstant(nowMs) },
+  });
   value(await h.call(C.settings.completeSetup, validSetup()));
   adminId = await login('admin', ADMIN_PASSWORD, ADMIN);
   value(
@@ -165,7 +169,12 @@ async function pricedItem(price: string, stock = 100) {
     value(
       await h.call(
         C.inventory.openBalance,
-        { requestId: uuid(), catalogItemId: item.id, quantity: stock },
+        {
+          stockLocationId: TEST_STOCK_LOCATION_ID,
+          requestId: uuid(),
+          catalogItemId: item.id,
+          quantity: stock,
+        },
         ADMIN,
       ),
     );
@@ -397,7 +406,7 @@ const stockOf = async (catalogItemId: string) =>
   value(
     await h.call<{ quantity: number }>(
       C.inventory.getStock,
-      { catalogItemId },
+      { stockLocationId: TEST_STOCK_LOCATION_ID, catalogItemId },
       CASHIER,
     ),
   ).quantity;
@@ -1739,6 +1748,7 @@ describe('migration 008 on a populated version-7 database', () => {
       // Current readers require the later optional-reference columns.
       db.exec(bundledMigrations.find((m) => m.version === 16)!.sql);
       db.exec(bundledMigrations.find((m) => m.version === 17)!.sql);
+      addCurrentStockLocationColumns(db);
       // The upgraded database works with the new services.
       const upgraded = new InvoiceService({ db, clock });
       const session: Session = {
@@ -1768,3 +1778,5 @@ describe('migration 008 on a populated version-7 database', () => {
     }
   });
 });
+
+const TEST_STOCK_LOCATION_ID = '11111111-1111-4111-8111-111111111119';

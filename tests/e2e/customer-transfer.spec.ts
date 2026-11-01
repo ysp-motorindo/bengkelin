@@ -33,6 +33,13 @@ test('admin imports customers and selects an inactive customer in a transaction'
       username: 'admin',
       password: 'correct-horse-battery',
     });
+    await b.references.save({
+      entity: 'stockLocation',
+      code: '01',
+      label: 'Gudang',
+      isDefault: true,
+    });
+
     if (!login.ok) throw new Error(JSON.stringify(login.error));
   });
   await page.reload();

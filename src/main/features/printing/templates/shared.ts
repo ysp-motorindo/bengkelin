@@ -111,6 +111,10 @@ export function headerFacts(
     [labels.top, labels.topDays(model.topDays, count(model.topDays, labels))],
     [labels.dueDate, localDate(model.dueDate)],
     [labels.channel, model.channel],
+    [
+      labels.stockLocation,
+      `${model.stockLocation.code} · ${model.stockLocation.label}`,
+    ],
     [labels.cashier, model.cashier],
   ];
   return facts;

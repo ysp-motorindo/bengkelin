@@ -60,6 +60,13 @@ async function seed(page: Page): Promise<void> {
         await b.auth.login({ username: 'admin', password: adminPassword }),
         'login',
       );
+      await b.references.save({
+        entity: 'stockLocation',
+        code: '01',
+        label: 'Gudang',
+        isDefault: true,
+      });
+
       must(
         await b.cashiers.create({
           username: 'siti',
@@ -101,6 +108,12 @@ async function seed(page: Page): Promise<void> {
       must(await b.catalog.applyPriceChange({ token: preview.token }), 'price');
       must(
         await b.inventory.openBalance({
+          stockLocationId: await b.references
+            .listActive({ entity: 'stockLocation' })
+            .then((r) => {
+              if (!r.ok || !r.value[0]) throw new Error('location');
+              return r.value[0].id;
+            }),
           requestId: crypto.randomUUID(),
           catalogItemId: item.id,
           quantity: 10,
@@ -193,7 +206,14 @@ test('scan, split payment, review, finalize, see the number, new transaction', a
   // Stock moved once; the draft list no longer has the finalized one.
   const state = await page.evaluate(async () => {
     const drafts = await window.bengkelin.drafts.list();
-    const stock = await window.bengkelin.inventory.listStock({});
+    const stock = await window.bengkelin.inventory.listStock({
+      stockLocationId: await window.bengkelin.references
+        .listActive({ entity: 'stockLocation' })
+        .then((r) => {
+          if (!r.ok || !r.value[0]) throw new Error('location');
+          return r.value[0].id;
+        }),
+    });
     return { drafts, stock };
   });
   if (!state.drafts.ok || !state.stock.ok) throw new Error('state');

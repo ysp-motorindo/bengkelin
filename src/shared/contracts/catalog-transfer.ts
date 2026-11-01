@@ -1,3 +1,4 @@
+import type { StockLocationDto } from './references';
 import { z } from 'zod';
 import type { Instant, Rupiah } from '../primitives';
 import { uuidSchema, type UUID } from './common';
@@ -18,6 +19,11 @@ import { uuidSchema, type UUID } from './common';
  *  - `current_stock` is written by the export and ignored on import.
  * An empty cell means "no change" for an existing SKU.
  */
+
+export const exportCatalogInputSchema = z.strictObject({
+  stockLocationId: uuidSchema,
+});
+export type ExportCatalogInput = z.infer<typeof exportCatalogInputSchema>;
 
 export const commitImportInputSchema = z.strictObject({ token: uuidSchema });
 export type CommitImportInput = z.infer<typeof commitImportInputSchema>;
@@ -57,6 +63,7 @@ export interface ImportPriceChangeDto {
 }
 
 export interface ImportRowDto {
+  stockLocation: StockLocationDto | null;
   row: number;
   sku: string;
   /** The title after the import (the current one when the cell is empty). */

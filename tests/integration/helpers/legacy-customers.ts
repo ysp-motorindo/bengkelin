@@ -15,6 +15,7 @@ export async function withCurrentCustomerColumns<T>(
 }
 
 export function addCurrentCustomerColumns(db: AppDatabase): void {
+  addCurrentStockLocationColumns(db);
   db.exec(bundledMigrations.find((m) => m.version === 12)!.sql);
   db.exec(bundledMigrations.find((m) => m.version === 15)!.sql);
   if (db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'invoices'").get()) {
@@ -27,6 +28,7 @@ export function addCurrentCustomerColumns(db: AppDatabase): void {
   }
 }
 export function removeCurrentCustomerColumns(db: AppDatabase): void {
+  removeCurrentStockLocationColumns(db);
   if (
     Number(db.pragma('user_version', { simple: true })) < 7 &&
     db
@@ -51,4 +53,37 @@ export function removeCurrentCustomerColumns(db: AppDatabase): void {
   db.exec(
     'ALTER TABLE settings DROP COLUMN complaint_phone_number; ALTER TABLE settings DROP COLUMN social_media_url; DROP INDEX customers_external_id; ALTER TABLE customers DROP COLUMN external_id; ALTER TABLE customers DROP COLUMN is_active;',
   );
+}
+
+/** Today's writer needs location columns while generating an older-schema fixture. */
+export function addCurrentStockLocationColumns(db: AppDatabase): void {
+  db.exec(bundledMigrations.find((m) => m.version === 18)!.sql);
+  db.prepare(
+    "INSERT INTO stock_locations (id,code,label,is_default) VALUES ('11111111-1111-4111-8111-111111111119','01','Gudang',1)",
+  ).run();
+  if (
+    db
+      .prepare("SELECT 1 FROM sqlite_master WHERE name='stock_ledger_entries'")
+      .get()
+  )
+    db.exec(
+      `ALTER TABLE stock_ledger_entries ADD COLUMN stock_location_id TEXT DEFAULT '11111111-1111-4111-8111-111111111119'`,
+    );
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE name='invoices'").get())
+    db.exec(
+      `ALTER TABLE invoices ADD COLUMN stock_location_id TEXT DEFAULT '11111111-1111-4111-8111-111111111119'; ALTER TABLE invoices ADD COLUMN stock_location_code_snapshot TEXT DEFAULT '01'; ALTER TABLE invoices ADD COLUMN stock_location_label_snapshot TEXT DEFAULT 'Gudang';`,
+    );
+}
+export function removeCurrentStockLocationColumns(db: AppDatabase): void {
+  if (
+    db
+      .prepare("SELECT 1 FROM sqlite_master WHERE name='stock_ledger_entries'")
+      .get()
+  )
+    db.exec('ALTER TABLE stock_ledger_entries DROP COLUMN stock_location_id');
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE name='invoices'").get())
+    db.exec(
+      'ALTER TABLE invoices DROP COLUMN stock_location_id; ALTER TABLE invoices DROP COLUMN stock_location_code_snapshot; ALTER TABLE invoices DROP COLUMN stock_location_label_snapshot;',
+    );
+  db.exec('DROP TABLE stock_locations');
 }

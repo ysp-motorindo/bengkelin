@@ -69,6 +69,13 @@ export function checkFinalization(
 
   // ---- blocking errors ----
   const errors: FinalizeIssue[] = [];
+  const location = deps.drafts.reference(
+    'stockLocation',
+    invoice.stock_location_id,
+  );
+  if (!location) errors.push({ code: 'STOCK_LOCATION_NOT_FOUND', params: {} });
+  else if (!location.isActive)
+    errors.push({ code: 'STOCK_LOCATION_INACTIVE', params: {} });
   if (calculation.lines.length === 0) {
     errors.push({ code: 'DRAFT_EMPTY', params: {} });
   }
@@ -171,13 +178,18 @@ export function checkFinalization(
       },
     });
   for (const item of demand) {
-    const observedStock = stockOf(deps.db, item.catalog_item_id);
+    const observedStock = stockOf(
+      deps.db,
+      item.catalog_item_id,
+      invoice.stock_location_id,
+    );
     const quantity = toNumber(item.demand);
     const resultingStock = observedStock - quantity;
     if (resultingStock < 0) {
       warnings.push({
         code: 'NEGATIVE_STOCK',
         params: {
+          stockLocationId: invoice.stock_location_id,
           catalogItemId: item.catalog_item_id,
           title: item.title,
           observedStock,

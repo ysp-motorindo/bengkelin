@@ -151,7 +151,7 @@ export async function populateWorkshop(
   // ---- reference data ----
   const ref = async (input: Record<string, unknown>) =>
     ok(await call<ReferenceDto>(C.references.save, input, ADMIN), 'reference');
-  await ref({
+  const stockLocation = await ref({
     entity: 'stockLocation',
     code: '01',
     label: 'Gudang',
@@ -304,7 +304,12 @@ export async function populateWorkshop(
     ok(
       await call(
         channel,
-        { requestId: requestId(), catalogItemId, quantity },
+        {
+          requestId: requestId(),
+          catalogItemId,
+          stockLocationId: stockLocation.id,
+          quantity,
+        },
         ADMIN,
       ),
       'stock',

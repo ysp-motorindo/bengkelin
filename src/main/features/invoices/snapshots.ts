@@ -52,7 +52,13 @@ export function captureHeaderSnapshots(
   };
   const customerPhone = customer?.phoneNumber ?? null;
   const plateNumber = vehicle?.plateNumber ?? null;
+  const location = deps.drafts.reference(
+    'stockLocation',
+    invoice.stock_location_id,
+  )!;
   return {
+    stockLocationCode: location.code!,
+    stockLocationLabel: location.label,
     salesName: deps.drafts.reference('sales', invoice.sales_id)?.label ?? null,
     expeditionName:
       deps.drafts.reference('expedition', invoice.expedition_id)?.label ?? null,

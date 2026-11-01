@@ -44,6 +44,7 @@ export function fixtureId(): string {
 }
 
 export interface PrintShop {
+  stockLocationId: string;
   call: Call;
   now(): Instant;
   bengkel: string;
@@ -110,6 +111,29 @@ export async function seedPrintShop(
     ),
     'cashier login',
   );
+  const locations = must(
+    await call<ReferenceDto[]>(
+      C.references.list,
+      { entity: 'stockLocation' },
+      ADMIN_WINDOW,
+    ),
+    'locations',
+  );
+  const stockLocation =
+    locations[0] ??
+    must(
+      await call<ReferenceDto>(
+        C.references.save,
+        {
+          entity: 'stockLocation',
+          code: '01',
+          label: 'Gudang',
+          isDefault: true,
+        },
+        ADMIN_WINDOW,
+      ),
+      'location',
+    );
   const channels = must(
     await call<ReferenceDto[]>(
       C.references.list,
@@ -173,6 +197,7 @@ export async function seedPrintShop(
     'vehicle',
   );
   return {
+    stockLocationId: stockLocation.id,
     call,
     now,
     bengkel: channels.find((c) => c.code === 'BENGKEL')!.id,
@@ -224,7 +249,12 @@ export async function stockItem(
   must(
     await call(
       C.inventory.openBalance,
-      { requestId: fixtureId(), catalogItemId: item.id, quantity: 500 },
+      {
+        stockLocationId: shop.stockLocationId,
+        requestId: fixtureId(),
+        catalogItemId: item.id,
+        quantity: 500,
+      },
       ADMIN_WINDOW,
     ),
     'opening',

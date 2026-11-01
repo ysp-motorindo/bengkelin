@@ -47,6 +47,13 @@ for (const locale of ['id', 'en'] as const) {
           username: 'admin',
           password: 'correct-horse-battery',
         });
+        await b.references.save({
+          entity: 'stockLocation',
+          code: '01',
+          label: 'Gudang',
+          isDefault: true,
+        });
+
         if (!login.ok) throw new Error(JSON.stringify(login.error));
       }, locale);
       await page.reload();

@@ -4,10 +4,22 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { InventoryScreen } from '@/renderer/features/inventory/InventoryScreen';
 import type { StockChangeDto } from '@/shared/contracts';
 
+const LOCATION = {
+  id: '11111111-1111-4111-8111-111111111119',
+  code: '01',
+  label: 'Gudang',
+};
+const LOCATION_REF = {
+  ...LOCATION,
+  entity: 'stockLocation',
+  isActive: true,
+  isDefault: true,
+};
 const ITEM = '5b9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d11';
 
 function bridge(setStock: ReturnType<typeof vi.fn>) {
   const listed = {
+    stockLocation: LOCATION,
     items: [
       {
         catalogItemId: ITEM,
@@ -21,15 +33,24 @@ function bridge(setStock: ReturnType<typeof vi.fn>) {
     ],
   };
   (window as unknown as { bengkelin: unknown }).bengkelin = {
+    references: {
+      list: vi.fn(async () => ({ ok: true, value: [LOCATION_REF] })),
+      listActive: vi.fn(async () => ({ ok: true, value: [LOCATION_REF] })),
+    },
     inventory: {
       listStock: vi.fn(async () => ({ ok: true, value: listed })),
       getStock: vi.fn(async () => ({
         ok: true,
-        value: { catalogItemId: ITEM, quantity: 30 },
+        value: { stockLocation: LOCATION, catalogItemId: ITEM, quantity: 30 },
       })),
       history: vi.fn(async () => ({
         ok: true,
-        value: { catalogItemId: ITEM, timezone: 'Asia/Jakarta', entries: [] },
+        value: {
+          stockLocation: LOCATION,
+          catalogItemId: ITEM,
+          timezone: 'Asia/Jakarta',
+          entries: [],
+        },
       })),
       setStock,
     },
@@ -80,6 +101,7 @@ describe('inventory screen', () => {
         ids.push(input.requestId);
         if (ids.length === 1) throw new Error('ipc down');
         const result: StockChangeDto = {
+          stockLocation: LOCATION,
           entryId: 'e1',
           catalogItemId: ITEM,
           quantityDelta: input.targetQuantity - 30,
@@ -163,4 +185,51 @@ describe('inventory screen', () => {
     expect(await screen.findByText('Isi alasan.')).toBeInTheDocument();
     expect(setStock).not.toHaveBeenCalled();
   });
+});
+
+test('location switching scopes stock requests and clears the previous item', async () => {
+  bridge(vi.fn());
+  const b = window.bengkelin;
+  const locations = [
+    { id: 'A', code: 'A', label: 'Alpha', isActive: true, isDefault: false },
+    {
+      id: 'B',
+      code: 'B',
+      label: 'Renamed depot',
+      isActive: true,
+      isDefault: true,
+    },
+  ];
+  Object.assign(b, {
+    references: {
+      list: vi.fn(async () => ({ ok: true, value: locations })),
+      listActive: vi.fn(async () => ({ ok: true, value: locations })),
+    },
+  });
+  render(<InventoryScreen role="ADMIN" />);
+  const selector = await screen.findByRole('combobox', { name: 'Lokasi stok' });
+  await waitFor(() => expect(selector).toHaveValue('B'));
+  await openItem();
+  await userEvent.keyboard('{Escape}');
+  await userEvent.selectOptions(selector, 'A');
+  await waitFor(() =>
+    expect(b.inventory.listStock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ stockLocationId: 'A' }),
+    ),
+  );
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+test('no active location gives setup guidance without querying unscoped stock', async () => {
+  bridge(vi.fn());
+  Object.assign(window.bengkelin, {
+    references: {
+      list: vi.fn(async () => ({ ok: true, value: [] })),
+      listActive: vi.fn(async () => ({ ok: true, value: [] })),
+    },
+  });
+  render(<InventoryScreen role="ADMIN" />);
+  expect(
+    await screen.findByText(/Siapkan lokasi stok aktif/),
+  ).toBeInTheDocument();
+  expect(window.bengkelin.inventory.listStock).not.toHaveBeenCalled();
 });

@@ -49,6 +49,13 @@ export async function seedWorkshop(
         await b.auth.login({ username: 'admin', password: adminPassword }),
         'login',
       );
+      await b.references.save({
+        entity: 'stockLocation',
+        code: '01',
+        label: 'Gudang',
+        isDefault: true,
+      });
+
       must(
         await b.cashiers.create({
           username: 'siti',
@@ -99,6 +106,12 @@ export async function seedWorkshop(
         );
         must(
           await b.inventory.openBalance({
+            stockLocationId: await b.references
+              .listActive({ entity: 'stockLocation' })
+              .then((r) => {
+                if (!r.ok || !r.value[0]) throw new Error('location');
+                return r.value[0].id;
+              }),
             requestId: crypto.randomUUID(),
             catalogItemId: item.id,
             quantity: stock,

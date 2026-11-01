@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Instant } from '../primitives';
+import type { StockLocationDto } from './references';
 import { uuidSchema, type UUID } from './common';
 
 /** Largest single movement or target quantity accepted from the UI. */
@@ -17,10 +18,12 @@ const requestId = uuidSchema;
 
 export const stockItemInputSchema = z.strictObject({
   catalogItemId: uuidSchema,
+  stockLocationId: uuidSchema,
 });
 export type StockItemInput = z.infer<typeof stockItemInputSchema>;
 
 export const listStockInputSchema = z.strictObject({
+  stockLocationId: uuidSchema,
   query: z
     .string('validation.invalid')
     .trim()
@@ -34,6 +37,7 @@ export type ListStockInput = z.input<typeof listStockInputSchema>;
 
 export const stockHistoryInputSchema = z.strictObject({
   catalogItemId: uuidSchema,
+  stockLocationId: uuidSchema,
   limit: z.number('validation.invalid').int().min(1).max(500).optional(),
 });
 export type StockHistoryInput = z.input<typeof stockHistoryInputSchema>;
@@ -41,6 +45,7 @@ export type StockHistoryInput = z.input<typeof stockHistoryInputSchema>;
 export const openBalanceInputSchema = z.strictObject({
   requestId,
   catalogItemId: uuidSchema,
+  stockLocationId: uuidSchema,
   quantity: quantity(0),
 });
 export type OpenBalanceInput = z.input<typeof openBalanceInputSchema>;
@@ -48,6 +53,7 @@ export type OpenBalanceInput = z.input<typeof openBalanceInputSchema>;
 export const receiveStockInputSchema = z.strictObject({
   requestId,
   catalogItemId: uuidSchema,
+  stockLocationId: uuidSchema,
   quantity: quantity(1),
   note: z
     .string('validation.invalid')
@@ -70,6 +76,7 @@ const reason = z
 export const adjustStockInputSchema = z.strictObject({
   requestId,
   catalogItemId: uuidSchema,
+  stockLocationId: uuidSchema,
   quantityDelta: z
     .number('validation.invalid')
     .int('validation.invalid')
@@ -83,6 +90,7 @@ export type AdjustStockInput = z.input<typeof adjustStockInputSchema>;
 export const setStockInputSchema = z.strictObject({
   requestId,
   catalogItemId: uuidSchema,
+  stockLocationId: uuidSchema,
   /** May be negative: the ledger allows it (spec 25). */
   targetQuantity: z
     .number('validation.invalid')
@@ -101,6 +109,7 @@ export type MovementType =
   | 'ADJUSTMENT';
 
 export interface StockDto {
+  stockLocation: StockLocationDto;
   catalogItemId: UUID;
   /** SUM(quantity_delta); may be negative. */
   quantity: number;
@@ -117,11 +126,13 @@ export interface StockListItemDto {
 }
 
 export interface StockListDto {
+  stockLocation: StockLocationDto;
   items: StockListItemDto[];
 }
 
 /** Result of every stock write. `entryId` is null when nothing was written. */
 export interface StockChangeDto {
+  stockLocation: StockLocationDto;
   entryId: UUID | null;
   catalogItemId: UUID;
   quantityDelta: number;
@@ -142,6 +153,7 @@ export interface LedgerEntryDto {
 }
 
 export interface LedgerDto {
+  stockLocation: StockLocationDto;
   catalogItemId: UUID;
   /** Shop timezone for displaying `createdAt`. */
   timezone: string;

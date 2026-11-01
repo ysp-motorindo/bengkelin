@@ -65,6 +65,13 @@ async function seed(page: Page): Promise<void> {
         await b.auth.login({ username: 'admin', password: adminPassword }),
         'login',
       );
+      await b.references.save({
+        entity: 'stockLocation',
+        code: '01',
+        label: 'Gudang',
+        isDefault: true,
+      });
+
       must(
         await b.cashiers.create({
           username: 'siti',
@@ -106,6 +113,12 @@ async function seed(page: Page): Promise<void> {
       must(await b.catalog.applyPriceChange({ token: preview.token }), 'price');
       must(
         await b.inventory.openBalance({
+          stockLocationId: await b.references
+            .listActive({ entity: 'stockLocation' })
+            .then((r) => {
+              if (!r.ok || !r.value[0]) throw new Error('location');
+              return r.value[0].id;
+            }),
           requestId: crypto.randomUUID(),
           catalogItemId: item.id,
           quantity: 10,
@@ -291,7 +304,14 @@ test('later payment from History reaches PAID; an unpaid invoice is voided with 
 
   // Stock: two sold, one returned by the void.
   const stock = await page.evaluate(async () =>
-    window.bengkelin.inventory.listStock({}),
+    window.bengkelin.inventory.listStock({
+      stockLocationId: await window.bengkelin.references
+        .listActive({ entity: 'stockLocation' })
+        .then((r) => {
+          if (!r.ok || !r.value[0]) throw new Error('location');
+          return r.value[0].id;
+        }),
+    }),
   );
   if (!stock.ok) throw new Error('stock');
   expect(stock.value.items[0]?.quantity).toBe(9);

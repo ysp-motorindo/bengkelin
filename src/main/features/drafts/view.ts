@@ -33,7 +33,10 @@ export interface ViewDeps {
   customers: CustomerRepository;
   vehicles: VehicleRepository;
   resolvePrice: ResolvePrice;
-  itemDetails: (id: string) => {
+  itemDetails: (
+    id: string,
+    stockLocationId: string,
+  ) => {
     itemCode: string | null;
     currentStock: number | null;
   };
@@ -118,7 +121,7 @@ function toLineDto(
 ): DraftLineDto {
   return {
     ...(line.catalog_item_id
-      ? itemDetails(line.catalog_item_id)
+      ? itemDetails(line.catalog_item_id, invoice.stock_location_id)
       : { itemCode: null, currentStock: null }),
     id: line.id,
     priceEntryConfirmed: bool(line.price_entry_confirmed),
@@ -178,6 +181,11 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
     : null;
 
   return {
+    stockLocation: {
+      id: invoice.stock_location_id,
+      code: repo.reference('stockLocation', invoice.stock_location_id)!.code!,
+      label: repo.reference('stockLocation', invoice.stock_location_id)!.label,
+    },
     id: invoice.id,
     status: invoice.status,
     version: toNumber(invoice.version),

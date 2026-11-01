@@ -1,3 +1,4 @@
+import { addCurrentStockLocationColumns } from './helpers/legacy-customers';
 import { createHash } from 'node:crypto';
 import {
   existsSync,
@@ -92,7 +93,12 @@ beforeEach(async () => {
   nowMs = T0;
   driver = new FakePrintDriver();
   dialogs = new FakeDialogs();
-  h = createHarness({ clock: { now }, printDriver: driver, dialogs });
+  h = createHarness({
+    stockLocation: true,
+    clock: { now },
+    printDriver: driver,
+    dialogs,
+  });
   scratch = mkdtempSync(path.join(tmpdir(), 'bengkelin-print-'));
   shop = await seedPrintShop(h.call, now);
 });
@@ -512,6 +518,7 @@ describe('one print model, three presentations', () => {
 
 test('English shop language controls all print formats and reprint labels', async () => {
   const english = createHarness({
+    stockLocation: true,
     clock: { now },
     printDriver: new FakePrintDriver(),
     dialogs: new FakeDialogs(),
@@ -1258,6 +1265,7 @@ describe('migration 009 on a populated version-8 database', () => {
       db.exec(bundledMigrations.find((m) => m.version === 15)!.sql);
       db.exec(bundledMigrations.find((m) => m.version === 16)!.sql);
       db.exec(bundledMigrations.find((m) => m.version === 17)!.sql);
+      addCurrentStockLocationColumns(db);
       const services = createApplicationServices({
         db,
         clock,

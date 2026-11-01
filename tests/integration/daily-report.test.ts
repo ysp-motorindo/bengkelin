@@ -96,6 +96,7 @@ beforeEach(async () => {
   driver = new FakePrintDriver();
   dialogs = new FakeDialogs();
   h = createHarness({
+    stockLocation: true,
     clock: { now: () => toInstant(nowMs) },
     printDriver: driver,
     dialogs,

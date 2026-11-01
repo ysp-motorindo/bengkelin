@@ -189,6 +189,13 @@ test('direct ADMIN calls from the renderer are denied without a session and for 
         preferences: { language: 'id', appearance: 'LIGHT' },
       });
       await b.auth.login({ username: 'admin', password });
+      await b.references.save({
+        entity: 'stockLocation',
+        code: '01',
+        label: 'Gudang',
+        isDefault: true,
+      });
+
       const created = await b.cashiers.create({
         username: 'siti',
         displayName: 'Siti',
@@ -240,11 +247,24 @@ test('technical logs are written and never contain the plaintext password', asyn
   const secret = 'never-log-this-Passw0rd';
   await page.evaluate(async (password) => {
     await window.bengkelin.auth.login({ username: 'admin', password });
+    await window.bengkelin.references.save({
+      entity: 'stockLocation',
+      code: '01',
+      label: 'Gudang',
+      isDefault: true,
+    });
+
     await window.bengkelin.auth.login({
       username: 'admin',
       password,
       extra: true,
     } as never);
+    await window.bengkelin.references.save({
+      entity: 'stockLocation',
+      code: '01',
+      label: 'Gudang',
+      isDefault: true,
+    });
   }, secret);
   await launched.close();
 

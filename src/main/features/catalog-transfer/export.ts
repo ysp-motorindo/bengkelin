@@ -1,3 +1,4 @@
+import type { StockLocationDto } from '@/shared/contracts';
 import { csvInteger, type CsvRow } from '@/main/features/csv/writer';
 import type { Instant } from '@/shared/primitives';
 import { barcodeColumnName, priceColumnName, type RefChannel } from './columns';
@@ -26,11 +27,12 @@ export interface CatalogExport {
 export function buildCatalogExport(
   repo: CatalogTransferRepository,
   now: Instant,
+  stockLocation: StockLocationDto,
 ): CatalogExport {
   const channels: RefChannel[] = repo.channels();
   const items = repo.exportItems();
   const barcodes = repo.activeBarcodes();
-  const stock = repo.stockLevels();
+  const stock = repo.stockLevels(stockLocation.id);
   const barcodeColumns = Math.max(
     1,
     ...items.map((item) => barcodes.get(item.id)?.length ?? 0),
@@ -41,7 +43,13 @@ export function buildCatalogExport(
     header.push(barcodeColumnName(n));
   }
   for (const channel of channels) header.push(priceColumnName(channel.code));
-  header.push('opening_stock', 'current_stock', 'is_active', 'description');
+  header.push(
+    'stock_location',
+    'opening_stock',
+    'current_stock',
+    'is_active',
+    'description',
+  );
 
   const rows: CsvRow[] = [header];
   let skuMissingCount = 0;
@@ -60,6 +68,7 @@ export function buildCatalogExport(
       row.push(price === null ? null : csvInteger(price));
     }
     row.push(
+      stockLocation.code,
       null,
       item.trackInventory ? csvInteger(stock.get(item.id) ?? 0n) : null,
       item.isActive ? 'true' : 'false',

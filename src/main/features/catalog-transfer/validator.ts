@@ -37,6 +37,7 @@ export interface CandidateRow {
   barcodes: { column: string; value: string }[];
   prices: { column: string; channel: RefChannel; price: bigint }[];
   openingStock: number | null;
+  stockLocationCode: string | null;
   isActive: boolean | null;
 }
 
@@ -223,6 +224,7 @@ export function validateRows(
       prices,
       openingStock,
       isActive,
+      stockLocationCode: cell(columns.stockLocation)?.toUpperCase() ?? null,
     });
   });
   return result;

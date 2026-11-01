@@ -27,6 +27,11 @@ const CHANNEL: ReferenceDto = {
 
 export function draftView(extra: Partial<DraftView> = {}): DraftView {
   return {
+    stockLocation: {
+      id: '11111111-1111-4111-8111-111111111119',
+      code: '01',
+      label: 'Gudang',
+    },
     cashReceived: '0',
     invoiceNumber: 'INV-20260930-0001',
     taxInvoiceNumber: null,

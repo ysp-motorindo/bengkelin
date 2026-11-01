@@ -50,6 +50,12 @@ test('ADMIN previews and commits a catalog CSV, then finds the items in the cata
       username: 'admin',
       password: adminPassword,
     });
+    await window.bengkelin.references.save({
+      entity: 'stockLocation',
+      code: '01',
+      label: 'Gudang',
+      isDefault: true,
+    });
   }, ADMIN_PASSWORD);
   await page.reload();
   await expect(page.getByTestId('session-name')).toBeVisible();

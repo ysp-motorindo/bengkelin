@@ -1,3 +1,3 @@
-sku,title,type,unit,barcode,price_bengkel,opening_stock,is_active
-E2E-BUSI,Busi Iridium E2E,STOCK_ITEM,PCS,0012345678905,85000,7,true
-E2E-SERVIS,Servis Ringan E2E,SERVICE,SERVICE,,50000,,true
+sku,title,type,unit,barcode,price_bengkel,opening_stock,is_active,stock_location
+E2E-BUSI,Busi Iridium E2E,STOCK_ITEM,PCS,0012345678905,85000,7,true,01
+E2E-SERVIS,Servis Ringan E2E,SERVICE,SERVICE,,50000,,true,01

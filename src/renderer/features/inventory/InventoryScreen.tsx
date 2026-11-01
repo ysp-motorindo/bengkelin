@@ -4,12 +4,18 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
+import { Select } from '@/renderer/components/ui/select';
 import { Input } from '@/renderer/components/ui/input';
 import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { X } from 'lucide-react';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
-import type { Role, StockListItemDto } from '@/shared/contracts';
+import type {
+  Role,
+  StockListItemDto,
+  ReferenceDto,
+  StockLocationDto,
+} from '@/shared/contracts';
 import { StockPanel } from './StockPanel';
 
 /**
@@ -19,9 +25,84 @@ import { StockPanel } from './StockPanel';
  * to show.
  */
 export function InventoryScreen({ role }: { role: Role }) {
+  const { t } = useTranslation();
+  const [locations, setLocations] = useState<ReferenceDto[]>([]);
+  const [stockLocationId, setStockLocationId] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const { run, check, error } = useAction();
+  useEffect(() => {
+    void run(async () => {
+      const result = await (
+        role === 'ADMIN'
+          ? window.bengkelin.references.list
+          : window.bengkelin.references.listActive
+      )({ entity: 'stockLocation' });
+      if (check(result)) {
+        setLocations(result.value);
+        setStockLocationId(
+          (
+            result.value.find((l) => l.isActive && l.isDefault) ??
+            result.value.find((l) => l.isActive)
+          )?.id ?? '',
+        );
+        setLoaded(true);
+      }
+    });
+  }, [role, run, check]);
+  const location = locations.find((l) => l.id === stockLocationId);
+  return (
+    <div className="flex min-w-0 flex-col gap-6">
+      <h1 className="text-xl font-semibold leading-tight tracking-tight">
+        {t('inventory.title')}
+      </h1>
+      <FormField label={t('references.entities.stockLocation')}>
+        <Select
+          required
+          value={stockLocationId}
+          onChange={(e) => setStockLocationId(e.target.value)}
+        >
+          {!location ? <option value="" /> : null}
+          {locations.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.code} · {l.label}
+              {l.isActive ? '' : ` (${t('references.status.inactive')})`}
+            </option>
+          ))}
+        </Select>
+      </FormField>
+      {!loaded && !error ? <p role="status">{t('common.loading')}</p> : null}
+      {error ? <Alert>{error}</Alert> : null}
+      {loaded && !location ? (
+        <Alert>{t('errors.STOCK_LOCATION_REQUIRED')}</Alert>
+      ) : null}
+      {location ? (
+        <InventoryLocation
+          key={location.id}
+          role={role}
+          stockLocation={{
+            id: location.id,
+            code: location.code!,
+            label: location.label,
+          }}
+          active={location.isActive}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function InventoryLocation({
+  role,
+  stockLocation,
+  active,
+}: {
+  role: Role;
+  stockLocation: StockLocationDto;
+  active: boolean;
+}) {
   const { numberOptions, formatNumber } = useNumberFormat();
   const { t } = useTranslation();
-  const admin = role === 'ADMIN';
+  const admin = role === 'ADMIN' && active;
   const [query, setQuery] = useState('');
   const [hasLoaded, setHasLoaded] = useState(false);
   const [negativeOnly, setNegativeOnly] = useState(false);
@@ -34,6 +115,7 @@ export function InventoryScreen({ role }: { role: Role }) {
     (text: string, negatives: boolean) =>
       run(async () => {
         const result = await window.bengkelin.inventory.listStock({
+          stockLocationId: stockLocation.id,
           query: text,
           negativeOnly: negatives,
         });
@@ -42,7 +124,7 @@ export function InventoryScreen({ role }: { role: Role }) {
           setHasLoaded(true);
         }
       }),
-    [run, check],
+    [run, check, stockLocation.id],
   );
 
   useEffect(() => {
@@ -62,9 +144,6 @@ export function InventoryScreen({ role }: { role: Role }) {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <h1 className="text-xl font-semibold leading-tight tracking-tight">
-        {t('inventory.title')}
-      </h1>
       {!admin ? (
         <p className="text-sm text-muted-foreground">
           {t('inventory.readOnlyNote')}
@@ -211,7 +290,8 @@ export function InventoryScreen({ role }: { role: Role }) {
           }
         >
           <StockPanel
-            key={selected.catalogItemId}
+            key={`${selected.catalogItemId}:${stockLocation.id}`}
+            stockLocation={stockLocation}
             item={selected}
             admin={admin}
             onChanged={() => load(query, negativeOnly)}

@@ -1,7 +1,7 @@
 {
   "title": "Catalog Import/Export",
   "description": "Download the template, export the current catalog, or import a catalog from a CSV file. The SKU is the import key.",
-  "spreadsheetNote": "Editing in Excel: save as \"CSV UTF-8 (comma delimited)\". Where Windows uses a semicolon as the list separator (common with Indonesian regional settings), Excel saves with semicolons, which this import rejects. Keep SKU and barcode columns formatted as Text so long numbers and leading zeros are not changed.",
+  "spreadsheetNote": "Editing in Excel: save as \"CSV UTF-8 (comma delimited)\". Where Windows uses a semicolon as the list separator (common with Indonesian regional settings), Excel saves with semicolons, which this import rejects. Keep SKU and barcode columns formatted as Text so long numbers and leading zeros are not changed. Inventory-tracked rows require stock_location. Keep location codes as Text to preserve leading zeros.",
   "downloadTemplate": "Download template",
   "export": "Export catalog",
   "import": "Import CSV...",

@@ -119,6 +119,7 @@ beforeEach(async () => {
   renameFault = undefined;
   dialogs = new FakeDialogs();
   h = createHarness({
+    stockLocation: true,
     clock,
     dialogs,
     restore: {
@@ -799,6 +800,13 @@ describe('restore', () => {
         expect(restored[table], table).toEqual(
           data.map((row) => ({
             ...(row as object),
+            stock_location_id: (
+              h.db
+                .prepare("SELECT id FROM stock_locations WHERE code='01'")
+                .get() as { id: string }
+            ).id,
+            stock_location_code_snapshot: '01',
+            stock_location_label_snapshot: 'Gudang',
             sales_id: null,
             expedition_id: null,
             reserved_invoice_number: null,
@@ -806,6 +814,16 @@ describe('restore', () => {
             cash_received: null,
             sales_name_snapshot: null,
             expedition_name_snapshot: null,
+          })),
+        );
+      } else if (table === 'stock_ledger_entries') {
+        const loc = h.db
+          .prepare("SELECT id FROM stock_locations WHERE code='01'")
+          .get() as { id: string };
+        expect(restored[table], table).toEqual(
+          data.map((row) => ({
+            ...(row as object),
+            stock_location_id: loc.id,
           })),
         );
       } else expect(restored[table], table).toEqual(data);

@@ -107,7 +107,7 @@ beforeEach(async () => {
   vi.mocked(mkdirSync).mockReset().mockImplementation(fs.mkdirSync);
   nowMs = T0;
   dialogs = new FakeDialogs();
-  h = createHarness({ clock, dialogs });
+  h = createHarness({ stockLocation: true, clock, dialogs });
   scratch = mkdtempSync(path.join(tmpdir(), 'bengkelin-backup-'));
   shop = await seedPrintShop(h.call, now);
 });
@@ -1084,7 +1084,7 @@ describe('automatic schedule', () => {
   });
 
   test('no automatic backup before first-run setup', async () => {
-    const fresh = createHarness({ clock });
+    const fresh = createHarness({ stockLocation: true, clock });
     try {
       expect(await fresh.services.backups.runAutomaticBackupIfDue()).toBe(
         'NOT_DUE',

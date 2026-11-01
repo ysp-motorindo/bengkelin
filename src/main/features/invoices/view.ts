@@ -92,6 +92,11 @@ export function buildInvoiceView(
   const paid = paymentRows.reduce((sum, p) => sum + p.amount, 0n);
 
   return {
+    stockLocation: {
+      id: invoice.stock_location_id,
+      code: invoice.stock_location_code_snapshot!,
+      label: invoice.stock_location_label_snapshot!,
+    },
     sales:
       invoice.sales_id === null
         ? null

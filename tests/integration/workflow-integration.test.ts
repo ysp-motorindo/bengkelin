@@ -75,7 +75,10 @@ const uuid = () => {
 beforeEach(async () => {
   nowMs = T0;
   counter = 0;
-  h = createHarness({ clock: { now: () => toInstant(nowMs) } });
+  h = createHarness({
+    stockLocation: true,
+    clock: { now: () => toInstant(nowMs) },
+  });
   value(await h.call(C.settings.completeSetup, validSetup()));
   value(
     await h.call(
@@ -557,6 +560,7 @@ describe('workflow e2e print hook (test-only route to printToPDF)', () => {
     const fake = new FakePrintDriver();
     const routed = routePrintsToPdf(fake, out);
     const ph = createHarness({
+      stockLocation: true,
       clock: { now: () => toInstant(nowMs) },
       printDriver: routed,
     });

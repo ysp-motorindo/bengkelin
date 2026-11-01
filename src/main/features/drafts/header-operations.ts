@@ -23,6 +23,7 @@ export function updateHeader(
   const invoiceDate = c.invoiceDate ?? invoice.invoice_date;
   const topDays = c.topDays ?? toNumber(invoice.top_days);
   const header: DraftHeader = {
+    stockLocationId: c.stockLocationId ?? invoice.stock_location_id,
     salesId: c.salesId !== undefined ? c.salesId : invoice.sales_id,
     expeditionId:
       c.expeditionId !== undefined ? c.expeditionId : invoice.expedition_id,
@@ -41,6 +42,8 @@ export function updateHeader(
     dueDate: calculateDueDate(invoiceDate, topDays),
     note: c.note !== undefined ? c.note : invoice.note,
   };
+  if (c.stockLocationId !== undefined)
+    repo.requireActiveStockLocation(header.stockLocationId);
   if (header.channelId !== invoice.channel_id) {
     requireActiveChannel(repo, header.channelId);
   }

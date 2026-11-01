@@ -87,6 +87,7 @@ export function applyPlan(ctx: ApplyContext, items: ItemPlan[]): void {
     if (item.openingStock !== null) {
       insertEntry(ctx.db, {
         catalogItemId: itemId,
+        stockLocationId: item.stockLocation!.id,
         movementType: 'OPENING_BALANCE',
         quantityDelta: item.openingStock,
         referenceType: CATALOG_IMPORT_REFERENCE,

@@ -35,6 +35,11 @@ function readyPreview(overrides: Partial<ImportReadyDto> = {}): ImportReadyDto {
         barcodesAdded: [],
         barcodesActivated: [],
         openingStock: 12,
+        stockLocation: {
+          id: '11111111-1111-4111-8111-111111111119',
+          code: '01',
+          label: 'Gudang',
+        },
       },
     ],
     rowsTruncated: false,
@@ -74,6 +79,19 @@ function install(preview: ImportReadyDto) {
     downloadTemplate: vi.fn(async () => ok({ outcome: 'CANCELLED' })),
   };
   (window as unknown as { bengkelin: unknown }).bengkelin = {
+    references: {
+      listActive: vi.fn(async () =>
+        ok([
+          {
+            id: '11111111-1111-4111-8111-111111111119',
+            code: '01',
+            label: 'Gudang',
+            isActive: true,
+            isDefault: true,
+          },
+        ]),
+      ),
+    },
     catalogTransfer: bridge,
   };
   return bridge;
@@ -94,6 +112,9 @@ describe('Catalog import/export screen', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Impor CSV...' }));
     const card = await screen.findByTestId('catalog-import-preview');
+    expect(
+      within(card).getByRole('cell', { name: '01 · Gudang' }),
+    ).toBeInTheDocument();
     expect(within(card).getAllByText('1,234')).toHaveLength(1);
   });
 

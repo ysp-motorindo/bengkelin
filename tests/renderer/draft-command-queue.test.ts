@@ -14,6 +14,11 @@ const INVOICE = '7d8f5a3e-1c2b-4a55-9c5b-0a8f3f0b9d11';
 
 function makeView(version: number, extra: Partial<DraftView> = {}): DraftView {
   return {
+    stockLocation: {
+      id: '11111111-1111-4111-8111-111111111119',
+      code: '01',
+      label: 'Gudang',
+    },
     cashReceived: '0',
     invoiceNumber: 'INV-20260930-0001',
     taxInvoiceNumber: null,

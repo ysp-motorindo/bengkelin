@@ -1,3 +1,4 @@
+import { requireActiveStockLocation } from '@/main/features/references/stock-locations';
 import { randomUUID } from 'node:crypto';
 import type { AppDatabase } from '@/main/database/connection';
 import { DatabaseError } from '@/main/database/errors';
@@ -39,12 +40,16 @@ function isConstraint(error: unknown, kind: string): boolean {
 }
 
 /** SUM(quantity_delta) for an item (0 when there are no entries). */
-export function stockOf(db: AppDatabase, catalogItemId: string): number {
+export function stockOf(
+  db: AppDatabase,
+  catalogItemId: string,
+  stockLocationId: string,
+): number {
   const row = db
     .prepare(
-      'SELECT COALESCE(SUM(quantity_delta), 0) AS quantity FROM stock_ledger_entries WHERE catalog_item_id = ?',
+      'SELECT COALESCE(SUM(quantity_delta), 0) AS quantity FROM stock_ledger_entries WHERE catalog_item_id = ? AND stock_location_id = ?',
     )
-    .get(catalogItemId) as { quantity: bigint };
+    .get(catalogItemId, stockLocationId) as { quantity: bigint };
   return toNumber(row.quantity);
 }
 
@@ -85,6 +90,7 @@ export function requireTrackedItem(
 export interface NewEntry {
   id?: string;
   catalogItemId: string;
+  stockLocationId: string;
   movementType: MovementType;
   /** Signed; the schema checks the sign against the movement type. */
   quantityDelta: number;
@@ -103,14 +109,17 @@ export function insertEntry(db: AppDatabase, entry: NewEntry): string {
     throw new DomainError('INVALID_QUANTITY', 'Quantity must be an integer');
   }
   const id = entry.id ?? randomUUID();
+  if (entry.movementType !== 'VOID_REVERSAL')
+    requireActiveStockLocation(db, entry.stockLocationId);
   db.prepare(
     `INSERT INTO stock_ledger_entries
-       (id, catalog_item_id, movement_type, quantity_delta, reference_type, reference_id,
+       (id, catalog_item_id, stock_location_id, movement_type, quantity_delta, reference_type, reference_id,
         note, reverses_entry_id, created_by_cashier_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     entry.catalogItemId,
+    entry.stockLocationId,
     entry.movementType,
     BigInt(entry.quantityDelta),
     entry.referenceType ?? null,
@@ -143,6 +152,7 @@ export function recordSale(
   db: AppDatabase,
   input: {
     invoiceId: string;
+    stockLocationId: string;
     catalogItemId: string;
     quantity: number;
     actor: LedgerActor;
@@ -155,6 +165,7 @@ export function recordSale(
   try {
     return insertEntry(db, {
       catalogItemId: input.catalogItemId,
+      stockLocationId: input.stockLocationId,
       movementType: 'SALE',
       quantityDelta: -input.quantity,
       referenceType: INVOICE_REFERENCE,
@@ -176,6 +187,7 @@ export function recordSale(
 interface SaleRow {
   id: string;
   catalog_item_id: string;
+  stock_location_id: string;
   quantity_delta: bigint;
   reference_type: string | null;
   reference_id: string | null;
@@ -194,7 +206,7 @@ export function recordVoidReversal(
   assertInTransaction(db);
   const sale = db
     .prepare(
-      `SELECT s.id, s.catalog_item_id, s.quantity_delta, s.reference_type, s.reference_id,
+      `SELECT s.id, s.catalog_item_id, s.stock_location_id, s.quantity_delta, s.reference_type, s.reference_id,
               (SELECT r.id FROM stock_ledger_entries r WHERE r.reverses_entry_id = s.id) AS reversed_by
        FROM stock_ledger_entries s
        WHERE s.id = ? AND s.movement_type = 'SALE'`,
@@ -212,6 +224,7 @@ export function recordVoidReversal(
   try {
     return insertEntry(db, {
       catalogItemId: sale.catalog_item_id,
+      stockLocationId: sale.stock_location_id,
       movementType: 'VOID_REVERSAL',
       quantityDelta: -toNumber(sale.quantity_delta),
       referenceType: sale.reference_type,
@@ -247,7 +260,7 @@ export function readSaleEntriesForInvoice(
 ): SaleEntry[] {
   const rows = db
     .prepare(
-      `SELECT s.id, s.catalog_item_id, s.quantity_delta,
+      `SELECT s.id, s.catalog_item_id, s.stock_location_id, s.quantity_delta,
               (SELECT r.id FROM stock_ledger_entries r WHERE r.reverses_entry_id = s.id) AS reversed_by
        FROM stock_ledger_entries s
        WHERE s.movement_type = 'SALE' AND s.reference_type = ? AND s.reference_id = ?

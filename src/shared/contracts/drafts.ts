@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { StockLocationDto } from './references';
 import {
   DomainError,
   parseRupiah,
@@ -76,6 +77,7 @@ const reasonSchema = z
 export const createDraftInputSchema = z.strictObject({
   requestId,
   channelId: uuidSchema,
+  stockLocationId: uuidSchema.optional(),
   invoiceDate: localDateSchema,
   /** Normally "now"; selects catalog prices for new lines. */
   pricingAt: instantSchema,
@@ -121,6 +123,7 @@ export const updateHeaderOpSchema = z.strictObject({
   changes: z
     .strictObject({
       channelId: uuidSchema.optional(),
+      stockLocationId: uuidSchema.optional(),
       invoiceDate: localDateSchema.optional(),
       pricingAt: instantSchema.optional(),
       taxInvoiceNumber: clearableText(100).optional(),
@@ -436,6 +439,7 @@ export interface DraftVehicleDto {
 }
 
 export interface DraftView {
+  stockLocation: StockLocationDto;
   cashReceived: Rupiah | null;
   invoiceNumber: string | null;
   taxInvoiceNumber: string | null;

@@ -1,6 +1,8 @@
 import type { TrackingChangeGuard } from '@/main/features/catalog/service';
 import type {
   CatalogItemType,
+  ReferenceDto,
+  StockLocationDto,
   ImportCounts,
   ImportField,
 } from '@/shared/contracts';
@@ -50,6 +52,7 @@ export interface BarcodeOwnerRef {
 
 /** The catalog reads the planner needs (implemented by the repository). */
 export interface PlannerSource {
+  stockLocationByCode(code: string): ReferenceDto | undefined;
   itemBySku(sku: string): ExistingItem | undefined;
   /**
    * An existing SKU that equals `digits` once its leading zeros are
@@ -78,6 +81,7 @@ export interface PlannedPrice {
 }
 
 export interface ItemPlan {
+  stockLocation: StockLocationDto | null;
   row: number;
   sku: string;
   action: 'CREATE' | 'UPDATE' | 'UNCHANGED';
@@ -202,6 +206,23 @@ export function planImport(
       if (fields.isActive !== existing.isActive) changedFields.push('isActive');
     }
 
+    const location = candidate.stockLocationCode
+      ? source.stockLocationByCode(candidate.stockLocationCode)
+      : undefined;
+    let stockLocation: StockLocationDto | null = null;
+    if (candidate.stockLocationCode && !location)
+      errors.push(issueError('STOCK_LOCATION_NOT_FOUND', at('stock_location')));
+    else if (location && !location.isActive)
+      errors.push(issueError('STOCK_LOCATION_INACTIVE', at('stock_location')));
+    else if (location)
+      stockLocation = {
+        id: location.id,
+        code: location.code!,
+        label: location.label,
+      };
+    if (fields.trackInventory && !candidate.stockLocationCode)
+      errors.push(issueError('STOCK_LOCATION_REQUIRED', at('stock_location')));
+
     // ---- opening stock ----
     let openingStock: number | null = null;
     if (candidate.openingStock !== null) {
@@ -271,6 +292,7 @@ export function planImport(
       barcodesToActivate.length > 0 ||
       prices.length > 0;
     plan.items.push({
+      stockLocation,
       row,
       sku,
       action: !existing ? 'CREATE' : changed ? 'UPDATE' : 'UNCHANGED',
@@ -316,6 +338,7 @@ export function countPlan(items: ItemPlan[]): ImportCounts {
 export function planSignature(items: ItemPlan[]): string {
   return JSON.stringify(
     items.map((item) => [
+      item.stockLocation,
       item.row,
       item.sku,
       item.action,

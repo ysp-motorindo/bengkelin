@@ -9,6 +9,7 @@ import type {
  * picks one. `Record<Language, PrintLabels>` makes a missing key a type error.
  */
 export interface PrintLabels {
+  stockLocation: string;
   sales: string;
   expedition: string;
   complaintContact: string;
@@ -65,6 +66,7 @@ export interface PrintLabels {
 
 export const PRINT_LABELS: Record<Language, PrintLabels> = {
   id: {
+    stockLocation: 'Lokasi stok',
     sales: 'Sales',
     expedition: 'Ekspedisi',
     complaintContact: 'Ada saran dan keluhan?\nHubungi kami di:',
@@ -129,6 +131,7 @@ export const PRINT_LABELS: Record<Language, PrintLabels> = {
     decimal: ',',
   },
   en: {
+    stockLocation: 'Stock location',
     sales: 'Sales',
     expedition: 'Expedition',
     complaintContact: 'Have feedback or complaints?\nContact us at:',

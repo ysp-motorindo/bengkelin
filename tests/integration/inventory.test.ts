@@ -48,7 +48,10 @@ function uuid(): string {
 beforeEach(async () => {
   nowMs = T0;
   counter = 0;
-  h = createHarness({ clock: { now: () => toInstant(nowMs) } });
+  h = createHarness({
+    stockLocation: true,
+    clock: { now: () => toInstant(nowMs) },
+  });
   value(await h.call(C.settings.completeSetup, validSetup()));
   const login = value(
     await h.call<{ cashierId: string }>(
@@ -104,7 +107,7 @@ function call(
 ) {
   return h.call<StockChangeDto>(
     channelOf(op),
-    { requestId, ...input },
+    { requestId, stockLocationId: TEST_STOCK_LOCATION_ID, ...input },
     windowId,
   );
 }
@@ -113,7 +116,7 @@ async function stockOf(itemId: string, windowId = ADMIN): Promise<number> {
   return value(
     await h.call<StockDto>(
       C.inventory.getStock,
-      { catalogItemId: itemId },
+      { stockLocationId: TEST_STOCK_LOCATION_ID, catalogItemId: itemId },
       windowId,
     ),
   ).quantity;
@@ -124,6 +127,7 @@ function rawInsert(fields: Record<string, unknown>): string | undefined {
   const row = {
     id: uuid(),
     catalog_item_id: null,
+    stock_location_id: TEST_STOCK_LOCATION_ID,
     movement_type: 'STOCK_IN',
     quantity_delta: 1n,
     reference_type: null,
@@ -137,9 +141,9 @@ function rawInsert(fields: Record<string, unknown>): string | undefined {
   try {
     h.db
       .prepare(
-        `INSERT INTO stock_ledger_entries (id, catalog_item_id, movement_type, quantity_delta,
+        `INSERT INTO stock_ledger_entries (id, catalog_item_id, stock_location_id, movement_type, quantity_delta,
            reference_type, reference_id, note, reverses_entry_id, created_by_cashier_id, created_at)
-         VALUES (@id, @catalog_item_id, @movement_type, @quantity_delta, @reference_type,
+         VALUES (@id, @catalog_item_id, @stock_location_id, @movement_type, @quantity_delta, @reference_type,
            @reference_id, @note, @reverses_entry_id, @created_by_cashier_id, @created_at)`,
       )
       .run(row);
@@ -316,7 +320,11 @@ describe('stock operations', () => {
     expect(await stockOf(low.id)).toBe(-2);
 
     const all = value(
-      await h.call<StockListDto>(C.inventory.listStock, {}, CASHIER),
+      await h.call<StockListDto>(
+        C.inventory.listStock,
+        { stockLocationId: TEST_STOCK_LOCATION_ID },
+        CASHIER,
+      ),
     );
     expect(all.items.map((i) => [i.title, i.quantity, i.isNegative])).toEqual([
       ['Aki', -2, true],
@@ -325,7 +333,7 @@ describe('stock operations', () => {
     const negatives = value(
       await h.call<StockListDto>(
         C.inventory.listStock,
-        { negativeOnly: true },
+        { stockLocationId: TEST_STOCK_LOCATION_ID, negativeOnly: true },
         CASHIER,
       ),
     );
@@ -333,7 +341,7 @@ describe('stock operations', () => {
     const searched = value(
       await h.call<StockListDto>(
         C.inventory.listStock,
-        { query: 'bus' },
+        { stockLocationId: TEST_STOCK_LOCATION_ID, query: 'bus' },
         ADMIN,
       ),
     );
@@ -356,7 +364,7 @@ describe('stock operations', () => {
     const ledger = value(
       await h.call<LedgerDto>(
         C.inventory.history,
-        { catalogItemId: item.id },
+        { stockLocationId: TEST_STOCK_LOCATION_ID, catalogItemId: item.id },
         CASHIER,
       ),
     );
@@ -398,7 +406,7 @@ describe('authorization', () => {
     const item = await newItem();
     const r = await h.call(
       C.inventory.getStock,
-      { catalogItemId: item.id },
+      { stockLocationId: TEST_STOCK_LOCATION_ID, catalogItemId: item.id },
       99,
     );
     expect(failure(r).code).toBe('UNAUTHENTICATED');
@@ -519,17 +527,17 @@ describe('append-only ledger', () => {
     const refs = { reference_type: 'INVOICE', reference_id: uuid() };
     expect(
       rawInsert({ ...base, movement_type: 'STOCK_IN', quantity_delta: 0n }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(
       rawInsert({ ...base, movement_type: 'STOCK_IN', quantity_delta: -1n }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(
       rawInsert({
         ...base,
         movement_type: 'OPENING_BALANCE',
         quantity_delta: -1n,
       }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(
       rawInsert({
         ...base,
@@ -537,7 +545,7 @@ describe('append-only ledger', () => {
         movement_type: 'SALE',
         quantity_delta: 1n,
       }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(
       rawInsert({
         ...base,
@@ -545,7 +553,7 @@ describe('append-only ledger', () => {
         movement_type: 'SALE',
         quantity_delta: 0n,
       }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(
       rawInsert({
         ...base,
@@ -553,10 +561,10 @@ describe('append-only ledger', () => {
         quantity_delta: 0n,
         note: 'x',
       }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(
       rawInsert({ ...base, movement_type: 'ADJUSTMENT', quantity_delta: 2n }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(
       rawInsert({
         ...base,
@@ -564,14 +572,14 @@ describe('append-only ledger', () => {
         quantity_delta: 2n,
         note: '  ',
       }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(
       rawInsert({ ...base, movement_type: 'BOGUS', quantity_delta: 2n }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     // A SALE needs the reference that ties it to its invoice.
     expect(
       rawInsert({ ...base, movement_type: 'SALE', quantity_delta: -1n }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(rows('SELECT id FROM stock_ledger_entries')).toHaveLength(0);
     // The valid forms go in.
     expect(
@@ -590,9 +598,10 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
     const item = await newItem();
     const other = await newItem({ title: 'Kampas' });
     value(await call('openBalance', { catalogItemId: item.id, quantity: 10 }));
-    const invoiceId = uuid();
+    const invoiceId = await newInvoice();
     const saleId = write(() =>
       recordSale(h.db, {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         invoiceId,
         catalogItemId: item.id,
         quantity: 3,
@@ -617,6 +626,7 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
     expect(() =>
       write(() =>
         recordSale(h.db, {
+          stockLocationId: TEST_STOCK_LOCATION_ID,
           invoiceId,
           catalogItemId: item.id,
           quantity: 1,
@@ -630,6 +640,7 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
     value(await call('openBalance', { catalogItemId: other.id, quantity: 1 }));
     write(() =>
       recordSale(h.db, {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         invoiceId,
         catalogItemId: other.id,
         quantity: 2,
@@ -666,6 +677,7 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
     expect(() =>
       write(() =>
         recordSale(h.db, {
+          stockLocationId: TEST_STOCK_LOCATION_ID,
           invoiceId: uuid(),
           catalogItemId: service.id,
           quantity: 1,
@@ -678,6 +690,7 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
       expect(() =>
         write(() =>
           recordSale(h.db, {
+            stockLocationId: TEST_STOCK_LOCATION_ID,
             invoiceId: uuid(),
             catalogItemId: item.id,
             quantity,
@@ -689,6 +702,7 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
     }
     expect(() =>
       recordSale(h.db, {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         invoiceId: uuid(),
         catalogItemId: item.id,
         quantity: 1,
@@ -701,9 +715,10 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
 
   test('a void reversal negates its sale exactly once', async () => {
     const item = await newItem();
-    const invoiceId = uuid();
+    const invoiceId = await newInvoice();
     const saleId = write(() =>
       recordSale(h.db, {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         invoiceId,
         catalogItemId: item.id,
         quantity: 2,
@@ -766,9 +781,10 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
   test('the database rejects reversals that do not exactly match a SALE', async () => {
     const item = await newItem();
     const other = await newItem({ title: 'Kampas' });
-    const invoiceId = uuid();
+    const invoiceId = await newInvoice();
     const saleId = write(() =>
       recordSale(h.db, {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         invoiceId,
         catalogItemId: item.id,
         quantity: 2,
@@ -792,10 +808,10 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
     );
     expect(rawInsert({ ...reversal, reference_id: uuid() })).toMatch(/exactly/);
     expect(rawInsert({ ...reversal, reverses_entry_id: null })).toMatch(
-      /CHECK|exactly/,
+      /CHECK|exactly|location must match/,
     );
     expect(rawInsert({ ...reversal, reverses_entry_id: uuid() })).toMatch(
-      /FOREIGN KEY|exactly/,
+      /FOREIGN KEY|exactly|location must match/,
     );
     const stockIn = uuid();
     expect(
@@ -817,7 +833,7 @@ describe('SALE and VOID_REVERSAL (used by finalization and void)', () => {
         quantity_delta: 2n,
         reverses_entry_id: saleId,
       }),
-    ).toMatch(/CHECK/);
+    ).toMatch(/CHECK|location must match/);
     expect(await stockOf(item.id)).toBe(0);
     // The exact negation goes in.
     expect(rawInsert(reversal)).toBeUndefined();
@@ -916,6 +932,7 @@ describe('retries and concurrency', () => {
       nowMs += 1000;
       const a = value(
         await h.call<StockChangeDto>(C.inventory.setStock, {
+          stockLocationId: TEST_STOCK_LOCATION_ID,
           requestId: uuid(),
           catalogItemId: item.id,
           targetQuantity: 25,
@@ -923,6 +940,7 @@ describe('retries and concurrency', () => {
         }),
       );
       const b = other.setStock(admin(), {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         requestId: uuid(),
         catalogItemId: item.id,
         targetQuantity: 20,
@@ -932,6 +950,7 @@ describe('retries and concurrency', () => {
       expect(b).toMatchObject({ quantityDelta: -5, newQuantity: 20 });
       // Same target again, other connection, new requestId: nothing left to do.
       const c = other.setStock(admin(), {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         requestId: uuid(),
         catalogItemId: item.id,
         targetQuantity: 20,
@@ -1012,3 +1031,20 @@ describe('audit', () => {
     expect(cashierId).toBeTruthy();
   });
 });
+
+const TEST_STOCK_LOCATION_ID = '11111111-1111-4111-8111-111111111119';
+
+async function newInvoice() {
+  const channel = h.db
+    .prepare("SELECT id FROM channels WHERE code = 'BENGKEL'")
+    .get() as { id: string };
+  return value(
+    await h.call<{ id: string }>(C.drafts.create, {
+      requestId: uuid(),
+      channelId: channel.id,
+      invoiceDate: '2026-09-30',
+      pricingAt: at(),
+      stockLocationId: TEST_STOCK_LOCATION_ID,
+    }),
+  ).id;
+}

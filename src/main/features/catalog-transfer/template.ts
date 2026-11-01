@@ -1,3 +1,4 @@
+import type { StockLocationDto } from '@/shared/contracts';
 import { csvInteger, type CsvRow } from '@/main/features/csv/writer';
 import {
   asciiLower,
@@ -31,6 +32,7 @@ function pickUnit(units: RefUnit[], preferred: string): string {
 export function buildCatalogTemplate(
   channels: RefChannel[],
   units: RefUnit[],
+  stockLocation: StockLocationDto,
 ): CsvRow[] {
   const active = channels.filter((c) => c.isActive);
   const header = [
@@ -41,6 +43,7 @@ export function buildCatalogTemplate(
     'barcode',
     'barcode_2',
     ...active.map((c) => priceColumnName(c.code)),
+    'stock_location',
     'opening_stock',
     'is_active',
     'description',
@@ -55,6 +58,7 @@ export function buildCatalogTemplate(
     ...active.map((c) =>
       csvInteger(EXAMPLE_STOCK_PRICES[asciiLower(c.code)] ?? 65000n),
     ),
+    stockLocation.code,
     csvInteger(12),
     'true',
     'Oli mesin 4T, 1 liter',
@@ -67,6 +71,7 @@ export function buildCatalogTemplate(
     '',
     '',
     ...active.map((_, index) => (index === 0 ? csvInteger(20000) : '')),
+    '',
     '',
     'true',
     'Termasuk pengecekan filter oli',

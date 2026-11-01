@@ -80,7 +80,10 @@ async function login(username: string, password: string, windowId: number) {
 beforeEach(async () => {
   nowMs = T0;
   counter = 0;
-  h = createHarness({ clock: { now: () => toInstant(nowMs) } });
+  h = createHarness({
+    stockLocation: true,
+    clock: { now: () => toInstant(nowMs) },
+  });
   value(await h.call(C.settings.completeSetup, validSetup()));
   adminId = await login('admin', ADMIN_PASSWORD, ADMIN);
   value(
@@ -366,7 +369,12 @@ test('draft lines show catalog SKU and recorded stock without reserving quantity
   value(
     await h.call(
       C.inventory.openBalance,
-      { requestId: uuid(), catalogItemId: item.id, quantity: 7 },
+      {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
+        requestId: uuid(),
+        catalogItemId: item.id,
+        quantity: 7,
+      },
       ADMIN,
     ),
   );
@@ -1611,7 +1619,12 @@ describe('no side effects and the status guard', () => {
     value(
       await h.call(
         C.inventory.openBalance,
-        { requestId: uuid(), catalogItemId: item.id, quantity: 10 },
+        {
+          stockLocationId: TEST_STOCK_LOCATION_ID,
+          requestId: uuid(),
+          catalogItemId: item.id,
+          quantity: 10,
+        },
         ADMIN,
       ),
     );
@@ -1642,7 +1655,7 @@ describe('no side effects and the status guard', () => {
       value(
         await h.call<{ quantity: number }>(
           C.inventory.getStock,
-          { catalogItemId: item.id },
+          { stockLocationId: TEST_STOCK_LOCATION_ID, catalogItemId: item.id },
           CASHIER,
         ),
       ).quantity,
@@ -1669,14 +1682,14 @@ describe('no side effects and the status guard', () => {
     const finalize = h.db.prepare(
       `UPDATE invoices SET status = 'FINALIZED', invoice_number = 'INV-20260930-0001', cashier_id = ?,
          finalized_at = ?, channel_label_snapshot = 'Bengkel', cashier_name_snapshot = 'Siti',
-         shop_identity_snapshot = '{}' WHERE id = ?`,
+         shop_identity_snapshot = '{}', stock_location_code_snapshot='01', stock_location_label_snapshot='Gudang' WHERE id = ?`,
     );
     // A draft cannot become FINALIZED without its number and snapshots.
     expect(() =>
       h.db
         .prepare(`UPDATE invoices SET status = 'FINALIZED' WHERE id = ?`)
         .run(draft.id),
-    ).toThrow(/CHECK/);
+    ).toThrow(/CHECK|snapshot is required/);
     // Nor jump straight to VOID.
     expect(() =>
       h.db
@@ -2184,3 +2197,5 @@ test('explicit zero requires checkout acknowledgment even after legacy confirmat
     ).invoiceNumber,
   ).toBe('INV-20260930-0001');
 });
+
+const TEST_STOCK_LOCATION_ID = '11111111-1111-4111-8111-111111111119';

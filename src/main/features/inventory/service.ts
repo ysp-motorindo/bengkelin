@@ -1,3 +1,5 @@
+import { requireActiveStockLocation } from '@/main/features/references/stock-locations';
+import { ReferenceRepository } from '@/main/features/references/repository';
 import { randomUUID } from 'node:crypto';
 import { appendAudit } from '@/main/database/audit';
 import {
@@ -80,15 +82,22 @@ export class InventoryService {
       throw new DomainError('CATALOG_ITEM_NOT_FOUND', 'Item not found');
     }
     return {
+      stockLocation: this.location(input.stockLocationId),
       catalogItemId: input.catalogItemId,
-      quantity: stockOf(this.deps.db, input.catalogItemId),
+      quantity: stockOf(
+        this.deps.db,
+        input.catalogItemId,
+        input.stockLocationId,
+      ),
     };
   }
 
   listStock(session: Session | undefined, input: ListStockInput): StockListDto {
     requireSession(session);
     return {
+      stockLocation: this.location(input.stockLocationId),
       items: this.repo.listStock(
+        input.stockLocationId,
         (input.query ?? '').trim(),
         input.negativeOnly === true,
         Math.min(input.limit ?? LIST_LIMIT, 200),
@@ -99,10 +108,12 @@ export class InventoryService {
   history(session: Session | undefined, input: StockHistoryInput): LedgerDto {
     requireSession(session);
     return {
+      stockLocation: this.location(input.stockLocationId),
       catalogItemId: input.catalogItemId,
       timezone: this.repo.shopTimezone(),
       entries: this.repo.history(
         input.catalogItemId,
+        input.stockLocationId,
         Math.min(input.limit ?? HISTORY_LIMIT, 500),
       ),
     };
@@ -121,23 +132,41 @@ export class InventoryService {
   ): StockChangeDto {
     const actor = requireAdmin(session);
     return this.idempotent(actor, 'inventory.openBalance', input, () => {
+      requireActiveStockLocation(this.deps.db, input.stockLocationId);
       requireTrackedItem(this.deps.db, input.catalogItemId);
-      if (hasLedgerEntries(this.deps.db, input.catalogItemId)) {
+      if (
+        this.deps.db
+          .prepare(
+            'SELECT 1 FROM stock_ledger_entries WHERE catalog_item_id = ? AND stock_location_id = ? LIMIT 1',
+          )
+          .get(input.catalogItemId, input.stockLocationId)
+      ) {
         throw new DomainError(
           'OPENING_BALANCE_EXISTS',
           'The item already has stock history',
         );
       }
-      const entryId = this.append(actor, input.catalogItemId, {
-        movementType: 'OPENING_BALANCE',
-        quantityDelta: input.quantity,
-      });
+      const entryId = this.append(
+        actor,
+        input.catalogItemId,
+        input.stockLocationId,
+        {
+          movementType: 'OPENING_BALANCE',
+          quantityDelta: input.quantity,
+        },
+      );
       this.audit(actor, 'STOCK_OPENING_BALANCE_RECORDED', input.catalogItemId, {
+        stockLocationId: input.stockLocationId,
         entryId,
         quantityDelta: input.quantity,
         newQuantity: input.quantity,
       });
-      return this.change(entryId, input.catalogItemId, input.quantity);
+      return this.change(
+        entryId,
+        input.catalogItemId,
+        input.stockLocationId,
+        input.quantity,
+      );
     });
   }
 
@@ -147,22 +176,38 @@ export class InventoryService {
   ): StockChangeDto {
     const actor = requireAdmin(session);
     return this.idempotent(actor, 'inventory.receive', input, () => {
+      requireActiveStockLocation(this.deps.db, input.stockLocationId);
       requireTrackedItem(this.deps.db, input.catalogItemId);
-      const previous = stockOf(this.deps.db, input.catalogItemId);
+      const previous = stockOf(
+        this.deps.db,
+        input.catalogItemId,
+        input.stockLocationId,
+      );
       const note = input.note ? input.note : null;
-      const entryId = this.append(actor, input.catalogItemId, {
-        movementType: 'STOCK_IN',
-        quantityDelta: input.quantity,
-        note,
-      });
+      const entryId = this.append(
+        actor,
+        input.catalogItemId,
+        input.stockLocationId,
+        {
+          movementType: 'STOCK_IN',
+          quantityDelta: input.quantity,
+          note,
+        },
+      );
       this.audit(actor, 'STOCK_RECEIVED', input.catalogItemId, {
+        stockLocationId: input.stockLocationId,
         entryId,
         quantityDelta: input.quantity,
         previousQuantity: previous,
         newQuantity: previous + input.quantity,
         note,
       });
-      return this.change(entryId, input.catalogItemId, input.quantity);
+      return this.change(
+        entryId,
+        input.catalogItemId,
+        input.stockLocationId,
+        input.quantity,
+      );
     });
   }
 
@@ -173,10 +218,12 @@ export class InventoryService {
     const actor = requireAdmin(session);
     const reason = requireReason(input.reason);
     return this.idempotent(actor, 'inventory.adjust', input, () => {
+      requireActiveStockLocation(this.deps.db, input.stockLocationId);
       requireTrackedItem(this.deps.db, input.catalogItemId);
       return this.writeAdjustment(
         actor,
         input.catalogItemId,
+        input.stockLocationId,
         input.quantityDelta,
         reason,
         'ADJUST',
@@ -193,12 +240,18 @@ export class InventoryService {
     const actor = requireAdmin(session);
     const reason = requireReason(input.reason);
     return this.idempotent(actor, 'inventory.setStock', input, () => {
+      requireActiveStockLocation(this.deps.db, input.stockLocationId);
       requireTrackedItem(this.deps.db, input.catalogItemId);
-      const current = stockOf(this.deps.db, input.catalogItemId);
+      const current = stockOf(
+        this.deps.db,
+        input.catalogItemId,
+        input.stockLocationId,
+      );
       const delta = input.targetQuantity - current;
       if (delta === 0) {
         return {
           entryId: null,
+          stockLocation: this.location(input.stockLocationId),
           catalogItemId: input.catalogItemId,
           quantityDelta: 0,
           newQuantity: current,
@@ -207,11 +260,21 @@ export class InventoryService {
       return this.writeAdjustment(
         actor,
         input.catalogItemId,
+        input.stockLocationId,
         delta,
         reason,
         'SET_STOCK',
       );
     });
+  }
+
+  private location(id: string) {
+    const location = new ReferenceRepository(this.deps.db).find(
+      'stockLocation',
+      id,
+    );
+    if (!location) throw new DomainError('STOCK_LOCATION_NOT_FOUND');
+    return { id: location.id, code: location.code!, label: location.label };
   }
 
   // ---- internals ----
@@ -241,17 +304,19 @@ export class InventoryService {
   private writeAdjustment(
     actor: Session,
     catalogItemId: string,
+    stockLocationId: string,
     delta: number,
     reason: string,
     via: 'ADJUST' | 'SET_STOCK',
   ): StockChangeDto {
-    const previous = stockOf(this.deps.db, catalogItemId);
-    const entryId = this.append(actor, catalogItemId, {
+    const previous = stockOf(this.deps.db, catalogItemId, stockLocationId);
+    const entryId = this.append(actor, catalogItemId, stockLocationId, {
       movementType: 'ADJUSTMENT',
       quantityDelta: delta,
       note: reason,
     });
     this.audit(actor, 'STOCK_ADJUSTED', catalogItemId, {
+      stockLocationId,
       entryId,
       via,
       quantityDelta: delta,
@@ -259,12 +324,13 @@ export class InventoryService {
       newQuantity: previous + delta,
       reason,
     });
-    return this.change(entryId, catalogItemId, delta);
+    return this.change(entryId, catalogItemId, stockLocationId, delta);
   }
 
   private append(
     actor: Session,
     catalogItemId: string,
+    stockLocationId: string,
     entry: {
       movementType: 'OPENING_BALANCE' | 'STOCK_IN' | 'ADJUSTMENT';
       quantityDelta: number;
@@ -274,6 +340,7 @@ export class InventoryService {
     return insertEntry(this.deps.db, {
       id: this.newId(),
       catalogItemId,
+      stockLocationId,
       ...entry,
       createdByCashierId: actor.cashierId,
       createdAt: this.deps.clock.now(),
@@ -283,13 +350,15 @@ export class InventoryService {
   private change(
     entryId: string,
     catalogItemId: string,
+    stockLocationId: string,
     quantityDelta: number,
   ): StockChangeDto {
     return {
       entryId,
       catalogItemId,
+      stockLocation: this.location(stockLocationId),
       quantityDelta,
-      newQuantity: stockOf(this.deps.db, catalogItemId),
+      newQuantity: stockOf(this.deps.db, catalogItemId, stockLocationId),
     };
   }
 

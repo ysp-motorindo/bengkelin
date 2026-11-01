@@ -43,6 +43,7 @@ function preview(extra: Partial<FinalizePreviewDto> = {}): FinalizePreviewDto {
 const negative = (observedStock: number) => ({
   code: 'NEGATIVE_STOCK' as const,
   params: {
+    stockLocationId: '11111111-1111-4111-8111-111111111119',
     catalogItemId: ITEM_ID,
     title: 'Kampas Rem',
     observedStock,

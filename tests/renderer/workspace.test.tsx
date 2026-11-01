@@ -523,6 +523,7 @@ test('rejected inline saves explain the server error and block review', async ()
       initialView={draftView({ lines: [customLine()] })}
       timezone="Asia/Jakarta"
       references={{
+        stockLocations: [],
         sales: [],
         expeditions: [],
         channels: [],
@@ -585,3 +586,63 @@ test.each([{ lines: [] }, { lines: [customLine()] }])(
     expect(screen.getByRole('button', { name: /Terapkan/ })).toBeDisabled();
   },
 );
+
+test('invoice header presents the agreed field order and saves the selected stock location', async () => {
+  const bridge = install();
+  const normal = workspaceBridge();
+  bridge.references.listActive.mockImplementation(async ({ entity }) =>
+    entity === 'stockLocation'
+      ? ok([
+          {
+            entity: 'stockLocation',
+            id: 'loc-a',
+            code: 'A',
+            label: 'Alpha',
+            phoneNumber: null,
+            brandId: null,
+            address: null,
+            city: null,
+            isActive: true,
+            isDefault: true,
+          },
+          {
+            entity: 'stockLocation',
+            id: 'loc-b',
+            code: 'B',
+            label: 'Beta',
+            phoneNumber: null,
+            brandId: null,
+            address: null,
+            city: null,
+            isActive: true,
+            isDefault: false,
+          },
+        ])
+      : normal.references.listActive({ entity }),
+  );
+  render(<CashierWorkspace />);
+  const location = await screen.findByRole('combobox', { name: 'Lokasi stok' });
+  const fields = [
+    'No. Faktur',
+    'Tanggal transaksi',
+    'TOP (hari)',
+    'Tanggal jatuh tempo',
+    'No. Faktur Pajak',
+    'No. Kendaraan',
+    'Odometer (km)',
+  ].map((name) => screen.getByLabelText(name));
+  const ordered = [...fields, location];
+  for (let i = 1; i < ordered.length; i++)
+    expect(
+      ordered[i - 1]!.compareDocumentPosition(ordered[i]!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  await userEvent.setup().selectOptions(location, 'loc-b');
+  await waitFor(() =>
+    expect(bridge.drafts.apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        op: { kind: 'updateHeader', changes: { stockLocationId: 'loc-b' } },
+      }),
+    ),
+  );
+});

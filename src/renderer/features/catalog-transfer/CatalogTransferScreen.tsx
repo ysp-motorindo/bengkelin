@@ -1,7 +1,9 @@
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Download, FileSpreadsheet, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FormField } from '@/renderer/components/form-field';
+import { Select } from '@/renderer/components/ui/select';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
 import {
@@ -14,6 +16,7 @@ import {
 import { useAction } from '@/renderer/lib/use-action';
 import type {
   CatalogFileOutcomeDto,
+  ReferenceDto,
   ImportReadyDto,
   ImportSummaryDto,
 } from '@/shared/contracts';
@@ -30,6 +33,23 @@ export function CatalogTransferScreen() {
   const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   const { busy, error, setError, run, check } = useAction();
+  const [locations, setLocations] = useState<ReferenceDto[]>([]);
+  const [stockLocationId, setStockLocationId] = useState('');
+  const [locationsLoaded, setLocationsLoaded] = useState(false);
+  useEffect(() => {
+    void run(async () => {
+      const result = await window.bengkelin.references.listActive({
+        entity: 'stockLocation',
+      });
+      if (check(result)) {
+        setLocations(result.value);
+        setLocationsLoaded(true);
+        setStockLocationId(
+          (result.value.find((l) => l.isDefault) ?? result.value[0])?.id ?? '',
+        );
+      }
+    });
+  }, [run, check]);
   const [notices, setNotices] = useState<string[]>([]);
   const [preview, setPreview] = useState<ImportReadyDto | null>(null);
   const [result, setResult] = useState<ImportSummaryDto | null>(null);
@@ -115,9 +135,13 @@ export function CatalogTransferScreen() {
             </Button>
             <Button
               variant="outline"
-              disabled={busy}
+              disabled={busy || !stockLocationId}
               onClick={() =>
-                saveFile(() => window.bengkelin.catalogTransfer.exportCatalog())
+                saveFile(() =>
+                  window.bengkelin.catalogTransfer.exportCatalog({
+                    stockLocationId,
+                  }),
+                )
               }
             >
               <Download aria-hidden="true" />
@@ -146,6 +170,23 @@ export function CatalogTransferScreen() {
               </p>
             ) : null}
           </div>
+          <FormField label={t('references.entities.stockLocation')}>
+            <Select
+              required
+              value={stockLocationId}
+              onChange={(e) => setStockLocationId(e.target.value)}
+            >
+              {!stockLocationId ? <option value="" /> : null}
+              {locations.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.code} · {l.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          {locationsLoaded && !stockLocationId ? (
+            <Alert>{t('errors.STOCK_LOCATION_REQUIRED')}</Alert>
+          ) : null}
           {error ? <Alert>{error}</Alert> : null}
         </CardContent>
       </Card>

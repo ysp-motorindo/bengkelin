@@ -24,6 +24,7 @@ import type { DraftCommands } from './use-draft-commands';
 
 interface DraftHeaderProps {
   commands: DraftCommands;
+  stockLocations: ReferenceDto[];
   sales: ReferenceDto[];
   expeditions: ReferenceDto[];
   channels: ReferenceDto[];
@@ -53,6 +54,7 @@ function parseCount(text: string, max: number): number | null | undefined {
  */
 export function DraftHeader({
   commands,
+  stockLocations,
   channels,
   sales,
   expeditions,
@@ -220,7 +222,10 @@ export function DraftHeader({
           })}
         </div>
         <div className="hidden lg:block" aria-hidden="true" />
-        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_.6fr_1fr]">
+        <div
+          className="grid min-w-0 grid-cols-1 gap-2 lg:grid-cols-3"
+          data-testid="invoice-header-fields"
+        >
           <FormField label={t('workspace.header.invoiceNumber')}>
             <Input readOnly value={view.invoiceNumber ?? ''} />
           </FormField>
@@ -238,7 +243,7 @@ export function DraftHeader({
               }}
             />
           </FormField>
-          <div className="contents">
+          <div className="grid min-w-0 grid-cols-[1fr_2fr] gap-2">
             <FormField
               label={t('workspace.header.topDays')}
               error={fieldErrors.topDays}
@@ -262,48 +267,69 @@ export function DraftHeader({
               />
             </FormField>
           </div>
-          <div className="sm:col-span-2 lg:col-span-1">
-            <FormField label={t('workspace.header.taxInvoiceNumber')}>
-              <Input
-                maxLength={100}
-                value={taxNumber}
-                onChange={(event) => {
-                  setTaxNumber(event.target.value);
-                  edit('taxInvoiceNumber', {
-                    kind: 'updateHeader',
-                    changes: { taxInvoiceNumber: event.target.value },
-                  });
-                }}
-              />
-            </FormField>
-          </div>
-          <div className="lg:col-span-2">
+          <FormField label={t('workspace.header.taxInvoiceNumber')}>
+            <Input
+              maxLength={100}
+              value={taxNumber}
+              onChange={(event) => {
+                setTaxNumber(event.target.value);
+                edit('taxInvoiceNumber', {
+                  kind: 'updateHeader',
+                  changes: { taxInvoiceNumber: event.target.value },
+                });
+              }}
+            />
+          </FormField>
+          <div className="grid min-w-0 grid-cols-[2fr_1fr] gap-2">
             <CustomerVehiclePicker
               mode="vehicle"
               commands={commands}
               onError={onError}
             />
+            <FormField
+              label={t('workspace.header.odometer')}
+              error={fieldErrors.odometer}
+            >
+              <NumericInput
+                value={odometer}
+                onValueChange={(value) => {
+                  setOdometer(value);
+                  textField(
+                    'odometer',
+                    value,
+                    100_000_000,
+                    (km) => ({
+                      kind: 'updateHeader',
+                      changes: { odometerKm: km },
+                    }),
+                    { kind: 'updateHeader', changes: { odometerKm: null } },
+                  );
+                }}
+              />
+            </FormField>{' '}
           </div>
-          <FormField
-            label={t('workspace.header.odometer')}
-            error={fieldErrors.odometer}
-          >
-            <NumericInput
-              value={odometer}
-              onValueChange={(value) => {
-                setOdometer(value);
-                textField(
-                  'odometer',
-                  value,
-                  100_000_000,
-                  (km) => ({
-                    kind: 'updateHeader',
-                    changes: { odometerKm: km },
-                  }),
-                  { kind: 'updateHeader', changes: { odometerKm: null } },
-                );
-              }}
-            />
+          <FormField label={t('references.entities.stockLocation')}>
+            <Select
+              required
+              value={view.stockLocation.id}
+              onChange={(event) =>
+                void apply({
+                  kind: 'updateHeader',
+                  changes: { stockLocationId: event.target.value },
+                })
+              }
+            >
+              {!stockLocations.some((l) => l.id === view.stockLocation.id) ? (
+                <option value={view.stockLocation.id}>
+                  {view.stockLocation.code} · {view.stockLocation.label}
+                </option>
+              ) : null}
+              {stockLocations.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.code} · {l.label}
+                </option>
+              ))}
+            </Select>
           </FormField>
         </div>
       </div>

@@ -49,7 +49,14 @@ const FIXTURES = path.resolve(__dirname, '../fixtures/csv');
 
 const fixture = (name: string) => readFileSync(path.join(FIXTURES, name));
 /** CRLF records from lines. */
-const csv = (...lines: string[]) => lines.join('\r\n') + '\r\n';
+const csv = (...lines: string[]) =>
+  lines
+    .map((line, i) =>
+      lines[0]!.includes(';') || lines[0]!.includes('stock_location')
+        ? line
+        : line + (i === 0 ? ',stock_location' : ',01'),
+    )
+    .join('\r\n') + '\r\n';
 
 function local(dateTime: string): Instant {
   const resolved = resolveLocalDateTime(dateTime, ZONE);
@@ -69,7 +76,11 @@ let pcs: string;
 beforeEach(async () => {
   nowMs = T0;
   dialogs = new FakeDialogs();
-  h = createHarness({ clock: { now: () => toInstant(nowMs) }, dialogs });
+  h = createHarness({
+    stockLocation: true,
+    clock: { now: () => toInstant(nowMs) },
+    dialogs,
+  });
   csvDir = path.join(h.dir, 'csv');
   mkdirSync(csvDir);
   value(await h.call(C.settings.completeSetup, validSetup()));
@@ -173,7 +184,7 @@ async function exportCatalog(windowId = ADMIN) {
   const outcome = value(
     await h.call<CatalogFileOutcomeDto>(
       C.catalogTransfer.exportCatalog,
-      undefined,
+      { stockLocationId: TEST_STOCK_LOCATION_ID },
       windowId,
     ),
   );
@@ -559,7 +570,7 @@ describe('import validation', () => {
     const p = await preview(fixture('spec-38-example.csv'));
     const mismatch = issue(p.errors, 'ROW_WIDTH_MISMATCH')!;
     expect(mismatch).toMatchObject({ row: 3, column: null });
-    expect(mismatch.error.params).toEqual({ expected: '10', actual: '9' });
+    expect(mismatch.error.params).toEqual({ expected: '11', actual: '10' });
     expect(p.canCommit).toBe(false);
 
     const wide = await preview(
@@ -678,6 +689,7 @@ describe('import validation', () => {
     const item = await newItem({ sku: 'OLI-01' });
     value(
       await h.call(C.inventory.openBalance, {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         requestId: crypto.randomUUID(),
         catalogItemId: item.id,
         quantity: 5,
@@ -753,8 +765,13 @@ describe('import validation', () => {
       ).code,
     ).toBe('FORBIDDEN');
     expect(
-      failure(await h.call(C.catalogTransfer.exportCatalog, undefined, CASHIER))
-        .code,
+      failure(
+        await h.call(
+          C.catalogTransfer.exportCatalog,
+          { stockLocationId: TEST_STOCK_LOCATION_ID },
+          CASHIER,
+        ),
+      ).code,
     ).toBe('FORBIDDEN');
     expect(
       failure(
@@ -1063,7 +1080,13 @@ describe('commit', () => {
 describe('export and template', () => {
   test('cancelling the save dialogs writes nothing', async () => {
     dialogs.csvAnswers.push(null, null);
-    expect(value(await h.call(C.catalogTransfer.exportCatalog))).toEqual({
+    expect(
+      value(
+        await h.call(C.catalogTransfer.exportCatalog, {
+          stockLocationId: TEST_STOCK_LOCATION_ID,
+        }),
+      ),
+    ).toEqual({
       outcome: 'CANCELLED',
     });
     expect(value(await h.call(C.catalogTransfer.downloadTemplate))).toEqual({
@@ -1092,6 +1115,7 @@ describe('export and template', () => {
     ]);
     value(
       await h.call(C.inventory.openBalance, {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         requestId: crypto.randomUUID(),
         catalogItemId: oli.id,
         quantity: 7,
@@ -1125,6 +1149,7 @@ describe('export and template', () => {
       'price_bengkel',
       'price_online',
       'price_marketplace',
+      'stock_location',
       'opening_stock',
       'current_stock',
       'is_active',
@@ -1141,6 +1166,7 @@ describe('export and template', () => {
       '50000',
       '52000',
       '',
+      '01',
       '',
       '7',
       'true',
@@ -1156,13 +1182,14 @@ describe('export and template', () => {
       '20000',
       '',
       '',
+      '01',
       '',
       '',
       'true',
       '',
     ]);
     expect(bySku.get('')?.[1]).toBe('Tanpa SKU');
-    expect(table.every((r) => r.length === 13)).toBe(true);
+    expect(table.every((r) => r.length === 14)).toBe(true);
     const audit = rows(
       `SELECT metadata FROM audit_log WHERE action = 'CATALOG_EXPORTED'`,
     );
@@ -1209,6 +1236,7 @@ describe('export and template', () => {
     ]);
     value(
       await h.call(C.inventory.openBalance, {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         requestId: crypto.randomUUID(),
         catalogItemId: oli.id,
         quantity: 3,
@@ -1216,6 +1244,7 @@ describe('export and template', () => {
     );
     value(
       await h.call(C.inventory.setStock, {
+        stockLocationId: TEST_STOCK_LOCATION_ID,
         requestId: crypto.randomUUID(),
         catalogItemId: oli.id,
         targetQuantity: -2,
@@ -1275,6 +1304,7 @@ describe('export and template', () => {
       'price_bengkel',
       'price_online',
       'price_marketplace',
+      'stock_location',
       'opening_stock',
       'is_active',
       'description',
@@ -1298,3 +1328,5 @@ describe('export and template', () => {
     expect(p.summary.creates).toBe(2);
   });
 });
+
+const TEST_STOCK_LOCATION_ID = '11111111-1111-4111-8111-111111111119';

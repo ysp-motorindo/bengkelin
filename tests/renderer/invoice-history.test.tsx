@@ -15,6 +15,11 @@ function view(overrides: Partial<InvoiceView> = {}): InvoiceView {
     id: ID,
     invoiceNumber: 'INV-20260930-0001',
     taxInvoiceNumber: null,
+    stockLocation: {
+      id: '11111111-1111-4111-8111-111111111119',
+      code: '01',
+      label: 'Gudang',
+    },
     cashReceived: null,
     status: 'FINALIZED',
     version: 2,

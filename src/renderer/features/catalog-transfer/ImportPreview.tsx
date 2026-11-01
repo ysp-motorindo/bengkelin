@@ -202,6 +202,9 @@ function RowTable({ preview }: { preview: ImportReadyDto }) {
                 {t('catalogTransfer.columns.title')}
               </th>
               <th scope="col" className="px-2 py-2">
+                {t('references.entities.stockLocation')}
+              </th>
+              <th scope="col" className="px-2 py-2">
                 {t('catalogTransfer.columns.action')}
               </th>
               <th scope="col" className="px-2 py-2">
@@ -217,6 +220,11 @@ function RowTable({ preview }: { preview: ImportReadyDto }) {
                   {row.sku}
                 </td>
                 <td className="whitespace-pre-line px-2 py-2">{row.title}</td>
+                <td className="px-2 py-2">
+                  {row.stockLocation
+                    ? `${row.stockLocation.code} · ${row.stockLocation.label}`
+                    : '—'}
+                </td>
                 <td
                   className={
                     row.action === 'INVALID'

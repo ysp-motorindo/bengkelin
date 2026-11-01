@@ -1,3 +1,4 @@
+import { requireActiveStockLocation } from '@/main/features/references/stock-locations';
 import { ReferenceRepository } from '@/main/features/references/repository';
 import type { AppDatabase } from '@/main/database/connection';
 import { flag } from '@/main/database/rows';
@@ -17,6 +18,7 @@ import { assertInt64, type Instant, type LocalDate } from '@/shared/primitives';
  */
 
 export interface InvoiceRow {
+  stock_location_id: string;
   id: string;
   status: InvoiceStatus;
   reserved_invoice_number: string | null;
@@ -123,6 +125,7 @@ export interface DraftSummaryRow {
 }
 
 export interface DraftHeader {
+  stockLocationId: string;
   salesId: string | null;
   expeditionId: string | null;
   channelId: string;
@@ -180,10 +183,17 @@ const n = (value: number): bigint => BigInt(value);
 export class DraftRepository {
   constructor(private readonly db: AppDatabase) {}
 
-  reference(entity: 'sales' | 'expedition', id: string | null) {
+  reference(
+    entity: 'sales' | 'expedition' | 'stockLocation',
+    id: string | null,
+  ) {
     return id === null
       ? undefined
       : new ReferenceRepository(this.db).find(entity, id);
+  }
+
+  requireActiveStockLocation(id: string) {
+    return requireActiveStockLocation(this.db, id);
   }
 
   saveCashReceived(id: string, amount: bigint): void {
@@ -211,7 +221,7 @@ export class DraftRepository {
   findInvoice(id: string): InvoiceRow | undefined {
     return this.db
       .prepare(
-        `SELECT id, status, reserved_invoice_number, tax_invoice_number, cash_received, sales_id, expedition_id, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
+        `SELECT stock_location_id, id, status, reserved_invoice_number, tax_invoice_number, cash_received, sales_id, expedition_id, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
            due_date, odometer_km, note, subtotal, item_discount_amount, invoice_discount_amount,
            discount_amount, amount, created_by_cashier_id, last_edited_by_cashier_id, version,
            discarded_at, created_at, updated_at
@@ -229,14 +239,15 @@ export class DraftRepository {
     const h = draft.header;
     this.db
       .prepare(
-        `INSERT INTO invoices (id, status, customer_id, vehicle_id, channel_id, invoice_date, pricing_at,
+        `INSERT INTO invoices (id, stock_location_id, status, customer_id, vehicle_id, channel_id, invoice_date, pricing_at,
            top_days, due_date, odometer_km, note, subtotal, item_discount_amount, invoice_discount_amount,
            discount_amount, amount, created_by_cashier_id, last_edited_by_cashier_id, version,
            created_at, updated_at)
-         VALUES (?, 'DRAFT', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 0, ?, ?, 1, ?, ?)`,
+         VALUES (?, ?, 'DRAFT', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 0, ?, ?, 1, ?, ?)`,
       )
       .run(
         draft.id,
+        h.stockLocationId,
         h.customerId,
         h.vehicleId,
         h.channelId,
@@ -256,11 +267,12 @@ export class DraftRepository {
   saveHeader(id: string, h: DraftHeader): void {
     this.db
       .prepare(
-        `UPDATE invoices SET channel_id = ?, invoice_date = ?, pricing_at = ?, customer_id = ?,
+        `UPDATE invoices SET stock_location_id = ?, channel_id = ?, invoice_date = ?, pricing_at = ?, customer_id = ?,
            vehicle_id = ?, odometer_km = ?, top_days = ?, due_date = ?, note = ?, sales_id = ?, expedition_id = ?
          WHERE id = ?`,
       )
       .run(
+        h.stockLocationId,
         h.channelId,
         h.invoiceDate,
         h.pricingAt,

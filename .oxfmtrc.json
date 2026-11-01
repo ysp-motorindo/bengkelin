@@ -5,6 +5,7 @@
   "ignorePatterns": [
     "docs/**",
     ".superpowers/**",
-    "output/transaction-form-*/**"
+    "output/transaction-form-*/**",
+    "output/stock-locations/**"
   ]
 }

@@ -127,6 +127,10 @@ export function InvoiceDetail({
     [t('history.detail.cashier'), invoice.cashier.displayName],
     [t('history.detail.createdBy'), invoice.createdBy.displayName],
     [t('history.detail.channel'), invoice.channel.label],
+    [
+      t('references.entities.stockLocation'),
+      `${invoice.stockLocation.code} · ${invoice.stockLocation.label}`,
+    ],
     ...(invoice.sales
       ? [
           [t('references.entities.sales'), invoice.sales.name] as [

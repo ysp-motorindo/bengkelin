@@ -16,6 +16,7 @@ import { formatDisplayDateTime } from '@/renderer/lib/date-format';
 import { useAction } from '@/renderer/lib/use-action';
 import { cn } from '@/renderer/lib/utils';
 import type {
+  StockLocationDto,
   LedgerDto,
   StockChangeDto,
   StockListItemDto,
@@ -50,6 +51,7 @@ function useSubmissionId() {
 }
 
 interface StockPanelProps {
+  stockLocation: StockLocationDto;
   item: StockListItemDto;
   admin: boolean;
   /** Called after a successful write so the list refreshes. */
@@ -57,7 +59,12 @@ interface StockPanelProps {
 }
 
 /** History (any role) and, for ADMIN, the four stock actions. */
-export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
+export function StockPanel({
+  item,
+  admin,
+  onChanged,
+  stockLocation,
+}: StockPanelProps) {
   const { numberOptions, formatNumber } = useNumberFormat();
   const { t } = useTranslation();
   const [ledger, setLedger] = useState<LedgerDto | null>(null);
@@ -73,15 +80,17 @@ export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
         const [history, stock] = await Promise.all([
           window.bengkelin.inventory.history({
             catalogItemId: item.catalogItemId,
+            stockLocationId: stockLocation.id,
           }),
           window.bengkelin.inventory.getStock({
             catalogItemId: item.catalogItemId,
+            stockLocationId: stockLocation.id,
           }),
         ]);
         if (loadCheck(history)) setLedger(history.value);
         if (loadCheck(stock)) setQuantity(stock.value.quantity);
       }),
-    [loadRun, loadCheck, item.catalogItemId],
+    [loadRun, loadCheck, item.catalogItemId, stockLocation.id],
   );
 
   useEffect(() => {
@@ -131,6 +140,9 @@ export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
         </p>
       </div>
 
+      <p className="text-sm text-muted-foreground">
+        {stockLocation.code} · {stockLocation.label}
+      </p>
       {notice ? (
         <p role="status" data-testid="stock-notice" className="text-sm">
           {notice}
@@ -165,6 +177,7 @@ export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
           key={action}
           kind={action}
           itemId={item.catalogItemId}
+          stockLocationId={stockLocation.id}
           current={quantity}
           onCancel={() => setAction(null)}
           onDone={changed}
@@ -180,12 +193,14 @@ export function StockPanel({ item, admin, onChanged }: StockPanelProps) {
 function ActionForm({
   kind,
   itemId,
+  stockLocationId,
   current,
   onCancel,
   onDone,
 }: {
   kind: ActionKind;
   itemId: string;
+  stockLocationId: string;
   current: number;
   onCancel(): void;
   onDone(result: StockChangeDto): Promise<void>;
@@ -229,12 +244,14 @@ function ActionForm({
           ? await bridge.openBalance({
               requestId,
               catalogItemId: itemId,
+              stockLocationId,
               quantity: parsed,
             })
           : kind === 'receive'
             ? await bridge.receive({
                 requestId,
                 catalogItemId: itemId,
+                stockLocationId,
                 quantity: parsed,
                 note: text,
               })
@@ -242,12 +259,14 @@ function ActionForm({
               ? await bridge.adjust({
                   requestId,
                   catalogItemId: itemId,
+                  stockLocationId,
                   quantityDelta: parsed,
                   reason: text,
                 })
               : await bridge.setStock({
                   requestId,
                   catalogItemId: itemId,
+                  stockLocationId,
                   targetQuantity: parsed,
                   reason: text,
                 });

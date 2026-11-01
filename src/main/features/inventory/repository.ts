@@ -66,12 +66,13 @@ export class InventoryRepository {
    * is always seen (spec 25); `negativeOnly` shows nothing else.
    */
   listStock(
+    stockLocationId: string,
     query: string,
     negativeOnly: boolean,
     limit: number,
   ): StockListItemDto[] {
     const clauses = ['i.track_inventory = 1'];
-    const params: unknown[] = [];
+    const params: unknown[] = [stockLocationId];
     if (query !== '') {
       const pattern = likePattern(query);
       clauses.push("(i.title LIKE ? ESCAPE '\\' OR i.sku LIKE ? ESCAPE '\\')");
@@ -86,7 +87,7 @@ export class InventoryRepository {
          JOIN units u ON u.id = i.unit_id
          LEFT JOIN (
            SELECT catalog_item_id, SUM(quantity_delta) AS quantity
-           FROM stock_ledger_entries GROUP BY catalog_item_id
+           FROM stock_ledger_entries WHERE stock_location_id = ? GROUP BY catalog_item_id
          ) s ON s.catalog_item_id = i.id
          WHERE ${clauses.join(' AND ')}
          ORDER BY (COALESCE(s.quantity, 0) < 0) DESC, i.title COLLATE NOCASE, i.id
@@ -97,7 +98,11 @@ export class InventoryRepository {
   }
 
   /** Newest first. Ties (same millisecond) resolve by insertion order. */
-  history(catalogItemId: string, limit: number): LedgerEntryDto[] {
+  history(
+    catalogItemId: string,
+    stockLocationId: string,
+    limit: number,
+  ): LedgerEntryDto[] {
     const rows = this.db
       .prepare(
         `SELECT e.id, e.movement_type, e.quantity_delta, e.reference_type, e.reference_id,
@@ -105,11 +110,11 @@ export class InventoryRepository {
                 c.display_name AS cashier_name, e.created_at
          FROM stock_ledger_entries e
          LEFT JOIN cashiers c ON c.id = e.created_by_cashier_id
-         WHERE e.catalog_item_id = ?
+         WHERE e.catalog_item_id = ? AND e.stock_location_id = ?
          ORDER BY e.created_at DESC, e.rowid DESC
          LIMIT ?`,
       )
-      .all(catalogItemId, BigInt(limit)) as LedgerRow[];
+      .all(catalogItemId, stockLocationId, BigInt(limit)) as LedgerRow[];
     return rows.map(toLedgerEntry);
   }
 

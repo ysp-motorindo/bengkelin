@@ -38,6 +38,20 @@ describe.each(['catalog', 'inventory'] as const)('%s list feedback', (kind) => {
 
   function open(request: ReturnType<typeof vi.fn>) {
     (window as unknown as { bengkelin: unknown }).bengkelin = {
+      references: {
+        listActive: vi.fn(async () => ({
+          ok: true,
+          value: [
+            {
+              id: 'location',
+              code: '01',
+              label: 'Gudang',
+              isActive: true,
+              isDefault: true,
+            },
+          ],
+        })),
+      },
       catalog: { search: request },
       inventory: { listStock: request },
     };

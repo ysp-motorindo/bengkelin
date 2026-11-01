@@ -104,6 +104,7 @@ export function finalizeDraft(
   for (const item of check.demand) {
     recordSale(ctx.db, {
       invoiceId: invoice.id,
+      stockLocationId: invoice.stock_location_id,
       catalogItemId: item.catalog_item_id,
       quantity: toNumber(item.demand),
       actor,
@@ -150,6 +151,7 @@ export function finalizeDraft(
     entityType: 'invoice',
     entityId: invoice.id,
     metadata: {
+      stockLocationId: invoice.stock_location_id,
       invoiceId: invoice.id,
       invoiceNumber,
       businessDate: today,

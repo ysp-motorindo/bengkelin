@@ -56,6 +56,7 @@ export function toInvoicePrintModel(
 ): InvoicePrintModel {
   const { timezone } = context;
   return {
+    stockLocation: view.stockLocation,
     salesName: view.sales?.name ?? null,
     expeditionName: view.expedition?.name ?? null,
     language: context.language,
