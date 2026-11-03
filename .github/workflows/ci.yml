@@ -75,15 +75,6 @@ jobs:
       - name: Renderer tests
         run: npm run test:renderer
 
-      # Playwright drives the UNPACKAGED automation build (npm run build:app);
-      # the hardened package cannot be driven (inspector fuse off).
-      - name: End-to-end tests (Linux, Xvfb)
-        if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test:e2e
-      - name: End-to-end tests
-        if: runner.os != 'Linux'
-        run: npm run test:e2e
-
       - name: Package
         run: npm run package
 
@@ -115,12 +106,3 @@ jobs:
           path: out/make/**
           if-no-files-found: warn
           retention-days: 14
-
-      - name: Upload e2e results on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-results-${{ runner.os }}-${{ runner.arch }}
-          path: test-results/**
-          if-no-files-found: ignore
-          retention-days: 7

@@ -150,6 +150,16 @@ test('ADMIN restores backup A over data B; the app restarts to login with A and 
   await page.reload();
   await signIn(page);
 
+  await page.evaluate(async () => {
+    const result = await window.bengkelin.references.save({
+      entity: 'stockLocation',
+      code: '01',
+      label: 'Gudang',
+      isDefault: true,
+    });
+    if (!result.ok) throw new Error(JSON.stringify(result.error));
+  });
+
   // Data A, a validated backup of it, then data B.
   const numberA = await issueInvoice(page, 'Servis A');
   const backupName = await page.evaluate(async () => {

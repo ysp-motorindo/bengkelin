@@ -87,7 +87,9 @@ test('ADMIN creates an item with a barcode and two price points, sees the timeli
     await bengkel
       .getByRole('button', { name: t('catalog.pricing.add') })
       .click();
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByRole('dialog', {
+      name: t('catalog.dialog.addTitle'),
+    });
     await expect(dialog).toBeVisible();
     await dialog.getByLabel(/^Berlaku sejak/).fill(start);
     await dialog.getByLabel(t('catalog.dialog.price'), exact).fill(price);
@@ -133,7 +135,9 @@ test('ADMIN creates an item with a barcode and two price points, sees the timeli
     .nth(0)
     .getByRole('button', { name: /^Koreksi revisi mulai/ })
     .click();
-  const correction = page.getByRole('dialog');
+  const correction = page.getByRole('dialog', {
+    name: t('catalog.dialog.correctTitle'),
+  });
   await correction.getByLabel(t('catalog.dialog.price'), exact).fill('66000');
   await correction
     .getByLabel(t('catalog.dialog.reason'), exact)
@@ -153,6 +157,10 @@ test('ADMIN creates an item with a barcode and two price points, sees the timeli
   );
 
   // Sign out and sign in as the cashier.
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('dialog', { name: t('catalog.detail.title') }),
+  ).toHaveCount(0);
   await page.getByTestId('session-name').click();
   await page.getByRole('button', { name: t('shell.logout') }).click();
   await page.getByLabel(t('auth.login.username'), exact).fill('siti');
