@@ -265,7 +265,7 @@ describe('one print model, three presentations', () => {
       const { html } = value(await preview(invoice.id, format));
       const money = moneyFields(html);
       expect(money.get('amount')).toBe('Rp 31.500');
-      expect(money.get('line-1-amount')).toBe('Rp 31.500');
+      expect(money.get('line-1-finalAmount')).toBe('Rp 31.500');
       expect(money.get('line-1-stage-1')).toBe('Rp 30.000');
       expect(money.get('line-1-stage-2')).toBe('Rp 35.000');
       expect(money.get('line-1-stage-3')).toBe('Rp 3.500');
@@ -381,6 +381,8 @@ describe('one print model, three presentations', () => {
       // And they are exactly the model's values.
       const expected = new Map<string, string>([
         ['subtotal', formatIdr(model.subtotal)],
+        ['taxSubtotal', formatIdr(model.taxSubtotal)],
+        ['vatAmount', formatIdr(model.vatAmount)],
         ['itemDiscountAmount', formatIdr(model.itemDiscountAmount)],
         ['invoiceDiscountAmount', formatIdr(model.invoiceDiscountAmount)],
         ['discountAmount', formatIdr(model.discountAmount)],
@@ -391,7 +393,12 @@ describe('one print model, three presentations', () => {
       model.lines.forEach((line, i) => {
         const n = i + 1;
         expected.set(`line-${n}-unitPrice`, formatIdr(line.unitPrice));
-        expected.set(`line-${n}-amount`, formatIdr(line.amount));
+        expected.set(`line-${n}-finalAmount`, formatIdr(line.finalAmount));
+        if (BigInt(line.allocatedInvoiceDiscount) > 0n)
+          expected.set(
+            `line-${n}-allocatedInvoiceDiscount`,
+            formatIdr(line.allocatedInvoiceDiscount),
+          );
         line.discounts.forEach((stage) =>
           expected.set(
             `line-${n}-stage-${stage.sequence}`,
@@ -1576,4 +1583,75 @@ test('all layouts use escaped frozen reference names after rename and deactivati
     expect(html).not.toContain('Renamed later');
     expect(html).not.toContain('<Andi>');
   }
+});
+
+describe('inclusive VAT print breakdown', () => {
+  test.each(['id', 'en'] as const)(
+    'all formats show saved per-line tax in %s and history reprints agree',
+    async (language) => {
+      h.db
+        .prepare('UPDATE settings SET language = ? WHERE id = 1')
+        .run(language);
+      const invoice = await issueInvoice(shop, {
+        vatRateBps: 1000,
+        lines: [
+          { custom: { type: 'SERVICE', title: 'Oli mesin', price: '25000' } },
+          { custom: { type: 'SERVICE', title: 'Jasa servis', price: '25000' } },
+        ],
+      });
+      for (const format of FORMATS) {
+        const { html, model } = h.services.printing.renderInvoice(
+          invoice.id,
+          format,
+        );
+        expect(model).toMatchObject({
+          vatRateBps: 1000,
+          taxSubtotal: '45454',
+          vatAmount: '4546',
+          amount: '50000',
+        });
+        const fields = moneyFields(html);
+        expect(fields.get('taxSubtotal')).toBe('Rp 45.454');
+        expect(fields.get('vatAmount')).toBe('Rp 4.546');
+        for (const n of [1, 2]) {
+          expect(fields.get(`line-${n}-taxSubtotal`)).toBe('Rp 22.727');
+          expect(fields.get(`line-${n}-vatAmount`)).toBe('Rp 2.273');
+          expect(fields.get(`line-${n}-finalAmount`)).toBe('Rp 25.000');
+        }
+        expect(html).toContain(language === 'id' ? 'PPN 10%' : 'VAT 10%');
+        value(await print(invoice.id, format));
+        const reprint = h.services.printing.renderInvoice(invoice.id, format);
+        expect(reprint.model.isReprint).toBe(true);
+        expect(moneyFields(reprint.html)).toEqual(fields);
+      }
+    },
+  );
+
+  test('allocated invoice discounts explain final line totals; zero VAT keeps only the invoice tax summary', async () => {
+    for (const rate of [1000, 0]) {
+      const invoice = await issueInvoice(shop, {
+        vatRateBps: rate,
+        invoiceDiscounts: [1000],
+        lines: [
+          {
+            custom: {
+              type: 'SERVICE',
+              title: 'Discounted service',
+              price: '100000',
+            },
+            discounts: [1000],
+          },
+        ],
+      });
+      for (const format of FORMATS) {
+        const { html } = h.services.printing.renderInvoice(invoice.id, format);
+        const fields = moneyFields(html);
+        expect(fields.get('line-1-finalAmount')).toBe('Rp 81.000');
+        expect(fields.get('line-1-allocatedInvoiceDiscount')).toBe('Rp 9.000');
+        expect(fields.get('vatAmount')).toBe(rate ? 'Rp 7.364' : 'Rp 0');
+        expect(fields.has('line-1-taxSubtotal')).toBe(rate !== 0);
+        expect(fields.has('line-1-vatAmount')).toBe(rate !== 0);
+      }
+    }
+  });
 });

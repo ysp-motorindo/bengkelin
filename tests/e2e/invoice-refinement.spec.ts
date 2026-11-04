@@ -162,7 +162,21 @@ for (const lang of ['id', 'en'] as const) {
         name: t('workspace.checkout.payments'),
         exact: true,
       });
+      const vatRate = page.getByRole('textbox', {
+        name: t('workspace.checkout.vat'),
+        exact: true,
+      });
+      await vatRate.fill('10,001');
+      await expect(vatRate).toHaveAttribute('aria-invalid', 'true');
       await cash.click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await vatRate.fill('10');
+      await cash.click();
+      await expect(page.getByTestId('tax-subtotal-amount')).toHaveText(
+        'Rp 81.817',
+      );
+      await expect(page.getByTestId('vat-amount')).toHaveText('Rp 8.183');
+      await expect(page.getByTestId('total-amount')).toHaveText('Rp 90.000');
       const payments = page.getByRole('dialog', {
         name: t('workspace.checkout.payments'),
         exact: true,
@@ -201,6 +215,8 @@ for (const lang of ['id', 'en'] as const) {
           exact: true,
         }),
       ).toHaveValue('TAX-42');
+      await expect(vatRate).toHaveValue('10');
+      await expect(page.getByTestId('vat-amount')).toHaveText('Rp 8.183');
       await expect(cash).toHaveText('Rp 100.000');
       await expect(note).toHaveValue('Invoice layout note');
       await discount.fill('101');

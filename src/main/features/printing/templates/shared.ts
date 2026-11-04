@@ -99,6 +99,45 @@ export function invoiceStageLabel(
   );
 }
 
+/** Saved values only; layout wrappers differ between tables and narrow receipts. */
+export function lineBreakdownRows(
+  line: PrintLine,
+  vatRateBps: number,
+  labels: PrintLabels,
+): { label: string; value: SafeHtml }[] {
+  const prefix = `line-${line.position}-`;
+  return [
+    ...(BigInt(line.allocatedInvoiceDiscount) > 0n
+      ? [
+          {
+            label: labels.invoiceDiscounts,
+            value: deduction(
+              `${prefix}allocatedInvoiceDiscount`,
+              line.allocatedInvoiceDiscount,
+              labels.locale,
+            ),
+          },
+        ]
+      : []),
+    ...(vatRateBps > 0
+      ? [
+          {
+            label: labels.subtotal,
+            value: money(
+              `${prefix}taxSubtotal`,
+              line.taxSubtotal,
+              labels.locale,
+            ),
+          },
+          {
+            label: `${labels.vat} ${percent(vatRateBps, labels)}%`,
+            value: money(`${prefix}vatAmount`, line.vatAmount, labels.locale),
+          },
+        ]
+      : []),
+  ];
+}
+
 /** Header facts every layout prints, in order, as [label, value] pairs. */
 export function headerFacts(
   model: InvoicePrintModel,
@@ -183,7 +222,7 @@ export function totalRows(
 ): { label: string; value: SafeHtml; strong?: boolean }[] {
   return [
     {
-      label: labels.subtotal,
+      label: labels.itemsTotal,
       value: money('subtotal', model.subtotal, labels.locale),
     },
     {
@@ -213,6 +252,14 @@ export function totalRows(
     {
       label: labels.discountTotal,
       value: deduction('discountAmount', model.discountAmount, labels.locale),
+    },
+    {
+      label: labels.subtotal,
+      value: money('taxSubtotal', model.taxSubtotal, labels.locale),
+    },
+    {
+      label: `${labels.vat} ${percent(model.vatRateBps, labels)}%`,
+      value: money('vatAmount', model.vatAmount, labels.locale),
     },
     {
       label: labels.total,

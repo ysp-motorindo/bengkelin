@@ -5,6 +5,7 @@ import {
   deduction,
   documentHtml,
   labelsFor,
+  lineBreakdownRows,
   money,
   quantity,
   stageLabel,
@@ -44,10 +45,18 @@ const CSS = `${thermalCss(58, THERMAL_58_PRINTABLE_MM)}
 .layout-58 .stage { font-size: 7pt; padding-left: 2mm; }
 `;
 
-function item(line: PrintLine, labels: PrintLabels): SafeHtml {
+function item(
+  line: PrintLine,
+  labels: PrintLabels,
+  vatRateBps: number,
+): SafeHtml {
   const n = line.position;
   const hasStages = line.discounts.length > 0;
-  const amount = money(`line-${n}-amount`, line.amount, labels.locale);
+  const amount = money(
+    `line-${n}-finalAmount`,
+    line.finalAmount,
+    labels.locale,
+  );
   return html`<div class="item">
 <div class="item-title">${n}. ${line.title}</div>
 ${line.mechanicName ? html`<div class="sub">${labels.mechanic}: ${line.mechanicName}</div>` : ''}
@@ -59,6 +68,7 @@ ${line.discounts.map(
     html`<div class="r stage"><span class="l">${stageLabel(stage, labels)}</span><span class="v">${deduction(`line-${n}-stage-${stage.sequence}`, stage.amount, labels.locale)}</span></div>`,
 )}
 ${hasStages ? html`<div class="r"><span class="l"></span><span class="v strong">${amount}</span></div>` : ''}
+${lineBreakdownRows(line, vatRateBps, labels).map((row) => html`<div class="r sub"><span class="l">${row.label}</span><span class="v">${row.value}</span></div>`)}
 </div>`;
 }
 
@@ -75,7 +85,7 @@ ${marking.banner}
 <div class="rule"></div>
 ${factRows(model, labels, 'stacked')}
 <div class="rule"></div>
-${model.lines.map((line) => item(line, labels))}
+${model.lines.map((line) => item(line, labels, model.vatRateBps))}
 <div class="rule"></div>
 ${receiptTotals(model, labels)}
 <div class="rule"></div>

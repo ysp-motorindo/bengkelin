@@ -5,6 +5,7 @@ import {
   deduction,
   documentHtml,
   labelsFor,
+  lineBreakdownRows,
   money,
   quantity,
   stageLabel,
@@ -48,10 +49,18 @@ const CSS = `${thermalCss(80, THERMAL_80_PRINTABLE_MM)}
 .layout-80 .sub { font-weight: 400; font-size: 8pt; }
 `;
 
-function item(line: PrintLine, labels: PrintLabels): SafeHtml {
+function item(
+  line: PrintLine,
+  labels: PrintLabels,
+  vatRateBps: number,
+): SafeHtml {
   const n = line.position;
   const hasStages = line.discounts.length > 0;
-  const amount = money(`line-${n}-amount`, line.amount, labels.locale);
+  const amount = money(
+    `line-${n}-finalAmount`,
+    line.finalAmount,
+    labels.locale,
+  );
   return html`<tr><td class="t" colspan="4">${n}. ${line.title}${
     line.mechanicName
       ? html`<div class="sub">${labels.mechanic}: ${line.mechanicName}</div>`
@@ -62,7 +71,8 @@ ${line.discounts.map(
   (stage) =>
     html`<tr><td class="s" colspan="3">${stageLabel(stage, labels)}</td><td class="a">${deduction(`line-${n}-stage-${stage.sequence}`, stage.amount, labels.locale)}</td></tr>`,
 )}
-${hasStages ? html`<tr><td class="s" colspan="3">${labels.amount}</td><td class="a strong">${amount}</td></tr>` : ''}`;
+${hasStages ? html`<tr><td class="s" colspan="3">${labels.amount}</td><td class="a strong">${amount}</td></tr>` : ''}
+${lineBreakdownRows(line, vatRateBps, labels).map((row) => html`<tr class="sub"><td class="s" colspan="3">${row.label}</td><td class="a">${row.value}</td></tr>`)}`;
 }
 
 export function renderThermal80(
@@ -81,7 +91,7 @@ ${factRows(model, labels, 'columns')}
 <table class="items">
 <thead><tr><th>${labels.item}</th><th>${labels.quantity}</th><th>${labels.unitPrice}</th><th>${labels.amount}</th></tr></thead>
 <tbody>
-${model.lines.map((line) => item(line, labels))}
+${model.lines.map((line) => item(line, labels, model.vatRateBps))}
 </tbody>
 </table>
 <div class="rule"></div>

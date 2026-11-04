@@ -23,6 +23,7 @@ import {
   ADMIN_WINDOW,
   CASHIER_WINDOW,
   criticalInvoice,
+  issueInvoice,
   fixtureId,
   must,
   seedPrintShop,
@@ -195,20 +196,46 @@ async function main(): Promise<void> {
       ),
       'contacts',
     );
+    const taxable = await issueInvoice(shop, {
+      vatRateBps: 1000,
+      lines: [
+        { custom: { type: 'SERVICE', title: 'Oli mesin', price: '25000' } },
+        { custom: { type: 'SERVICE', title: 'Jasa servis', price: '25000' } },
+      ],
+    });
+    const discounted = await issueInvoice(shop, {
+      vatRateBps: 1000,
+      invoiceDiscounts: [1000],
+      lines: [
+        {
+          custom: {
+            type: 'SERVICE',
+            title: 'Servis dengan diskon item dan faktur',
+            price: '100000',
+          },
+          discounts: [1000],
+        },
+      ],
+    });
     const fixtures = [
       ['acceptance-42-lines', acceptance.id],
       ['critical-31500-reprint', critical.id],
       ['void', voided.id],
+      ['vat-50000', taxable.id],
+      ['vat-discounted-81000', discounted.id],
     ] as const;
     rmSync(OUT, { recursive: true, force: true });
     mkdirSync(OUT, { recursive: true });
-    for (const [name, invoiceId] of fixtures) {
-      for (const format of FORMATS) {
-        const { html } = services.printing.renderInvoice(invoiceId, format);
-        const base = path.join(OUT, `${name}-${format}`);
-        writeFileSync(`${base}.html`, html);
-        writeFileSync(`${base}.pdf`, await driver.printToPdf(html, format));
-        console.log(`wrote ${path.relative(process.cwd(), base)}.pdf`);
+    for (const language of ['id', 'en'] as const) {
+      db.prepare('UPDATE settings SET language = ? WHERE id = 1').run(language);
+      for (const [name, invoiceId] of fixtures) {
+        for (const format of FORMATS) {
+          const { html } = services.printing.renderInvoice(invoiceId, format);
+          const base = path.join(OUT, `${name}-${language}-${format}`);
+          writeFileSync(`${base}.html`, html);
+          writeFileSync(`${base}.pdf`, await driver.printToPdf(html, format));
+          console.log(`wrote ${path.relative(process.cwd(), base)}.pdf`);
+        }
       }
     }
   } finally {

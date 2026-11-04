@@ -6,6 +6,7 @@ import {
   documentHtml,
   headerFacts,
   labelsFor,
+  lineBreakdownRows,
   localDateTime,
   logo,
   money,
@@ -95,7 +96,11 @@ html, body { margin: 0; padding: 0; background: #fff; }
 `;
 }
 
-function lineRow(line: PrintLine, labels: PrintLabels): SafeHtml {
+function lineRow(
+  line: PrintLine,
+  labels: PrintLabels,
+  vatRateBps: number,
+): SafeHtml {
   const n = line.position;
   return html`<tr>
 <td class="c-no">${n}</td>
@@ -110,8 +115,8 @@ function lineRow(line: PrintLine, labels: PrintLabels): SafeHtml {
     (stage) =>
       html`<div class="stage"><span>${stageLabel(stage, labels)}</span>${deduction(`line-${n}-stage-${stage.sequence}`, stage.amount, labels.locale)}</div>`,
   )}</td>
-<td class="c-amount">${money(`line-${n}-amount`, line.amount, labels.locale)}</td>
-</tr>`;
+<td class="c-amount">${money(`line-${n}-finalAmount`, line.finalAmount, labels.locale)}</td>
+</tr>${lineBreakdownRows(line, vatRateBps, labels).map((row) => html`<tr class="sub"><td></td><td colspan="4">${row.label}</td><td class="c-amount">${row.value}</td></tr>`)}`;
 }
 
 function facts(rows: [string, string][]): SafeHtml {
@@ -170,7 +175,7 @@ ${marking.banner}
 <tr><th class="c-no">#</th><th>${labels.item}</th><th class="c-qty">${labels.quantity}</th><th class="c-price">${labels.unitPrice}</th><th class="c-disc">${labels.discount}</th><th class="c-amount">${labels.amount}</th></tr>
 </thead>
 <tbody>
-${model.lines.map((line) => lineRow(line, labels))}
+${model.lines.map((line) => lineRow(line, labels, model.vatRateBps))}
 </tbody>
 </table>
 <section class="bottom">

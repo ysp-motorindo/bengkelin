@@ -43,6 +43,8 @@ export interface PrintLabels {
   mechanic: string;
   stage: (sequence: number, percent: string) => string;
   invoiceDiscount: (sequence: number, percent: string) => string;
+  itemsTotal: string;
+  vat: string;
   subtotal: string;
   itemDiscounts: string;
   invoiceDiscounts: string;
@@ -96,10 +98,12 @@ export const PRINT_LABELS: Record<Language, PrintLabels> = {
     quantity: 'Qty',
     unitPrice: 'Harga',
     discount: 'Diskon',
-    amount: 'Jumlah',
+    amount: 'Total',
     mechanic: 'Mekanik',
     stage: (n, p) => `Diskon ${n} (${p}%)`,
     invoiceDiscount: (n, p) => `Diskon faktur ${n} (${p}%)`,
+    itemsTotal: 'Total item',
+    vat: 'PPN',
     subtotal: 'Subtotal',
     itemDiscounts: 'Diskon barang',
     invoiceDiscounts: 'Diskon faktur',
@@ -162,10 +166,12 @@ export const PRINT_LABELS: Record<Language, PrintLabels> = {
     quantity: 'Qty',
     unitPrice: 'Price',
     discount: 'Discount',
-    amount: 'Amount',
+    amount: 'Total',
     mechanic: 'Mechanic',
     stage: (n, p) => `Discount ${n} (${p}%)`,
     invoiceDiscount: (n, p) => `Invoice discount ${n} (${p}%)`,
+    itemsTotal: 'Items total',
+    vat: 'VAT',
     subtotal: 'Subtotal',
     itemDiscounts: 'Item discounts',
     invoiceDiscounts: 'Invoice discounts',
