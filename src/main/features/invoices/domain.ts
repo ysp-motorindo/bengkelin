@@ -59,11 +59,16 @@ export type InvoiceLineInput = {
 };
 
 export type InvoiceCalculationInput = {
+  vatRateBps?: number;
   lines: InvoiceLineInput[];
   discountStages: PercentageBps[];
 };
 
 export type InvoiceLineCalculation = {
+  allocatedInvoiceDiscount: bigint;
+  finalAmount: bigint;
+  taxSubtotal: bigint;
+  vatAmount: bigint;
   /** quantity x unitPrice, before line discounts. */
   subtotal: bigint;
   stageAmounts: bigint[];
@@ -73,6 +78,9 @@ export type InvoiceLineCalculation = {
 };
 
 export type InvoiceCalculation = {
+  vatRateBps: number;
+  taxSubtotal: bigint;
+  vatAmount: bigint;
   lines: InvoiceLineCalculation[];
   /** Sum of line subtotals, before all discounts. */
   subtotal: bigint;
@@ -88,6 +96,13 @@ export type InvoiceCalculation = {
 export function calculateInvoice(
   input: InvoiceCalculationInput,
 ): InvoiceCalculation {
+  const vatRateBps = input.vatRateBps ?? 0;
+  if (!Number.isInteger(vatRateBps) || vatRateBps < 0 || vatRateBps > 10000) {
+    throw new DomainError(
+      'INVALID_PERCENTAGE',
+      'Percentage must be an integer 0-10000 bps',
+    );
+  }
   let subtotal = 0n;
   let itemDiscountTotal = 0n;
   let discountedSum = 0n;
@@ -106,6 +121,10 @@ export function calculateInvoice(
     itemDiscountTotal += d.discountTotal;
     discountedSum = assertInt64(discountedSum + d.amount);
     return {
+      allocatedInvoiceDiscount: 0n,
+      finalAmount: 0n,
+      taxSubtotal: 0n,
+      vatAmount: 0n,
       subtotal: lineSubtotal,
       stageAmounts: d.stageAmounts,
       discountTotal: d.discountTotal,
@@ -113,7 +132,16 @@ export function calculateInvoice(
     };
   });
   const inv = applyDiscounts(discountedSum, input.discountStages);
+  const breakdown = calculateInclusiveVat(
+    lines.map((line) => line.amount),
+    inv.discountTotal,
+    vatRateBps,
+  );
+  lines.forEach((line, index) => Object.assign(line, breakdown.lines[index]));
   return {
+    vatRateBps,
+    taxSubtotal: breakdown.taxSubtotal,
+    vatAmount: breakdown.vatAmount,
     lines,
     subtotal,
     itemDiscountTotal,
@@ -121,6 +149,51 @@ export function calculateInvoice(
     invoiceDiscountTotal: inv.discountTotal,
     discountAmount: itemDiscountTotal + inv.discountTotal,
     amount: inv.amount,
+  };
+}
+
+/** Shared by legacy readers, which must use saved amounts rather than reprice. */
+export function calculateInclusiveVat(
+  amounts: bigint[],
+  discount: bigint,
+  vatRateBps: number,
+) {
+  const sum = amounts.reduce((total, amount) => total + amount, 0n);
+  const lines = amounts.map((amount) => ({
+    allocatedInvoiceDiscount: sum === 0n ? 0n : (discount * amount) / sum,
+    finalAmount: 0n,
+    taxSubtotal: 0n,
+    vatAmount: 0n,
+  }));
+  if (sum !== 0n) {
+    let remainder =
+      discount -
+      lines.reduce((total, line) => total + line.allocatedInvoiceDiscount, 0n);
+    const order = amounts
+      .map((amount, index) => ({ index, remainder: (discount * amount) % sum }))
+      .sort((a, b) =>
+        a.remainder === b.remainder
+          ? a.index - b.index
+          : a.remainder > b.remainder
+            ? -1
+            : 1,
+      );
+    for (const { index } of order) {
+      if (remainder === 0n) break;
+      lines[index]!.allocatedInvoiceDiscount += 1n;
+      remainder -= 1n;
+    }
+  }
+  for (const [index, line] of lines.entries()) {
+    line.finalAmount = amounts[index]! - line.allocatedInvoiceDiscount;
+    line.taxSubtotal =
+      (line.finalAmount * 10000n) / (10000n + BigInt(vatRateBps));
+    line.vatAmount = line.finalAmount - line.taxSubtotal;
+  }
+  return {
+    lines,
+    taxSubtotal: lines.reduce((total, line) => total + line.taxSubtotal, 0n),
+    vatAmount: lines.reduce((total, line) => total + line.vatAmount, 0n),
   };
 }
 

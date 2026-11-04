@@ -164,6 +164,182 @@ describe('calculateInvoice', () => {
   });
 });
 
+describe('inclusive VAT', () => {
+  const line = (
+    price: bigint,
+    quantity = 1,
+    discountStages: number[] = [],
+  ) => ({ quantity, unitPrice: price, discountStages });
+
+  test.each([
+    {
+      lines: [line(50000n)],
+      discounts: [],
+      net: [45454n],
+      vat: [4546n],
+      final: [50000n],
+    },
+    {
+      lines: [line(25000n), line(25000n)],
+      discounts: [],
+      net: [22727n, 22727n],
+      vat: [2273n, 2273n],
+      final: [25000n, 25000n],
+    },
+    {
+      lines: [line(100000n, 1, [1000])],
+      discounts: [1000],
+      net: [73636n],
+      vat: [7364n],
+      final: [81000n],
+    },
+    {
+      lines: [line(25000n, 2)],
+      discounts: [],
+      net: [45454n],
+      vat: [4546n],
+      final: [50000n],
+    },
+  ])(
+    'extracts VAT per transaction line: $final',
+    ({ lines, discounts, net, vat, final }) => {
+      const r = calculateInvoice({
+        lines,
+        discountStages: discounts,
+        vatRateBps: 1000,
+      });
+      expect(r.lines.map((l) => l.taxSubtotal)).toEqual(net);
+      expect(r.lines.map((l) => l.vatAmount)).toEqual(vat);
+      expect(r.lines.map((l) => l.finalAmount)).toEqual(final);
+      expect(r.taxSubtotal).toBe(net.reduce((a, b) => a + b, 0n));
+      expect(r.vatAmount).toBe(vat.reduce((a, b) => a + b, 0n));
+      expect(r.taxSubtotal + r.vatAmount).toBe(r.amount);
+    },
+  );
+
+  test('allocates largest remainders with stable ties', () => {
+    const r = calculateInvoice({
+      lines: [line(1n), line(1n), line(1n)],
+      discountStages: [5000],
+    });
+    expect(r.lines.map((l) => l.allocatedInvoiceDiscount)).toEqual([
+      1n,
+      0n,
+      0n,
+    ]);
+    expect(r.lines.map((l) => l.finalAmount)).toEqual([0n, 1n, 1n]);
+    const uneven = calculateInvoice({
+      lines: [line(1n), line(2n), line(4n)],
+      discountStages: [5000],
+    });
+    expect(uneven.lines.map((l) => l.allocatedInvoiceDiscount)).toEqual([
+      0n,
+      1n,
+      2n,
+    ]);
+  });
+
+  test.each([
+    { lines: [] },
+    { lines: [line(0n)] },
+    { lines: [line(12n, 3, [10000])] },
+  ])('handles zero bases', ({ lines }) => {
+    const r = calculateInvoice({
+      lines,
+      discountStages: [5000],
+      vatRateBps: 1000,
+    });
+    expect(r.taxSubtotal).toBe(0n);
+    expect(r.vatAmount).toBe(0n);
+    for (const l of r.lines)
+      expect(l).toMatchObject({
+        allocatedInvoiceDiscount: 0n,
+        finalAmount: 0n,
+        taxSubtotal: 0n,
+        vatAmount: 0n,
+      });
+  });
+
+  test('full invoice discount leaves no tax', () => {
+    const r = calculateInvoice({
+      lines: [line(999n)],
+      discountStages: [10000],
+      vatRateBps: 10000,
+    });
+    expect(r.lines[0]).toMatchObject({
+      allocatedInvoiceDiscount: 999n,
+      finalAmount: 0n,
+      taxSubtotal: 0n,
+      vatAmount: 0n,
+    });
+  });
+
+  test('fractional rate and int64 intermediate arithmetic', () => {
+    const r = calculateInvoice({
+      lines: [line(10275n)],
+      discountStages: [],
+      vatRateBps: 275,
+    });
+    expect(r).toMatchObject({
+      vatRateBps: 275,
+      taxSubtotal: 10000n,
+      vatAmount: 275n,
+    });
+    const max = calculateInvoice({
+      lines: [line(9223372036854775807n)],
+      discountStages: [5000],
+      vatRateBps: 10000,
+    });
+    expect(max.lines[0]).toMatchObject({
+      allocatedInvoiceDiscount: 4611686018427387903n,
+      finalAmount: 4611686018427387904n,
+      taxSubtotal: 2305843009213693952n,
+      vatAmount: 2305843009213693952n,
+    });
+  });
+
+  test.each([-1, 10001, 1.5, NaN, Infinity])(
+    'rejects invalid VAT rate %s even on empty invoices',
+    (vatRateBps) => {
+      expect(() =>
+        calculateInvoice({ lines: [], discountStages: [], vatRateBps }),
+      ).toThrowError(code('INVALID_PERCENTAGE'));
+    },
+  );
+
+  test('VAT preserves old prices, discounts and payable amount', () => {
+    const input = {
+      lines: [line(100000n, 2, [275]), line(123n)],
+      discountStages: [1000],
+    };
+    const zero = calculateInvoice(input);
+    const taxed = calculateInvoice({ ...input, vatRateBps: 1100 });
+    expect(zero.vatRateBps).toBe(0);
+    expect(zero.taxSubtotal).toBe(zero.amount);
+    expect(zero.vatAmount).toBe(0n);
+    for (const key of [
+      'subtotal',
+      'itemDiscountTotal',
+      'invoiceDiscountStageAmounts',
+      'invoiceDiscountTotal',
+      'discountAmount',
+      'amount',
+    ] as const)
+      expect(taxed[key]).toEqual(zero[key]);
+    taxed.lines.forEach((l, i) => {
+      for (const key of [
+        'subtotal',
+        'stageAmounts',
+        'discountTotal',
+        'amount',
+        'allocatedInvoiceDiscount',
+        'finalAmount',
+      ] as const)
+        expect(l[key]).toEqual(zero.lines[i]![key]);
+    });
+  });
+});
+
 describe('derivePaymentStatus', () => {
   test('states', () => {
     expect(derivePaymentStatus(1000n, 0n)).toBe('UNPAID');
