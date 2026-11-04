@@ -1,3 +1,4 @@
+import { Check, X } from 'lucide-react';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import {
   useEffect,
@@ -6,11 +7,13 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
+  type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Alert } from '@/renderer/components/ui/alert';
 import { Button } from '@/renderer/components/ui/button';
+import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { controlClass } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { Label } from '@/renderer/components/ui/label';
@@ -32,7 +35,8 @@ import type { Result } from '@/shared/primitives';
 
 interface CustomLineEntryProps {
   onDirtyChange?(dirty: boolean): void;
-  onBusyChange?(busy: boolean): void;
+  returnFocus?: () => void;
+  saveFeedback?: ReactNode;
   /** Ids of the draft's current lines, to find the one this dialog adds. */
   existingLineIds: readonly string[];
   units: ReferenceDto[];
@@ -48,7 +52,8 @@ interface CustomLineEntryProps {
  */
 export function CustomLineEntry({
   onDirtyChange,
-  onBusyChange,
+  returnFocus,
+  saveFeedback,
   existingLineIds,
   units,
   mechanics,
@@ -57,6 +62,7 @@ export function CustomLineEntry({
 }: CustomLineEntryProps) {
   const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
+  const formId = useId();
   const listId = useId();
   const titleInputId = useId();
   const typeRef = useRef<HTMLSelectElement>(null);
@@ -150,7 +156,7 @@ export function CustomLineEntry({
     if (busy) return;
     if (createdLineId.current) {
       setBusy(true);
-      onBusyChange?.(true);
+
       setFormError(null);
       try {
         if (await assignMechanic(createdLineId.current)) onClose();
@@ -158,7 +164,6 @@ export function CustomLineEntry({
         setFormError(t('errors.INTERNAL_ERROR'));
       } finally {
         setBusy(false);
-        onBusyChange?.(false);
       }
       return;
     }
@@ -176,7 +181,7 @@ export function CustomLineEntry({
     if (Object.keys(next).length > 0 || unitPrice === null) return;
 
     setBusy(true);
-    onBusyChange?.(true);
+
     setFormError(null);
     try {
       const op: Extract<DraftOperation, { kind: 'addCustomLine' }> = {
@@ -209,7 +214,6 @@ export function CustomLineEntry({
       setFormError(t('errors.INTERNAL_ERROR'));
     } finally {
       setBusy(false);
-      onBusyChange?.(false);
     }
   }
 
@@ -222,12 +226,12 @@ export function CustomLineEntry({
   const open = suggestions.length > 0;
   const form = (
     <form
-      id="custom-line-form"
+      id={formId}
       onSubmit={submit}
       noValidate
-      className="grid items-end gap-2 sm:grid-cols-[8rem_minmax(12rem,1fr)_minmax(18rem,1fr)_10rem]"
+      className="grid gap-3 sm:grid-cols-2"
     >
-      {formError ? <Alert>{formError}</Alert> : null}
+      {formError ? <Alert className="sm:col-span-2">{formError}</Alert> : null}
       <FormField label={t('workspace.custom.type')}>
         <Select
           ref={typeRef}
@@ -245,7 +249,7 @@ export function CustomLineEntry({
         </Select>
       </FormField>
 
-      <div className="relative flex flex-col gap-1.5">
+      <div className="relative flex flex-col gap-1.5 sm:col-span-2">
         <Label htmlFor={titleInputId}>{t('workspace.custom.itemTitle')}</Label>
         <input
           id={titleInputId}
@@ -303,7 +307,7 @@ export function CustomLineEntry({
         </ul>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:col-span-2 sm:grid-cols-3">
         <FormField label={t('workspace.custom.price')} error={errors.unitPrice}>
           <NumericInput
             autoComplete="off"
@@ -355,24 +359,42 @@ export function CustomLineEntry({
       ) : null}
     </form>
   );
+  function dismiss() {
+    if (!busy) onClose();
+  }
+
   return (
-    <section aria-label={t('workspace.custom.title')} className="grid gap-2">
+    <Dialog
+      title={t('workspace.custom.title')}
+      onClose={dismiss}
+      initialFocus={typeRef}
+      returnFocus={returnFocus}
+      closeLabel={t('workspace.common.close')}
+      footer={
+        <DialogActions
+          secondary={
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={dismiss}
+            >
+              <X aria-hidden="true" />
+              {t('workspace.common.cancel')}
+            </Button>
+          }
+        >
+          <Button type="submit" form={formId} disabled={busy}>
+            <Check aria-hidden="true" />
+            {t('workspace.custom.add')}
+          </Button>
+        </DialogActions>
+      }
+    >
+      {saveFeedback}
       <fieldset disabled={busy} className="contents">
         {form}
       </fieldset>
-      <div className="flex gap-2">
-        <Button type="submit" form="custom-line-form" disabled={busy}>
-          {t('workspace.custom.add')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={busy}
-          onClick={onClose}
-        >
-          {t('workspace.common.cancel')}
-        </Button>
-      </div>
-    </section>
+    </Dialog>
   );
 }

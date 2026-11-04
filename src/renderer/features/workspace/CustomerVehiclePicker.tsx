@@ -9,7 +9,6 @@ import {
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/renderer/components/ui/input';
-import { Dialog } from '@/renderer/components/ui/dialog';
 import { QuickCustomerForm } from '@/renderer/features/customers/QuickCustomerForm';
 import { QuickVehicleForm } from '@/renderer/features/customers/QuickVehicleForm';
 import { customerLabel } from '@/renderer/features/customers/labels';
@@ -392,27 +391,20 @@ export function CustomerVehiclePicker({
           )
         : null}
       {creating ? (
-        <Dialog
-          title={t(
-            mode === 'customer'
-              ? 'workspace.party.createCustomer'
-              : 'workspace.party.createVehicle',
-          )}
-          onClose={() => setCreating(false)}
-          returnFocus={() => input.current?.focus()}
-          closeLabel={t('workspace.common.close')}
-        >
-          {mode === 'customer' ? (
-            <QuickCustomerForm
-              onSelected={(record) => void choose(record.id)}
-            />
-          ) : (
-            <QuickVehicleForm
-              customer={owner}
-              onSelected={(record) => void choose(record.id)}
-            />
-          )}
-        </Dialog>
+        mode === 'customer' ? (
+          <QuickCustomerForm
+            onSelected={(record) => void choose(record.id)}
+            onClose={() => setCreating(false)}
+            returnFocus={() => input.current?.focus()}
+          />
+        ) : (
+          <QuickVehicleForm
+            customer={owner}
+            onSelected={(record) => void choose(record.id)}
+            onClose={() => setCreating(false)}
+            returnFocus={() => input.current?.focus()}
+          />
+        )
       ) : null}
     </div>
   );

@@ -7,7 +7,6 @@ import {
   type Ref,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dialog } from '@/renderer/components/ui/dialog';
 import { errorMessage } from '@/renderer/lib/errors';
 import type { ReferenceDto } from '@/shared/contracts';
 import { SaveIndicator } from './SaveIndicator';
@@ -30,7 +29,6 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
   const revision = useRef(0);
   const submissions = useRef(Promise.resolve<ScanOutcome>('other'));
   const [custom, setCustom] = useState(false);
-  const [customBusy, setCustomBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [priceFocus, setPriceFocus] = useState<string | null>(null);
   const { markInvalid } = commands;
@@ -46,11 +44,6 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
     setCustom(true);
   }
   useImperativeHandle(entryRef, () => ({ focusSearch: focus, startCustom }));
-  function closeCustom() {
-    if (customBusy) return;
-    setCustom(false);
-    dirty(false);
-  }
   useEffect(() => {
     if (!priceFocus) return;
     const input = document.querySelector<HTMLInputElement>(
@@ -126,31 +119,26 @@ export function LineEntryRow({ commands, units, mechanics, entryRef }: Props) {
           }}
         />
         {custom ? (
-          <Dialog
-            title={t('workspace.custom.title')}
-            onClose={closeCustom}
+          <CustomLineEntry
+            existingLineIds={commands.view.lines.map((line) => line.id)}
+            units={units}
+            mechanics={mechanics}
+            send={commands.send}
+            onClose={() => {
+              setCustom(false);
+              dirty(false);
+            }}
+            onDirtyChange={dirty}
             returnFocus={focus}
-            closeLabel={t('workspace.common.close')}
-          >
-            {commands.saveState === 'failed' ? (
-              <SaveIndicator
-                state={commands.saveState}
-                onRetry={commands.retry}
-              />
-            ) : null}
-            <CustomLineEntry
-              existingLineIds={commands.view.lines.map((line) => line.id)}
-              units={units}
-              mechanics={mechanics}
-              send={commands.send}
-              onClose={() => {
-                setCustom(false);
-                dirty(false);
-              }}
-              onDirtyChange={dirty}
-              onBusyChange={setCustomBusy}
-            />
-          </Dialog>
+            saveFeedback={
+              commands.saveState === 'failed' ? (
+                <SaveIndicator
+                  state={commands.saveState}
+                  onRetry={commands.retry}
+                />
+              ) : null
+            }
+          />
         ) : null}
       </td>
       <td colSpan={10} />

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { CustomLineEntry } from '@/renderer/features/workspace/CustomLineEntry';
@@ -107,4 +107,77 @@ describe('custom line dialog retry (T9)', () => {
       mechanicId: MECHANIC.id,
     });
   });
+});
+
+test('owns one dialog with footer actions that submit the custom form', async () => {
+  Object.assign(window, {
+    bengkelin: {
+      adHocReferences: { search: vi.fn(async () => ok({ results: [] })) },
+    },
+  });
+  const send = vi.fn(async () => ok(draftView()));
+  const onClose = vi.fn();
+  render(
+    <CustomLineEntry
+      existingLineIds={[]}
+      units={[]}
+      mechanics={[]}
+      send={send}
+      onClose={onClose}
+    />,
+  );
+  const dialog = screen.getByRole('dialog');
+  expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  expect(within(dialog).getAllByRole('heading')).toHaveLength(1);
+  const add = within(dialog).getByRole('button', { name: 'Tambahkan' });
+  const cancel = within(dialog).getByRole('button', { name: 'Batal' });
+  expect(add.closest('.dialog-scroll-area')).toBeNull();
+  expect(cancel.closest('.dialog-scroll-area')).toBeNull();
+  expect((add as HTMLButtonElement).form).toBe(dialog.querySelector('form'));
+  const user = userEvent.setup();
+  await user.click(add);
+  expect(send).not.toHaveBeenCalled();
+  expect(screen.getByLabelText('Nama item')).toHaveAttribute(
+    'aria-invalid',
+    'true',
+  );
+  await user.type(screen.getByLabelText('Nama item'), 'Service');
+  await user.type(screen.getByLabelText('Harga'), '20000');
+  await user.click(add);
+  await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+});
+
+test('blocks user dismissal during a pending save but closes on success', async () => {
+  Object.assign(window, {
+    bengkelin: {
+      adHocReferences: { search: vi.fn(async () => ok({ results: [] })) },
+    },
+  });
+  let finish!: (result: Result<DraftView>) => void;
+  const send = vi.fn(
+    () =>
+      new Promise<Result<DraftView>>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const onClose = vi.fn();
+  render(
+    <CustomLineEntry
+      existingLineIds={[]}
+      units={[]}
+      mechanics={[]}
+      send={send}
+      onClose={onClose}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText('Nama item'), 'Service');
+  await user.type(screen.getByLabelText('Harga'), '20000');
+  await user.click(screen.getByRole('button', { name: 'Tambahkan' }));
+  expect(screen.getByRole('button', { name: 'Batal' })).toBeDisabled();
+  await user.click(screen.getByRole('button', { name: 'Tutup' }));
+  await user.keyboard('{Escape}');
+  expect(onClose).not.toHaveBeenCalled();
+  await act(async () => finish(ok(draftView())));
+  expect(onClose).toHaveBeenCalledOnce();
 });

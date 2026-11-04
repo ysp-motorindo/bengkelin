@@ -83,6 +83,7 @@ test('Escape abandons only search text and creation is last result', async () =>
   expect(options.at(-1)).toHaveTextContent('Tambah pelanggan');
   await user.click(options.at(-1)!);
   expect(screen.getByRole('dialog')).toBeVisible();
+  expect(screen.getAllByRole('heading')).toHaveLength(1);
 });
 test('inactive filter uses current query and ignores an older response', async () => {
   const api = install();
