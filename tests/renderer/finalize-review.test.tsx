@@ -21,6 +21,9 @@ function preview(extra: Partial<FinalizePreviewDto> = {}): FinalizePreviewDto {
     invoiceId: DRAFT_ID,
     draftVersion: 3,
     totals: {
+      vatRateBps: 0,
+      taxSubtotal: '145000',
+      vatAmount: '0',
       subtotal: '145000',
       itemDiscountAmount: '0',
       invoiceDiscountAmount: '0',

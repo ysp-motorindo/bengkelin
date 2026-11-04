@@ -188,6 +188,10 @@ export type VoidInvoiceData = z.output<typeof voidInvoiceInputSchema>;
 // ---- DTOs ----
 
 export interface FinalizePreviewTotalsDto {
+  vatRateBps: number;
+  taxSubtotal: Rupiah;
+  vatAmount: Rupiah;
+
   subtotal: Rupiah;
   itemDiscountAmount: Rupiah;
   invoiceDiscountAmount: Rupiah;
@@ -236,6 +240,11 @@ export interface ShopIdentitySnapshot {
 }
 
 export interface InvoiceLineDto {
+  allocatedInvoiceDiscount: Rupiah;
+  finalAmount: Rupiah;
+  taxSubtotal: Rupiah;
+  vatAmount: Rupiah;
+
   id: UUID;
   position: number;
   catalogItemId: UUID | null;
@@ -267,6 +276,10 @@ export interface PaymentDto {
 }
 
 export interface InvoiceTotalsDto {
+  vatRateBps: number;
+  taxSubtotal: Rupiah;
+  vatAmount: Rupiah;
+
   subtotal: Rupiah;
   itemDiscountAmount: Rupiah;
   invoiceDiscountAmount: Rupiah;

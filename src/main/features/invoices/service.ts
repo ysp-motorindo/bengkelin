@@ -118,6 +118,9 @@ export class InvoiceService {
         invoiceId: invoice.id,
         draftVersion: toNumber(invoice.version),
         totals: {
+          vatRateBps: calc.vatRateBps,
+          taxSubtotal: formatRupiah(calc.taxSubtotal),
+          vatAmount: formatRupiah(calc.vatAmount),
           subtotal: formatRupiah(calc.subtotal),
           itemDiscountAmount: formatRupiah(calc.itemDiscountTotal),
           invoiceDiscountAmount: formatRupiah(calc.invoiceDiscountTotal),

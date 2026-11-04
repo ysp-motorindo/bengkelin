@@ -286,12 +286,22 @@ export const discardOpSchema = z.strictObject({
   kind: z.literal('discard'),
 });
 
+export const setVatRateOpSchema = z.strictObject({
+  kind: z.literal('setVatRate'),
+  vatRateBps: z
+    .number('validation.invalid')
+    .int('validation.invalid')
+    .min(0, 'validation.invalid')
+    .max(10000, 'validation.invalid'),
+});
+
 export const draftOperationSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('setCashPayment'), amount: priceSchema }),
   z.strictObject({
     kind: z.literal('confirmLineZeroPrice'),
     lineId: uuidSchema,
   }),
+  setVatRateOpSchema,
   updateHeaderOpSchema,
   addCatalogLineOpSchema,
   addCustomLineOpSchema,
@@ -371,6 +381,11 @@ export interface LinePricingDto {
 }
 
 export interface DraftLineDto {
+  allocatedInvoiceDiscount: Rupiah;
+  finalAmount: Rupiah;
+  taxSubtotal: Rupiah;
+  vatAmount: Rupiah;
+
   itemCode: string | null;
   currentStock: number | null;
   priceEntryConfirmed: boolean;
@@ -417,6 +432,10 @@ export interface CheckoutPaymentSummary {
 }
 
 export interface DraftTotalsDto {
+  vatRateBps: number;
+  taxSubtotal: Rupiah;
+  vatAmount: Rupiah;
+
   /** Before all discounts. */
   subtotal: Rupiah;
   itemDiscountAmount: Rupiah;

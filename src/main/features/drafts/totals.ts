@@ -34,6 +34,7 @@ export function calculateDraftTotals(
   const lineStages = groupByOwner(repo.lineStages(invoiceId));
   const invoiceStages = repo.invoiceStages(invoiceId);
   const calc = calculateInvoice({
+    vatRateBps: toNumber(repo.findInvoice(invoiceId)!.vat_rate_bps),
     lines: lines.map((line) => ({
       quantity: toNumber(line.quantity),
       unitPrice: line.unit_price,
@@ -67,9 +68,14 @@ export function recalculateDraft(
     if (
       line.subtotal !== result.subtotal ||
       line.discount_amount !== result.discountTotal ||
-      line.amount !== result.amount
+      line.amount !== result.amount ||
+      line.allocated_invoice_discount !== result.allocatedInvoiceDiscount ||
+      line.final_amount !== result.finalAmount ||
+      line.tax_subtotal !== result.taxSubtotal ||
+      line.vat_amount !== result.vatAmount
     ) {
       repo.setLineAmounts(line.id, {
+        ...result,
         subtotal: result.subtotal,
         discountAmount: result.discountTotal,
         amount: result.amount,
@@ -86,6 +92,8 @@ export function recalculateDraft(
   });
 
   repo.saveTotals(invoiceId, {
+    taxSubtotal: calc.taxSubtotal,
+    vatAmount: calc.vatAmount,
     subtotal: calc.subtotal,
     itemDiscountAmount: calc.itemDiscountTotal,
     invoiceDiscountAmount: calc.invoiceDiscountTotal,

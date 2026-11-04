@@ -22,6 +22,8 @@ export type EditOperation = Exclude<DraftOperationData, { kind: 'discard' }>;
 /** Applies one edit to the draft's rows. Totals are recomputed afterwards. */
 export function runOperation(ctx: OperationContext, op: EditOperation): void {
   switch (op.kind) {
+    case 'setVatRate':
+      return ctx.repo.saveVatRate(ctx.invoice.id, op.vatRateBps);
     case 'setCashPayment':
       return ctx.repo.saveCashReceived(ctx.invoice.id, parseRupiah(op.amount));
     case 'confirmLineZeroPrice':

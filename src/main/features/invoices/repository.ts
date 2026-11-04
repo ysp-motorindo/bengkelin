@@ -10,6 +10,9 @@ import type { Instant, LocalDate } from '@/shared/primitives';
 
 /** The full invoices row, including finalization, snapshot and void columns. */
 export interface FullInvoiceRow {
+  vat_rate_bps: bigint;
+  tax_subtotal: bigint | null;
+  vat_amount: bigint | null;
   stock_location_id: string;
   stock_location_code_snapshot: string | null;
   stock_location_label_snapshot: string | null;
@@ -86,7 +89,7 @@ export class InvoiceRepository {
   findFull(id: string): FullInvoiceRow | undefined {
     return this.db
       .prepare(
-        `SELECT i.stock_location_id, i.stock_location_code_snapshot, i.stock_location_label_snapshot, i.cash_received, i.tax_invoice_number, i.sales_id, i.expedition_id, i.sales_name_snapshot, i.expedition_name_snapshot, i.id, i.status, i.customer_id, i.vehicle_id, i.channel_id, i.invoice_date,
+        `SELECT i.vat_rate_bps, i.tax_subtotal, i.vat_amount, i.stock_location_id, i.stock_location_code_snapshot, i.stock_location_label_snapshot, i.cash_received, i.tax_invoice_number, i.sales_id, i.expedition_id, i.sales_name_snapshot, i.expedition_name_snapshot, i.id, i.status, i.customer_id, i.vehicle_id, i.channel_id, i.invoice_date,
            i.pricing_at, i.top_days, i.due_date, i.odometer_km, i.note, i.subtotal,
            i.item_discount_amount, i.invoice_discount_amount, i.discount_amount, i.amount,
            i.created_by_cashier_id, cb.display_name AS created_by_name, i.version,

@@ -134,6 +134,11 @@ export interface PrintDiscountStage {
 }
 
 export interface PrintLine {
+  allocatedInvoiceDiscount: Rupiah;
+  finalAmount: Rupiah;
+  taxSubtotal: Rupiah;
+  vatAmount: Rupiah;
+
   position: number;
   itemType: LineItemType;
   title: string;
@@ -162,6 +167,10 @@ export interface PrintPayment {
  * Templates format these; they never recompute money.
  */
 export interface InvoicePrintModel {
+  vatRateBps: number;
+  taxSubtotal: Rupiah;
+  vatAmount: Rupiah;
+
   stockLocation: import('./references').StockLocationDto;
   salesName: string | null;
   expeditionName: string | null;

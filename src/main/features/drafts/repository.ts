@@ -18,6 +18,9 @@ import { assertInt64, type Instant, type LocalDate } from '@/shared/primitives';
  */
 
 export interface InvoiceRow {
+  vat_rate_bps: bigint;
+  tax_subtotal: bigint | null;
+  vat_amount: bigint | null;
   stock_location_id: string;
   id: string;
   status: InvoiceStatus;
@@ -49,6 +52,10 @@ export interface InvoiceRow {
 }
 
 export interface LineRow {
+  allocated_invoice_discount: bigint | null;
+  final_amount: bigint | null;
+  tax_subtotal: bigint | null;
+  vat_amount: bigint | null;
   price_entry_confirmed: bigint;
   id: string;
   invoice_id: string;
@@ -166,6 +173,8 @@ export interface LinePrice {
 }
 
 export interface Totals {
+  taxSubtotal: bigint;
+  vatAmount: bigint;
   subtotal: bigint;
   itemDiscountAmount: bigint;
   invoiceDiscountAmount: bigint;
@@ -173,7 +182,7 @@ export interface Totals {
   amount: bigint;
 }
 
-const LINE_COLUMNS = `price_entry_confirmed, id, invoice_id, position, catalog_item_id, ad_hoc_item_reference_id,
+const LINE_COLUMNS = `allocated_invoice_discount, final_amount, tax_subtotal, vat_amount, price_entry_confirmed, id, invoice_id, position, catalog_item_id, ad_hoc_item_reference_id,
   item_type_snapshot, title_snapshot, unit_id, unit_snapshot, mechanic_id, mechanic_name_snapshot,
   quantity, listed_unit_price, unit_price, subtotal, discount_amount, amount, resolved_price_id,
   price_resolved_at, manual_price_override, removed_at, created_at, updated_at`;
@@ -194,6 +203,12 @@ export class DraftRepository {
 
   requireActiveStockLocation(id: string) {
     return requireActiveStockLocation(this.db, id);
+  }
+
+  saveVatRate(id: string, rate: number): void {
+    this.db
+      .prepare('UPDATE invoices SET vat_rate_bps = ? WHERE id = ?')
+      .run(BigInt(rate), id);
   }
 
   saveCashReceived(id: string, amount: bigint | null): void {
@@ -221,7 +236,7 @@ export class DraftRepository {
   findInvoice(id: string): InvoiceRow | undefined {
     return this.db
       .prepare(
-        `SELECT stock_location_id, id, status, reserved_invoice_number, tax_invoice_number, cash_received, sales_id, expedition_id, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
+        `SELECT vat_rate_bps, tax_subtotal, vat_amount, stock_location_id, id, status, reserved_invoice_number, tax_invoice_number, cash_received, sales_id, expedition_id, customer_id, vehicle_id, channel_id, invoice_date, pricing_at, top_days,
            due_date, odometer_km, note, subtotal, item_discount_amount, invoice_discount_amount,
            discount_amount, amount, created_by_cashier_id, last_edited_by_cashier_id, version,
            discarded_at, created_at, updated_at
@@ -292,7 +307,7 @@ export class DraftRepository {
     this.db
       .prepare(
         `UPDATE invoices SET subtotal = ?, item_discount_amount = ?, invoice_discount_amount = ?,
-           discount_amount = ?, amount = ?
+           discount_amount = ?, amount = ?, tax_subtotal = ?, vat_amount = ?
          WHERE id = ?`,
       )
       .run(
@@ -301,6 +316,8 @@ export class DraftRepository {
         t.invoiceDiscountAmount,
         t.discountAmount,
         t.amount,
+        t.taxSubtotal,
+        t.vatAmount,
         id,
       );
   }
@@ -503,13 +520,30 @@ export class DraftRepository {
   /** Authoritative amounts from the calculation; `updated_at` is not touched. */
   setLineAmounts(
     lineId: string,
-    amounts: { subtotal: bigint; discountAmount: bigint; amount: bigint },
+    amounts: {
+      subtotal: bigint;
+      discountAmount: bigint;
+      amount: bigint;
+      allocatedInvoiceDiscount: bigint;
+      finalAmount: bigint;
+      taxSubtotal: bigint;
+      vatAmount: bigint;
+    },
   ): void {
     this.db
       .prepare(
-        'UPDATE invoice_items SET subtotal = ?, discount_amount = ?, amount = ? WHERE id = ?',
+        'UPDATE invoice_items SET subtotal = ?, discount_amount = ?, amount = ?, allocated_invoice_discount = ?, final_amount = ?, tax_subtotal = ?, vat_amount = ? WHERE id = ?',
       )
-      .run(amounts.subtotal, amounts.discountAmount, amounts.amount, lineId);
+      .run(
+        amounts.subtotal,
+        amounts.discountAmount,
+        amounts.amount,
+        amounts.allocatedInvoiceDiscount,
+        amounts.finalAmount,
+        amounts.taxSubtotal,
+        amounts.vatAmount,
+        lineId,
+      );
   }
 
   // ---- discounts ----

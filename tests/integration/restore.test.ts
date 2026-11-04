@@ -794,6 +794,10 @@ describe('restore', () => {
           data.map((row) => ({
             ...(row as object),
             price_entry_confirmed: 1n,
+            allocated_invoice_discount: null,
+            final_amount: null,
+            tax_subtotal: null,
+            vat_amount: null,
           })),
         );
       } else if (table === 'invoices') {
@@ -805,6 +809,9 @@ describe('restore', () => {
                 .prepare("SELECT id FROM stock_locations WHERE code='01'")
                 .get() as { id: string }
             ).id,
+            vat_rate_bps: 0n,
+            tax_subtotal: null,
+            vat_amount: null,
             stock_location_code_snapshot: '01',
             stock_location_label_snapshot: 'Gudang',
             sales_id: null,
@@ -974,6 +981,34 @@ describe('restore', () => {
       sourceFileName: path.basename(backupFile),
       safetyBackupFileName: started.safetyBackupFileName,
     });
+  });
+
+  test('issued inclusive VAT survives backup restoration and history reprints', async () => {
+    const invoice = await issueInvoice(shop, {
+      vatRateBps: 1000,
+      lines: [
+        { custom: { type: 'SERVICE', title: 'VAT service', price: '50000' } },
+      ],
+    });
+    expect(invoice.totals).toMatchObject({
+      vatRateBps: 1000,
+      taxSubtotal: '45454',
+      vatAmount: '4546',
+      amount: '50000',
+    });
+    const backupFile = await backupNow();
+    await serviceInvoice('Later invoice');
+    value(await restore(backupFile));
+    expect((await restart()).outcome).toBe('RESTORED');
+    const loaded = value(
+      await h.call<import('@/shared/contracts').InvoiceView>(
+        C.invoices.get,
+        { invoiceId: invoice.id },
+        ADMIN_WINDOW,
+      ),
+    );
+    expect(loaded.totals).toEqual(invoice.totals);
+    expect(loaded.lines).toEqual(invoice.lines);
   });
 
   test('a backup of uncheckpointed WAL-era data restores that data', async () => {

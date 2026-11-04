@@ -1,6 +1,7 @@
 import { appendAudit } from '@/main/database/audit';
 import type { AppDatabase } from '@/main/database/connection';
 import { toNumber } from '@/main/database/rows';
+import { recalculateDraft } from '@/main/features/drafts/totals';
 import type { InvoiceRow } from '@/main/features/drafts/repository';
 import { recordSale } from '@/main/features/inventory/ledger';
 import type { FinalizeData } from '@/shared/contracts';
@@ -88,6 +89,7 @@ export function finalizeDraft(
     );
   }
   assertPersistedTotals(invoice, check);
+  recalculateDraft(ctx.drafts, invoice.id);
 
   writeSnapshots(ctx, invoice, actor.cashierId);
   step('snapshots');
@@ -184,12 +186,23 @@ function assertPersistedTotals(
     invoice.invoice_discount_amount !== calc.invoiceDiscountTotal ||
     invoice.discount_amount !== calc.discountAmount ||
     invoice.amount !== calc.amount ||
+    (invoice.tax_subtotal !== null &&
+      invoice.tax_subtotal !== calc.taxSubtotal) ||
+    (invoice.vat_amount !== null && invoice.vat_amount !== calc.vatAmount) ||
     lines.some((line, index) => {
       const result = calc.lines[index]!;
       return (
         line.subtotal !== result.subtotal ||
         line.discount_amount !== result.discountTotal ||
         line.amount !== result.amount ||
+        (line.allocated_invoice_discount !== null &&
+          line.allocated_invoice_discount !==
+            result.allocatedInvoiceDiscount) ||
+        (line.final_amount !== null &&
+          line.final_amount !== result.finalAmount) ||
+        (line.tax_subtotal !== null &&
+          line.tax_subtotal !== result.taxSubtotal) ||
+        (line.vat_amount !== null && line.vat_amount !== result.vatAmount) ||
         (lineStages.get(line.id) ?? []).some(
           (stage, i) => stage.amount !== result.stageAmounts[i],
         )

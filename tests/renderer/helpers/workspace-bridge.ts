@@ -62,6 +62,9 @@ export function draftView(extra: Partial<DraftView> = {}): DraftView {
       nonCashExcess: '0',
     },
     totals: {
+      vatRateBps: 0,
+      taxSubtotal: '0',
+      vatAmount: '0',
       subtotal: '0',
       itemDiscountAmount: '0',
       invoiceDiscountAmount: '0',

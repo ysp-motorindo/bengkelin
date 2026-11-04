@@ -137,6 +137,9 @@ describe('menu action dispatch in the shell', () => {
           invoiceId: DRAFT_ID,
           draftVersion: 1,
           totals: {
+            vatRateBps: 0,
+            taxSubtotal: '0',
+            vatAmount: '0',
             subtotal: '0',
             itemDiscountAmount: '0',
             invoiceDiscountAmount: '0',

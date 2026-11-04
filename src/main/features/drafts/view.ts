@@ -1,3 +1,4 @@
+import { calculateInclusiveVat } from '@/main/features/invoices/domain';
 import { calculateCheckoutPayments } from '@/shared/checkout-payments';
 import { readCheckoutTenders } from './checkout-tenders';
 import { bool, toNumber } from '@/main/database/rows';
@@ -143,6 +144,10 @@ function toLineDto(
     subtotal: money(line.subtotal),
     discountAmount: money(line.discount_amount),
     amount: money(line.amount),
+    allocatedInvoiceDiscount: money(line.allocated_invoice_discount!),
+    finalAmount: money(line.final_amount!),
+    taxSubtotal: money(line.tax_subtotal!),
+    vatAmount: money(line.vat_amount!),
     discounts: stages.map(toStageDto),
     pricing: linePricing(line, invoice, resolvePrice),
     priceChanges: changes.map(toPriceChangeDto),
@@ -154,6 +159,12 @@ function toLineDto(
 /** The complete DraftView of an invoice row (any status; callers check it). */
 export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
   const { repo } = deps;
+  const liveLines = repo.liveLines(invoice.id);
+  const legacy = calculateInclusiveVat(
+    liveLines.map((line) => line.amount),
+    invoice.invoice_discount_amount,
+    0,
+  );
   const lineStages = group(repo.lineStages(invoice.id), (s) => s.owner_id);
   const changes = group(
     repo.priceChanges(invoice.id),
@@ -234,23 +245,34 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
     odometerKm:
       invoice.odometer_km === null ? null : toNumber(invoice.odometer_km),
     note: invoice.note,
-    lines: repo
-      .liveLines(invoice.id)
-      .map((line) =>
-        toLineDto(
-          line,
-          invoice,
-          lineStages.get(line.id) ?? [],
-          changes.get(line.id) ?? [],
-          deps.resolvePrice,
-          deps.itemDetails,
-        ),
-      ),
+    lines: liveLines.map((stored, index) => {
+      const fallback = legacy.lines[index]!;
+      const line = {
+        ...stored,
+        allocated_invoice_discount:
+          stored.allocated_invoice_discount ??
+          fallback.allocatedInvoiceDiscount,
+        final_amount: stored.final_amount ?? fallback.finalAmount,
+        tax_subtotal: stored.tax_subtotal ?? fallback.taxSubtotal,
+        vat_amount: stored.vat_amount ?? fallback.vatAmount,
+      };
+      return toLineDto(
+        line,
+        invoice,
+        lineStages.get(line.id) ?? [],
+        changes.get(line.id) ?? [],
+        deps.resolvePrice,
+        deps.itemDetails,
+      );
+    }),
     invoiceDiscounts: repo.invoiceStages(invoice.id).map(toStageDto),
     checkoutAllocations: allocations,
     checkoutTenders,
     paymentSummary,
     totals: {
+      vatRateBps: toNumber(invoice.vat_rate_bps),
+      taxSubtotal: money(invoice.tax_subtotal ?? legacy.taxSubtotal),
+      vatAmount: money(invoice.vat_amount ?? legacy.vatAmount),
       subtotal: money(invoice.subtotal),
       itemDiscountAmount: money(invoice.item_discount_amount),
       invoiceDiscountAmount: money(invoice.invoice_discount_amount),

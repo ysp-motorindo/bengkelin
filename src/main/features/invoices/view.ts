@@ -12,7 +12,7 @@ import type {
   ShopIdentitySnapshot,
 } from '@/shared/contracts';
 import { formatRupiah } from '@/shared/primitives';
-import { derivePaymentStatus } from './domain';
+import { calculateInclusiveVat, derivePaymentStatus } from './domain';
 import type { PaymentRepository, PaymentRow } from './payments-repository';
 import type { FullInvoiceRow, InvoiceRepository } from './repository';
 
@@ -56,6 +56,10 @@ function toLineDto(line: LineRow, stages: StageRow[]): InvoiceLineDto {
     subtotal: money(line.subtotal),
     discountAmount: money(line.discount_amount),
     amount: money(line.amount),
+    allocatedInvoiceDiscount: money(line.allocated_invoice_discount!),
+    finalAmount: money(line.final_amount!),
+    taxSubtotal: money(line.tax_subtotal!),
+    vatAmount: money(line.vat_amount!),
     discounts: stages.map(toStageDto),
   };
 }
@@ -88,6 +92,12 @@ export function buildInvoiceView(
     list.push(stage);
     stages.set(stage.owner_id, list);
   }
+  const liveLines = deps.drafts.liveLines(invoice.id);
+  const legacy = calculateInclusiveVat(
+    liveLines.map((line) => line.amount),
+    invoice.invoice_discount_amount,
+    0,
+  );
   const paymentRows = deps.payments.forInvoice(invoice.id);
   const paid = paymentRows.reduce((sum, p) => sum + p.amount, 0n);
 
@@ -152,11 +162,26 @@ export function buildInvoiceView(
       displayName: invoice.created_by_name,
     },
     shop: JSON.parse(invoice.shop_identity_snapshot!) as ShopIdentitySnapshot,
-    lines: deps.drafts
-      .liveLines(invoice.id)
-      .map((line) => toLineDto(line, stages.get(line.id) ?? [])),
+    lines: liveLines.map((line, index) => {
+      const fallback = legacy.lines[index]!;
+      return toLineDto(
+        {
+          ...line,
+          allocated_invoice_discount:
+            line.allocated_invoice_discount ??
+            fallback.allocatedInvoiceDiscount,
+          final_amount: line.final_amount ?? fallback.finalAmount,
+          tax_subtotal: line.tax_subtotal ?? fallback.taxSubtotal,
+          vat_amount: line.vat_amount ?? fallback.vatAmount,
+        },
+        stages.get(line.id) ?? [],
+      );
+    }),
     invoiceDiscounts: deps.drafts.invoiceStages(invoice.id).map(toStageDto),
     totals: {
+      vatRateBps: toNumber(invoice.vat_rate_bps),
+      taxSubtotal: money(invoice.tax_subtotal ?? legacy.taxSubtotal),
+      vatAmount: money(invoice.vat_amount ?? legacy.vatAmount),
       subtotal: money(invoice.subtotal),
       itemDiscountAmount: money(invoice.item_discount_amount),
       invoiceDiscountAmount: money(invoice.invoice_discount_amount),

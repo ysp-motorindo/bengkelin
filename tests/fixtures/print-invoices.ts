@@ -271,6 +271,7 @@ export interface LineSpec {
 }
 
 export interface InvoiceSpec {
+  vatRateBps?: number;
   lines: LineSpec[];
   customer?: boolean;
   references?: boolean;
@@ -385,6 +386,8 @@ export async function issueInvoice(
   if (Object.keys(changes).length > 0) {
     await apply({ kind: 'updateHeader', changes } as DraftOperation);
   }
+  if (spec.vatRateBps !== undefined)
+    await apply({ kind: 'setVatRate', vatRateBps: spec.vatRateBps });
   if (spec.invoiceDiscounts?.length) {
     await apply({ kind: 'setInvoiceDiscounts', stages: spec.invoiceDiscounts });
   }

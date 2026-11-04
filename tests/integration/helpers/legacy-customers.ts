@@ -70,11 +70,23 @@ export function addCurrentStockLocationColumns(db: AppDatabase): void {
       `ALTER TABLE stock_ledger_entries ADD COLUMN stock_location_id TEXT DEFAULT '11111111-1111-4111-8111-111111111119'`,
     );
   if (db.prepare("SELECT 1 FROM sqlite_master WHERE name='invoices'").get())
+    db.exec(bundledMigrations.find((m) => m.version === 20)!.sql);
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE name='invoices'").get())
     db.exec(
       `ALTER TABLE invoices ADD COLUMN stock_location_id TEXT DEFAULT '11111111-1111-4111-8111-111111111119'; ALTER TABLE invoices ADD COLUMN stock_location_code_snapshot TEXT DEFAULT '01'; ALTER TABLE invoices ADD COLUMN stock_location_label_snapshot TEXT DEFAULT 'Gudang';`,
     );
 }
 export function removeCurrentStockLocationColumns(db: AppDatabase): void {
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE name='invoices'").get())
+    db.exec(`DROP TRIGGER invoices_vat_immutable;
+      ALTER TABLE invoices DROP COLUMN vat_rate_bps;
+      ALTER TABLE invoices DROP COLUMN tax_subtotal;
+      ALTER TABLE invoices DROP COLUMN vat_amount;
+      ALTER TABLE invoice_items DROP COLUMN allocated_invoice_discount;
+      ALTER TABLE invoice_items DROP COLUMN final_amount;
+      ALTER TABLE invoice_items DROP COLUMN tax_subtotal;
+      ALTER TABLE invoice_items DROP COLUMN vat_amount;`);
+
   if (
     db
       .prepare("SELECT 1 FROM sqlite_master WHERE name='stock_ledger_entries'")

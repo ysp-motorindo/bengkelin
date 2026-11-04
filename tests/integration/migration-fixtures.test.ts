@@ -304,6 +304,7 @@ FIXTURE_ROWS[17] = {
 FIXTURE_ROWS[18] = { ...FIXTURE_ROWS[17]!, stock_locations: 1, audit_log: 47 };
 
 FIXTURE_ROWS[19] = FIXTURE_ROWS[18]!;
+FIXTURE_ROWS[20] = FIXTURE_ROWS[19]!;
 
 const fixtures = readdirSync(FIXTURE_DIR)
   .map((file) => /^schema-v(\d{3})-populated\.sqlite$/.exec(file))
@@ -1057,6 +1058,11 @@ function probeEveryTrigger(
       [ids.d1],
     );
   }
+  expectFires(
+    'invoices_vat_immutable',
+    'UPDATE invoices SET vat_rate_bps = 1000 WHERE id = ?',
+    [ids.d1],
+  );
   expectFires(
     'invoices_cash_immutable',
     'UPDATE invoices SET cash_received = 1 WHERE id = ?',

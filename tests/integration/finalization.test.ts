@@ -1880,3 +1880,218 @@ test('non-cash excess saves but blocks preview/finalization with the excess and 
   });
   expect(dump()).toEqual(before);
 });
+
+describe('inclusive VAT persistence', () => {
+  async function taxableDraft() {
+    let d = await createDraft();
+    d = await applyOk(d, {
+      kind: 'addCustomLine',
+      type: 'SERVICE',
+      title: 'VAT service',
+      unitPrice: '100000',
+    });
+    d = await applyOk(d, {
+      kind: 'setLineDiscounts',
+      lineId: d.lines[0]!.id,
+      stages: [1000],
+    });
+    d = await applyOk(d, { kind: 'setInvoiceDiscounts', stages: [1000] });
+    return d;
+  }
+
+  test('rate is versioned and idempotent; edits recalculate and reopening preserves breakdown', async () => {
+    const d = await taxableDraft();
+    expect(d.totals).toMatchObject({
+      vatRateBps: 0,
+      taxSubtotal: '81000',
+      vatAmount: '0',
+    });
+    const command = {
+      requestId: uuid(),
+      invoiceId: d.id,
+      expectedVersion: d.version,
+      op: { kind: 'setVatRate', vatRateBps: 1000 },
+    };
+    const edited = value(
+      await h.call<DraftView>(C.drafts.apply, command, CASHIER),
+    );
+    expect(edited.totals).toMatchObject({
+      amount: '81000',
+      vatRateBps: 1000,
+      taxSubtotal: '73636',
+      vatAmount: '7364',
+    });
+    expect(edited.lines[0]).toMatchObject({
+      amount: '90000',
+      allocatedInvoiceDiscount: '9000',
+      finalAmount: '81000',
+      taxSubtotal: '73636',
+      vatAmount: '7364',
+    });
+    expect(
+      value(await h.call<DraftView>(C.drafts.apply, command, CASHIER)),
+    ).toEqual(edited);
+    expect(
+      failure(
+        await h.call(
+          C.drafts.apply,
+          { ...command, requestId: uuid() },
+          CASHIER,
+        ),
+      ).code,
+    ).toBe('DRAFT_VERSION_CONFLICT');
+    const reopened = value(
+      await h.call<DraftView>(C.drafts.get, d.id, CASHIER),
+    );
+    expect(reopened.totals).toEqual(edited.totals);
+    const doubled = await applyOk(edited, {
+      kind: 'updateLine',
+      lineId: edited.lines[0]!.id,
+      quantity: 2,
+    });
+    expect(doubled.totals).toMatchObject({
+      amount: '162000',
+      taxSubtotal: '147272',
+      vatAmount: '14728',
+    });
+    const removed = await applyOk(doubled, {
+      kind: 'removeLine',
+      lineId: doubled.lines[0]!.id,
+    });
+    expect(removed.totals).toMatchObject({
+      amount: '0',
+      taxSubtotal: '0',
+      vatAmount: '0',
+    });
+  });
+
+  test.each([-1, 10001, 1.5, '10'])(
+    'rejects invalid rate %s at command boundary',
+    async (rate) => {
+      const d = await createDraft();
+      const result = await h.call(
+        C.drafts.apply,
+        {
+          requestId: uuid(),
+          invoiceId: d.id,
+          expectedVersion: d.version,
+          op: { kind: 'setVatRate', vatRateBps: rate },
+        },
+        CASHIER,
+      );
+      expect(result.ok).toBe(false);
+      expect(
+        value(await h.call<DraftView>(C.drafts.get, d.id, CASHIER)).version,
+      ).toBe(d.version);
+    },
+  );
+
+  test('issued VAT persists across history reads and is immutable', async () => {
+    const d = await applyOk(await taxableDraft(), {
+      kind: 'setVatRate',
+      vatRateBps: 1000,
+    });
+    const p = value(await preview(d.id));
+    expect(p.totals).toMatchObject({ taxSubtotal: '73636', vatAmount: '7364' });
+    const issued = value(
+      await finalize(d, { acknowledgedWarnings: p.warnings }),
+    );
+    expect(issued.totals).toMatchObject({
+      vatRateBps: 1000,
+      taxSubtotal: '73636',
+      vatAmount: '7364',
+      amount: '81000',
+    });
+    expect(
+      value(
+        await h.call<InvoiceView>(C.invoices.get, { invoiceId: d.id }, CASHIER),
+      ).totals,
+    ).toEqual(issued.totals);
+    for (const column of ['vat_rate_bps', 'tax_subtotal', 'vat_amount']) {
+      expect(() =>
+        h.db
+          .prepare(`UPDATE invoices SET ${column} = 1 WHERE id = ?`)
+          .run(d.id),
+      ).toThrow();
+    }
+    expect(() =>
+      h.db
+        .prepare('UPDATE invoice_items SET vat_amount = 1 WHERE invoice_id = ?')
+        .run(d.id),
+    ).toThrow();
+  });
+
+  test('legacy missing breakdown derives zero tax then fills before freezing', async () => {
+    const d = await taxableDraft();
+    h.db
+      .prepare(
+        'UPDATE invoices SET tax_subtotal = NULL, vat_amount = NULL WHERE id = ?',
+      )
+      .run(d.id);
+    h.db
+      .prepare(
+        'UPDATE invoice_items SET allocated_invoice_discount = NULL, final_amount = NULL, tax_subtotal = NULL, vat_amount = NULL WHERE invoice_id = ?',
+      )
+      .run(d.id);
+    const reopened = value(
+      await h.call<DraftView>(C.drafts.get, d.id, CASHIER),
+    );
+    expect(reopened.lines[0]).toMatchObject({
+      allocatedInvoiceDiscount: '9000',
+      finalAmount: '81000',
+      taxSubtotal: '81000',
+      vatAmount: '0',
+    });
+    expect(
+      rows('SELECT tax_subtotal FROM invoices WHERE id = ?', d.id)[0]!
+        .tax_subtotal,
+    ).toBeNull();
+    const p = value(await preview(d.id));
+    const issued = value(
+      await finalize(d, { acknowledgedWarnings: p.warnings }),
+    );
+    expect(issued.totals).toMatchObject({
+      taxSubtotal: '81000',
+      vatAmount: '0',
+    });
+    expect(
+      rows('SELECT tax_subtotal FROM invoices WHERE id = ?', d.id)[0]!
+        .tax_subtotal,
+    ).toBe(81000n);
+  });
+
+  test.each(['original', 'header', 'line'])(
+    'inconsistent %s money rolls back without repairing non-null data',
+    async (kind) => {
+      const d = await taxableDraft();
+      if (kind === 'original')
+        h.db
+          .prepare(
+            'UPDATE invoices SET amount = amount + 1, subtotal = subtotal + 1, tax_subtotal = NULL, vat_amount = NULL WHERE id = ?',
+          )
+          .run(d.id);
+      if (kind === 'header')
+        h.db
+          .prepare(
+            'UPDATE invoices SET tax_subtotal = 1, vat_amount = NULL WHERE id = ?',
+          )
+          .run(d.id);
+      if (kind === 'line')
+        h.db
+          .prepare(
+            'UPDATE invoice_items SET final_amount = 1, vat_amount = NULL WHERE invoice_id = ?',
+          )
+          .run(d.id);
+      const p = value(await preview(d.id));
+      expect((await finalize(d, { acknowledgedWarnings: p.warnings })).ok).toBe(
+        false,
+      );
+      expect(
+        rows('SELECT status, version FROM invoices WHERE id = ?', d.id)[0],
+      ).toMatchObject({ status: 'DRAFT', version: BigInt(d.version) });
+      expect(
+        count('SELECT COUNT(*) AS n FROM payments WHERE invoice_id = ?', d.id),
+      ).toBe(0);
+    },
+  );
+});
