@@ -271,3 +271,26 @@ describe('invoice detail', () => {
     ).toBeDisabled();
   });
 });
+
+test('history displays saved tax amounts without changing payable or outstanding', async () => {
+  const invoice = view();
+  bridge({
+    ...invoice,
+    totals: {
+      ...invoice.totals,
+      vatRateBps: 1000,
+      taxSubtotal: '90909',
+      vatAmount: '9091',
+    },
+  });
+  render(
+    <InvoiceDetail invoiceId={ID} timezone="Asia/Jakarta" onBack={vi.fn()} />,
+  );
+  expect(await screen.findByTestId('detail-tax-subtotal')).toHaveTextContent(
+    '90.909',
+  );
+  expect(screen.getByTestId('detail-vat')).toHaveTextContent('9.091');
+  expect(screen.getByTestId('detail-total')).toHaveTextContent('100.000');
+  expect(screen.getByTestId('detail-outstanding')).toHaveTextContent('100.000');
+  expect(screen.getByText('PPN 10%')).toBeVisible();
+});

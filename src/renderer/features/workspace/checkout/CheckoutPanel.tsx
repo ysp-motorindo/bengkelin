@@ -29,6 +29,10 @@ export function CheckoutPanel({
   const [discount, setDiscount] = useSyncedValue(serverDiscount, () =>
     isDirty('invoiceDiscounts'),
   );
+  const [vatRate, setVatRate] = useSyncedValue(
+    String(view.totals.vatRateBps / 100),
+    () => isDirty('vatRate'),
+  );
   const [paymentsOpen, setPaymentsOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const difference = BigInt(view.totals.unallocatedAmount);
@@ -57,6 +61,20 @@ export function CheckoutPanel({
         stages: parsed.stages,
       });
   }
+  function changeVatRate(text: string) {
+    setVatRate(text);
+    const parsed = parseStageTexts([text]);
+    setErrors((old) => ({
+      ...old,
+      vatRate: parsed.ok ? '' : 'workspace.validation.percentage',
+    }));
+    if (!parsed.ok) markInvalid('vatRate', true);
+    else
+      edit('vatRate', {
+        kind: 'setVatRate',
+        vatRateBps: parsed.stages[0] ?? 0,
+      });
+  }
   return (
     <aside
       aria-label={t('workspace.checkout.label')}
@@ -65,7 +83,7 @@ export function CheckoutPanel({
       <table className="w-full border-collapse tabular [&_th]:border [&_th]:border-border [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-normal [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1 [&_td]:text-right">
         <tbody>
           <tr>
-            <th scope="row">{t('workspace.checkout.subtotal')}</th>
+            <th scope="row">{t('workspace.checkout.itemsTotal')}</th>
             <td data-testid="subtotal-amount">
               {formatIdr(
                 (
@@ -112,16 +130,44 @@ export function CheckoutPanel({
               </div>
             </td>
           </tr>
+          <tr>
+            <th scope="row">{t('workspace.checkout.subtotal')}</th>
+            <td data-testid="tax-subtotal-amount">
+              {formatIdr(view.totals.taxSubtotal)}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">{t('workspace.checkout.vat')}</th>
+            <td>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1">
+                  <NumericInput
+                    aria-label={t('workspace.checkout.vat')}
+                    aria-describedby="invoice-vat-unit"
+                    decimal
+                    value={vatRate}
+                    onValueChange={changeVatRate}
+                    aria-invalid={!!errors.vatRate}
+                    className="h-5 w-20 rounded-none border-0 border-b border-dashed border-input bg-transparent p-0 text-right"
+                  />
+                  <span id="invoice-vat-unit">%</span>
+                </div>
+                <span data-testid="vat-amount">
+                  {formatIdr(view.totals.vatAmount)}
+                </span>
+              </div>
+            </td>
+          </tr>
+          <tr className="bg-amber-50 font-semibold dark:bg-amber-950/40">
+            <th scope="row">{t('workspace.checkout.total')}</th>
+            <td data-testid="total-amount">{formatIdr(view.totals.amount)}</td>
+          </tr>
           {view.topDays > 0 && (
             <tr>
               <th scope="row">{t('workspace.checkout.downPayment')}</th>
               <td>{formatIdr(view.totals.allocatedAmount)}</td>
             </tr>
           )}
-          <tr className="bg-amber-50 font-semibold dark:bg-amber-950/40">
-            <th scope="row">{t('workspace.checkout.total')}</th>
-            <td data-testid="total-amount">{formatIdr(view.totals.amount)}</td>
-          </tr>
           <tr>
             <th scope="row">{t('workspace.checkout.payments')}</th>
             <td>

@@ -195,7 +195,9 @@
     "singleDiscount": "Disc",
     "downPayment": "Uang Muka",
     "replaceDiscount": "Ganti diskon",
-    "replacePayment": "Ganti dengan tunai"
+    "replacePayment": "Ganti dengan tunai",
+    "itemsTotal": "Total item",
+    "vat": "PPN"
   },
   "paymentMethod": {
     "CASH": "Tunai",

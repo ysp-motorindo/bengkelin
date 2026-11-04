@@ -587,3 +587,30 @@ test('invoice header presents the agreed field order and saves the selected stoc
     ),
   );
 });
+
+test('invalid VAT blocks checkout flushing; cleared input saves zero and fractional rate saves basis points', async () => {
+  const bridge = install();
+  render(<CashierWorkspace />);
+  const user = userEvent.setup();
+  await screen.findByRole('combobox', { name: 'Cari barang' });
+  const vat = screen.getByRole('textbox', { name: 'PPN' });
+  await user.clear(vat);
+  await user.type(vat, '10,001');
+  expect(vat).toHaveAttribute('aria-invalid', 'true');
+  expect(await getWorkspaceActions()!.saveDraft()).toBe(false);
+  await user.click(screen.getByRole('button', { name: 'Pembayaran' }));
+  await getWorkspaceActions()!.openCheckoutReview();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  await user.clear(vat);
+  expect(await getWorkspaceActions()!.saveDraft()).toBe(true);
+  expect(bridge.drafts.apply.mock.calls.at(-1)![0].op).toEqual({
+    kind: 'setVatRate',
+    vatRateBps: 0,
+  });
+  await user.type(vat, '2,75');
+  expect(await getWorkspaceActions()!.saveDraft()).toBe(true);
+  expect(bridge.drafts.apply.mock.calls.at(-1)![0].op).toEqual({
+    kind: 'setVatRate',
+    vatRateBps: 275,
+  });
+});

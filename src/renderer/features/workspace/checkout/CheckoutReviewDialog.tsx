@@ -468,13 +468,23 @@ function ReviewBody({
         <dt className="text-muted-foreground">{t('workspace.review.lines')}</dt>
         <dd>{formatNumber(view.lines.length)}</dd>
         <dt className="text-muted-foreground">
-          {t('workspace.checkout.subtotal')}
+          {t('workspace.checkout.itemsTotal')}
         </dt>
         <dd>{formatIdr(totals.subtotal)}</dd>
         <dt className="text-muted-foreground">
           {t('workspace.review.discounts')}
         </dt>
         <dd>-{formatIdr(totals.discountAmount)}</dd>
+        <dt className="text-muted-foreground">
+          {t('workspace.checkout.subtotal')}
+        </dt>
+        <dd data-testid="review-tax-subtotal">
+          {formatIdr(totals.taxSubtotal)}
+        </dd>
+        <dt className="text-muted-foreground">
+          {t('workspace.checkout.vat')} {totals.vatRateBps / 100}%
+        </dt>
+        <dd data-testid="review-vat">{formatIdr(totals.vatAmount)}</dd>
         <dt className="font-semibold">{t('workspace.checkout.total')}</dt>
         <dd className="text-lg font-semibold" data-testid="review-total">
           {formatIdr(totals.amount)}

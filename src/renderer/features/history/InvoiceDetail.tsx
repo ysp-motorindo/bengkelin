@@ -357,7 +357,7 @@ export function InvoiceDetail({
           </p>
         ) : null}
         <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
-          <dt>{t('history.detail.subtotal')}</dt>
+          <dt>{t('history.detail.itemsTotal')}</dt>
           <dd className="text-right tabular">
             {formatIdr(invoice.totals.subtotal)}
           </dd>
@@ -368,6 +368,16 @@ export function InvoiceDetail({
           <dt>{t('history.detail.invoiceDiscountTotal')}</dt>
           <dd className="text-right tabular">
             {formatIdr(invoice.totals.invoiceDiscountAmount)}
+          </dd>
+          <dt>{t('history.detail.subtotal')}</dt>
+          <dd className="text-right tabular" data-testid="detail-tax-subtotal">
+            {formatIdr(invoice.totals.taxSubtotal)}
+          </dd>
+          <dt>
+            {t('history.detail.vat')} {invoice.totals.vatRateBps / 100}%
+          </dt>
+          <dd className="text-right tabular" data-testid="detail-vat">
+            {formatIdr(invoice.totals.vatAmount)}
           </dd>
           <dt className="font-semibold">{t('history.detail.total')}</dt>
           <dd

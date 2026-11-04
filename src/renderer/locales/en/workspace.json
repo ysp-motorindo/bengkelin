@@ -195,7 +195,9 @@
     "singleDiscount": "Disc",
     "downPayment": "Down Payment",
     "replaceDiscount": "Replace discount",
-    "replacePayment": "Replace with cash"
+    "replacePayment": "Replace with cash",
+    "itemsTotal": "Items total",
+    "vat": "VAT"
   },
   "paymentMethod": {
     "CASH": "Cash",

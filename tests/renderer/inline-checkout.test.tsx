@@ -147,3 +147,73 @@ test('invoice discount uses a separate percent suffix', () => {
   expect(discount.nextElementSibling).toHaveTextContent('%');
   expect(discount).toHaveAccessibleDescription('%');
 });
+
+test.each([
+  ['id', 'PPN', 'Total item'],
+  ['en', 'VAT', 'Items total'],
+] as const)(
+  'VAT saves before payments open and preserves payable/change in %s',
+  async (language, label, itemsLabel) => {
+    const { i18n } = await import('@/renderer/i18n');
+    await i18n.changeLanguage(language);
+    const bridge = workspaceBridge();
+    Object.assign(window, { bengkelin: bridge });
+    let resolve!: (
+      value: import('@/shared/primitives').Result<DraftView>,
+    ) => void;
+    bridge.drafts.apply.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    const user = userEvent.setup();
+    const mounted = render(<Harness />);
+    expect(screen.getByText(itemsLabel)).toBeVisible();
+    const vat = screen.getByRole('textbox', { name: label });
+    await user.clear(vat);
+    await user.type(vat, '10');
+    await user.click(
+      screen.getByRole('button', {
+        name: language === 'id' ? 'Pembayaran' : 'Payments',
+      }),
+    );
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    const saved = {
+      ...initial,
+      version: 2,
+      totals: {
+        ...initial.totals,
+        vatRateBps: 1000,
+        taxSubtotal: '45454',
+        vatAmount: '4546',
+      },
+    };
+    resolve(ok(saved));
+    expect(await screen.findByRole('dialog')).toBeVisible();
+    expect(screen.getByTestId('tax-subtotal-amount')).toHaveTextContent(
+      '45.454',
+    );
+    expect(screen.getByTestId('vat-amount')).toHaveTextContent('4.546');
+    expect(screen.getByTestId('total-amount')).toHaveTextContent('50.000');
+    expect(screen.getByTestId('cash-change')).toHaveTextContent('0');
+    expect(bridge.drafts.apply.mock.calls[0]![0].op).toEqual({
+      kind: 'setVatRate',
+      vatRateBps: 1000,
+    });
+    mounted.unmount();
+    function Reopened() {
+      const commands = useDraftCommands(saved.id, { initialView: saved });
+      return (
+        <CheckoutPanel
+          commands={commands}
+          onReview={() => {}}
+          onError={() => {}}
+        />
+      );
+    }
+    render(<Reopened />);
+    expect(screen.getByRole('textbox', { name: label })).toHaveValue('10');
+    await i18n.changeLanguage('id');
+  },
+);

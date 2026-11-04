@@ -112,7 +112,9 @@
     "paymentBlockedVoid": "A void invoice does not accept payments.",
     "paymentRecorded": "Payment of {{amount}} recorded.",
     "voided": "Invoice {{number}} voided.",
-    "taxInvoiceNumber": "Tax Invoice Number"
+    "taxInvoiceNumber": "Tax Invoice Number",
+    "itemsTotal": "Items total",
+    "vat": "VAT"
   },
   "payment": {
     "title": "Record payment — {{number}}",

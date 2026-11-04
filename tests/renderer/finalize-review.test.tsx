@@ -495,3 +495,29 @@ test('zero confirmation displays authoritative stored zero instead of the stale 
   await screen.findByText('Free oil');
   expect(screen.queryByText(/70.000/)).not.toBeInTheDocument();
 });
+
+test('review shows the saved inclusive tax breakdown alongside unchanged payable', async () => {
+  const p = preview();
+  renderReview(
+    client(
+      [
+        {
+          ...p,
+          totals: {
+            ...p.totals,
+            vatRateBps: 1000,
+            taxSubtotal: '131818',
+            vatAmount: '13182',
+          },
+        },
+      ],
+      [],
+    ),
+  );
+  expect(await screen.findByTestId('review-tax-subtotal')).toHaveTextContent(
+    '131.818',
+  );
+  expect(screen.getByTestId('review-vat')).toHaveTextContent('13.182');
+  expect(screen.getByTestId('review-total')).toHaveTextContent('145.000');
+  expect(screen.getByText('PPN 10%')).toBeVisible();
+});
