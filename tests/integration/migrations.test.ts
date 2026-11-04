@@ -357,3 +357,23 @@ describe('withWriteTransaction', () => {
     expect(db.prepare('SELECT count(*) AS n FROM t').get()).toEqual({ n: 0n });
   });
 });
+
+test('version 19 upgrades to customer openings without touching existing customers', () => {
+  const db = track(openDatabase(file));
+  migrateDatabase(
+    db,
+    bundledMigrations.filter((m) => m.version <= 19),
+  );
+  expect(readSchemaVersion(db)).toBe(19);
+  migrateDatabase(db);
+  expect(
+    db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'customer_opening_%' ORDER BY name",
+      )
+      .all(),
+  ).toEqual([
+    { name: 'customer_opening_balances' },
+    { name: 'customer_opening_payments' },
+  ]);
+});

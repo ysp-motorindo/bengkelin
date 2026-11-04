@@ -1,4 +1,9 @@
 import type {
+  CustomerOpeningPage,
+  CustomerOpeningDetail,
+  RecordOpeningPaymentInput,
+} from './contracts/customer-receivables';
+import type {
   ReferenceTransferInput,
   ReferenceImportPreviewDto,
   ReferenceImportSummaryDto,
@@ -330,6 +335,15 @@ export interface BengkelinApi {
     downloadTemplate(
       input: ReferenceTransferInput,
     ): Promise<Result<CatalogFileOutcomeDto>>;
+  };
+  readonly customerReceivables: {
+    list(input: {
+      page?: import('./contracts').PageInput;
+    }): Promise<Result<CustomerOpeningPage>>;
+    get(input: { customerId: string }): Promise<Result<CustomerOpeningDetail>>;
+    recordPayment(
+      input: RecordOpeningPaymentInput,
+    ): Promise<Result<CustomerOpeningDetail>>;
   };
   readonly customerTransfer: {
     previewImport(): Promise<Result<CustomerImportPreviewDto>>;

@@ -304,6 +304,11 @@ FIXTURE_ROWS[17] = {
 FIXTURE_ROWS[18] = { ...FIXTURE_ROWS[17]!, stock_locations: 1, audit_log: 47 };
 
 FIXTURE_ROWS[19] = FIXTURE_ROWS[18]!;
+FIXTURE_ROWS[20] = {
+  ...FIXTURE_ROWS[19]!,
+  customer_opening_balances: 0,
+  customer_opening_payments: 0,
+};
 
 const fixtures = readdirSync(FIXTURE_DIR)
   .map((file) => /^schema-v(\d{3})-populated\.sqlite$/.exec(file))
@@ -872,6 +877,14 @@ describe('progressive upgrade from an empty database', () => {
             );
           }
         },
+        20: async () => {
+          db.prepare(
+            `INSERT INTO customer_opening_balances SELECT ?, '2026-09-30', 100, '2026-09-30T03:00:00.000Z', id FROM cashiers LIMIT 1`,
+          ).run(ids.customerA);
+          db.prepare(
+            `INSERT INTO customer_opening_payments SELECT '88888888-8888-4888-8888-888888888888', ?, 'CASH', 50, '2026-09-30T03:00:00.000Z', NULL, NULL, id, display_name FROM cashiers LIMIT 1`,
+          ).run(ids.customerA);
+        },
         11: async () => {
           const a = await app();
           await a.call(C.backups.create, undefined, ADMIN);
@@ -1365,6 +1378,30 @@ function probeEveryTrigger(
     'vehicle_ownerships_history_guard',
     `UPDATE vehicle_ownerships SET customer_id = ? WHERE vehicle_id = ?`,
     [ids.customerB, ids.vehicle],
+  );
+
+  expectFires(
+    'customer_opening_balances_no_update',
+    'UPDATE customer_opening_balances SET amount=1',
+  );
+  expectFires(
+    'customer_opening_balances_no_delete',
+    'DELETE FROM customer_opening_balances',
+  );
+  expectFires(
+    'customer_opening_payments_no_update',
+    'UPDATE customer_opening_payments SET amount=1',
+  );
+  expectFires(
+    'customer_opening_payments_no_delete',
+    'DELETE FROM customer_opening_payments',
+  );
+  cloneInsert(
+    'customer_opening_payments_within_outstanding',
+    'customer_opening_payments',
+    '1=1',
+    [],
+    { id: '88888888-8888-4888-8888-888888888888', amount: 51 },
   );
 
   return [...new Set(fired)];

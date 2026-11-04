@@ -21,3 +21,5 @@ export * from './app';
 export * from './customer-transfer';
 
 export * from './reference-transfer';
+
+export * from './customer-receivables';
