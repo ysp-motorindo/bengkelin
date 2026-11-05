@@ -13,7 +13,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'docs/Saldo Piutang 30 September 2026.xlsx'
-OUTPUT = ROOT / 'data/import-ready/customer-piutang-mmb-2026-09-30.csv'
+OUTPUT = ROOT / 'references/customer-piutang-import.csv'
 NS = {'m': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 
 
