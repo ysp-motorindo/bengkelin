@@ -50,6 +50,7 @@ const CORE_TABLES: readonly (readonly [number, readonly string[]])[] = [
   [11, ['backup_runs']],
   [16, ['sales', 'expeditions']],
   [18, ['stock_locations']],
+  [21, ['customer_opening_balances', 'customer_opening_payments']],
 ];
 
 export function coreTablesFor(schemaVersion: number): string[] {

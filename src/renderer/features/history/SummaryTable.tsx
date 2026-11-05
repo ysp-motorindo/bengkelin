@@ -146,12 +146,18 @@ export function SummaryTable({
 }
 
 interface PagerProps {
-  page: InvoicePage;
+  page: Pick<InvoicePage, 'total' | 'pageSize' | 'pageNumber' | 'hasMore'>;
   busy: boolean;
   onPage(number: number): void;
+  summaryKey?: string;
 }
 
-export function Pager({ page, busy, onPage }: PagerProps) {
+export function Pager({
+  page,
+  busy,
+  onPage,
+  summaryKey = 'history.pagination.summary',
+}: PagerProps) {
   const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
   const pages = Math.max(1, Math.ceil(page.total / page.pageSize));
@@ -169,7 +175,7 @@ export function Pager({ page, busy, onPage }: PagerProps) {
         {t('history.pagination.previous')}
       </Button>
       <span data-testid="history-page-summary">
-        {t('history.pagination.summary', {
+        {t(summaryKey, {
           ...numberOptions,
           page: page.pageNumber,
           pages,

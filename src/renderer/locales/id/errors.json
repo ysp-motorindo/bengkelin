@@ -154,5 +154,11 @@
   "LEGACY_CHECKOUT_REVIEW_REQUIRED": "Ganti diskon bertahap lama sebelum checkout.",
   "STOCK_LOCATION_NOT_FOUND": "Lokasi stok tidak ditemukan. Pilih lokasi aktif.",
   "STOCK_LOCATION_INACTIVE": "Lokasi stok nonaktif. Pilih lokasi aktif.",
-  "STOCK_LOCATION_REQUIRED": "Siapkan lokasi stok aktif di Data Referensi sebelum melanjutkan."
+  "STOCK_LOCATION_REQUIRED": "Siapkan lokasi stok aktif di Data Referensi sebelum melanjutkan.",
+  "OPENING_IMPORT_HEADER": "Kolom CSV harus external_id, customer_name, as_of_date, opening_balance.",
+  "OPENING_IMPORT_UNKNOWN_CUSTOMER": "ID pelanggan belum terdaftar. Impor master pelanggan terlebih dahulu.",
+  "OPENING_IMPORT_INVALID_DATE": "Tanggal harus tanggal kalender yang valid (YYYY-MM-DD).",
+  "OPENING_IMPORT_INVALID_AMOUNT": "Saldo harus rupiah bulat nonnegatif dalam batas yang didukung.",
+  "OPENING_IMPORT_CONFLICT": "Saldo awal pelanggan sudah ada dengan tanggal atau nominal berbeda.",
+  "CUSTOMER_OPENING_NOT_FOUND": "Saldo awal pelanggan tidak ditemukan."
 }

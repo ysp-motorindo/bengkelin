@@ -50,7 +50,9 @@
     "older": "Untuk faktur sebelumnya",
     "byMethod": "Pembayaran per metode",
     "method": "Metode",
-    "amount": "Jumlah"
+    "amount": "Jumlah",
+    "opening": "Pembayaran saldo awal pelanggan",
+    "openingChannelNote": "Filter kanal mengecualikan pembayaran saldo awal pelanggan karena tidak memiliki kanal faktur."
   },
   "actions": {
     "preview": "Pratinjau & cetak",

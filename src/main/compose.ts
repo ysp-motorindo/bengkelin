@@ -1,3 +1,5 @@
+import { OpeningImportService } from '@/main/features/customer-receivables/import-service';
+import { CustomerReceivablesService } from '@/main/features/customer-receivables/service';
 import { ReferenceTransferService } from '@/main/features/reference-transfer/service';
 import { CustomerTransferService } from '@/main/features/customer-transfer/service';
 import type { AppDatabase } from '@/main/database/connection';
@@ -155,6 +157,17 @@ export function createApplicationServices(
       logger,
       sessions,
     }),
+    customerReceivables: new CustomerReceivablesService(
+      { db, clock },
+      new OpeningImportService({
+        db,
+        clock,
+        dialogs,
+        backups,
+        logger,
+        sessions,
+      }),
+    ),
     customerTransfer: new CustomerTransferService({
       db,
       clock,

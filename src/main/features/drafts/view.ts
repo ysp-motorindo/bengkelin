@@ -223,6 +223,9 @@ export function buildDraftView(deps: ViewDeps, invoice: InvoiceRow): DraftView {
     pricingAt: invoice.pricing_at,
     topDays: toNumber(invoice.top_days),
     dueDate: invoice.due_date,
+    customerOutstandingAmount: customer
+      ? money(repo.customerOutstanding(customer.id))
+      : null,
     customer: customer
       ? {
           id: customer.id,

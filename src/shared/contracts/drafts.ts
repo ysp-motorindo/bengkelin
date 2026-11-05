@@ -481,6 +481,7 @@ export interface DraftView {
   sales: { id: UUID; name: string } | null;
   expedition: { id: UUID; name: string } | null;
   customer: DraftCustomerDto | null;
+  customerOutstandingAmount: Rupiah | null;
   vehicle: DraftVehicleDto | null;
   /** The vehicle's active owner is not the selected customer (warning only). */
   ownerMismatch: boolean;

@@ -434,6 +434,7 @@ describe('create, list, get', () => {
       dueDate: '2026-09-30',
       customer: null,
       vehicle: null,
+      customerOutstandingAmount: null,
       ownerMismatch: false,
       lines: [],
       totals: { subtotal: '0', amount: '0', allocatedAmount: '0' },
@@ -2270,4 +2271,72 @@ test('older cash drafts expose full tender instead of their capped allocation', 
   ]);
   expect(paid.paymentSummary.changeAmount).toBe('20000');
   expect(paid.checkoutAllocations[0]?.amount).toBe('100000');
+});
+
+test('draft Piutang combines remaining opening debt and issued invoice debt by customer ID', async () => {
+  const customer = value(
+    await h.call<Extract<SaveCustomerResult, { saved: true }>>(
+      C.customers.save,
+      { name: 'Debt customer' },
+    ),
+  ).customer;
+  h.db
+    .prepare('INSERT INTO customer_opening_balances VALUES (?,?,?,?,?)')
+    .run(customer.id, '2026-09-30', 100000n, at(T0), adminId);
+  value(
+    await h.call(C.customerReceivables.recordPayment, {
+      requestId: uuid(),
+      customerId: customer.id,
+      method: 'CASH',
+      amount: '30000',
+    }),
+  );
+  const { draft: withLine } = await draftWithLine('20000');
+  const ready = await applyOk(withLine, {
+    kind: 'updateHeader',
+    changes: { customerId: customer.id, topDays: 30 },
+  });
+  const preview = value(
+    await h.call<import('@/shared/contracts').FinalizePreviewDto>(
+      C.invoices.previewFinalize,
+      { invoiceId: ready.id },
+    ),
+  );
+  value(
+    await h.call(C.invoices.finalize, {
+      requestId: uuid(),
+      invoiceId: ready.id,
+      expectedVersion: ready.version,
+      acknowledgedWarnings: preview.warnings,
+    }),
+  );
+  let draft = value(await createDraft());
+  expect(draft.customerOutstandingAmount).toBeNull();
+  draft = await applyOk(draft, {
+    kind: 'updateHeader',
+    changes: { customerId: customer.id },
+  });
+  expect(draft.customerOutstandingAmount).toBe('90000');
+  value(
+    await h.call(C.invoices.recordPayment, {
+      requestId: uuid(),
+      invoiceId: ready.id,
+      method: 'CASH',
+      amount: '20000',
+    }),
+  );
+  expect(value(await getDraft(draft.id)).customerOutstandingAmount).toBe(
+    '70000',
+  );
+  const other = value(
+    await h.call<Extract<SaveCustomerResult, { saved: true }>>(
+      C.customers.save,
+      { name: 'Debt customer' },
+    ),
+  ).customer;
+  draft = await applyOk(draft, {
+    kind: 'updateHeader',
+    changes: { customerId: other.id },
+  });
+  expect(draft.customerOutstandingAmount).toBe('0');
 });

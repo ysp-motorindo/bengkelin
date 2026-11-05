@@ -79,6 +79,7 @@ function report(overrides: Partial<DailyReport> = {}): DailyReport {
       })),
       sameDayInvoices: '500000',
       olderInvoices: '600000',
+      openingBalanceRepayments: '0',
     },
     ...overrides,
   };

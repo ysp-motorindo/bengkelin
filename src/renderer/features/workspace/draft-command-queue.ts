@@ -258,7 +258,7 @@ export class DraftCommandQueue {
    * ownership transfer that changes `ownerMismatch`). Pending input first.
    */
   async refresh(): Promise<void> {
-    await this.flush();
+    if (!(await this.flush())) return;
     if (!this.isClosed) await this.reload(false);
   }
 
@@ -386,12 +386,21 @@ export class DraftCommandQueue {
   }
 
   /** Reloads with `drafts.get`; used after conflicts and replays. */
+  private reloadSequence = 0;
   private async reload(notify: boolean): Promise<void> {
+    const sequence = ++this.reloadSequence;
     const result = await this.withTransportRetry(
       () => this.deps.get(this.invoiceId),
       noop,
     );
-    if (result === null || this.isClosed) return;
+    if (this.isClosed || sequence !== this.reloadSequence) return;
+    if (result === null) {
+      this.listener.notice({
+        kind: 'failed',
+        error: { code: 'INTERNAL_ERROR', messageKey: 'errors.INTERNAL_ERROR' },
+      });
+      return;
+    }
     if (result.ok) {
       this.acceptView(result.value);
       if (notify) this.listener.notice({ kind: 'conflictReloaded' });
@@ -401,7 +410,7 @@ export class DraftCommandQueue {
       this.closeWith(result.error.code as ClosedCode, result);
     } else if (result.error.code === 'UNAUTHENTICATED') {
       this.listener.notice({ kind: 'unauthenticated' });
-    }
+    } else this.listener.notice({ kind: 'failed', error: result.error });
   }
 
   private async withTransportRetry<T>(

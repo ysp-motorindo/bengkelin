@@ -239,6 +239,7 @@ export function renderDailyReportHtml(
 <section>
   <h2>${labels.paymentSplit}</h2>
   <p class="basis">${labels.paymentsBasis}</p>
+  ${report.filters.channel ? html`<p class="basis">${labels.openingChannelNote}</p>` : html``}
   <div class="columns">
     ${summary([
       {
@@ -252,6 +253,13 @@ export function renderDailyReportHtml(
       {
         label: labels.olderInvoices,
         value: money('payments.olderInvoices', payments.olderInvoices),
+      },
+      {
+        label: labels.openingBalanceRepayments,
+        value: money(
+          'payments.openingBalanceRepayments',
+          payments.openingBalanceRepayments,
+        ),
       },
       {
         label: labels.received,

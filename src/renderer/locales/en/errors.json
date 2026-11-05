@@ -154,5 +154,11 @@
   "LEGACY_CHECKOUT_REVIEW_REQUIRED": "Replace the legacy sequential discount before checkout.",
   "STOCK_LOCATION_NOT_FOUND": "Stock location not found. Choose an active location.",
   "STOCK_LOCATION_INACTIVE": "Stock location is inactive. Choose an active location.",
-  "STOCK_LOCATION_REQUIRED": "Set up an active stock location in Reference Data before continuing."
+  "STOCK_LOCATION_REQUIRED": "Set up an active stock location in Reference Data before continuing.",
+  "OPENING_IMPORT_HEADER": "CSV columns must be external_id, customer_name, as_of_date, opening_balance.",
+  "OPENING_IMPORT_UNKNOWN_CUSTOMER": "Customer ID is unknown. Import the customer master first.",
+  "OPENING_IMPORT_INVALID_DATE": "Use a valid calendar date (YYYY-MM-DD).",
+  "OPENING_IMPORT_INVALID_AMOUNT": "Use nonnegative whole Rupiah within the supported range.",
+  "OPENING_IMPORT_CONFLICT": "This customer already has an opening balance with a different date or amount.",
+  "CUSTOMER_OPENING_NOT_FOUND": "Customer opening balance not found."
 }

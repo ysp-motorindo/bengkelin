@@ -340,6 +340,11 @@ export function ReportSections({ report }: { report: DailyReport }) {
         title={t('reports.payments.title')}
         basis={t('reports.payments.basis')}
       >
+        {report.filters.channel && (
+          <p className="text-sm text-muted-foreground">
+            {t('reports.payments.openingChannelNote')}
+          </p>
+        )}
         <div className="grid gap-4 lg:grid-cols-2">
           <Figures
             caption={t('reports.payments.title')}
@@ -363,6 +368,15 @@ export function ReportSections({ report }: { report: DailyReport }) {
                   <Money
                     field="payments.olderInvoices"
                     value={payments.olderInvoices}
+                  />
+                ),
+              },
+              {
+                label: t('reports.payments.opening'),
+                value: (
+                  <Money
+                    field="payments.openingBalanceRepayments"
+                    value={payments.openingBalanceRepayments}
                   />
                 ),
               },

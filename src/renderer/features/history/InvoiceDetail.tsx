@@ -472,7 +472,7 @@ export function InvoiceDetail({
         <PaymentDialog
           invoice={invoice}
           onClose={() => setDialog(null)}
-          onRecorded={(view) => {
+          onRecorded={(view: InvoiceView) => {
             const newest = view.payments[view.payments.length - 1];
             updated(
               view,

@@ -126,6 +126,13 @@ export const CHANNELS = {
     commitImport: 'bengkelin:referenceTransfer:commitImport',
     downloadTemplate: 'bengkelin:referenceTransfer:downloadTemplate',
   },
+  customerReceivables: {
+    previewImport: 'bengkelin:customerReceivables:previewImport',
+    commitImport: 'bengkelin:customerReceivables:commitImport',
+    list: 'bengkelin:customerReceivables:list',
+    get: 'bengkelin:customerReceivables:get',
+    recordPayment: 'bengkelin:customerReceivables:recordPayment',
+  },
   customerTransfer: {
     previewImport: 'bengkelin:customerTransfer:previewImport',
     commitImport: 'bengkelin:customerTransfer:commitImport',

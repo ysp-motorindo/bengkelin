@@ -121,7 +121,8 @@
     "invoiceNumber": "No. Faktur",
     "taxInvoiceNumber": "No. Faktur Pajak",
     "pricingOptions": "Channel dan waktu harga",
-    "cashier": "Kasir"
+    "cashier": "Kasir",
+    "piutang": "Piutang"
   },
   "pricing": {
     "title": "Waktu harga",

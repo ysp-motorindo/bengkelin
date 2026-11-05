@@ -135,12 +135,14 @@ export function toDailyReport(
   let paymentCount = 0n;
   let sameDay = 0n;
   let older = 0n;
+  let opening = 0n;
   const byMethod = PAYMENT_METHODS.map((method: PaymentMethod) => {
     const row = methods.get(method);
     received += row?.amount ?? 0n;
     paymentCount += row?.payment_count ?? 0n;
     sameDay += row?.same_day ?? 0n;
     older += row?.older ?? 0n;
+    opening += row?.opening ?? 0n;
     return {
       method,
       count: toNumber(row?.payment_count ?? 0n),
@@ -177,6 +179,7 @@ export function toDailyReport(
       byMethod,
       sameDayInvoices: formatRupiah(sameDay),
       olderInvoices: formatRupiah(older),
+      openingBalanceRepayments: formatRupiah(opening),
     },
   };
 }

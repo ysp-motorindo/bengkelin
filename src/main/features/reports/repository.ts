@@ -59,6 +59,7 @@ export interface PaymentMethodRow {
   amount: bigint;
   same_day: bigint;
   older: bigint;
+  opening: bigint;
 }
 
 function filterSql(
@@ -124,10 +125,11 @@ export const REPORT_QUERIES = {
    */
   paymentsByMethod(range: InstantRange, filters: ReportFilters): Query {
     const f = filterSql(filters, 'p.received_by_cashier_id');
-    return {
+    const invoiceQuery: Query = {
       sql: `SELECT p.method,
                  COUNT(*) AS payment_count,
                  SUM(p.amount) AS amount,
+                 0 AS opening,
                  SUM(CASE WHEN i.finalized_at >= ? THEN p.amount ELSE 0 END) AS same_day,
                  SUM(CASE WHEN i.finalized_at < ? THEN p.amount ELSE 0 END) AS older
             FROM payments p
@@ -135,6 +137,23 @@ export const REPORT_QUERIES = {
            WHERE p.paid_at >= ? AND p.paid_at < ? ${f.sql}
            GROUP BY p.method`,
       params: [range.start, range.start, range.start, range.end, ...f.params],
+    };
+    if (filters.channelId) return invoiceQuery;
+    return {
+      sql: `SELECT method,SUM(payment_count) payment_count,SUM(amount) amount,SUM(same_day) same_day,SUM(older) older,SUM(opening) opening FROM (
+        ${invoiceQuery.sql}
+        UNION ALL
+        SELECT method,COUNT(*) payment_count,SUM(amount) amount,SUM(amount) opening,0 same_day,0 older
+        FROM customer_opening_payments
+        WHERE paid_at>=? AND paid_at<? ${filters.cashierId ? 'AND received_by_cashier_id=?' : ''}
+        GROUP BY method
+      ) GROUP BY method`,
+      params: [
+        ...invoiceQuery.params,
+        range.start,
+        range.end,
+        ...(filters.cashierId ? [filters.cashierId] : []),
+      ],
     };
   },
 } as const;

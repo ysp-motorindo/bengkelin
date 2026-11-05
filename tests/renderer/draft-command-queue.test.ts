@@ -35,6 +35,7 @@ function makeView(version: number, extra: Partial<DraftView> = {}): DraftView {
     expedition: null,
     customer: null,
     vehicle: null,
+    customerOutstandingAmount: null,
     ownerMismatch: false,
     odometerKm: null,
     note: null,
@@ -628,4 +629,42 @@ describe('inline cancellation and rejected saves', () => {
     expect(await queue.flush()).toBe(true);
     expect(queue.saveState).toBe('saved');
   });
+});
+
+test('refresh preserves invalid pending edits and reports reload failures', async () => {
+  const { queue, server, notices } = setup();
+  queue.markInvalid('note', true);
+  await queue.refresh();
+  expect(server.get).not.toHaveBeenCalled();
+  queue.markInvalid('note', false);
+  server.get.mockResolvedValueOnce({
+    ok: false,
+    error: { code: 'INTERNAL_ERROR', messageKey: 'errors.INTERNAL_ERROR' },
+  });
+  await queue.refresh();
+  expect(notices).toContainEqual({
+    kind: 'failed',
+    error: { code: 'INTERNAL_ERROR', messageKey: 'errors.INTERNAL_ERROR' },
+  });
+});
+
+test('older refresh cannot overwrite a newer balance at the same draft version', async () => {
+  const { queue, server } = setup();
+  let resolveOld!: (value: Result<DraftView>) => void;
+  server.get
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveOld = resolve;
+        }),
+    )
+    .mockResolvedValueOnce(
+      ok(makeView(1, { customerOutstandingAmount: '70000' })),
+    );
+  const old = queue.refresh();
+  await settle();
+  await queue.refresh();
+  resolveOld(ok(makeView(1, { customerOutstandingAmount: '90000' })));
+  await old;
+  expect(queue.view.customerOutstandingAmount).toBe('70000');
 });

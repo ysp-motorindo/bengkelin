@@ -122,6 +122,13 @@ const api: BengkelinApi = Object.freeze({
     commitImport: call(c.referenceTransfer.commitImport),
     downloadTemplate: call(c.referenceTransfer.downloadTemplate),
   }),
+  customerReceivables: Object.freeze({
+    previewImport: call(c.customerReceivables.previewImport),
+    commitImport: call(c.customerReceivables.commitImport),
+    list: call(c.customerReceivables.list),
+    get: call(c.customerReceivables.get),
+    recordPayment: call(c.customerReceivables.recordPayment),
+  }),
   customerTransfer: Object.freeze({
     previewImport: call(c.customerTransfer.previewImport),
     commitImport: call(c.customerTransfer.commitImport),

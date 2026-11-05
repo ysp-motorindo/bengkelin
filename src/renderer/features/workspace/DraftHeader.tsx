@@ -1,3 +1,4 @@
+import { useNumberFormat } from '@/renderer/lib/number-format';
 import { TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -62,6 +63,7 @@ export function DraftHeader({
   onError,
 }: DraftHeaderProps) {
   const { t } = useTranslation();
+  const { formatIdr } = useNumberFormat();
   const { view, send, edit, isDirty, markInvalid } = commands;
   const [taxNumber, setTaxNumber] = useSyncedValue(
     commands.view.taxInvoiceNumber ?? '',
@@ -158,6 +160,17 @@ export function DraftHeader({
       aria-label={t('workspace.header.label')}
       className="flex flex-col gap-2 [&_input]:h-8 [&_select]:h-8 [&_select]:py-0 [&_select]:leading-normal [&_input]:text-xs [&_select]:text-xs [&_label]:text-xs"
     >
+      {view.customer && view.customerOutstandingAmount !== null && (
+        <div className="flex justify-end gap-2 text-sm tabular-nums">
+          <span>{t('workspace.header.piutang')}</span>
+          <output
+            aria-label={t('workspace.header.piutang')}
+            className="font-semibold"
+          >
+            {formatIdr(view.customerOutstandingAmount)}
+          </output>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]">
         <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr]">
           <FormField label={t('workspace.header.channel')}>

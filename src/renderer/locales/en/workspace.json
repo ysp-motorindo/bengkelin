@@ -121,7 +121,8 @@
     "invoiceNumber": "Invoice Number",
     "taxInvoiceNumber": "Tax Invoice Number",
     "pricingOptions": "Channel and pricing time",
-    "cashier": "Cashier"
+    "cashier": "Cashier",
+    "piutang": "Outstanding debt"
   },
   "pricing": {
     "title": "Pricing time",

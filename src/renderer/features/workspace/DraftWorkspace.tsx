@@ -108,6 +108,15 @@ export function DraftWorkspace({
     }
   }, [active, flush, reload, t]);
 
+  useEffect(() => {
+    if (!active) return;
+    const refresh = () => {
+      void reload().catch(() => setError(t('errors.INTERNAL_ERROR')));
+    };
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, [active, reload, t]);
+
   const focusSearch = useCallback(() => {
     entryRef.current?.focusSearch();
   }, []);

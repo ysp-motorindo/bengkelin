@@ -1,3 +1,9 @@
+import { commitOpeningImportInputSchema } from '@/shared/contracts';
+import {
+  openingListInputSchema,
+  openingCustomerInputSchema,
+  recordOpeningPaymentInputSchema,
+} from '@/shared/contracts';
 import {
   referenceTransferInputSchema,
   commitReferenceImportInputSchema,
@@ -93,6 +99,8 @@ const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
   C.references.list,
   C.customers.search,
   C.customers.get,
+  C.customerReceivables.list,
+  C.customerReceivables.get,
   C.vehicles.searchByPlate,
   C.vehicles.get,
   C.catalog.search,
@@ -174,6 +182,7 @@ export function buildCommands(services: ApplicationServices): Command[] {
     restore,
     catalogTransfer,
     referenceTransfer,
+    customerReceivables,
     customerTransfer,
     app,
     menu,
@@ -543,6 +552,33 @@ export function buildCommands(services: ApplicationServices): Command[] {
       referenceTransferInputSchema,
       ({ windowId }, input) =>
         referenceTransfer.downloadTemplate(session(windowId), input),
+    ),
+    command(C.customerReceivables.previewImport, noInput, ({ windowId }) =>
+      customerReceivables.previewImport(session(windowId)),
+    ),
+    command(
+      C.customerReceivables.commitImport,
+      commitOpeningImportInputSchema,
+      ({ windowId }, input) =>
+        customerReceivables.commitImport(session(windowId), input),
+    ),
+    command(
+      C.customerReceivables.list,
+      openingListInputSchema,
+      ({ windowId }, input) =>
+        customerReceivables.list(session(windowId), input),
+    ),
+    command(
+      C.customerReceivables.get,
+      openingCustomerInputSchema,
+      ({ windowId }, input) =>
+        customerReceivables.get(session(windowId), input),
+    ),
+    command(
+      C.customerReceivables.recordPayment,
+      recordOpeningPaymentInputSchema,
+      ({ windowId }, input) =>
+        customerReceivables.recordPayment(session(windowId), input),
     ),
     command(C.customerTransfer.previewImport, noInput, ({ windowId }) =>
       customerTransfer.previewImport(session(windowId)),
