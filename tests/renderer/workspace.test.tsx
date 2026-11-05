@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { CashierWorkspace } from '@/renderer/features/workspace/CashierWorkspace';
@@ -628,7 +628,9 @@ test('shows customer Piutang and refreshes it on window focus', async () => {
   bridge.drafts.create.mockResolvedValue(
     ok(draftView({ customer, customerOutstandingAmount: '90000' })),
   );
-  render(<CashierWorkspace />);
+  await act(async () => {
+    render(<CashierWorkspace />);
+  });
   expect(await screen.findByLabelText('Piutang')).toHaveTextContent(
     'Rp 90.000',
   );
