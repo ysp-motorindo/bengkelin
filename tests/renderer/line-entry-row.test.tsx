@@ -56,7 +56,12 @@ test('custom action opens a modal and cancellation restores search focus', async
   const search = screen.getByRole('combobox', { name: 'Cari barang' });
   await user.click(search);
   await user.click(await screen.findByRole('option', { name: 'Item kustom' }));
-  expect(screen.getByRole('dialog')).toBeVisible();
+  expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  expect(
+    screen
+      .getByRole('button', { name: 'Batal' })
+      .closest('.dialog-scroll-area'),
+  ).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Batal' }));
   expect(search).toHaveFocus();
   expect(await flushAll()).toBe(true);
@@ -196,7 +201,7 @@ test('Escape cannot abandon a custom item submission in flight', async () => {
   await user.click(screen.getByRole('textbox', { name: 'Harga' }));
   await user.keyboard('{Escape}');
   expect(
-    screen.getByRole('region', { name: 'Tambah item kustom' }),
+    screen.getByRole('dialog', { name: 'Tambah item kustom' }),
   ).toBeInTheDocument();
   resolve({ ok: true, value: draftView({ version: 2 }) });
   await waitFor(() =>

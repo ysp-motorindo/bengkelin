@@ -232,8 +232,8 @@ async function choosePreference(
   await option.locator('..').click();
 }
 
-async function startAsCashier(): Promise<Page> {
-  launched = await launchApp({ dataDir });
+async function startAsCashier(args: string[] = []): Promise<Page> {
+  launched = await launchApp({ dataDir, args });
   const { page } = launched;
   await seed(page);
   await login(page);
@@ -472,13 +472,14 @@ test('short dialogs and custom entry fit a narrow screen', async () => {
   await page
     .getByRole('option', { name: t('workspace.custom.open'), ...exact })
     .click();
-  const entry = page.getByRole('region', { name: t('workspace.custom.title') });
+  const entry = page.getByRole('dialog', { name: t('workspace.custom.title') });
   await expect(page.getByRole('dialog')).toHaveCount(1);
-  const cancel = entry.getByRole('button', {
-    name: t('workspace.common.cancel'),
-    ...exact,
-  });
-  await cancel.scrollIntoViewIfNeeded();
+  const cancel = entry
+    .locator('.dialog-scroll-area + div')
+    .getByRole('button', {
+      name: t('workspace.common.cancel'),
+      ...exact,
+    });
   await expect(cancel).toBeInViewport();
   await cancel.click();
   await expect(searchBox(page)).toBeFocused();
@@ -754,7 +755,7 @@ test('custom service line with mechanic, checkout allocations and the review ste
   await page
     .getByRole('option', { name: t('workspace.custom.open'), ...exact })
     .click();
-  const custom = page.getByRole('region', {
+  const custom = page.getByRole('dialog', {
     name: t('workspace.custom.title'),
   });
   await custom
@@ -795,11 +796,19 @@ test('custom service line with mechanic, checkout allocations and the review ste
   );
 
   await page
-    .getByRole('textbox', {
-      name: t('workspace.checkout.payments'),
-      exact: true,
-    })
+    .getByRole('button', { name: t('workspace.checkout.payments'), ...exact })
+    .click();
+  const payments = page.getByRole('dialog', {
+    name: t('workspace.checkout.payments'),
+    ...exact,
+  });
+  await payments
+    .getByLabel(`${t('workspace.checkout.amount')} 1`, exact)
     .fill('100000');
+  await payments
+    .getByRole('button', { name: t('workspace.checkout.apply'), ...exact })
+    .click();
+  await expect(payments).toHaveCount(0);
   await expect(page.getByTestId('cash-change')).toHaveText('Rp 10.000');
 
   await page
@@ -913,3 +922,252 @@ test('language and theme switch; 1024x768, 1366x768 and 200% zoom keep key contr
   await scanner(page)(BARCODE);
   await expect(page.getByTestId('line-quantity')).toHaveValue('2');
 });
+
+for (const viewport of [
+  { width: 1800, height: 1040 },
+  { width: 390, height: 560 },
+]) {
+  for (const lang of ['id', 'en'] as const) {
+    for (const appearance of ['light', 'dark'] as const) {
+      test(`creation dialogs: ${viewport.width} ${lang} ${appearance}`, async () => {
+        const testInfo = test.info();
+        test.setTimeout(120_000);
+        const page = await startAsCashier(['--force-device-scale-factor=1']);
+        await page.setViewportSize(viewport);
+        expect(await page.evaluate(() => window.devicePixelRatio)).toBe(1);
+        if (lang === 'en')
+          await choosePreference(page, 'languages', 'en', 'id');
+        if (appearance === 'dark')
+          await choosePreference(page, 'appearances', 'DARK', lang);
+        await page.keyboard.press('Escape');
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        const capture = async (name: string) => {
+          await page.evaluate(() => document.fonts.ready);
+          const stamp = new Date().toISOString().replaceAll(/[:.]/g, '-');
+          await page.screenshot({
+            path: testInfo.outputPath(`${stamp}-${name}.png`),
+          });
+        };
+        const open = async (mode: 'custom' | 'customer' | 'vehicle') => {
+          const input =
+            mode === 'custom'
+              ? searchBox(page, lang)
+              : page.getByTestId(`header-${mode}`);
+          await input.click();
+          await page
+            .getByRole('option', {
+              name: t(
+                mode === 'custom'
+                  ? 'workspace.custom.open'
+                  : mode === 'customer'
+                    ? 'workspace.party.createCustomer'
+                    : 'workspace.party.createVehicle',
+                lang,
+              ),
+              ...exact,
+            })
+            .click();
+          return { input, dialog: page.getByRole('dialog') };
+        };
+        const layout = async () => {
+          const dialog = page.getByRole('dialog');
+          await expect(dialog).toHaveCount(1);
+          await expect(dialog.getByRole('heading')).toHaveCount(1);
+          await expect(dialog.locator('.shadow-sm')).toHaveCount(0);
+          const footer = dialog.locator('.dialog-scroll-area + div');
+          for (const button of await footer.getByRole('button').all())
+            await expect(button).toBeInViewport({ ratio: 1 });
+          expect(
+            await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
+          ).toBe(true);
+          const body = dialog.locator('.dialog-scroll-area');
+          expect(
+            await body.evaluate((el) => el.scrollWidth <= el.clientWidth),
+          ).toBe(true);
+          const headerBefore = await dialog.getByRole('heading').boundingBox();
+          const footerBefore = await footer.boundingBox();
+          await body.evaluate((el) => {
+            el.scrollTop = el.scrollHeight;
+          });
+          await expect(dialog.getByRole('heading')).toBeInViewport({
+            ratio: 1,
+          });
+          expect(await dialog.getByRole('heading').boundingBox()).toEqual(
+            headerBefore,
+          );
+          expect(await footer.boundingBox()).toEqual(footerBefore);
+          return body;
+        };
+        for (const mode of ['custom', 'customer', 'vehicle'] as const) {
+          for (const dismissal of ['cancel', 'corner', 'escape'] as const) {
+            const { input, dialog } = await open(mode);
+            await layout();
+            if (dismissal === 'cancel') {
+              await dialog.locator('.dialog-scroll-area').evaluate((el) => {
+                el.scrollTop = 0;
+              });
+              await capture(`${mode}-initial`);
+              await dialog
+                .locator('.dialog-scroll-area + div')
+                .getByRole('button', {
+                  name: t('workspace.common.cancel', lang),
+                  ...exact,
+                })
+                .click();
+            } else if (dismissal === 'corner')
+              await dialog
+                .getByRole('button', {
+                  name: t('workspace.common.close', lang),
+                  ...exact,
+                })
+                .click();
+            else await page.keyboard.press('Escape');
+            await expect(dialog).toHaveCount(0);
+            await expect(input).toBeFocused();
+          }
+          const { input, dialog } = await open(mode);
+          const submit = dialog
+            .locator('.dialog-scroll-area + div')
+            .getByRole('button')
+            .last();
+          await submit.click();
+          if (mode === 'customer')
+            await expect(dialog.getByRole('alert')).toBeVisible();
+          else
+            await expect(
+              dialog.locator('[aria-invalid="true"]').first(),
+            ).toBeVisible();
+          await layout();
+          await dialog.locator('.dialog-scroll-area').evaluate((el) => {
+            el.scrollTop = 0;
+          });
+          await capture(`${mode}-validation`);
+          if (mode === 'custom') {
+            await dialog
+              .getByLabel(t('workspace.custom.itemTitle', lang), exact)
+              .fill('Dialog service');
+            await dialog
+              .getByLabel(t('workspace.custom.price', lang), exact)
+              .fill('5000');
+          } else if (mode === 'customer')
+            await dialog
+              .getByLabel(t('customers.quickCustomer.name', lang), exact)
+              .fill('Dialog Customer');
+          else
+            await dialog
+              .getByLabel(t('customers.quickVehicle.plate', lang), exact)
+              .fill('B 1234 XY');
+          await submit.click();
+          await expect(dialog).toHaveCount(0);
+          await expect(input).toBeFocused();
+        }
+        // Saved custom references feed the existing autocomplete through the real bridge.
+        {
+          const { dialog, input } = await open('custom');
+          const title = dialog.getByLabel(
+            t('workspace.custom.itemTitle', lang),
+            exact,
+          );
+          await title.fill('Dialog service');
+          await expect(
+            dialog.getByRole('option', { name: /Dialog service/ }),
+          ).toBeVisible();
+          await title.press('Escape');
+          await expect(dialog.getByRole('listbox')).toBeHidden();
+          await expect(dialog).toBeVisible();
+          await title.press('Escape');
+          await expect(dialog).toHaveCount(0);
+          await expect(input).toBeFocused();
+        }
+        // Long duplicate review makes body scrolling necessary at both sizes.
+        await page.evaluate(async () => {
+          for (let index = 0; index < 20; index++) {
+            const result = await window.bengkelin.customers.save({
+              name: `Duplicate ${index}`,
+              phoneNumber: '08123456789',
+              acknowledgeDuplicates: true,
+            });
+            if (!result.ok) throw new Error(JSON.stringify(result.error));
+          }
+        });
+        {
+          const { dialog } = await open('customer');
+          await dialog
+            .getByLabel(t('customers.quickCustomer.phone', lang), exact)
+            .fill('08123456789');
+          await dialog
+            .getByRole('button', {
+              name: t('customers.quickCustomer.submit', lang),
+              ...exact,
+            })
+            .click();
+          await expect(dialog.getByRole('group')).toBeVisible();
+          const body = await layout();
+          expect(
+            await body.evaluate(
+              (el) => el.scrollHeight > el.clientHeight && el.scrollTop > 0,
+            ),
+          ).toBe(true);
+          await capture('customer-duplicate-scrolled');
+          await dialog
+            .locator('.dialog-scroll-area + div')
+            .getByRole('button', {
+              name: t('customers.duplicate.acknowledge', lang),
+              ...exact,
+            })
+            .click();
+          await expect(dialog).toHaveCount(0);
+        }
+        {
+          const { dialog } = await open('vehicle');
+          await dialog
+            .getByLabel(t('customers.quickVehicle.plate', lang), exact)
+            .fill('B 1234 XY');
+          await dialog
+            .getByRole('button', {
+              name: t('customers.quickVehicle.submit', lang),
+              ...exact,
+            })
+            .click();
+          await expect(dialog.getByRole('group')).toBeVisible();
+          await layout();
+          await capture('vehicle-reuse');
+          await dialog
+            .locator('.dialog-scroll-area + div')
+            .getByRole('button', {
+              name: t('customers.plateExists.use', lang),
+              ...exact,
+            })
+            .click();
+          await expect(dialog).toHaveCount(0);
+        }
+        await page
+          .getByRole('button', {
+            name: t('shell.nav.customers', lang),
+            ...exact,
+          })
+          .click();
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        const customerForm = page.getByRole('form', {
+          name: t('customers.quickCustomer.title', lang),
+          ...exact,
+        });
+        const vehicleForm = page.getByRole('form', {
+          name: t('customers.quickVehicle.title', lang),
+          ...exact,
+        });
+        await expect(customerForm.getByRole('heading')).toBeVisible();
+        await expect(vehicleForm.getByRole('heading')).toBeVisible();
+        expect(await customerForm.getAttribute('id')).not.toBe(
+          await vehicleForm.getAttribute('id'),
+        );
+        await customerForm.scrollIntoViewIfNeeded();
+        await capture('inline-customer');
+        await vehicleForm.scrollIntoViewIfNeeded();
+        await capture('inline-vehicle');
+        expect(errors).toEqual([]);
+      });
+    }
+  }
+}
