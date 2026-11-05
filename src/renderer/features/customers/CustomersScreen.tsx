@@ -1,3 +1,4 @@
+import { OpeningImportDialog } from './OpeningImportDialog';
 import { CustomerImportDialog } from './CustomerImportDialog';
 import { X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
@@ -32,6 +33,7 @@ interface Results {
  */
 export function CustomersScreen({ role = 'CASHIER' }: { role?: Role } = {}) {
   const { t } = useTranslation();
+  const [openingImport, setOpeningImport] = useState(false);
   const [importing, setImporting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState('');
@@ -84,6 +86,9 @@ export function CustomersScreen({ role = 'CASHIER' }: { role?: Role } = {}) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      {openingImport && (
+        <OpeningImportDialog onClose={() => setOpeningImport(false)} />
+      )}
       {importing ? (
         <CustomerImportDialog
           onClose={() => setImporting(false)}
@@ -98,13 +103,18 @@ export function CustomersScreen({ role = 'CASHIER' }: { role?: Role } = {}) {
             {t('customers.title')}
           </h1>
           {role === 'ADMIN' ? (
-            <Button
-              variant="outline"
-              className="self-start"
-              onClick={() => setImporting(true)}
-            >
-              {t('customers.import.open')}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setOpeningImport(true)}>
+                {t('history.opening.importOpen')}
+              </Button>
+              <Button
+                variant="outline"
+                className="self-start"
+                onClick={() => setImporting(true)}
+              >
+                {t('customers.import.open')}
+              </Button>
+            </div>
           ) : null}
         </div>
         {error ? <Alert>{error}</Alert> : null}

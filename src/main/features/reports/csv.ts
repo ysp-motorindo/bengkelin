@@ -23,6 +23,7 @@ export function dailyReportCsvRows(
     [labels.generatedAt, report.generatedAtLocal],
     [labels.cashierFilter, report.filters.cashier?.displayName ?? labels.all],
     [labels.channelFilter, report.filters.channel?.label ?? labels.all],
+    ...(report.filters.channel ? [[labels.openingChannelNote]] : []),
     [],
     [labels.salesSummary],
     [labels.metric, labels.value],
@@ -84,6 +85,10 @@ export function dailyReportCsvRows(
     [labels.received, n(report.payments.received)],
     [labels.sameDayInvoices, n(report.payments.sameDayInvoices)],
     [labels.olderInvoices, n(report.payments.olderInvoices)],
+    [
+      labels.openingBalanceRepayments,
+      n(report.payments.openingBalanceRepayments),
+    ],
     [labels.paymentCount, n(report.payments.count)],
   ];
   return rows;

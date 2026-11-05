@@ -13,16 +13,18 @@ import { parseRupiahInput } from '@/renderer/lib/money';
 import { useAction } from '@/renderer/lib/use-action';
 import {
   PAYMENT_METHODS,
+  type CustomerOpeningDetail,
   type InvoiceView,
   type PaymentMethod,
-  type RecordPaymentInput,
 } from '@/shared/contracts';
 
-interface PaymentDialogProps {
-  invoice: InvoiceView;
-  onClose(): void;
-  onRecorded(view: InvoiceView): void;
-}
+type PaymentDialogProps = { onClose(): void } & (
+  | { invoice: InvoiceView; onRecorded(view: InvoiceView): void }
+  | {
+      opening: CustomerOpeningDetail;
+      onRecorded(view: CustomerOpeningDetail): void;
+    }
+);
 
 /**
  * Later payment (spec 22). The amount defaults to the outstanding balance.
@@ -30,11 +32,17 @@ interface PaymentDialogProps {
  * after a lost response) reuses it, so main records it at most once; any
  * change to the form starts a new submission.
  */
-export function PaymentDialog({
-  invoice,
-  onClose,
-  onRecorded,
-}: PaymentDialogProps) {
+export function PaymentDialog(props: PaymentDialogProps) {
+  const { onClose } = props;
+  const invoice =
+    'opening' in props
+      ? {
+          id: props.opening.customerId,
+          invoiceNumber:
+            props.opening.customerName ?? props.opening.externalId ?? '',
+          outstandingAmount: props.opening.outstandingAmount,
+        }
+      : props.invoice;
   const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const [method, setMethod] = useState<PaymentMethod>('CASH');
@@ -58,41 +66,62 @@ export function PaymentDialog({
     }
     setAmountError(undefined);
     const payload = {
-      invoiceId: invoice.id,
       method,
       amount,
       reference,
       note,
     };
-    const key = JSON.stringify(payload);
+    const key = JSON.stringify({ id: invoice.id, ...payload });
     if (pending.current?.key !== key) {
       pending.current = { key, requestId: crypto.randomUUID() };
     }
-    const input: RecordPaymentInput = {
-      requestId: pending.current.requestId,
-      ...payload,
-    };
+    const input = { requestId: pending.current.requestId, ...payload };
     void action.run(async () => {
-      const result = await window.bengkelin.invoices.recordPayment(input);
-      if (action.check(result)) {
-        pending.current = null;
-        onRecorded(result.value);
+      if ('opening' in props) {
+        const result = await window.bengkelin.customerReceivables.recordPayment(
+          { ...input, customerId: props.opening.customerId },
+        );
+        if (action.check(result)) {
+          pending.current = null;
+          props.onRecorded(result.value);
+        }
+      } else {
+        const result = await window.bengkelin.invoices.recordPayment({
+          ...input,
+          invoiceId: props.invoice.id,
+        });
+        if (action.check(result)) {
+          pending.current = null;
+          props.onRecorded(result.value);
+        }
       }
     });
   }
 
   return (
     <Dialog
-      title={t('history.payment.title', { number: invoice.invoiceNumber })}
+      title={t(
+        'opening' in props
+          ? 'history.opening.paymentTitle'
+          : 'history.payment.title',
+        { number: invoice.invoiceNumber },
+      )}
       description={t('history.payment.outstanding', {
         amount: formatIdr(invoice.outstandingAmount),
       })}
-      onClose={onClose}
+      onClose={() => {
+        if (!action.busy) onClose();
+      }}
       closeLabel={t('history.payment.cancel')}
       footer={
         <DialogActions
           secondary={
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={action.busy}
+              onClick={onClose}
+            >
               <X aria-hidden="true" />
               {t('history.payment.cancel')}
             </Button>
@@ -113,53 +142,57 @@ export function PaymentDialog({
         noValidate
         className="flex flex-col gap-3"
       >
-        <FormField label={t('history.payment.method')}>
-          <Select
-            value={method}
-            onChange={(event) => setMethod(event.target.value as PaymentMethod)}
+        <fieldset disabled={action.busy} className="flex flex-col gap-3">
+          <FormField label={t('history.payment.method')}>
+            <Select
+              value={method}
+              onChange={(event) =>
+                setMethod(event.target.value as PaymentMethod)
+              }
+            >
+              {PAYMENT_METHODS.map((value) => (
+                <option key={value} value={value}>
+                  {t(`workspace.paymentMethod.${value}`)}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          <FormField
+            label={t('history.payment.amount')}
+            error={amountError ?? action.fieldErrors.amount}
           >
-            {PAYMENT_METHODS.map((value) => (
-              <option key={value} value={value}>
-                {t(`workspace.paymentMethod.${value}`)}
-              </option>
-            ))}
-          </Select>
-        </FormField>
-        <FormField
-          label={t('history.payment.amount')}
-          error={amountError ?? action.fieldErrors.amount}
-        >
-          <NumericInput
-            autoComplete="off"
-            value={amountText}
-            onValueChange={setAmountText}
-          />
-        </FormField>
-        <FormField
-          label={t('history.payment.reference')}
-          error={action.fieldErrors.reference}
-        >
-          <Input
-            autoComplete="off"
-            value={reference}
-            maxLength={100}
-            onChange={(event) => setReference(event.target.value)}
-          />
-        </FormField>
-        <FormField
-          label={t('history.payment.note')}
-          error={action.fieldErrors.note}
-        >
-          <Input
-            autoComplete="off"
-            value={note}
-            maxLength={500}
-            onChange={(event) => setNote(event.target.value)}
-          />
-        </FormField>
-        <p className="text-xs text-muted-foreground">
-          {t('history.payment.paidAtNote')}
-        </p>
+            <NumericInput
+              autoComplete="off"
+              value={amountText}
+              onValueChange={setAmountText}
+            />
+          </FormField>
+          <FormField
+            label={t('history.payment.reference')}
+            error={action.fieldErrors.reference}
+          >
+            <Input
+              autoComplete="off"
+              value={reference}
+              maxLength={100}
+              onChange={(event) => setReference(event.target.value)}
+            />
+          </FormField>
+          <FormField
+            label={t('history.payment.note')}
+            error={action.fieldErrors.note}
+          >
+            <Input
+              autoComplete="off"
+              value={note}
+              maxLength={500}
+              onChange={(event) => setNote(event.target.value)}
+            />
+          </FormField>
+          <p className="text-xs text-muted-foreground">
+            {t('history.payment.paidAtNote')}
+          </p>
+        </fieldset>
         {action.error ? <Alert>{action.error}</Alert> : null}
       </form>
     </Dialog>

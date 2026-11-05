@@ -173,3 +173,59 @@ test('rechecks session and validity after backup', async () => {
       .code,
   ).toBe('UNAUTHENTICATED');
 });
+
+test.each(['logout', 'stale'] as const)(
+  'rechecks %s after awaiting safety backup',
+  async (change) => {
+    const p = await preview();
+    const original = h.services.backups.createValidatedBackup.bind(
+      h.services.backups,
+    );
+    vi.spyOn(
+      h.services.backups,
+      'createValidatedBackup',
+    ).mockImplementationOnce(async (input) => {
+      const backup = await original(input);
+      if (change === 'logout') value(await h.call(C.auth.logout));
+      else h.db.prepare("UPDATE customers SET name='Changed'").run();
+      return backup;
+    });
+    expect(failure(await commit(p.token)).code).toBe(
+      change === 'logout' ? 'UNAUTHENTICATED' : 'IMPORT_PREVIEW_STALE',
+    );
+    expect(
+      h.db.prepare('SELECT COUNT(*) n FROM customer_opening_balances').get(),
+    ).toEqual({ n: 0n });
+  },
+);
+test('an error after the first insert rolls back every opening and its command receipt', async () => {
+  const second = randomUUID();
+  h.db
+    .prepare(
+      'INSERT INTO customers(id,name,external_id,created_at,updated_at) VALUES (?,?,?,?,?)',
+    )
+    .run(
+      second,
+      'Beta',
+      'CU-2',
+      new Date(now).toISOString(),
+      new Date(now).toISOString(),
+    );
+  writeFileSync(
+    file,
+    header + 'CU-1,A,2026-09-30,100000\nCU-2,B,2026-09-30,200000',
+  );
+  h.db.exec(
+    "CREATE TRIGGER reject_second BEFORE INSERT ON customer_opening_balances WHEN NEW.amount=200000 BEGIN SELECT RAISE(ABORT,'disk'); END",
+  );
+  const p = await preview();
+  expect((await commit(p.token)).ok).toBe(false);
+  expect(
+    h.db.prepare('SELECT COUNT(*) n FROM customer_opening_balances').get(),
+  ).toEqual({ n: 0n });
+  expect(
+    h.db
+      .prepare('SELECT request_id FROM command_receipts WHERE request_id=?')
+      .get(p.token),
+  ).toBeUndefined();
+});

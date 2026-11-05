@@ -47,6 +47,8 @@ export interface ReportLabels {
   received: string;
   sameDayInvoices: string;
   olderInvoices: string;
+  openingBalanceRepayments: string;
+  openingChannelNote: string;
   paymentCount: string;
   none: string;
   paymentMethod: Record<PaymentMethod, string>;
@@ -97,6 +99,9 @@ export const REPORT_LABELS: Record<Language, ReportLabels> = {
     received: 'Total uang diterima',
     sameDayInvoices: 'Untuk faktur hari ini',
     olderInvoices: 'Untuk faktur sebelumnya',
+    openingBalanceRepayments: 'Pembayaran saldo awal pelanggan',
+    openingChannelNote:
+      'Filter kanal mengecualikan pembayaran saldo awal pelanggan karena tidak memiliki kanal faktur.',
     paymentCount: 'Jumlah pembayaran',
     none: 'Tidak ada',
     paymentMethod: PRINT_LABELS.id.paymentMethod,
@@ -144,6 +149,9 @@ export const REPORT_LABELS: Record<Language, ReportLabels> = {
     received: 'Total money received',
     sameDayInvoices: "On today's invoices",
     olderInvoices: 'On earlier invoices',
+    openingBalanceRepayments: 'Customer opening balance repayments',
+    openingChannelNote:
+      'Channel filters exclude opening balance repayments because they have no invoice channel.',
     paymentCount: 'Payments',
     none: 'None',
     paymentMethod: PRINT_LABELS.en.paymentMethod,

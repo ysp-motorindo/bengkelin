@@ -50,7 +50,9 @@
     "older": "On earlier invoices",
     "byMethod": "Payments by method",
     "method": "Method",
-    "amount": "Amount"
+    "amount": "Amount",
+    "opening": "Customer opening balance repayments",
+    "openingChannelNote": "Channel filters exclude opening balance repayments because they have no invoice channel."
   },
   "actions": {
     "preview": "Preview & print",

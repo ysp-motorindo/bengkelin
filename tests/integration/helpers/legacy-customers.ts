@@ -16,6 +16,9 @@ export async function withCurrentCustomerColumns<T>(
 
 export function addCurrentCustomerColumns(db: AppDatabase): void {
   addCurrentStockLocationColumns(db);
+  db.exec(bundledMigrations.find((m) => m.version === 20)!.sql);
+  if (Number(db.pragma('user_version', { simple: true })) < 7)
+    db.exec('CREATE TABLE payments (invoice_id TEXT, amount INTEGER) STRICT');
   db.exec(bundledMigrations.find((m) => m.version === 12)!.sql);
   db.exec(bundledMigrations.find((m) => m.version === 15)!.sql);
   if (db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'invoices'").get()) {
@@ -29,6 +32,11 @@ export function addCurrentCustomerColumns(db: AppDatabase): void {
 }
 export function removeCurrentCustomerColumns(db: AppDatabase): void {
   removeCurrentStockLocationColumns(db);
+  db.exec(
+    'DROP TABLE customer_opening_payments; DROP TABLE customer_opening_balances',
+  );
+  if (Number(db.pragma('user_version', { simple: true })) < 7)
+    db.exec('DROP TABLE payments');
   if (
     Number(db.pragma('user_version', { simple: true })) < 7 &&
     db

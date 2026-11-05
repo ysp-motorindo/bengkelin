@@ -1,3 +1,4 @@
+import { OpeningBalances } from './OpeningBalances';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import {
   useCallback,
@@ -20,6 +21,8 @@ import { Pager, SummaryTable } from './SummaryTable';
 import { useShopTimezone } from './use-shop-timezone';
 
 const PAGE_SIZE = 25;
+const TABS = [...RECEIVABLE_KINDS, 'OPENING'] as const;
+type Tab = (typeof TABS)[number];
 
 /**
  * Receivables: unpaid and partially paid FINALIZED invoices (VOID never
@@ -30,7 +33,7 @@ export function ReceivablesScreen() {
   const { formatIdr } = useNumberFormat();
   const { t } = useTranslation();
   const timezone = useShopTimezone();
-  const [kind, setKind] = useState<ReceivableKind>('OUTSTANDING');
+  const [kind, setKind] = useState<Tab>('OUTSTANDING');
   const [page, setPage] = useState<ReceivablesPage | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const tabs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -50,19 +53,18 @@ export function ReceivablesScreen() {
   );
 
   useEffect(() => {
-    void load(kind, 1);
+    if (kind !== 'OPENING') void load(kind, 1);
   }, [load, kind]);
 
   function onTabKey(event: KeyboardEvent<HTMLButtonElement>) {
-    const index = RECEIVABLE_KINDS.indexOf(kind);
+    const index = TABS.indexOf(kind);
     let next: number | null = null;
-    if (event.key === 'ArrowRight')
-      next = (index + 1) % RECEIVABLE_KINDS.length;
+    if (event.key === 'ArrowRight') next = (index + 1) % TABS.length;
     if (event.key === 'ArrowLeft')
-      next = (index - 1 + RECEIVABLE_KINDS.length) % RECEIVABLE_KINDS.length;
+      next = (index - 1 + TABS.length) % TABS.length;
     if (next === null) return;
     event.preventDefault();
-    const target = RECEIVABLE_KINDS[next]!;
+    const target = TABS[next]!;
     setKind(target);
     tabs.current[target]?.focus();
   }
@@ -74,7 +76,7 @@ export function ReceivablesScreen() {
         timezone={timezone}
         onBack={() => {
           setSelected(null);
-          void load(kind, page?.pageNumber ?? 1);
+          if (kind !== 'OPENING') void load(kind, page?.pageNumber ?? 1);
         }}
       />
     );
@@ -91,7 +93,7 @@ export function ReceivablesScreen() {
         aria-label={t('history.receivables.tabs')}
         className="flex gap-1 border-b border-border"
       >
-        {RECEIVABLE_KINDS.map((value) => (
+        {TABS.map((value) => (
           <button
             key={value}
             ref={(el) => {
@@ -112,7 +114,11 @@ export function ReceivablesScreen() {
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {t(`history.receivables.${value}`)}
+            {t(
+              value === 'OPENING'
+                ? 'history.opening.title'
+                : `history.receivables.${value}`,
+            )}
           </button>
         ))}
       </div>
@@ -122,39 +128,45 @@ export function ReceivablesScreen() {
         aria-labelledby={`receivables-tab-${kind}`}
         className="flex flex-col gap-3"
       >
-        {page ? (
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <p className="font-semibold" data-testid="receivables-total">
-              {t('history.receivables.totalOutstanding', {
-                amount: formatIdr(page.totalOutstanding),
-              })}
-            </p>
-            <p className="text-muted-foreground">
-              {t('history.receivables.today', { date: page.today })}
-            </p>
-          </div>
-        ) : null}
-        {kind === 'OVERDUE' ? (
-          <p className="text-xs text-muted-foreground">
-            {t('history.receivables.overdueNote')}
-          </p>
-        ) : null}
-        {list.error ? <Alert>{list.error}</Alert> : null}
-        {page && page.kind === kind ? (
+        {kind === 'OPENING' ? (
+          timezone && <OpeningBalances timezone={timezone} />
+        ) : (
           <>
-            <SummaryTable
-              rows={page.items}
-              caption={t(`history.receivables.${kind}`)}
-              emptyText={t('history.receivables.empty')}
-              onOpen={setSelected}
-            />
-            <Pager
-              page={page}
-              busy={list.busy}
-              onPage={(number) => void load(kind, number)}
-            />
+            {page ? (
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                <p className="font-semibold" data-testid="receivables-total">
+                  {t('history.receivables.totalOutstanding', {
+                    amount: formatIdr(page.totalOutstanding),
+                  })}
+                </p>
+                <p className="text-muted-foreground">
+                  {t('history.receivables.today', { date: page.today })}
+                </p>
+              </div>
+            ) : null}
+            {kind === 'OVERDUE' ? (
+              <p className="text-xs text-muted-foreground">
+                {t('history.receivables.overdueNote')}
+              </p>
+            ) : null}
+            {list.error ? <Alert>{list.error}</Alert> : null}
+            {page && page.kind === kind ? (
+              <>
+                <SummaryTable
+                  rows={page.items}
+                  caption={t(`history.receivables.${kind}`)}
+                  emptyText={t('history.receivables.empty')}
+                  onOpen={setSelected}
+                />
+                <Pager
+                  page={page}
+                  busy={list.busy}
+                  onPage={(number) => void load(kind, number)}
+                />
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
       </div>
     </div>
   );

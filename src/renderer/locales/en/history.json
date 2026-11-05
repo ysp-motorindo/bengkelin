@@ -139,11 +139,30 @@
   "receivables": {
     "title": "Receivables",
     "tabs": "Receivable type",
-    "OUTSTANDING": "Outstanding",
-    "OVERDUE": "Overdue",
+    "OUTSTANDING": "Unpaid invoices",
+    "OVERDUE": "Overdue invoices",
     "totalOutstanding": "Total outstanding: {{amount}}",
     "today": "Today (shop timezone): {{date}}",
     "overdueNote": "Overdue means the due date is before today. An invoice due today is not late yet.",
     "empty": "No receivables."
+  },
+  "opening": {
+    "title": "Opening balances",
+    "description": "Opening balances have no due date and never enter Overdue. Payments use the receipt time and cannot be changed or reversed.",
+    "importTitle": "Import customer opening balances",
+    "importOpen": "Import opening balances...",
+    "importDescription": "Choose CSV: external_id, customer_name, as_of_date, opening_balance. Customers must already exist. Names are informational. Identical reimports do nothing; changed dates or amounts are blocked.",
+    "imported": "{{count}} opening balances imported.",
+    "paymentTitle": "Opening balance payment — {{number}}",
+    "externalId": "External ID",
+    "customer": "Customer",
+    "asOfDate": "As of",
+    "original": "Original balance",
+    "paid": "Paid",
+    "outstanding": "Outstanding",
+    "status": "Status",
+    "action": "Action",
+    "creates": "New balances",
+    "pagination": "Page {{page}} of {{pages}} · {{total}} balances"
   }
 }

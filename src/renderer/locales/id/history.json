@@ -139,11 +139,30 @@
   "receivables": {
     "title": "Piutang",
     "tabs": "Jenis piutang",
-    "OUTSTANDING": "Belum lunas",
-    "OVERDUE": "Lewat jatuh tempo",
+    "OUTSTANDING": "Faktur belum lunas",
+    "OVERDUE": "Faktur lewat tempo",
     "totalOutstanding": "Total sisa tagihan: {{amount}}",
     "today": "Hari ini (zona waktu toko): {{date}}",
     "overdueNote": "Lewat jatuh tempo berarti jatuh tempo sebelum hari ini. Faktur yang jatuh tempo hari ini belum terlambat.",
     "empty": "Tidak ada piutang."
+  },
+  "opening": {
+    "title": "Saldo awal",
+    "description": "Saldo awal tidak memiliki jatuh tempo dan tidak masuk tab Lewat tempo. Pembayaran dicatat saat diterima dan tidak dapat diubah atau dibatalkan.",
+    "importTitle": "Impor saldo awal pelanggan",
+    "importOpen": "Impor saldo awal...",
+    "importDescription": "Pilih CSV: external_id, customer_name, as_of_date, opening_balance. Pelanggan harus sudah ada. Nama hanya informasi. Impor ulang identik tidak mengubah saldo; perubahan tanggal atau nominal ditolak.",
+    "imported": "{{count}} saldo awal diimpor.",
+    "paymentTitle": "Pembayaran saldo awal — {{number}}",
+    "externalId": "ID eksternal",
+    "customer": "Pelanggan",
+    "asOfDate": "Per tanggal",
+    "original": "Saldo awal",
+    "paid": "Dibayar",
+    "outstanding": "Sisa piutang",
+    "status": "Status",
+    "action": "Tindakan",
+    "creates": "Saldo baru",
+    "pagination": "Halaman {{page}} dari {{pages}} · {{total}} saldo"
   }
 }

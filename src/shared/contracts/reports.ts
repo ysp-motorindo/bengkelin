@@ -30,7 +30,7 @@ export const dailyReportInputSchema = z.strictObject({
    * the voiding cashier.
    */
   cashierId: uuidSchema.optional(),
-  /** The invoice's channel, in all three sections. */
+  /** The invoice's channel; excludes opening-balance receipts. */
   channelId: uuidSchema.optional(),
 });
 export type DailyReportInput = z.input<typeof dailyReportInputSchema>;
@@ -125,6 +125,7 @@ export interface DailyReport {
     sameDayInvoices: Rupiah;
     /** Received on invoices finalized on an earlier day. */
     olderInvoices: Rupiah;
+    openingBalanceRepayments: Rupiah;
   };
 }
 

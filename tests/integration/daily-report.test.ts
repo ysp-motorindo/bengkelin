@@ -276,7 +276,9 @@ function expectConsistent(report: DailyReport) {
   expect(p.byMethod.map((m) => m.method)).toEqual([...PAYMENT_METHODS]);
   expect(sum(p.byMethod.map((m) => m.amount))).toBe(p.received);
   expect(p.byMethod.reduce((n, m) => n + m.count, 0)).toBe(p.count);
-  expect(sum([p.sameDayInvoices, p.olderInvoices])).toBe(p.received);
+  expect(
+    sum([p.sameDayInvoices, p.olderInvoices, p.openingBalanceRepayments]),
+  ).toBe(p.received);
   // Money is a canonical integer string; only netAfterVoids may be negative.
   const money = [
     s.grossSubtotal,
@@ -584,6 +586,7 @@ describe('empty day', () => {
       count: 0,
       sameDayInvoices: '0',
       olderInvoices: '0',
+      openingBalanceRepayments: '0',
       byMethod: PAYMENT_METHODS.map((m) => ({
         method: m,
         count: 0,
@@ -952,6 +955,7 @@ describe('screen, CSV and print agree', () => {
       [L.received]: report.payments.received,
       [L.sameDayInvoices]: report.payments.sameDayInvoices,
       [L.olderInvoices]: report.payments.olderInvoices,
+      [L.openingBalanceRepayments]: report.payments.openingBalanceRepayments,
       [L.paymentCount]: String(report.payments.count),
     });
 
@@ -967,6 +971,8 @@ describe('screen, CSV and print agree', () => {
       'payments.received': report.payments.received,
       'payments.sameDayInvoices': report.payments.sameDayInvoices,
       'payments.olderInvoices': report.payments.olderInvoices,
+      'payments.openingBalanceRepayments':
+        report.payments.openingBalanceRepayments,
     };
     report.sales.byChannel.forEach((r, i) => {
       expected[`sales.byChannel.${i}.netBeforeVoids`] = r.netBeforeVoids;
@@ -1322,4 +1328,81 @@ describe('query plans', () => {
       expect(detail).not.toMatch(/\bSCAN (i|p|invoices|payments)\b/);
     }
   });
+});
+
+test('opening receipts reconcile separately, filter by receiver/time and never change sales', async () => {
+  nowMs = wib('2026-09-30', '10:00');
+  await issue({ lines: [{ price: '20000' }], pay: [{ amount: '20000' }] });
+  const customerId = uuid();
+  h.db
+    .prepare(
+      'INSERT INTO customers(id,name,created_at,updated_at) VALUES (?,?,?,?)',
+    )
+    .run(customerId, 'Opening', toInstant(nowMs), toInstant(nowMs));
+  h.db
+    .prepare('INSERT INTO customer_opening_balances VALUES (?,?,?,?,?)')
+    .run(customerId, '2026-09-30', 100000n, toInstant(nowMs), adminId);
+  const openingPay = async (amount: string, windowId = SITI) =>
+    value(
+      await h.call(
+        C.customerReceivables.recordPayment,
+        { requestId: uuid(), customerId, method: 'QRIS', amount },
+        windowId,
+      ),
+    );
+  await openingPay('30000');
+  let report = value(
+    await h.call<DailyReport>(C.reports.daily, { date: '2026-09-30' }),
+  );
+  expect(report.payments.received).toBe('50000');
+  expect(report.payments.openingBalanceRepayments).toBe('30000');
+  expect(report.payments.count).toBe(2);
+  expect(report.sales.netBeforeVoids).toBe('20000');
+  expect(method(report, 'QRIS')).toEqual({
+    method: 'QRIS',
+    count: 1,
+    amount: '30000',
+  });
+  expect(
+    value(
+      await h.call<DailyReport>(C.reports.daily, {
+        date: '2026-09-30',
+        cashierId: jokoId,
+      }),
+    ).payments.received,
+  ).toBe('0');
+  const filtered = value(
+    await h.call<DailyReport>(C.reports.daily, {
+      date: '2026-09-30',
+      channelId: bengkel,
+    }),
+  );
+  expect(filtered.payments.received).toBe('20000');
+  expect(filtered.payments.openingBalanceRepayments).toBe('0');
+  const preview = value(
+    await h.call<ReportPreviewDto>(C.reports.preview, { date: '2026-09-30' }),
+  );
+  expect(
+    scrapeHtml(preview.html).money['payments.openingBalanceRepayments'],
+  ).toBe('30000');
+  const target = path.join(h.dir, 'opening-receipts.csv');
+  dialogs.csvAnswers.push(target);
+  value(await h.call(C.reports.exportCsv, { date: '2026-09-30' }));
+  expect(readFileSync(target, 'utf8')).toContain('30000');
+  nowMs = wib('2026-09-30', '23:59');
+  await openingPay('10000');
+  nowMs = wib('2026-10-01', '00:00');
+  await openingPay('5000', JOKO);
+  report = value(
+    await h.call<DailyReport>(C.reports.daily, { date: '2026-09-30' }),
+  );
+  expect(report.payments.openingBalanceRepayments).toBe('40000');
+  expect(
+    value(
+      await h.call<DailyReport>(C.reports.daily, {
+        date: '2026-10-01',
+        cashierId: jokoId,
+      }),
+    ).payments.openingBalanceRepayments,
+  ).toBe('5000');
 });
