@@ -48,6 +48,7 @@ export function draftView(extra: Partial<DraftView> = {}): DraftView {
     expedition: null,
     customer: null,
     vehicle: null,
+    customerOutstandingAmount: null,
     ownerMismatch: false,
     odometerKm: null,
     note: null,

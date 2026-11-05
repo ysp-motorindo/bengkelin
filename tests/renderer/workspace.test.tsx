@@ -587,3 +587,29 @@ test('invoice header presents the agreed field order and saves the selected stoc
     ),
   );
 });
+
+test('shows customer Piutang and refreshes it on window focus', async () => {
+  const bridge = install();
+  const customer = { id: 'customer-a', name: 'Alpha', phoneNumber: null };
+  Object.assign(bridge, {
+    customers: {
+      get: vi.fn(async () =>
+        ok({ customer: { ...customer, isActive: true }, vehicles: [] }),
+      ),
+    },
+  });
+  bridge.drafts.create.mockResolvedValue(
+    ok(draftView({ customer, customerOutstandingAmount: '90000' })),
+  );
+  render(<CashierWorkspace />);
+  expect(await screen.findByLabelText('Piutang')).toHaveTextContent(
+    'Rp 90.000',
+  );
+  bridge.drafts.get.mockResolvedValue(
+    ok(draftView({ customer, customerOutstandingAmount: '70000' })),
+  );
+  window.dispatchEvent(new Event('focus'));
+  await waitFor(() =>
+    expect(screen.getByLabelText('Piutang')).toHaveTextContent('Rp 70.000'),
+  );
+});

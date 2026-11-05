@@ -182,6 +182,15 @@ const n = (value: number): bigint => BigInt(value);
 
 export class DraftRepository {
   constructor(private readonly db: AppDatabase) {}
+  customerOutstanding(customerId: string): bigint {
+    const { amount } = this.db
+      .prepare(`SELECT
+      COALESCE((SELECT amount FROM customer_opening_balances WHERE customer_id=@id),0)
+      - COALESCE((SELECT SUM(amount) FROM customer_opening_payments WHERE customer_id=@id),0)
+      + COALESCE((SELECT SUM(i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id=i.id),0)) FROM invoices i WHERE i.customer_id=@id AND i.status='FINALIZED'),0) amount`)
+      .get({ id: customerId }) as { amount: bigint };
+    return amount;
+  }
 
   reference(
     entity: 'sales' | 'expedition' | 'stockLocation',
