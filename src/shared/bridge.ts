@@ -337,6 +337,12 @@ export interface BengkelinApi {
     ): Promise<Result<CatalogFileOutcomeDto>>;
   };
   readonly customerReceivables: {
+    previewImport(): Promise<
+      Result<import('./contracts').OpeningImportPreview>
+    >;
+    commitImport(input: {
+      token: string;
+    }): Promise<Result<import('./contracts').OpeningImportSummary>>;
     list(input: {
       page?: import('./contracts').PageInput;
     }): Promise<Result<CustomerOpeningPage>>;

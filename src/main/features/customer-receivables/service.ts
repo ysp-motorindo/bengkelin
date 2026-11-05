@@ -1,3 +1,4 @@
+import { OpeningImportService } from './import-service';
 import { randomUUID } from 'node:crypto';
 import {
   withWriteTransaction,
@@ -14,8 +15,17 @@ import type { Clock } from '@/shared/time';
 import { CustomerReceivablesRepository } from './repository';
 export class CustomerReceivablesService {
   private readonly repo: CustomerReceivablesRepository;
-  constructor(private readonly deps: { db: AppDatabase; clock: Clock }) {
+  constructor(
+    private readonly deps: { db: AppDatabase; clock: Clock },
+    private readonly imports: OpeningImportService,
+  ) {
     this.repo = new CustomerReceivablesRepository(deps.db);
+  }
+  previewImport(session: Session | undefined) {
+    return this.imports.previewImport(session);
+  }
+  commitImport(session: Session | undefined, input: { token: string }) {
+    return this.imports.commitImport(session, input);
   }
   list(session: Session | undefined, input: { page: PageData }) {
     requireSession(session);

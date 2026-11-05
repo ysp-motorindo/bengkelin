@@ -1,3 +1,4 @@
+import { commitOpeningImportInputSchema } from '@/shared/contracts';
 import {
   openingListInputSchema,
   openingCustomerInputSchema,
@@ -551,6 +552,15 @@ export function buildCommands(services: ApplicationServices): Command[] {
       referenceTransferInputSchema,
       ({ windowId }, input) =>
         referenceTransfer.downloadTemplate(session(windowId), input),
+    ),
+    command(C.customerReceivables.previewImport, noInput, ({ windowId }) =>
+      customerReceivables.previewImport(session(windowId)),
+    ),
+    command(
+      C.customerReceivables.commitImport,
+      commitOpeningImportInputSchema,
+      ({ windowId }, input) =>
+        customerReceivables.commitImport(session(windowId), input),
     ),
     command(
       C.customerReceivables.list,
