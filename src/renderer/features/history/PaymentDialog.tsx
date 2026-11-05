@@ -16,6 +16,7 @@ import {
   type CustomerOpeningDetail,
   type InvoiceView,
   type PaymentMethod,
+  type RecordPaymentInput,
 } from '@/shared/contracts';
 
 type PaymentDialogProps = { onClose(): void } & (
@@ -29,8 +30,8 @@ type PaymentDialogProps = { onClose(): void } & (
 /**
  * Later payment (spec 22). The amount defaults to the outstanding balance.
  * One requestId per submission: a retry of the same payment (for example
- * after a lost response) reuses it, so main records it at most once; any
- * change to the form starts a new submission.
+ * after a lost response) reuses the exact payload and ID. Until resolved,
+ * editing and closing are blocked so recovery cannot become a new payment.
  */
 export function PaymentDialog(props: PaymentDialogProps) {
   const { onClose } = props;
@@ -50,50 +51,64 @@ export function PaymentDialog(props: PaymentDialogProps) {
   const [reference, setReference] = useState('');
   const [note, setNote] = useState('');
   const [amountError, setAmountError] = useState<string | undefined>();
-  const pending = useRef<{ key: string; requestId: string } | null>(null);
+  const pending = useRef<Omit<RecordPaymentInput, 'invoiceId'> | null>(null);
+  const [uncertain, setUncertain] = useState(false);
+
   const action = useAction();
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    const amount = parseRupiahInput(amountText);
-    if (
-      amount === null ||
-      BigInt(amount) <= 0n ||
-      BigInt(amount) > BigInt(invoice.outstandingAmount)
-    ) {
-      setAmountError('history.payment.amountInvalid');
-      return;
+    if (!pending.current) {
+      const amount = parseRupiahInput(amountText);
+      if (
+        amount === null ||
+        BigInt(amount) <= 0n ||
+        BigInt(amount) > BigInt(invoice.outstandingAmount)
+      ) {
+        setAmountError('history.payment.amountInvalid');
+        return;
+      }
+      setAmountError(undefined);
+      pending.current = {
+        requestId: crypto.randomUUID(),
+        method,
+        amount,
+        reference,
+        note,
+      };
     }
-    setAmountError(undefined);
-    const payload = {
-      method,
-      amount,
-      reference,
-      note,
-    };
-    const key = JSON.stringify({ id: invoice.id, ...payload });
-    if (pending.current?.key !== key) {
-      pending.current = { key, requestId: crypto.randomUUID() };
-    }
-    const input = { requestId: pending.current.requestId, ...payload };
+    const input = pending.current;
     void action.run(async () => {
-      if ('opening' in props) {
-        const result = await window.bengkelin.customerReceivables.recordPayment(
-          { ...input, customerId: props.opening.customerId },
-        );
-        if (action.check(result)) {
-          pending.current = null;
-          props.onRecorded(result.value);
+      try {
+        if ('opening' in props) {
+          const result =
+            await window.bengkelin.customerReceivables.recordPayment({
+              ...input,
+              customerId: props.opening.customerId,
+            });
+          if (!result.ok && result.error.code === 'INTERNAL_ERROR')
+            setUncertain(true);
+          else {
+            setUncertain(false);
+            pending.current = null;
+          }
+          if (action.check(result)) props.onRecorded(result.value);
+        } else {
+          const result = await window.bengkelin.invoices.recordPayment({
+            ...input,
+            invoiceId: props.invoice.id,
+          });
+          if (!result.ok && result.error.code === 'INTERNAL_ERROR')
+            setUncertain(true);
+          else {
+            setUncertain(false);
+            pending.current = null;
+          }
+          if (action.check(result)) props.onRecorded(result.value);
         }
-      } else {
-        const result = await window.bengkelin.invoices.recordPayment({
-          ...input,
-          invoiceId: props.invoice.id,
-        });
-        if (action.check(result)) {
-          pending.current = null;
-          props.onRecorded(result.value);
-        }
+      } catch (error) {
+        setUncertain(true);
+        throw error;
       }
     });
   }
@@ -110,7 +125,7 @@ export function PaymentDialog(props: PaymentDialogProps) {
         amount: formatIdr(invoice.outstandingAmount),
       })}
       onClose={() => {
-        if (!action.busy) onClose();
+        if (!action.busy && !uncertain) onClose();
       }}
       closeLabel={t('history.payment.cancel')}
       footer={
@@ -119,7 +134,7 @@ export function PaymentDialog(props: PaymentDialogProps) {
             <Button
               type="button"
               variant="outline"
-              disabled={action.busy}
+              disabled={action.busy || uncertain}
               onClick={onClose}
             >
               <X aria-hidden="true" />
@@ -142,7 +157,10 @@ export function PaymentDialog(props: PaymentDialogProps) {
         noValidate
         className="flex flex-col gap-3"
       >
-        <fieldset disabled={action.busy} className="flex flex-col gap-3">
+        <fieldset
+          disabled={action.busy || uncertain}
+          className="flex flex-col gap-3"
+        >
           <FormField label={t('history.payment.method')}>
             <Select
               value={method}
@@ -193,6 +211,11 @@ export function PaymentDialog(props: PaymentDialogProps) {
             {t('history.payment.paidAtNote')}
           </p>
         </fieldset>
+        {uncertain && (
+          <p role="status" className="text-sm">
+            {t('history.payment.uncertain')}
+          </p>
+        )}
         {action.error ? <Alert>{action.error}</Alert> : null}
       </form>
     </Dialog>

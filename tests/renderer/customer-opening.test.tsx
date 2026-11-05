@@ -19,6 +19,23 @@ const detail: CustomerOpeningDetail = {
   paymentStatus: 'UNPAID',
   payments: [],
 };
+const partiallyPaid: CustomerOpeningDetail = {
+  ...detail,
+  paidAmount: '30000',
+  outstandingAmount: '70000',
+  paymentStatus: 'PARTIALLY_PAID',
+  payments: [
+    {
+      id: 'p1',
+      method: 'CASH',
+      amount: '30000',
+      paidAt: '2026-10-01T03:00:00.000Z',
+      receivedBy: { id: 'a', displayName: 'Admin' },
+      reference: null,
+      note: null,
+    },
+  ],
+};
 function install() {
   const b = {
     settings: { getShop: vi.fn(async () => ok({ timezone: 'Asia/Jakarta' })) },
@@ -53,24 +70,7 @@ function install() {
         }),
       ),
       get: vi.fn(async () => ok(detail)),
-      recordPayment: vi.fn(async (_input: unknown) =>
-        ok({
-          ...detail,
-          paidAmount: '30000',
-          outstandingAmount: '70000',
-          payments: [
-            {
-              id: 'p1',
-              method: 'CASH',
-              amount: '30000',
-              paidAt: '2026-10-01T03:00:00.000Z',
-              receivedBy: { id: 'a', displayName: 'Admin' },
-              reference: null,
-              note: null,
-            },
-          ],
-        }),
-      ),
+      recordPayment: vi.fn(async (_input: unknown) => ok(partiallyPaid)),
       previewImport: vi.fn(async () =>
         ok<OpeningImportPreview>({
           outcome: 'READY',
@@ -174,6 +174,15 @@ test('opening tab supports payment retry, history and refreshed totals', async (
     screen.getByRole('button', { name: 'Simpan pembayaran' }),
   );
   expect(await screen.findByRole('alert')).toBeInTheDocument();
+  b.customerReceivables.get.mockResolvedValueOnce(ok(partiallyPaid));
+  expect(screen.getByLabelText('Catatan (opsional)')).toBeDisabled();
+  expect(
+    screen.getAllByRole('button', { name: 'Batal' }).at(-1),
+  ).toBeDisabled();
+  await userEvent.type(screen.getByLabelText('Catatan (opsional)'), 'changed');
+  await userEvent.keyboard('{Escape}');
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+
   await userEvent.click(
     screen.getByRole('button', { name: 'Simpan pembayaran' }),
   );
@@ -204,6 +213,14 @@ test('keyboard tabs reach opening balances and full repayment locks duplicate su
   await userEvent.keyboard('{ArrowLeft}');
   expect(screen.getByRole('tab', { name: 'Saldo awal' })).toHaveFocus();
   await userEvent.click(await screen.findByRole('button', { name: 'Alpha' }));
+  b.customerReceivables.get.mockResolvedValueOnce(
+    ok({
+      ...detail,
+      paidAmount: '100000',
+      outstandingAmount: '0',
+      paymentStatus: 'PAID',
+    }),
+  );
   await userEvent.click(
     screen.getByRole('button', { name: 'Catat pembayaran' }),
   );
@@ -217,4 +234,67 @@ test('keyboard tabs reach opening balances and full repayment locks duplicate su
     screen.getByRole('button', { name: 'Catat pembayaran' }),
   ).toBeDisabled();
   expect(b.customerReceivables.recordPayment).toHaveBeenCalledTimes(1);
+});
+
+test('payment recovery reloads current detail instead of showing its stored receipt snapshot', async () => {
+  const b = install();
+  render(<ReceivablesScreen />);
+  await userEvent.click(screen.getByRole('tab', { name: 'Saldo awal' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Alpha' }));
+  const current: CustomerOpeningDetail = {
+    ...detail,
+    paidAmount: '50000',
+    outstandingAmount: '50000',
+    paymentStatus: 'PARTIALLY_PAID',
+    payments: [
+      {
+        id: 'p1',
+        method: 'CASH',
+        amount: '30000',
+        paidAt: '2026-10-01T03:00:00.000Z',
+        receivedBy: { id: 'a', displayName: 'Admin' },
+        reference: null,
+        note: null,
+      },
+      {
+        id: 'p2',
+        method: 'CASH',
+        amount: '20000',
+        paidAt: '2026-10-01T03:01:00.000Z',
+        receivedBy: { id: 'b', displayName: 'Other cashier' },
+        reference: null,
+        note: null,
+      },
+    ],
+  };
+  b.customerReceivables.get.mockResolvedValueOnce(ok(current));
+  b.customerReceivables.list.mockResolvedValue(
+    ok({
+      items: [current],
+      total: 1,
+      pageNumber: 1,
+      pageSize: 25,
+      hasMore: false,
+      totalOriginal: '100000',
+      totalPaid: '50000',
+      totalOutstanding: '50000',
+    }),
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Catat pembayaran' }),
+  );
+  const amount = screen.getByLabelText('Jumlah (Rp)');
+  await userEvent.clear(amount);
+  await userEvent.type(amount, '30000');
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Simpan pembayaran' }),
+  );
+  expect(await screen.findAllByText('Rp 50.000')).toHaveLength(2);
+  expect(screen.getByText('Other cashier')).toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Kembali ke daftar' }),
+  );
+  expect(await screen.findByTestId('opening-total')).toHaveTextContent(
+    'Rp 50.000',
+  );
 });

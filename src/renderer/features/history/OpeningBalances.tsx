@@ -64,7 +64,9 @@ export function OpeningBalances({ timezone }: { timezone: string }) {
               {detail.customerName ?? detail.externalId}
             </h2>
             <Button
-              disabled={BigInt(detail.outstandingAmount) === 0n}
+              disabled={
+                detailAction.busy || BigInt(detail.outstandingAmount) === 0n
+              }
               onClick={() => setPay(true)}
             >
               {t('history.detail.recordPayment')}
@@ -137,6 +139,7 @@ export function OpeningBalances({ timezone }: { timezone: string }) {
               onRecorded={(view: CustomerOpeningDetail) => {
                 setDetail(view);
                 setPay(false);
+                open(view.customerId);
                 void load(page?.pageNumber ?? 1);
               }}
             />

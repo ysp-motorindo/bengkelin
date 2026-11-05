@@ -125,7 +125,8 @@
     "paidAtNote": "Waktu pembayaran dicatat otomatis saat disimpan.",
     "submit": "Simpan pembayaran",
     "saving": "Menyimpan…",
-    "cancel": "Batal"
+    "cancel": "Batal",
+    "uncertain": "Hasil pembayaran belum dapat dipastikan. Ulangi pembayaran yang sama sebelum mengubah isian atau menutup dialog."
   },
   "void": {
     "title": "Batalkan faktur {{number}}",

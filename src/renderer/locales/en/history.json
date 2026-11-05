@@ -125,7 +125,8 @@
     "paidAtNote": "The payment time is recorded automatically when you save.",
     "submit": "Save payment",
     "saving": "Saving…",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "uncertain": "The payment outcome is uncertain. Retry this payment before editing or closing the dialog."
   },
   "void": {
     "title": "Void invoice {{number}}",
