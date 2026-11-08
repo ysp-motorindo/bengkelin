@@ -373,6 +373,7 @@ function toPreview(
     shopName: candidate.summary.shopName,
     counts: candidate.summary.counts,
     latestFinalizedAt: candidate.summary.latestFinalizedAt,
+    latestPurchaseFinalizedAt: candidate.summary.latestPurchaseFinalizedAt,
     activeAdmins: candidate.summary.activeAdmins,
   };
 }

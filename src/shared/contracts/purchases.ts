@@ -29,25 +29,31 @@ const mutation = {
   expectedVersion: version,
 };
 export const purchaseIdInputSchema = z.strictObject({ purchaseId: uuidSchema });
-export const saveSupplierInputSchema = z.strictObject({
-  requestId: uuidSchema,
-  id: uuidSchema.optional(),
-  name: requiredText(120),
-  phoneNumber: optionalPhone,
-  email: z
-    .string()
-    .trim()
-    .max(200)
-    .refine(
-      (v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
-      'validation.invalidEmail',
-    )
-    .nullish()
-    .transform((v) => v || null),
-  address: optionalText(300),
-  isActive: z.boolean().optional(),
-  acknowledgeDuplicates: z.boolean().optional(),
-});
+export const saveSupplierInputSchema = z
+  .strictObject({
+    expectedVersion: version.optional(),
+    requestId: uuidSchema,
+    id: uuidSchema.optional(),
+    name: requiredText(120),
+    phoneNumber: optionalPhone,
+    email: z
+      .string()
+      .trim()
+      .max(200)
+      .refine(
+        (v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+        'validation.invalidEmail',
+      )
+      .nullish()
+      .transform((v) => v || null),
+    address: optionalText(300),
+    isActive: z.boolean().optional(),
+    acknowledgeDuplicates: z.boolean().optional(),
+  })
+  .refine((v) => Boolean(v.id) === (v.expectedVersion !== undefined), {
+    message: 'validation.required',
+    path: ['expectedVersion'],
+  });
 export const searchSuppliersInputSchema = z.strictObject({
   query: z.string().trim().max(100),
   includeInactive: z.boolean().optional(),
@@ -58,6 +64,7 @@ export type SaveSupplierInput = z.input<typeof saveSupplierInputSchema>;
 export type SaveSupplierData = z.output<typeof saveSupplierInputSchema>;
 export type SearchSuppliersInput = z.infer<typeof searchSuppliersInputSchema>;
 export interface SupplierDto {
+  version: number;
   id: string;
   name: string;
   phoneNumber: string | null;
@@ -309,6 +316,10 @@ export interface PurchaseView extends PurchaseDraftView {
   refunds: PurchaseMoneyDto[];
   receipts: PurchaseReceiptDto[];
   credits: PurchaseCreditDto[];
+  creditedAmount: Rupiah;
+  netAmount: Rupiah;
+  paidAmount: Rupiah;
+  refundedAmount: Rupiah;
   outstandingAmount: Rupiah;
   refundDue: Rupiah;
   settlementStatus: 'UNPAID' | 'PARTIALLY_PAID' | 'SETTLED' | 'REFUND_DUE';

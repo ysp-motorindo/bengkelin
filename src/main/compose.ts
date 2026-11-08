@@ -1,3 +1,4 @@
+import { PurchasePrintingService } from '@/main/features/purchases/printing';
 import { PurchaseService } from '@/main/features/purchases/service';
 import { SupplierService } from '@/main/features/suppliers/service';
 import { PurchaseDraftService } from '@/main/features/purchases/drafts';
@@ -140,6 +141,14 @@ export function createApplicationServices(
     ...(restoreDeps.tokenTtlMs ? { tokenTtlMs: restoreDeps.tokenTtlMs } : {}),
   });
   return {
+    purchasePrinting: new PurchasePrintingService({
+      db,
+      clock,
+      printing,
+      driver: deps.printDriver ?? unavailablePrintDriver,
+      dialogs,
+      systemNumberLocale: deps.systemNumberLocale ?? 'id-ID',
+    }),
     purchases: new PurchaseService({ db, clock }),
     suppliers: new SupplierService({ db, clock }),
     purchaseDrafts: new PurchaseDraftService({ db, clock, catalog }),

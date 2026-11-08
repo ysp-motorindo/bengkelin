@@ -1,3 +1,4 @@
+import type { PurchasePrintingService } from '@/main/features/purchases/printing';
 import type { PurchaseService } from '@/main/features/purchases/service';
 import type { SupplierService } from '@/main/features/suppliers/service';
 import type { PurchaseDraftService } from '@/main/features/purchases/drafts';
@@ -34,6 +35,7 @@ import type { MenuState } from './menu-state';
  * tests build the same graph the app runs.
  */
 export interface ApplicationServices {
+  purchasePrinting: PurchasePrintingService;
   purchases: PurchaseService;
   suppliers: SupplierService;
   purchaseDrafts: PurchaseDraftService;

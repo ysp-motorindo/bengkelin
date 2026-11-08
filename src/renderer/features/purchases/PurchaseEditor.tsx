@@ -9,7 +9,10 @@ import { Alert } from '@/renderer/components/ui/alert';
 import { FormField } from '@/renderer/components/form-field';
 import { ScannerCombobox } from '@/renderer/features/workspace/ScannerCombobox';
 import { SaveIndicator } from '@/renderer/features/workspace/SaveIndicator';
-import { registerWorkspaceActions } from '@/renderer/features/workspace/workspace-actions';
+import {
+  registerWorkspaceActions,
+  type WorkspaceActions,
+} from '@/renderer/features/workspace/workspace-actions';
 import { useSyncedValue } from '@/renderer/features/workspace/synced-field';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { useAction } from '@/renderer/lib/use-action';
@@ -43,6 +46,8 @@ export function PurchaseEditor({
   onNew,
   onPosted,
   onDiscarded,
+  registerDraftActions,
+  onChanged,
 }: {
   initial: PurchaseDraftView;
   active: boolean;
@@ -50,6 +55,8 @@ export function PurchaseEditor({
   onNew: () => Promise<void>;
   onPosted: (p: PurchaseView) => void;
   onDiscarded: () => void;
+  registerDraftActions: (actions: WorkspaceActions) => () => void;
+  onChanged: (view: PurchaseDraftView) => void;
 }) {
   const { t } = useTranslation();
   const { formatIdr } = useNumberFormat();
@@ -61,6 +68,20 @@ export function PurchaseEditor({
     else if (n.kind === 'closed') onDiscarded();
   });
   const { view } = commands;
+  useEffect(
+    () =>
+      registerDraftActions({
+        newTransaction: async () => {
+          if (await commands.flush()) await onNew();
+        },
+        focusSearch: () => search.current?.focus(),
+        addCustomItem: () => setCustom(true),
+        saveDraft: commands.flush,
+        openCheckoutReview: reviewBill,
+      }),
+    [registerDraftActions, commands.flush, onNew, view.id, view.version],
+  );
+  useEffect(() => onChanged(view), [view, onChanged]);
   const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
   const [supplierForm, setSupplierForm] = useState(false);
   const [custom, setCustom] = useState(false);
@@ -90,8 +111,10 @@ export function PurchaseEditor({
   }, []);
   const returning = useRef(active);
   useEffect(() => {
-    if (active && !returning.current)
+    if (active && !returning.current) {
+      loadSuppliers();
       void commands.flush().then((ok) => (ok ? commands.refresh() : undefined));
+    }
     returning.current = active;
   }, [active, commands.flush, commands.refresh]);
   async function send(op: PurchaseDraftOperation) {
@@ -308,7 +331,15 @@ export function PurchaseEditor({
         />
       </fieldset>
       <div className="overflow-x-auto rounded-md border bg-card">
-        <table className="w-full min-w-[850px] text-sm">
+        <table className="w-full min-w-[850px] table-fixed text-sm">
+          <colgroup>
+            <col className="w-[25%]" />
+            <col className="w-[8%]" />
+            <col className="w-[16%]" />
+            <col className="w-[32%]" />
+            <col className="w-[13%]" />
+            <col className="w-[6%]" />
+          </colgroup>
           <caption className="sr-only">{t('purchases.item')}</caption>
           <thead className="bg-muted/40">
             <tr>
@@ -336,12 +367,14 @@ export function PurchaseEditor({
                 <td className="min-w-44 p-3">
                   <span className="font-medium">{l.title}</span>
                   <p className="text-xs text-muted-foreground">
-                    {l.itemCode} {l.unitLabel}
+                    {l.itemCode ? `${l.itemCode} · ` : ''}
+                    {l.unitLabel}
                   </p>
                 </td>
                 <td className="w-28 p-3">
                   <DraftField
                     commands={commands}
+                    compact
                     field={'qty:' + l.id}
                     label={t('purchases.quantityLabel', { title: l.title })}
                     value={String(l.quantity)}
@@ -360,6 +393,7 @@ export function PurchaseEditor({
                 <td className="min-w-40 p-3" data-purchase-price>
                   <DraftField
                     commands={commands}
+                    compact
                     field={'price:' + l.id}
                     label={t('purchases.priceLabel', { title: l.title })}
                     value={l.unitPrice ?? ''}

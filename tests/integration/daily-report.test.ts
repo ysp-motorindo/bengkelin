@@ -986,6 +986,21 @@ describe('screen, CSV and print agree', () => {
     report.payments.byMethod.forEach((m) => {
       expected[`payments.byMethod.${m.method}.amount`] = m.amount;
     });
+    for (const key of [
+      'grossSubtotal',
+      'discountAmount',
+      'netBeforeAdjustments',
+      'voidDeduction',
+      'creditAmount',
+      'netAfterAdjustments',
+    ] as const)
+      expected[`purchases.${key}`] = report.purchases[key];
+    for (const key of ['purchasePayments', 'supplierRefunds'] as const) {
+      expected[`${key}.amount`] = report[key].amount;
+      report[key].byMethod.forEach((m) => {
+        expected[`${key}.byMethod.${m.method}.amount`] = m.amount;
+      });
+    }
     expect(money).toEqual(expected);
     expect(counts).toMatchObject({
       'sales.invoiceCount': report.sales.invoiceCount,

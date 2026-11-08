@@ -113,6 +113,10 @@ test('undelivered credits and physical returns leave a refund due until money is
     }),
   );
   expect(p.settlementStatus).toBe('SETTLED');
+  expect(p.creditedAmount).toBe('50000');
+  expect(p.netAmount).toBe('50000');
+  expect(p.paidAmount).toBe('60000');
+  expect(p.refundedAmount).toBe('10000');
   expect(
     failure(
       await purchaseCall(h, 'reverseReceipt', {

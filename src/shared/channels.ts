@@ -17,6 +17,11 @@ export const CHANNELS = {
     /** Help > About: app and schema version (no session needed). */
     about: 'bengkelin:app:about',
   },
+  purchasePrinting: {
+    preview: 'bengkelin:purchasePrinting:preview',
+    print: 'bengkelin:purchasePrinting:print',
+    exportPdf: 'bengkelin:purchasePrinting:exportPdf',
+  },
   purchases: {
     receive: 'bengkelin:purchases:receive',
     reverseReceipt: 'bengkelin:purchases:reverseReceipt',

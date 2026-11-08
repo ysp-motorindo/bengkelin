@@ -21,12 +21,15 @@ const PREVIEW: RestorePreviewDto = {
   schemaVersion: 11,
   shopName: 'Bengkel Maju Jaya Motor',
   counts: {
+    purchases: { draft: 0, finalized: 0, void: 0 },
+    suppliers: 0,
     invoices: { draft: 1, finalized: 12, void: 2 },
     catalogItems: 40,
     customers: 9,
     cashiers: 3,
   },
   latestFinalizedAt: '2026-09-29T09:30:00.000Z',
+  latestPurchaseFinalizedAt: null,
   activeAdmins: 1,
 };
 

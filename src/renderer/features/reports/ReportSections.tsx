@@ -416,6 +416,96 @@ export function ReportSections({ report }: { report: DailyReport }) {
           />
         </div>
       </Section>
+      <Section
+        id="report-purchases"
+        title={t('purchases.report.title')}
+        basis={t('purchases.report.basis')}
+      >
+        <p className="mb-4 text-sm text-muted-foreground">
+          {t('purchases.report.salesChannelNote')}
+        </p>
+        <Figures
+          caption={t('purchases.report.title')}
+          rows={(
+            [
+              ['billCount', 'billCount', true],
+              ['grossSubtotal', 'grossSubtotal', false],
+              ['discountAmount', 'discountAmount', false],
+              ['netBeforeAdjustments', 'netBeforeAdjustments', false],
+              ['voidCount', 'voidCount', true],
+              ['voidDeduction', 'voidDeduction', false],
+              ['creditCount', 'creditCount', true],
+              ['creditAmount', 'creditAmount', false],
+              ['netAfterAdjustments', 'netAfterAdjustments', false],
+            ] as const
+          ).map(([label, key, isCount]) => ({
+            label: t(`purchases.report.${label}`),
+            value: isCount ? (
+              <Count
+                field={`purchases.${key}`}
+                value={report.purchases[key] as number}
+              />
+            ) : (
+              <Money
+                field={`purchases.${key}`}
+                value={report.purchases[key] as string}
+              />
+            ),
+          }))}
+        />
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          {(['purchasePayments', 'supplierRefunds'] as const).map((key) => (
+            <div key={key} className="space-y-3">
+              <Figures
+                caption={t(`purchases.report.${key}`)}
+                rows={[
+                  {
+                    label: t('purchases.total'),
+                    value: (
+                      <Money
+                        field={`${key}.amount`}
+                        value={report[key].amount}
+                      />
+                    ),
+                    strong: true,
+                  },
+                  {
+                    label: t('purchases.report.count'),
+                    value: (
+                      <Count field={`${key}.count`} value={report[key].count} />
+                    ),
+                  },
+                ]}
+              />
+              <Table
+                caption={t(`purchases.report.${key}`)}
+                columns={[
+                  { label: t('purchases.method') },
+                  { label: t('purchases.report.count'), right: true },
+                  { label: t('purchases.amount'), right: true },
+                ]}
+                rows={report[key].byMethod.map((m) => ({
+                  key: m.method,
+                  cells: [
+                    t(`workspace.paymentMethod.${m.method}`),
+                    <Count
+                      key="count"
+                      field={`${key}.byMethod.${m.method}.count`}
+                      value={m.count}
+                    />,
+                    <Money
+                      key="money"
+                      field={`${key}.byMethod.${m.method}.amount`}
+                      value={m.amount}
+                    />,
+                  ],
+                }))}
+                empty={empty}
+              />
+            </div>
+          ))}
+        </div>
+      </Section>
     </div>
   );
 }

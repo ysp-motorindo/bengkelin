@@ -91,6 +91,38 @@ export function dailyReportCsvRows(
     ],
     [labels.paymentCount, n(report.payments.count)],
   ];
+  rows.push(
+    [],
+    [labels.purchase.report],
+    [labels.purchase.basis],
+    [labels.purchase.salesChannelNote],
+    [labels.purchase.billCount, n(report.purchases.billCount)],
+    [labels.purchase.gross, n(report.purchases.grossSubtotal)],
+    [labels.purchase.discount, n(report.purchases.discountAmount)],
+    [labels.purchase.net, n(report.purchases.netBeforeAdjustments)],
+    [labels.purchase.voidCount, n(report.purchases.voidCount)],
+    [labels.purchase.voidDeduction, n(report.purchases.voidDeduction)],
+    [labels.purchase.creditCount, n(report.purchases.creditCount)],
+    [labels.purchase.credits, n(report.purchases.creditAmount)],
+    [labels.purchase.netAfter, n(report.purchases.netAfterAdjustments)],
+  );
+  for (const [title, flow] of [
+    [labels.purchase.payments, report.purchasePayments],
+    [labels.purchase.refunds, report.supplierRefunds],
+  ] as const) {
+    rows.push(
+      [],
+      [title],
+      [labels.purchase.total, n(flow.amount)],
+      [labels.purchase.count, n(flow.count)],
+      [labels.purchase.method, labels.purchase.count, labels.purchase.amount],
+      ...flow.byMethod.map((m) => [
+        labels.paymentMethod[m.method],
+        n(m.count),
+        n(m.amount),
+      ]),
+    );
+  }
   return rows;
 }
 

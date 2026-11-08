@@ -1,3 +1,4 @@
+import { readPurchasingReport } from '@/main/features/purchases/reports';
 import { resolveNumberLocale } from '@/shared/number-format';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -165,6 +166,11 @@ export class ReportService {
           },
         },
         {
+          purchasing: readPurchasingReport(
+            this.deps.db,
+            range,
+            input.cashierId,
+          ),
           sales: this.repo.sales(range, filters),
           voids: this.repo.voids(range, filters),
           payments: this.repo.paymentsByMethod(range, filters),

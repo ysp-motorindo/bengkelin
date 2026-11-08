@@ -19,6 +19,7 @@ export function DraftField({
   type = 'text',
   parse,
   disabled = false,
+  compact = false,
 }: {
   commands: PurchaseCommands;
   field: string;
@@ -29,7 +30,9 @@ export function DraftField({
   type?: string;
   parse: (v: string) => PurchaseDraftOperation | null;
   disabled?: boolean;
+  compact?: boolean;
 }) {
+  const { t } = useTranslation();
   const [text, setText] = useSyncedValue(value, () => commands.dirty(field));
   useEffect(
     () => () => commands.invalid(field, false),
@@ -42,6 +45,24 @@ export function DraftField({
     commands.invalid(field, op === null);
     if (op) commands.edit(field, op);
   };
+  if (compact)
+    return (
+      <div>
+        <NumericInput
+          value={text}
+          onValueChange={change}
+          decimal={decimal}
+          disabled={disabled}
+          aria-label={label}
+          aria-invalid={!valid}
+        />
+        {!valid ? (
+          <p className="mt-1 text-xs text-destructive" role="alert">
+            {t('validation.invalid')}
+          </p>
+        ) : null}
+      </div>
+    );
   return (
     <FormField label={label} error={valid ? undefined : 'validation.invalid'}>
       {numeric ? (

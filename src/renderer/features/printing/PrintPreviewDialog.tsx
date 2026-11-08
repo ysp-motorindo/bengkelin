@@ -1,3 +1,4 @@
+import { registerPrintTarget } from './print-target';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Printer, X } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
@@ -20,6 +21,7 @@ import { ShadowDocument } from './ShadowDocument';
 export function PrintPreviewDialog({
   invoiceId,
   initialFormat,
+  formats = PRINT_FORMATS,
   client,
   busy,
   notice,
@@ -28,11 +30,12 @@ export function PrintPreviewDialog({
 }: {
   invoiceId: string;
   initialFormat: PrintFormat;
+  formats?: readonly PrintFormat[];
   client: PrintClient;
   busy: boolean;
   /** The latest print outcome, repeated here while the dialog covers it. */
   notice: string | null;
-  onPrint(format: PrintFormat): void;
+  onPrint(format: PrintFormat): void | Promise<void>;
   onClose(): void;
 }) {
   const { t } = useTranslation();
@@ -59,6 +62,13 @@ export function PrintPreviewDialog({
   }, [client, invoiceId, format, t, locale]);
 
   const shown = preview?.format === format ? preview : null;
+  useEffect(
+    () =>
+      registerPrintTarget(async () => {
+        if (shown && !busy) await onPrint(format);
+      }),
+    [shown, busy, onPrint, format],
+  );
 
   return (
     <Dialog
@@ -89,7 +99,7 @@ export function PrintPreviewDialog({
             value={format}
             onChange={(event) => setFormat(event.target.value as PrintFormat)}
           >
-            {PRINT_FORMATS.map((value) => (
+            {formats.map((value) => (
               <option key={value} value={value}>
                 {t(`printing.format.${value}`)}
               </option>

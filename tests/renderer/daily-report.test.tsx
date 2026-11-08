@@ -19,6 +19,19 @@ const BENGKEL = '5b9e6a3e-4c1e-4a55-9c5b-0a8f3f0b9d31';
 
 function report(overrides: Partial<DailyReport> = {}): DailyReport {
   return {
+    purchases: {
+      billCount: 0,
+      grossSubtotal: '0',
+      discountAmount: '0',
+      netBeforeAdjustments: '0',
+      voidCount: 0,
+      voidDeduction: '0',
+      creditCount: 0,
+      creditAmount: '0',
+      netAfterAdjustments: '0',
+    },
+    purchasePayments: { amount: '0', count: 0, byMethod: [] },
+    supplierRefunds: { amount: '0', count: 0, byMethod: [] },
     date: '2026-10-01',
     timezone: 'Asia/Jakarta',
     range: {
@@ -203,7 +216,10 @@ describe('daily report screen', () => {
         .map((o) => o.textContent),
     ).toEqual(['Semua', 'Pak Budi', 'Siti']);
     await user.selectOptions(cashier, SITI.cashierId);
-    await user.selectOptions(await screen.findByLabelText('Kanal'), BENGKEL);
+    await user.selectOptions(
+      await screen.findByLabelText('Kanal penjualan'),
+      BENGKEL,
+    );
     const date = screen.getByLabelText('Tanggal');
     await user.clear(date);
     await user.type(date, '2026-09-30');

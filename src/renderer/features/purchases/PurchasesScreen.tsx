@@ -5,7 +5,6 @@ import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { Select } from '@/renderer/components/ui/select';
 import { FormField } from '@/renderer/components/form-field';
-import { flushAll } from '@/renderer/lib/flush-registry';
 import { useAction } from '@/renderer/lib/use-action';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { todayInShop } from '@/renderer/features/workspace/shop-time';
@@ -19,7 +18,10 @@ import type {
 import { PurchaseEditor } from './PurchaseEditor';
 import { PurchaseDetail } from './PurchaseDetail';
 import { SuppliersScreen } from './Suppliers';
-import { registerWorkspaceActions } from '@/renderer/features/workspace/workspace-actions';
+import {
+  registerWorkspaceActions,
+  type WorkspaceActions,
+} from '@/renderer/features/workspace/workspace-actions';
 type Tab = 'editor' | 'history' | 'receiving' | 'payables' | 'suppliers';
 export function PurchasesScreen({ active }: { active: boolean }) {
   const { t } = useTranslation();
@@ -31,33 +33,68 @@ export function PurchasesScreen({ active }: { active: boolean }) {
   const [units, setUnits] = useState<ReferenceDto[]>([]);
   const [locations, setLocations] = useState<ReferenceDto[]>([]);
   const [timezone, setTimezone] = useState('Asia/Jakarta');
+  const [autoPrint, setAutoPrint] = useState(false);
   const [detail, setDetail] = useState<PurchaseView | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const newRequest = useRef<string | null>(null);
-  const boot = useCallback(async () => {
+  const editorActions = useRef<WorkspaceActions | null>(null);
+  const registerDraftActions = useCallback((actions: WorkspaceActions) => {
+    editorActions.current = actions;
+    return () => {
+      if (editorActions.current === actions) editorActions.current = null;
+    };
+  }, []);
+  const flushDraft = useCallback(
+    () => editorActions.current?.saveDraft() ?? Promise.resolve(true),
+    [],
+  );
+  const changedDraft = useCallback(
+    (view: PurchaseDraftView) =>
+      setDrafts((ds) =>
+        ds.some((d) => d.id === view.id && d.version < view.version)
+          ? ds.map((d) => (d.id === view.id ? view : d))
+          : ds,
+      ),
+    [],
+  );
+
+  const refreshReferences = useCallback(async () => {
     const b = window.bengkelin;
-    const [d, u, l, s] = await Promise.all([
-      b.purchaseDrafts.list(),
+    const [u, l, s] = await Promise.all([
       b.references.listActive({ entity: 'unit' }),
       b.references.listActive({ entity: 'stockLocation' }),
       b.settings.getShop(),
+    ]);
+    if (action.check(u)) setUnits(u.value);
+    if (action.check(l)) setLocations(l.value);
+    if (action.check(s)) setTimezone(s.value.timezone);
+  }, [action.check]);
+  const boot = useCallback(async () => {
+    const [d] = await Promise.all([
+      window.bengkelin.purchaseDrafts.list(),
+      refreshReferences(),
     ]);
     if (action.check(d)) {
       setDrafts(d.value);
       setCurrent((old) => old ?? d.value[0] ?? null);
     }
-    if (action.check(u)) setUnits(u.value);
-    if (action.check(l)) setLocations(l.value);
-    if (action.check(s)) setTimezone(s.value.timezone);
-  }, [action.check]);
+  }, [action.check, refreshReferences]);
+  const wasActive = useRef(false);
   useEffect(() => {
-    if (active && !started) {
-      setStarted(true);
-      void action.run(boot);
+    if (active && !wasActive.current) {
+      if (!started) {
+        setStarted(true);
+        void action.run(boot);
+      } else void action.run(refreshReferences);
     }
-  }, [active, started, boot, action.run]);
+    wasActive.current = active;
+  }, [active, started, boot, refreshReferences, action.run]);
   const create = useCallback(async () => {
-    if (!(await flushAll())) return;
+    if (!(await flushDraft())) {
+      setNotice(t('workspace.notices.unsaved'));
+      setTab('editor');
+      return;
+    }
     await action.run(async () => {
       newRequest.current ??= crypto.randomUUID();
       const r = await window.bengkelin.purchaseDrafts.create({
@@ -72,19 +109,32 @@ export function PurchasesScreen({ active }: { active: boolean }) {
         setTab('editor');
       }
     });
-  }, [action.run, action.check, timezone]);
+  }, [action.run, action.check, timezone, flushDraft]);
   useEffect(() => {
     if (!active || tab === 'editor') return;
     return registerWorkspaceActions({
       newTransaction: create,
-      focusSearch: () => setTab('editor'),
-      addCustomItem: () => setTab('editor'),
-      saveDraft: flushAll,
-      openCheckoutReview: async () => setTab('editor'),
+      focusSearch: () => {
+        setTab('editor');
+        requestAnimationFrame(() => editorActions.current?.focusSearch());
+      },
+      addCustomItem: () => {
+        setTab('editor');
+        requestAnimationFrame(() => editorActions.current?.addCustomItem());
+      },
+      saveDraft: flushDraft,
+      openCheckoutReview: async () => {
+        setTab('editor');
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => resolve()),
+        );
+        await editorActions.current?.openCheckoutReview();
+      },
     });
   }, [active, tab, create]);
   if (!started) return null;
   const navigate = (next: Tab) => {
+    setAutoPrint(false);
     setTab(next);
     setDetail(null);
   };
@@ -140,7 +190,7 @@ export function PurchasesScreen({ active }: { active: boolean }) {
                 value={current?.id ?? ''}
                 onChange={(e) => {
                   const id = e.target.value;
-                  void flushAll().then((ok) => {
+                  void flushDraft().then((ok) => {
                     if (ok)
                       void action.run(async () => {
                         const r = await window.bengkelin.purchaseDrafts.get({
@@ -167,10 +217,13 @@ export function PurchasesScreen({ active }: { active: boolean }) {
             initial={current}
             active={active && tab === 'editor'}
             units={units}
+            registerDraftActions={registerDraftActions}
+            onChanged={changedDraft}
             onNew={create}
             onPosted={(p) => {
               setDrafts((ds) => ds.filter((d) => d.id !== p.id));
               setCurrent(null);
+              setAutoPrint(true);
               setDetail(p);
               setTab('history');
               setNotice(t('purchases.billRecorded'));
@@ -199,11 +252,19 @@ export function PurchasesScreen({ active }: { active: boolean }) {
         <PurchaseDetail
           key={detail.id}
           purchase={detail}
+          active={active}
+          autoPrint={autoPrint}
           locations={locations}
           timezone={timezone}
-          onChange={setDetail}
+          onChange={(p) => {
+            setDetail(p);
+            setNotice(null);
+          }}
           onReload={reload}
-          onBack={() => setDetail(null)}
+          onBack={() => {
+            setAutoPrint(false);
+            setDetail(null);
+          }}
         />
       ) : null}
       {!detail &&

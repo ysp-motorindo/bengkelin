@@ -65,3 +65,7 @@ HTML akhir diperiksa tanpa permintaan jaringan, dengan 32 gambar dan font berhas
 Read [stock-locations.md](stock-locations.md) alongside the existing onboarding and operating manual. It supersedes their location-free inventory and catalog-import examples: set up active stock locations first, keep `stock_location` as text in CSV files, and select a location for stock operations and catalog export. Existing invoices and stock history are migrated to `01`; fresh installations do not seed Gudang.
 
 Baca [stock-locations.md](stock-locations.md) bersama onboarding dan manual operasional. Panduan ini memperbarui contoh stok dan impor katalog lama: siapkan lokasi aktif terlebih dahulu, simpan `stock_location` sebagai teks dalam CSV, dan pilih lokasi untuk mutasi stok serta ekspor katalog. Faktur dan riwayat lama dimigrasikan ke `01`; instalasi baru tidak membuat Gudang.
+
+## Panduan pembelian
+
+Lihat [Pembelian dari pemasok](pembelian.md) sebagai pelengkap manual operasional untuk faktur pemasok, penerimaan sebagian, retur/kredit, pembayaran, pengembalian dana, laporan, cetak, dan cadangan. Panduan berisi ringkasan Bahasa Indonesia dan English.

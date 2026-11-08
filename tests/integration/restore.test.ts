@@ -146,6 +146,7 @@ const EXCLUDED = new Set([
   'audit_log',
   'command_receipts',
   'invoice_daily_counters',
+  'purchase_daily_counters',
 ]);
 
 function openRaw(file: string, readonly = true): RawDb {
@@ -546,9 +547,12 @@ describe('inspectRestore', () => {
       shopName: SHOP_NAME,
       counts: {
         invoices: { draft: 0, finalized: 1, void: 0 },
+        purchases: { draft: 0, finalized: 0, void: 0 },
+        suppliers: 0,
         ...expectedCounts,
       },
       latestFinalizedAt: toInstant(T0),
+      latestPurchaseFinalizedAt: null,
       activeAdmins: 1,
     });
     expect(expectedCounts.cashiers).toBe(2);

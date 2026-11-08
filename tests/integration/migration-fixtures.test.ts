@@ -1,3 +1,4 @@
+import { populatePurchases } from '../fixtures/db/populate-purchases';
 import { withCurrentCustomerColumns } from './helpers/legacy-customers';
 import {
   copyFileSync,
@@ -309,6 +310,27 @@ FIXTURE_ROWS[21] = {
   ...FIXTURE_ROWS[20]!,
   customer_opening_balances: 0,
   customer_opening_payments: 0,
+};
+
+FIXTURE_ROWS[22] = {
+  ...FIXTURE_ROWS[21]!,
+  audit_log: 66,
+  command_receipts: 55,
+  stock_ledger_entries: 12,
+  suppliers: 1,
+  purchases: 4,
+  purchase_items: 2,
+  purchase_discounts: 1,
+  purchase_checkout_allocations: 1,
+  purchase_payments: 1,
+  purchase_refunds: 1,
+  purchase_receipts: 2,
+  purchase_receipt_items: 2,
+  purchase_receipt_reversals: 1,
+  purchase_credits: 1,
+  purchase_credit_items: 1,
+  purchase_daily_counters: 3,
+  purchase_print_jobs: 1,
 };
 
 const fixtures = readdirSync(FIXTURE_DIR)
@@ -878,6 +900,22 @@ describe('progressive upgrade from an empty database', () => {
             );
           }
         },
+        22: async () => {
+          const a = await app();
+          const call: import('../fixtures/db/populate').FixtureContext['call'] =
+            async <T>(channel: string, input?: unknown, windowId?: number) => ({
+              ok: true,
+              value: await a.call<T>(channel, input, windowId),
+            });
+          const locations = await a.call<ReferenceDto[]>(
+            C.references.listActive,
+            { entity: 'stockLocation' },
+          );
+          Object.assign(
+            ids,
+            await populatePurchases(call, ids.oil!, locations[0]!.id),
+          );
+        },
         21: async () => {
           db.prepare(
             `INSERT INTO customer_opening_balances SELECT ?, '2026-09-30', 100, '2026-09-30T03:00:00.000Z', id FROM cashiers LIMIT 1`,
@@ -1410,5 +1448,69 @@ function probeEveryTrigger(
     { id: '88888888-8888-4888-8888-888888888888', amount: 51 },
   );
 
+  expectFires(
+    'purchase_counters_forward',
+    'UPDATE purchase_daily_counters SET last_sequence=last_sequence',
+  );
+  expectFires(
+    'purchases_status_guard',
+    "UPDATE purchases SET status='DRAFT' WHERE id=?",
+    [ids.purchasePaid],
+  );
+  expectFires(
+    'purchases_discarded_frozen',
+    'UPDATE purchases SET version=version+1 WHERE id=?',
+    [ids.purchaseDiscarded],
+  );
+  expectFires(
+    'purchases_posted_frozen',
+    'UPDATE purchases SET amount=amount+1 WHERE id=?',
+    [ids.purchasePaid],
+  );
+  expectFires(
+    'purchases_void_frozen',
+    'UPDATE purchases SET version=version+1 WHERE id=?',
+    [ids.purchaseVoid],
+  );
+  expectFires(
+    'purchases_prices_required',
+    "UPDATE purchases SET status='FINALIZED' WHERE id=?",
+    [ids.purchaseOpen],
+  );
+  for (const table of [
+    'purchase_items',
+    'purchase_discounts',
+    'purchase_checkout_allocations',
+  ]) {
+    cloneInsert(
+      `${table}_draft_insert`,
+      table,
+      'purchase_id=?',
+      [ids.purchasePaid],
+      { id: newId },
+    );
+    expectFires(
+      `${table}_draft_update`,
+      `UPDATE ${table} SET purchase_id=purchase_id WHERE purchase_id=?`,
+      [ids.purchasePaid],
+    );
+    expectFires(
+      `${table}_draft_delete`,
+      `DELETE FROM ${table} WHERE purchase_id=?`,
+      [ids.purchasePaid],
+    );
+  }
+  for (const table of [
+    'purchase_payments',
+    'purchase_refunds',
+    'purchase_receipts',
+    'purchase_receipt_reversals',
+    'purchase_credits',
+  ]) {
+    cloneInsert(`${table}_issued_only`, table, '1=1', [], {
+      id: newId,
+      purchase_id: ids.purchaseOpen,
+    });
+  }
   return [...new Set(fired)];
 }

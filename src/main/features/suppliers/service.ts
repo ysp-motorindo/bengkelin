@@ -18,6 +18,7 @@ import type {
 import { DomainError } from '@/shared/primitives';
 import type { Clock } from '@/shared/time';
 interface SupplierRow {
+  version: bigint;
   id: string;
   name: string;
   phone_number: string | null;
@@ -29,6 +30,7 @@ interface SupplierRow {
 }
 const dto = (r: SupplierRow): SupplierDto => ({
   id: r.id,
+  version: Number(r.version),
   name: r.name,
   phoneNumber: r.phone_number,
   email: r.email,
@@ -90,6 +92,8 @@ export class SupplierService {
         },
         () => {
           const prior = input.id ? this.get(actor, { id: input.id }) : null;
+          if (prior && prior.version !== input.expectedVersion)
+            throw new DomainError('SUPPLIER_VERSION_CONFLICT');
           const phone = input.phoneNumber
             ? normalizePhone(input.phoneNumber)
             : '';
@@ -113,7 +117,7 @@ export class SupplierService {
           const id = input.id ?? randomUUID();
           const now = clock.now();
           db.prepare(
-            `INSERT INTO suppliers(id,name,phone_number,normalized_phone,email,address,is_active,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,phone_number=excluded.phone_number,normalized_phone=excluded.normalized_phone,email=excluded.email,address=excluded.address,is_active=excluded.is_active,updated_at=excluded.updated_at`,
+            `INSERT INTO suppliers(id,name,phone_number,normalized_phone,email,address,is_active,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET version=suppliers.version+1,name=excluded.name,phone_number=excluded.phone_number,normalized_phone=excluded.normalized_phone,email=excluded.email,address=excluded.address,is_active=excluded.is_active,updated_at=excluded.updated_at`,
           ).run(
             id,
             input.name,

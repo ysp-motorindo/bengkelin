@@ -1,3 +1,4 @@
+import { PRINT_FORMATS } from '@/shared/contracts';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { Eye, FileDown, Printer } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -29,11 +30,15 @@ export function PrintActions({
   client = bridgePrintClient,
   autoPrint = false,
   size = 'default',
+  formats = PRINT_FORMATS,
+  registerTarget = true,
 }: {
   invoiceId: string;
   client?: PrintClient;
   autoPrint?: boolean;
   size?: 'default' | 'sm';
+  formats?: readonly PrintFormat[];
+  registerTarget?: boolean;
 }) {
   const { numberOptions } = useNumberFormat();
   const { t } = useTranslation();
@@ -46,7 +51,9 @@ export function PrintActions({
 
   const thermalFormat: PrintFormat = options?.thermalFormat ?? 'THERMAL_58';
   const defaultFormat: PrintFormat =
-    options?.defaultInvoiceFormat === 'A4' ? 'A4' : thermalFormat;
+    options?.defaultInvoiceFormat === 'A4' || !formats.includes(thermalFormat)
+      ? 'A4'
+      : thermalFormat;
 
   const describe = useCallback(
     (outcome: PrintOutcomeDto): Notice => {
@@ -125,7 +132,13 @@ export function PrintActions({
   // File > Print (CmdOrCtrl+P) prints this invoice in the default format.
   const printDefault = useRef(() => print(defaultFormat));
   printDefault.current = () => print(defaultFormat);
-  useEffect(() => registerPrintTarget(() => printDefault.current()), []);
+  useEffect(
+    () =>
+      registerTarget
+        ? registerPrintTarget(() => printDefault.current())
+        : undefined,
+    [registerTarget],
+  );
 
   // Auto-print once, only when the shop enabled it.
   useEffect(() => {
@@ -137,15 +150,17 @@ export function PrintActions({
   return (
     <div className="flex flex-col gap-2" data-testid="print-actions">
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          size={size}
-          disabled={busy}
-          onClick={() => void print(thermalFormat)}
-        >
-          <Printer aria-hidden="true" />
-          {t('printing.actions.printThermal')}
-        </Button>
+        {formats.includes(thermalFormat) ? (
+          <Button
+            variant="outline"
+            size={size}
+            disabled={busy}
+            onClick={() => void print(thermalFormat)}
+          >
+            <Printer aria-hidden="true" />
+            {t('printing.actions.printThermal')}
+          </Button>
+        ) : null}
         <Button
           variant="outline"
           size={size}
@@ -189,10 +204,11 @@ export function PrintActions({
         <PrintPreviewDialog
           invoiceId={invoiceId}
           initialFormat={defaultFormat}
+          formats={formats}
           client={client}
           busy={busy}
           notice={notice?.text ?? null}
-          onPrint={(format) => void print(format)}
+          onPrint={(format) => print(format)}
           onClose={() => setPreviewing(false)}
         />
       ) : null}

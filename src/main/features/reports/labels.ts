@@ -1,3 +1,7 @@
+import {
+  PURCHASE_LABELS,
+  type PurchaseLabels,
+} from '@/main/features/purchases/labels';
 import { PRINT_LABELS } from '@/main/features/printing/templates/labels';
 import type { Language, PaymentMethod } from '@/shared/contracts';
 
@@ -8,6 +12,7 @@ import type { Language, PaymentMethod } from '@/shared/contracts';
  * print labels.
  */
 export interface ReportLabels {
+  purchase: PurchaseLabels;
   title: string;
   date: string;
   timezone: string;
@@ -60,12 +65,13 @@ export interface ReportLabels {
 
 export const REPORT_LABELS: Record<Language, ReportLabels> = {
   id: {
+    purchase: PURCHASE_LABELS.id,
     title: 'Laporan Harian',
     date: 'Tanggal',
     timezone: 'Zona waktu',
     generatedAt: 'Dibuat',
     cashierFilter: 'Filter kasir',
-    channelFilter: 'Filter kanal',
+    channelFilter: 'Filter kanal penjualan',
     all: 'Semua',
     salesSummary: 'Ringkasan penjualan',
     salesBasis: 'Penjualan menurut waktu finalisasi faktur',
@@ -110,12 +116,13 @@ export const REPORT_LABELS: Record<Language, ReportLabels> = {
     fileName: (date) => `laporan-harian-${date}.csv`,
   },
   en: {
+    purchase: PURCHASE_LABELS.en,
     title: 'Daily Report',
     date: 'Date',
     timezone: 'Time zone',
     generatedAt: 'Generated',
     cashierFilter: 'Cashier filter',
-    channelFilter: 'Channel filter',
+    channelFilter: 'Sales channel filter',
     all: 'All',
     salesSummary: 'Sales summary',
     salesBasis: 'Sales by invoice finalization time',

@@ -22,6 +22,9 @@
     "cashiers": "Cashiers",
     "cashierCounts": "{{total}} (active ADMINs: {{admins}})",
     "warning": "All current data will be replaced with the contents of this backup. Transactions made after this backup will no longer be in the application.",
-    "safetyNote": "A safety backup of the current data is made automatically before restoring. Invoice numbers already used are never reused."
+    "safetyNote": "A safety backup of the current data is made automatically before restoring. Invoice numbers already used are never reused.",
+    "purchases": "Purchase bills",
+    "suppliers": "Suppliers",
+    "latestPurchaseFinalized": "Latest purchase recorded"
   }
 }

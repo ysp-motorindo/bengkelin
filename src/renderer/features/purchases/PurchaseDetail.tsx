@@ -1,3 +1,4 @@
+import { PurchasePrintActions } from './PurchasePrintActions';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
@@ -11,6 +12,8 @@ import type { PurchaseView, ReferenceDto } from '@/shared/contracts';
 import { PurchaseAction, type PurchaseActionKind } from './PurchaseAction';
 export function PurchaseDetail({
   purchase,
+  active,
+  autoPrint = false,
   locations,
   timezone,
   onChange,
@@ -18,6 +21,8 @@ export function PurchaseDetail({
   onReload,
 }: {
   purchase: PurchaseView;
+  active: boolean;
+  autoPrint?: boolean;
   locations: ReferenceDto[];
   timezone: string;
   onChange: (p: PurchaseView) => void;
@@ -32,9 +37,6 @@ export function PurchaseDetail({
   } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const p = purchase;
-  const money = p.outgoingPayments
-    .reduce((sum, r) => sum + BigInt(r.amount), 0n)
-    .toString();
   return (
     <section className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -56,6 +58,13 @@ export function PurchaseDetail({
           ))}
         </div>
       </div>
+      <PurchasePrintActions
+        purchaseId={p.id}
+        documentId={p.id}
+        documentType="BILL"
+        active={active}
+        autoPrint={autoPrint}
+      />
       {notice ? (
         <p
           role="status"
@@ -71,8 +80,11 @@ export function PurchaseDetail({
       ) : null}
       <dl className="grid gap-3 rounded-md border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ['total', p.totals!.amount],
-          ['paid', money],
+          ['originalTotal', p.totals!.amount],
+          ['creditedTotal', p.creditedAmount],
+          ['adjustedTotal', p.netAmount],
+          ['paid', p.paidAmount],
+          ['refundedTotal', p.refundedAmount],
           ['outstanding', p.outstandingAmount],
           ['refundDue', p.refundDue],
         ].map(([key, value]) => (
@@ -196,6 +208,12 @@ export function PurchaseDetail({
                   </Button>
                 ) : null}
               </div>
+              <PurchasePrintActions
+                purchaseId={p.id}
+                documentId={r.id}
+                documentType="RECEIPT"
+                active={active}
+              />
               {r.lines.map((l) => (
                 <p key={l.id} className="text-sm">
                   {p.lines.find((x) => x.id === l.purchaseLineId)?.title}:{' '}
@@ -217,6 +235,12 @@ export function PurchaseDetail({
                 {formatDisplayDateTime(c.createdAt, timezone)} · {c.cashierName}
               </p>
               <p className="text-sm">{c.reason}</p>
+              <PurchasePrintActions
+                purchaseId={p.id}
+                documentId={c.id}
+                documentType="CREDIT"
+                active={active}
+              />
               {c.lines.map((l, i) => (
                 <p key={i} className="text-sm">
                   {p.lines.find((x) => x.id === l.purchaseLineId)?.title}:{' '}

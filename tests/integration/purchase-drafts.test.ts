@@ -146,3 +146,56 @@ test('suppliers validate and warn about duplicate normalized phones', async () =
     ).saved,
   ).toBe(true);
 });
+
+test('stale supplier edits cannot undo a deactivation and successful updates replay only once', async () => {
+  const s = await supplier();
+  const deactivate = {
+    requestId: randomUUID(),
+    id: s.id,
+    expectedVersion: 1,
+    name: s.name,
+    address: 'New address',
+    isActive: false,
+  };
+  const first = value(
+    await call<SaveSupplierResult>('suppliers', 'save', deactivate),
+  );
+  expect(first.saved).toBe(true);
+  expect(
+    failure(
+      await call('suppliers', 'save', {
+        requestId: randomUUID(),
+        id: s.id,
+        expectedVersion: 1,
+        name: s.name,
+        address: 'Stale address',
+        isActive: true,
+      }),
+    ).code,
+  ).toBe('SUPPLIER_VERSION_CONFLICT');
+  const current = value(
+    await call<import('@/shared/contracts').SupplierDto>('suppliers', 'get', {
+      id: s.id,
+    }),
+  );
+  expect(current.isActive).toBe(false);
+  expect(current.address).toBe('New address');
+  expect(current.version).toBe(2);
+  expect(value(await call('suppliers', 'save', deactivate))).toEqual(first);
+  expect(
+    value(
+      await call<import('@/shared/contracts').SupplierDto>('suppliers', 'get', {
+        id: s.id,
+      }),
+    ).version,
+  ).toBe(2);
+  expect(
+    failure(
+      await call('suppliers', 'save', {
+        requestId: randomUUID(),
+        id: s.id,
+        name: 'Missing revision',
+      }),
+    ).code,
+  ).toBe('VALIDATION_FAILED');
+});

@@ -78,7 +78,28 @@ export interface DailyReportMethodRow {
   amount: Rupiah;
 }
 
-export interface DailyReport {
+export interface PurchaseActivity {
+  billCount: number;
+  grossSubtotal: Rupiah;
+  discountAmount: Rupiah;
+  netBeforeAdjustments: Rupiah;
+  voidCount: number;
+  voidDeduction: Rupiah;
+  creditCount: number;
+  creditAmount: Rupiah;
+  netAfterAdjustments: string;
+}
+export interface PurchaseCashFlow {
+  amount: Rupiah;
+  count: number;
+  byMethod: DailyReportMethodRow[];
+}
+export interface PurchaseReporting {
+  purchases: PurchaseActivity;
+  purchasePayments: PurchaseCashFlow;
+  supplierRefunds: PurchaseCashFlow;
+}
+export interface DailyReport extends PurchaseReporting {
   date: LocalDate;
   /** The shop timezone the day was computed in (shown on every surface). */
   timezone: string;
@@ -111,7 +132,7 @@ export interface DailyReport {
     invoices: DailyReportVoidRow[];
   };
   /**
-   * netBeforeVoids - voids.deduction. The ONLY money field that may be
+   * netBeforeVoids - voids.deduction. A sales money field that may be
    * negative (a day with a void of an earlier sale and little new sales):
    * a canonical integer string with a leading '-', e.g. '-250000'.
    */

@@ -1,3 +1,4 @@
+import type { PurchasePrintInput } from './contracts';
 import type {
   ReceivePurchaseData,
   ReversePurchaseReceiptData,
@@ -154,6 +155,11 @@ import type { Result } from './primitives';
 
 /** Shape of `window.bengkelin`. Feature tasks add named namespaces here. */
 export interface BengkelinApi {
+  purchasePrinting: {
+    preview(input: PurchasePrintInput): Promise<Result<PrintPreviewDto>>;
+    print(input: PurchasePrintInput): Promise<Result<PrintOutcomeDto>>;
+    exportPdf(input: PurchasePrintInput): Promise<Result<PrintOutcomeDto>>;
+  };
   purchases: {
     receive(input: ReceivePurchaseData): Promise<Result<PurchaseView>>;
     reverseReceipt(

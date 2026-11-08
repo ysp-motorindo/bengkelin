@@ -44,7 +44,7 @@ export class PurchaseService {
       session,
       'purchases.receive',
       input,
-      (ctx, actor, row) => receivePurchase(ctx, actor, input),
+      (ctx, actor) => receivePurchase(ctx, actor, input),
     );
   }
   reverseReceipt(
@@ -56,7 +56,7 @@ export class PurchaseService {
       session,
       'purchases.reverseReceipt',
       input,
-      (ctx, actor, row) => reversePurchaseReceipt(ctx, actor, input),
+      (ctx, actor) => reversePurchaseReceipt(ctx, actor, input),
     );
   }
   credit(session: Session | undefined, input: PurchaseCreditData) {
@@ -65,7 +65,7 @@ export class PurchaseService {
       session,
       'purchases.credit',
       input,
-      (ctx, actor, row) => creditPurchase(ctx, actor, input),
+      (ctx, actor) => creditPurchase(ctx, actor, input),
     );
   }
   previewCredit(

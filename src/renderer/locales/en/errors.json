@@ -178,5 +178,6 @@
   "PURCHASE_RECEIPTS_MUST_BE_REVERSED": "Reverse all receipts before voiding this bill.",
   "REFUND_EXCEEDS_AMOUNT": "The refund exceeds the money due from this supplier. Reload and check the refund due.",
   "INVALID_PURCHASE_BALANCE": "The purchase balance is inconsistent. Reload the bill and contact support if it persists.",
-  "INVALID_CREDIT_QUANTITY": "Check the credit quantity and original purchase quantities."
+  "INVALID_CREDIT_QUANTITY": "Check the credit quantity and original purchase quantities.",
+  "SUPPLIER_VERSION_CONFLICT": "This supplier changed while you were editing. Your entries are kept. Load the latest saved details before saving again."
 }

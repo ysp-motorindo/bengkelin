@@ -1,3 +1,4 @@
+import { emptyPurchasingReport } from '@/main/features/purchases/reports';
 import { localDateTime } from '@/main/features/printing/model';
 import {
   PAYMENT_METHODS,
@@ -32,6 +33,7 @@ export interface ReportContext {
 }
 
 export interface ReportRows {
+  purchasing?: import('@/shared/contracts').PurchaseReporting;
   sales: SalesGroupRow[];
   voids: VoidRow[];
   payments: PaymentMethodRow[];
@@ -151,6 +153,7 @@ export function toDailyReport(
   });
 
   return {
+    ...(rows.purchasing ?? emptyPurchasingReport()),
     date: context.date,
     timezone,
     range: { start: context.range.start, end: context.range.end },

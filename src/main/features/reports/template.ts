@@ -285,6 +285,82 @@ export function renderDailyReportHtml(
     </div>
   </div>
 </section>
+<section><h2>${labels.purchase.report}</h2><p class="basis">${labels.purchase.basis}</p><p class="basis">${labels.purchase.salesChannelNote}</p>
+${summary([
+  {
+    label: labels.purchase.billCount,
+    value: count('purchases.billCount', report.purchases.billCount, labels),
+  },
+  {
+    label: labels.purchase.gross,
+    value: money('purchases.grossSubtotal', report.purchases.grossSubtotal),
+  },
+  {
+    label: labels.purchase.discount,
+    value: money('purchases.discountAmount', report.purchases.discountAmount),
+  },
+  {
+    label: labels.purchase.net,
+    value: money(
+      'purchases.netBeforeAdjustments',
+      report.purchases.netBeforeAdjustments,
+    ),
+  },
+  {
+    label: labels.purchase.voidCount,
+    value: count('purchases.voidCount', report.purchases.voidCount, labels),
+  },
+  {
+    label: labels.purchase.voidDeduction,
+    value: money('purchases.voidDeduction', report.purchases.voidDeduction),
+  },
+  {
+    label: labels.purchase.creditCount,
+    value: count('purchases.creditCount', report.purchases.creditCount, labels),
+  },
+  {
+    label: labels.purchase.credits,
+    value: money('purchases.creditAmount', report.purchases.creditAmount),
+  },
+  {
+    label: labels.purchase.netAfter,
+    value: money(
+      'purchases.netAfterAdjustments',
+      report.purchases.netAfterAdjustments,
+    ),
+    strong: true,
+  },
+])}
+${(
+  [
+    [labels.purchase.payments, 'purchasePayments', report.purchasePayments],
+    [labels.purchase.refunds, 'supplierRefunds', report.supplierRefunds],
+  ] as const
+).map(
+  ([title, key, flow]) =>
+    html`<h3>${title}</h3>${summary([
+      {
+        label: labels.purchase.total,
+        value: money(`${key}.amount`, flow.amount),
+      },
+      {
+        label: labels.purchase.count,
+        value: count(`${key}.count`, flow.count, labels),
+      },
+    ])}${table(
+      [
+        { label: labels.purchase.method },
+        { label: labels.purchase.count, right: true },
+        { label: labels.purchase.amount, right: true },
+      ],
+      flow.byMethod.map(
+        (m) =>
+          html`<tr><td>${labels.paymentMethod[m.method]}</td><td class="r">${count(`${key}.byMethod.${m.method}.count`, m.count, labels)}</td><td class="r">${money(`${key}.byMethod.${m.method}.amount`, m.amount)}</td></tr>`,
+      ),
+      labels,
+    )}`,
+)}
+</section>
 </div>`;
   return documentShell({
     language: options.language,

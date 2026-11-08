@@ -207,7 +207,7 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
               exact: true,
             })
             .click();
-          const custom = page.getByRole('region', {
+          const custom = page.getByRole('dialog', {
             name: t('workspace.custom.title'),
           });
           await custom
@@ -223,7 +223,7 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
         },
       );
       await page
-        .getByRole('region', { name: t('workspace.custom.title') })
+        .getByRole('dialog', { name: t('workspace.custom.title') })
         .getByRole('button', { name: t('workspace.custom.add'), exact: true })
         .click();
       await expect(page.getByTestId('line-row')).toHaveCount(3);
@@ -270,11 +270,24 @@ test('compact transaction form: bilingual desktop layout and inline save evidenc
             .getByTestId('total-amount')
             .textContent())!.replace(/\D/g, '');
           await page
-            .getByRole('textbox', {
+            .getByRole('button', {
               name: t('workspace.checkout.payments'),
               exact: true,
             })
+            .click();
+          const payments = page.getByRole('dialog', {
+            name: t('workspace.checkout.payments'),
+            exact: true,
+          });
+          await payments
+            .getByLabel(`${t('workspace.checkout.amount')} 1`, { exact: true })
             .fill(total);
+          await payments
+            .getByRole('button', {
+              name: t('workspace.checkout.apply'),
+              exact: true,
+            })
+            .click();
           await expect(page.getByTestId('save-state')).toHaveAttribute(
             'data-state',
             'saved',

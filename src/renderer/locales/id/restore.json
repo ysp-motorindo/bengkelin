@@ -22,6 +22,9 @@
     "cashiers": "Kasir",
     "cashierCounts": "{{total}} (ADMIN aktif: {{admins}})",
     "warning": "Semua data saat ini akan diganti dengan isi cadangan ini. Transaksi yang dibuat setelah cadangan ini tidak akan ada lagi di aplikasi.",
-    "safetyNote": "Cadangan pengaman data saat ini dibuat otomatis sebelum pemulihan. Nomor faktur yang sudah pernah dipakai tidak akan dipakai ulang."
+    "safetyNote": "Cadangan pengaman data saat ini dibuat otomatis sebelum pemulihan. Nomor faktur yang sudah pernah dipakai tidak akan dipakai ulang.",
+    "purchases": "Faktur pembelian",
+    "suppliers": "Pemasok",
+    "latestPurchaseFinalized": "Pembelian terakhir dicatat"
   }
 }

@@ -1,6 +1,7 @@
 -- Purchasing is independent from sales. Posted values are immutable; later
 -- deliveries, settlements and credits append their own records.
 CREATE TABLE suppliers (
+ version INTEGER NOT NULL DEFAULT 1 CHECK(version>=1),
  id TEXT PRIMARY KEY CHECK(length(id)>0), name TEXT NOT NULL CHECK(length(trim(name)) BETWEEN 1 AND 120),
  phone_number TEXT, normalized_phone TEXT NOT NULL DEFAULT '', email TEXT, address TEXT,
  is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0,1)),
@@ -129,7 +130,7 @@ WHEN NOT EXISTS(SELECT 1 FROM purchases WHERE id=NEW.purchase_id AND status='DRA
 BEGIN SELECT RAISE(ABORT,'only open purchase drafts are editable'); END;
 
 CREATE TRIGGER purchase_items_draft_update BEFORE UPDATE ON purchase_items
-WHEN NOT EXISTS(SELECT 1 FROM purchases WHERE id=NEW.purchase_id AND status='DRAFT' AND discarded_at IS NULL)
+WHEN NEW.purchase_id IS NOT OLD.purchase_id OR NOT EXISTS(SELECT 1 FROM purchases WHERE id=NEW.purchase_id AND status='DRAFT' AND discarded_at IS NULL)
 BEGIN SELECT RAISE(ABORT,'only open purchase drafts are editable'); END;
 
 CREATE TRIGGER purchase_items_draft_delete BEFORE DELETE ON purchase_items
@@ -141,7 +142,7 @@ WHEN NOT EXISTS(SELECT 1 FROM purchases WHERE id=NEW.purchase_id AND status='DRA
 BEGIN SELECT RAISE(ABORT,'only open purchase drafts are editable'); END;
 
 CREATE TRIGGER purchase_discounts_draft_update BEFORE UPDATE ON purchase_discounts
-WHEN NOT EXISTS(SELECT 1 FROM purchases WHERE id=NEW.purchase_id AND status='DRAFT' AND discarded_at IS NULL)
+WHEN NEW.purchase_id IS NOT OLD.purchase_id OR NOT EXISTS(SELECT 1 FROM purchases WHERE id=NEW.purchase_id AND status='DRAFT' AND discarded_at IS NULL)
 BEGIN SELECT RAISE(ABORT,'only open purchase drafts are editable'); END;
 
 CREATE TRIGGER purchase_discounts_draft_delete BEFORE DELETE ON purchase_discounts
@@ -153,7 +154,7 @@ WHEN NOT EXISTS(SELECT 1 FROM purchases WHERE id=NEW.purchase_id AND status='DRA
 BEGIN SELECT RAISE(ABORT,'only open purchase drafts are editable'); END;
 
 CREATE TRIGGER purchase_checkout_allocations_draft_update BEFORE UPDATE ON purchase_checkout_allocations
-WHEN NOT EXISTS(SELECT 1 FROM purchases WHERE id=NEW.purchase_id AND status='DRAFT' AND discarded_at IS NULL)
+WHEN NEW.purchase_id IS NOT OLD.purchase_id OR NOT EXISTS(SELECT 1 FROM purchases WHERE id=NEW.purchase_id AND status='DRAFT' AND discarded_at IS NULL)
 BEGIN SELECT RAISE(ABORT,'only open purchase drafts are editable'); END;
 
 CREATE TRIGGER purchase_checkout_allocations_draft_delete BEFORE DELETE ON purchase_checkout_allocations

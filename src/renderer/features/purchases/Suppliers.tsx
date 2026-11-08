@@ -24,11 +24,14 @@ export function SupplierForm({
   const [address, setAddress] = useState(initial?.address ?? '');
   const [active, setActive] = useState(initial?.isActive ?? true);
   const [duplicate, setDuplicate] = useState(false);
+  const [version, setVersion] = useState(initial?.version);
+  const [conflict, setConflict] = useState(false);
   const request = useRef({ key: '', id: '' });
   const save = () =>
     void action.run(async () => {
       const payload = {
         id: initial?.id,
+        expectedVersion: version,
         name,
         phoneNumber: phone,
         email,
@@ -43,9 +46,28 @@ export function SupplierForm({
         ...payload,
         requestId: request.current.id,
       });
+      setConflict(
+        !result.ok && result.error.code === 'SUPPLIER_VERSION_CONFLICT',
+      );
       if (action.check(result)) {
         if (result.value.saved) onSaved(result.value.supplier);
         else setDuplicate(true);
+      }
+    });
+  const reload = () =>
+    void action.run(async () => {
+      if (!initial) return;
+      const result = await window.bengkelin.suppliers.get({ id: initial.id });
+      if (action.check(result)) {
+        const saved = result.value;
+        setName(saved.name);
+        setPhone(saved.phoneNumber ?? '');
+        setEmail(saved.email ?? '');
+        setAddress(saved.address ?? '');
+        setActive(saved.isActive);
+        setVersion(saved.version);
+        setConflict(false);
+        setDuplicate(false);
       }
     });
   return (
@@ -71,6 +93,11 @@ export function SupplierForm({
     >
       <div className="space-y-4">
         {action.error ? <Alert>{action.error}</Alert> : null}
+        {conflict ? (
+          <Button variant="outline" disabled={action.busy} onClick={reload}>
+            {t('purchases.loadLatestSupplier')}
+          </Button>
+        ) : null}
         {duplicate ? <Alert>{t('purchases.duplicatePhone')}</Alert> : null}
         <FormField label={t('purchases.name')} error={action.fieldErrors.name}>
           <Input

@@ -1,3 +1,4 @@
+import { purchasePrintInputSchema } from '@/shared/contracts';
 import {
   receivePurchaseInputSchema,
   reversePurchaseReceiptInputSchema,
@@ -105,6 +106,7 @@ const C = CHANNELS;
  * mutating: a new channel is blocked during a restore unless listed here.
  */
 const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
+  C.purchasePrinting.preview,
   C.purchases.previewCredit,
   C.purchases.previewReceiptReversal,
   C.purchases.previewFinalize,
@@ -223,6 +225,25 @@ export function buildCommands(services: ApplicationServices): Command[] {
   const session = (windowId: number) => sessions.get(windowId);
 
   const commands: Command[] = [
+    command(
+      C.purchasePrinting.preview,
+      purchasePrintInputSchema,
+      ({ windowId }, input) =>
+        services.purchasePrinting.preview(session(windowId), input),
+    ),
+    command(
+      C.purchasePrinting.print,
+      purchasePrintInputSchema,
+      ({ windowId }, input) =>
+        services.purchasePrinting.print(session(windowId), input),
+    ),
+    command(
+      C.purchasePrinting.exportPdf,
+      purchasePrintInputSchema,
+      ({ windowId }, input) =>
+        services.purchasePrinting.exportPdf(session(windowId), input),
+    ),
+
     command(
       C.purchases.receive,
       receivePurchaseInputSchema,

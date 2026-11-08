@@ -122,5 +122,27 @@
   "yes": "Ya",
   "no": "Tidak",
   "fromDate": "Dari tanggal",
-  "toDate": "Sampai tanggal"
+  "toDate": "Sampai tanggal",
+  "report": {
+    "title": "Aktivitas pembelian",
+    "basis": "Faktur, kredit, dan pembatalan menurut waktu pencatatan. Pembayaran dan pengembalian dana menurut waktu dana dicatat.",
+    "salesChannelNote": "Filter kanal hanya berlaku untuk penjualan; pembelian tidak memiliki kanal penjualan.",
+    "billCount": "Faktur pembelian",
+    "grossSubtotal": "Subtotal pembelian",
+    "discountAmount": "Diskon pembelian",
+    "netBeforeAdjustments": "Pembelian sebelum penyesuaian",
+    "voidCount": "Faktur pembelian dibatalkan",
+    "voidDeduction": "Potongan pembatalan pembelian",
+    "creditCount": "Nota kredit pemasok",
+    "creditAmount": "Kredit pemasok",
+    "netAfterAdjustments": "Pembelian bersih setelah penyesuaian",
+    "count": "Jumlah",
+    "purchasePayments": "Pembayaran pembelian keluar",
+    "supplierRefunds": "Pengembalian dana pemasok diterima"
+  },
+  "originalTotal": "Total faktur asal",
+  "creditedTotal": "Kredit pemasok",
+  "adjustedTotal": "Nilai faktur setelah kredit",
+  "refundedTotal": "Dana kembali diterima",
+  "loadLatestSupplier": "Muat data terbaru (ganti isian)"
 }

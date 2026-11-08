@@ -123,6 +123,8 @@ for (const language of ['id', 'en'] as const) {
             path: testInfo.outputPath(`${view}-detail-${viewport.width}.png`),
             fullPage: true,
           });
+          await page.keyboard.press('Escape');
+          await expect(page.getByRole('dialog')).toHaveCount(0);
         }
         await nav
           .getByRole('button', { name: t('shell.nav.settings'), exact: true })
@@ -153,7 +155,7 @@ for (const language of ['id', 'en'] as const) {
         exact: true,
       });
       await open.click();
-      const dialog = page.getByRole('region', {
+      const dialog = page.getByRole('dialog', {
         name: t('workspace.custom.title'),
       });
       const cancel = dialog.getByRole('button', {

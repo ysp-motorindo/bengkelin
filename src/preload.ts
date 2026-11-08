@@ -14,6 +14,11 @@ const call =
 
 const c = CHANNELS;
 const api: BengkelinApi = Object.freeze({
+  purchasePrinting: Object.freeze({
+    preview: call(c.purchasePrinting.preview),
+    print: call(c.purchasePrinting.print),
+    exportPdf: call(c.purchasePrinting.exportPdf),
+  }),
   purchases: Object.freeze({
     receive: call(c.purchases.receive),
     reverseReceipt: call(c.purchases.reverseReceipt),

@@ -33,3 +33,20 @@ test('purchase drafts preserve missing prices and posted commercial values are f
     db.close();
   }
 });
+
+test('posted purchase lines cannot be moved into another editable draft', () => {
+  const db = openDatabase(':memory:');
+  try {
+    migrateDatabase(db);
+    db.exec(`INSERT INTO cashiers(id,username,display_name,password_hash,role,created_at,updated_at) VALUES('actor','a','A','x','ADMIN','2026-11-08T00:00:00.000Z','2026-11-08T00:00:00.000Z');
+ INSERT INTO suppliers(id,name,created_at,updated_at) VALUES('s','Supplier','2026-11-08T00:00:00.000Z','2026-11-08T00:00:00.000Z');
+ INSERT INTO purchases(id,supplier_id,bill_date,due_date,created_by,updated_by,created_at,updated_at) VALUES('p','s','2026-11-08','2026-11-08','actor','actor','now','now'),('other','s','2026-11-08','2026-11-08','actor','actor','now','now');
+ INSERT INTO purchase_items(id,purchase_id,position,type,title,unit_label,quantity,unit_price,amount,tax_subtotal,vat_amount) VALUES('l','p',0,'NON_STOCK_ITEM','Oil','Bottle',3,0,0,0,0);
+ UPDATE purchases SET status='FINALIZED',document_number='PUR-20261108-0001',amount=0,tax_subtotal=0,vat_amount=0,supplier_snapshot='{}',shop_snapshot='{}',finalized_at='2026-11-08T00:00:00.000Z' WHERE id='p';`);
+    expect(() =>
+      db.exec("UPDATE purchase_items SET purchase_id='other' WHERE id='l'"),
+    ).toThrow();
+  } finally {
+    db.close();
+  }
+});

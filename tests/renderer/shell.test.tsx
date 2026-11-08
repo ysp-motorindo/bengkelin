@@ -50,9 +50,7 @@ describe('shell', () => {
     expect(
       screen.queryByRole('button', { name: 'Draft' }),
     ).not.toBeInTheDocument();
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Penjualan' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Penjualan' }));
     expect(screen.getByRole('button', { name: 'Draft' })).toBeInTheDocument();
   });
   test('profile preferences start collapsed and expose full-width language options with flags', async () => {

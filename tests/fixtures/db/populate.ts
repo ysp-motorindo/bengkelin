@@ -1,3 +1,4 @@
+import { populatePurchases } from './populate-purchases';
 import path from 'node:path';
 import { CHANNELS } from '@/shared/channels';
 import type {
@@ -519,6 +520,8 @@ export async function populateWorkshop(
   }
   ctx.answerSave(path.join(ctx.exportDir, 'invoice.pdf'));
   ok(await call(C.printing.exportPdf, { invoiceId: paid.id }, CASHIER), 'pdf');
+
+  await populatePurchases(call, oil.id, stockLocation.id);
 
   // ---- backup run ----
   ok(await call(C.backups.create, undefined, ADMIN), 'backup');

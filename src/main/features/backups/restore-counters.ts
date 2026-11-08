@@ -37,6 +37,35 @@ export function readIssuedSequences(db: AppDatabase): IssuedSequences {
     const [, year, month, day, sequence] = match as unknown as string[];
     raise(`${year}-${month}-${day}`, BigInt(sequence as string));
   }
+  const hasPurchases = db
+    .prepare(
+      "SELECT 1 FROM sqlite_master WHERE type='table' AND name='purchase_daily_counters'",
+    )
+    .get();
+  if (hasPurchases) {
+    const counters = db
+      .prepare(
+        'SELECT kind,business_date,last_sequence FROM purchase_daily_counters',
+      )
+      .all() as {
+      kind: string;
+      business_date: string;
+      last_sequence: bigint;
+    }[];
+    for (const row of counters)
+      raise(`${row.kind}/${row.business_date}`, row.last_sequence);
+    const docs = db
+      .prepare(
+        'SELECT document_number FROM purchases WHERE document_number IS NOT NULL UNION ALL SELECT document_number FROM purchase_receipts UNION ALL SELECT document_number FROM purchase_credits',
+      )
+      .all() as { document_number: string }[];
+    for (const row of docs) {
+      const m = /^(PUR|RCV|PCN)-(\d{4})(\d{2})(\d{2})-(\d{4,})$/.exec(
+        row.document_number,
+      );
+      if (m) raise(`${m[1]}/${m[2]}-${m[3]}-${m[4]}`, BigInt(m[5]!));
+    }
+  }
   return issued;
 }
 
@@ -76,6 +105,13 @@ export function raiseStagedCounters(
   for (const [date, sequence] of [...target].sort(([a], [b]) =>
     a.localeCompare(b),
   )) {
-    upsert.run(date, sequence);
+    if (date.includes('/')) {
+      const [kind, day] = date.split('/');
+      staged
+        .prepare(
+          `INSERT INTO purchase_daily_counters(kind,business_date,last_sequence) VALUES(?,?,?) ON CONFLICT(kind,business_date) DO UPDATE SET last_sequence=excluded.last_sequence WHERE excluded.last_sequence>purchase_daily_counters.last_sequence`,
+        )
+        .run(kind!, day!, sequence);
+    } else upsert.run(date, sequence);
   }
 }

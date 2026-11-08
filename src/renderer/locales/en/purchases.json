@@ -122,5 +122,27 @@
   "yes": "Yes",
   "no": "No",
   "fromDate": "From date",
-  "toDate": "Through date"
+  "toDate": "Through date",
+  "report": {
+    "title": "Purchase activity",
+    "basis": "Bills, credits and voids by posting time. Payments and refunds by actual recorded time.",
+    "salesChannelNote": "The channel filter applies to sales only; purchases do not have a sales channel.",
+    "billCount": "Purchase bills",
+    "grossSubtotal": "Purchase subtotal",
+    "discountAmount": "Purchase discounts",
+    "netBeforeAdjustments": "Purchases before adjustments",
+    "voidCount": "Voided purchase bills",
+    "voidDeduction": "Purchase void deductions",
+    "creditCount": "Supplier credit notes",
+    "creditAmount": "Supplier credits",
+    "netAfterAdjustments": "Net purchases after adjustments",
+    "count": "Count",
+    "purchasePayments": "Outgoing purchase payments",
+    "supplierRefunds": "Supplier refunds received"
+  },
+  "originalTotal": "Original bill total",
+  "creditedTotal": "Supplier credits",
+  "adjustedTotal": "Adjusted bill total",
+  "refundedTotal": "Refunds received",
+  "loadLatestSupplier": "Load latest saved details (replace entries)"
 }

@@ -166,6 +166,20 @@ export function RestoreSection() {
                   ? time(preview.latestFinalizedAt)
                   : t('restore.preview.none')}
               </Row>
+              <Row label={t('restore.preview.purchases')}>
+                {t('restore.preview.invoiceCounts', {
+                  ...numberOptions,
+                  ...preview.counts.purchases,
+                })}
+              </Row>
+              <Row label={t('restore.preview.suppliers')}>
+                {formatNumber(preview.counts.suppliers)}
+              </Row>
+              <Row label={t('restore.preview.latestPurchaseFinalized')}>
+                {preview.latestPurchaseFinalizedAt
+                  ? time(preview.latestPurchaseFinalizedAt)
+                  : t('restore.preview.none')}
+              </Row>
               <Row label={t('restore.preview.catalogItems')}>
                 {formatNumber(preview.counts.catalogItems)}
               </Row>

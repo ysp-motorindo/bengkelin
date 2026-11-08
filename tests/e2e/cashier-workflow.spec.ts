@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   clickMenuItem,
   menuItem,
@@ -166,7 +166,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
 
   // ---- Service line with a mechanic (Transaction > Add Custom Item) ----
   await clickMenuItem(app, 'addCustomItem');
-  const custom = page.getByRole('region', {
+  const custom = page.getByRole('dialog', {
     name: t('workspace.custom.title'),
   });
   await expect(custom).toBeVisible();
@@ -235,11 +235,21 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
 
   await page.getByLabel(t('workspace.header.topDays'), exact).fill('7');
   await page
-    .getByRole('textbox', {
+    .getByRole('button', {
       name: t('workspace.checkout.payments'),
       exact: true,
     })
+    .click();
+  const paymentDialog = page.getByRole('dialog', {
+    name: t('workspace.checkout.payments'),
+    exact: true,
+  });
+  await paymentDialog
+    .getByLabel(`${t('workspace.checkout.amount')} 1`, exact)
     .fill('150000');
+  await paymentDialog
+    .getByRole('button', { name: t('workspace.checkout.apply'), exact: true })
+    .click();
   await expect(page.getByTestId('total-amount')).toHaveText('Rp 196.500');
 
   // ---- F8 opens the review only; nothing is finalized by the shortcut ----

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
 import { Button } from '@/renderer/components/ui/button';

@@ -51,6 +51,25 @@ const CORE_TABLES: readonly (readonly [number, readonly string[]])[] = [
   [16, ['sales', 'expeditions']],
   [18, ['stock_locations']],
   [21, ['customer_opening_balances', 'customer_opening_payments']],
+  [
+    22,
+    [
+      'suppliers',
+      'purchases',
+      'purchase_items',
+      'purchase_discounts',
+      'purchase_checkout_allocations',
+      'purchase_daily_counters',
+      'purchase_payments',
+      'purchase_refunds',
+      'purchase_receipts',
+      'purchase_receipt_items',
+      'purchase_receipt_reversals',
+      'purchase_credits',
+      'purchase_credit_items',
+      'purchase_print_jobs',
+    ],
+  ],
 ];
 
 export function coreTablesFor(schemaVersion: number): string[] {

@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import type { Session } from '@/main/features/auth/sessions';
-import { requireSession } from '@/main/features/auth/authorize';
 import { CatalogRepository } from '@/main/features/catalog/repository';
 import { requireActiveStockLocation } from '@/main/features/references/stock-locations';
 import { insertEntry, stockOf } from '@/main/features/inventory/ledger';
@@ -15,7 +14,6 @@ import {
   allocatePurchaseNumber,
   bumpPurchase,
   requireIssued,
-  writePurchase,
   type PurchaseContext,
 } from './context';
 import { purchaseView } from './view';

@@ -99,6 +99,7 @@ test('history uses original supplier identity and allows settlement after deacti
     await h.call('bengkelin:suppliers:save', {
       requestId: randomUUID(),
       id: p.supplier!.id,
+      expectedVersion: p.supplier!.version,
       name: 'Renamed',
       isActive: false,
     }),
@@ -147,9 +148,26 @@ test('checkout write failure rolls back the bill and its allocated document numb
       .documentNumber,
   ).toBe('PUR-20260930-0001');
 });
-test('history filters and totals use the same bill selection',async()=>{
- const {draft}=await purchaseDraft(h);const p=await finalizePurchase(h,draft);
- const page=value(await purchaseCall<{items:PurchaseView[];payableAmount:string;refundDue:string;hasMore:boolean}>(h,'search',{query:'Supplier A',settlement:'PAYABLE'}));
- expect(page.items.map(x=>x.id)).toEqual([p.id]);expect(page.payableAmount).toBe('40000');expect(page.refundDue).toBe('0');expect(page.hasMore).toBe(false);
- expect(value(await purchaseCall<{items:PurchaseView[]}>(h,'search',{settlement:'REFUND_DUE'})).items).toEqual([]);
+test('history filters and totals use the same bill selection', async () => {
+  const { draft } = await purchaseDraft(h);
+  const p = await finalizePurchase(h, draft);
+  const page = value(
+    await purchaseCall<{
+      items: PurchaseView[];
+      payableAmount: string;
+      refundDue: string;
+      hasMore: boolean;
+    }>(h, 'search', { query: 'Supplier A', settlement: 'PAYABLE' }),
+  );
+  expect(page.items.map((x) => x.id)).toEqual([p.id]);
+  expect(page.payableAmount).toBe('40000');
+  expect(page.refundDue).toBe('0');
+  expect(page.hasMore).toBe(false);
+  expect(
+    value(
+      await purchaseCall<{ items: PurchaseView[] }>(h, 'search', {
+        settlement: 'REFUND_DUE',
+      }),
+    ).items,
+  ).toEqual([]);
 });

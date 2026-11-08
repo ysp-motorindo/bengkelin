@@ -193,6 +193,14 @@ export function purchaseView(
     refunds,
     credits,
     receipts,
+    creditedAmount: sum(credits).toString(),
+    netAmount: (
+      (row.amount ?? 0n) -
+      sum(credits) -
+      (row.void_amount ?? 0n)
+    ).toString(),
+    paidAmount: sum(outgoingPayments).toString(),
+    refundedAmount: sum(refunds).toString(),
     outstandingAmount:
       row.status === 'VOID' ? '0' : balance.outstanding.toString(),
     refundDue: balance.refundDue.toString(),

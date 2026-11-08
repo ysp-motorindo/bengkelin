@@ -3,8 +3,13 @@ import { test, expect, vi } from 'vitest';
 import { Shell } from '@/renderer/features/shell/Shell';
 import { PurchasesScreen } from '@/renderer/features/purchases/PurchasesScreen';
 import { workspaceBridge } from './helpers/workspace-bridge';
-import type { PurchaseDraftView, CashierSession } from '@/shared/contracts';
+import type {
+  PurchaseDraftView,
+  PurchaseDraftCommand,
+  CashierSession,
+} from '@/shared/contracts';
 const supplier = {
+  version: 1,
   id: 's',
   name: 'Supplier A',
   phoneNumber: null,
@@ -60,7 +65,7 @@ function bridge() {
     purchaseDrafts: {
       list: vi.fn(async () => ok([draft])),
       get: vi.fn(async () => ok(draft)),
-      apply: vi.fn(async () => ok(draft)),
+      apply: vi.fn(async (_command: PurchaseDraftCommand) => ok(draft)),
     },
   };
 }
@@ -100,7 +105,7 @@ test('explicit zero requires warning acknowledgment before posting the purchase'
   const { default: userEvent } = await import('@testing-library/user-event');
   const b = bridge();
   let saved = structuredClone(draft);
-  b.purchaseDrafts.apply = vi.fn(async (command) => {
+  b.purchaseDrafts.apply = vi.fn(async (command: PurchaseDraftCommand) => {
     saved = {
       ...saved,
       version: saved.version + 1,
@@ -165,4 +170,224 @@ test('explicit zero requires warning acknowledgment before posting the purchase'
     }),
   );
   expect(confirm).toBeEnabled();
+});
+
+test('an unrelated unsaved sales field does not block creating a purchase', async () => {
+  const { registerFlusher } = await import('@/renderer/lib/flush-registry');
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const { waitFor } = await import('@testing-library/react');
+  const unregister = registerFlusher(async () => false);
+  const create = vi.fn(async () => ok(draft));
+  const b = bridge();
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchaseDrafts: { ...b.purchaseDrafts, list: async () => ok([]), create },
+  };
+  try {
+    render(<PurchasesScreen active={true} />);
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Pembelian baru' }),
+    );
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+  } finally {
+    unregister();
+  }
+});
+
+test('the draft switcher shows the supplier selected on the current draft', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const { waitFor } = await import('@testing-library/react');
+  const empty = { ...draft, supplier: null };
+  const b = bridge();
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchaseDrafts: {
+      ...b.purchaseDrafts,
+      list: async () => ok([empty]),
+      apply: async () => ok({ ...draft, version: 2 }),
+    },
+  };
+  render(<PurchasesScreen active={true} />);
+  await screen.findByRole('option', { name: 'Supplier A' });
+  await userEvent.selectOptions(
+    await screen.findByLabelText('Pemasok', { exact: true }),
+    's',
+  );
+  await waitFor(() =>
+    expect(
+      within(screen.getByLabelText('Draf tersimpan')).getByRole('option', {
+        selected: true,
+      }),
+    ).toHaveTextContent('Supplier A'),
+  );
+});
+
+test('the custom-item shortcut from purchase history opens the purchase editor dialog', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const { getWorkspaceActions } =
+    await import('@/renderer/features/workspace/workspace-actions');
+  const { act } = await import('@testing-library/react');
+  const b = bridge();
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchases: {
+      search: async () =>
+        ok({
+          items: [],
+          page: 1,
+          hasMore: false,
+          payableAmount: '0',
+          refundDue: '0',
+        }),
+    },
+  };
+  render(<PurchasesScreen active={true} />);
+  await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  await userEvent.click(screen.getByRole('tab', { name: 'Riwayat pembelian' }));
+  await act(async () => {
+    getWorkspaceActions()?.addCustomItem();
+  });
+  expect(
+    await screen.findByRole('dialog', { name: 'Item khusus' }),
+  ).toBeVisible();
+});
+
+test('returning to Purchase refreshes added and deactivated receiving locations', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const { waitFor } = await import('@testing-library/react');
+  const b = bridge();
+  const a = {
+    id: 'A',
+    entity: 'stockLocation',
+    code: 'A',
+    label: 'Warehouse A',
+    isActive: true,
+    isDefault: true,
+    phoneNumber: null,
+    brandId: null,
+    address: null,
+    city: null,
+  };
+  const other = { ...a, id: 'B', code: 'B', label: 'Warehouse B' };
+  let activeLocations = [a];
+  const bill: import('@/shared/contracts').PurchaseView = {
+    ...draft,
+    status: 'FINALIZED',
+    lines: draft.lines.map((l) => ({
+      ...l,
+      unitPrice: '10000',
+      amount: '10000',
+      taxSubtotal: '10000',
+      vatAmount: '0',
+    })),
+    totals: {
+      subtotal: '10000',
+      discountAmount: '0',
+      amount: '10000',
+      taxSubtotal: '10000',
+      vatAmount: '0',
+    },
+    documentNumber: 'PUR-20260930-0001',
+    finalizedAt: draft.createdAt,
+    shop: { name: 'Shop', address: null, phoneNumber: null },
+    outgoingPayments: [],
+    refunds: [],
+    receipts: [],
+    credits: [],
+    creditedAmount: '0',
+    netAmount: '10000',
+    paidAmount: '0',
+    refundedAmount: '0',
+    outstandingAmount: '10000',
+    refundDue: '0',
+    settlementStatus: 'UNPAID',
+    receivingStatus: 'NOT_RECEIVED',
+    void: null,
+  };
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    references: {
+      ...b.references,
+      listActive: async (input: { entity: string }) =>
+        input.entity === 'stockLocation'
+          ? ok(activeLocations)
+          : b.references.listActive(input),
+    },
+    purchases: {
+      search: async () =>
+        ok({
+          items: [bill],
+          page: 1,
+          hasMore: false,
+          payableAmount: '10000',
+          refundDue: '0',
+        }),
+    },
+  };
+  const rendered = render(<PurchasesScreen active={true} />);
+  await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  rendered.rerender(<PurchasesScreen active={false} />);
+  activeLocations = [other];
+  rendered.rerender(<PurchasesScreen active={true} />);
+  await userEvent.click(screen.getByRole('tab', { name: 'Riwayat pembelian' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: bill.documentNumber }),
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Catat penerimaan barang / jasa' }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole('option', { name: 'Warehouse B' }),
+    ).toBeInTheDocument(),
+  );
+  expect(
+    screen.queryByRole('option', { name: 'Warehouse A' }),
+  ).not.toBeInTheDocument();
+});
+
+test('supplier conflict keeps edits until the user chooses to load saved details', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const { SupplierForm } =
+    await import('@/renderer/features/purchases/Suppliers');
+  const save = vi.fn(async () => ({
+    ok: false as const,
+    error: {
+      code: 'SUPPLIER_VERSION_CONFLICT',
+      messageKey: 'errors.SUPPLIER_VERSION_CONFLICT',
+    },
+  }));
+  const saved = {
+    ...supplier,
+    version: 2,
+    name: 'Latest supplier',
+    isActive: false,
+  };
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...bridge(),
+    suppliers: { save, get: async () => ok(saved) },
+  };
+  render(
+    <SupplierForm initial={supplier} onSaved={vi.fn()} onClose={vi.fn()} />,
+  );
+  const name = screen.getByRole('textbox', { name: 'Nama' });
+  await userEvent.clear(name);
+  await userEvent.type(name, 'My unsaved name');
+  await userEvent.click(screen.getByRole('button', { name: 'Simpan' }));
+  expect(
+    await screen.findByText(/Pemasok berubah saat Anda mengedit/),
+  ).toBeVisible();
+  expect(name).toHaveValue('My unsaved name');
+  expect(save).toHaveBeenLastCalledWith(
+    expect.objectContaining({ expectedVersion: 1, name: 'My unsaved name' }),
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Muat data terbaru (ganti isian)' }),
+  );
+  expect(name).toHaveValue('Latest supplier');
+  expect(screen.getByRole('checkbox', { name: 'Aktif' })).not.toBeChecked();
+  await userEvent.click(screen.getByRole('button', { name: 'Simpan' }));
+  expect(save).toHaveBeenLastCalledWith(
+    expect.objectContaining({ expectedVersion: 2, isActive: false }),
+  );
 });

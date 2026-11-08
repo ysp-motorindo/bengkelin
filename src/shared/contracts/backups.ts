@@ -110,6 +110,8 @@ export type CancelRestoreInput = z.infer<typeof cancelRestoreInputSchema>;
 export interface RestoreCountsDto {
   /** Discarded drafts are not counted. */
   invoices: { draft: number; finalized: number; void: number };
+  purchases: { draft: number; finalized: number; void: number };
+  suppliers: number;
   catalogItems: number;
   customers: number;
   cashiers: number;
@@ -130,6 +132,7 @@ export interface RestorePreviewDto {
   shopName: string;
   counts: RestoreCountsDto;
   latestFinalizedAt: Instant | null;
+  latestPurchaseFinalizedAt: Instant | null;
   /** Always at least 1 (otherwise RESTORE_NO_ACTIVE_ADMIN). */
   activeAdmins: number;
 }

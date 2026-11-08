@@ -35,6 +35,7 @@ export interface StagedSummary {
   shopName: string;
   counts: RestoreCountsDto;
   latestFinalizedAt: Instant | null;
+  latestPurchaseFinalizedAt: Instant | null;
   activeAdmins: number;
 }
 
@@ -149,11 +150,31 @@ export function readSummary(db: AppDatabase): StagedSummary {
         finalized: byStatus.FINALIZED ?? 0,
         void: byStatus.VOID ?? 0,
       },
+      purchases: {
+        draft: count(
+          db,
+          "SELECT COUNT(*) AS n FROM purchases WHERE status='DRAFT' AND discarded_at IS NULL",
+        ),
+        finalized: count(
+          db,
+          "SELECT COUNT(*) AS n FROM purchases WHERE status='FINALIZED'",
+        ),
+        void: count(
+          db,
+          "SELECT COUNT(*) AS n FROM purchases WHERE status='VOID'",
+        ),
+      },
+      suppliers: count(db, 'SELECT COUNT(*) AS n FROM suppliers'),
       catalogItems: count(db, 'SELECT COUNT(*) AS n FROM catalog_items'),
       customers: count(db, 'SELECT COUNT(*) AS n FROM customers'),
       cashiers: count(db, 'SELECT COUNT(*) AS n FROM cashiers'),
     },
     latestFinalizedAt: latest.latest,
+    latestPurchaseFinalizedAt: (
+      db.prepare('SELECT MAX(finalized_at) AS latest FROM purchases').get() as {
+        latest: string | null;
+      }
+    ).latest,
     activeAdmins: count(
       db,
       `SELECT COUNT(*) AS n FROM cashiers WHERE role = 'ADMIN' AND is_active = 1`,
