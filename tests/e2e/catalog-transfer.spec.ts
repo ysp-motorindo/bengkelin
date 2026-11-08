@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { readdirSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -59,11 +60,7 @@ test('ADMIN previews and commits a catalog CSV, then finds the items in the cata
   }, ADMIN_PASSWORD);
   await page.reload();
   await expect(page.getByTestId('session-name')).toBeVisible();
-
-  const nav = page.getByRole('navigation');
-  await nav
-    .getByRole('button', { name: t('shell.nav.catalogTransfer'), ...exact })
-    .click();
+  await navigateTo(page, 'catalogTransfer');
   await page
     .getByRole('button', { name: t('catalogTransfer.import'), ...exact })
     .click();
@@ -99,9 +96,7 @@ test('ADMIN previews and commits a catalog CSV, then finds the items in the cata
     ),
   ).toHaveLength(1);
 
-  await nav
-    .getByRole('button', { name: t('shell.nav.catalog'), ...exact })
-    .click();
+  await navigateTo(page, 'catalog');
   const catalogRows = page.getByTestId('catalog-row');
   await expect(catalogRows.filter({ hasText: 'Busi Iridium E2E' })).toHaveCount(
     1,

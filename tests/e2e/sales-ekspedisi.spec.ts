@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -57,10 +58,7 @@ for (const locale of ['id', 'en'] as const) {
         if (!login.ok) throw new Error(JSON.stringify(login.error));
       }, locale);
       await page.reload();
-      const nav = page.getByRole('navigation');
-      await nav
-        .getByRole('button', { name: t('shell.nav.references'), exact: true })
-        .click();
+      await navigateTo(page, 'references');
       for (const entity of ['sales', 'expedition'] as const) {
         fs.copyFileSync(
           path.resolve(
@@ -141,9 +139,7 @@ for (const locale of ['id', 'en'] as const) {
           .click();
         await capture(`${entity}-master`);
       }
-      await nav
-        .getByRole('button', { name: t('shell.nav.workspace'), exact: true })
-        .click();
+      await navigateTo(page, 'workspace');
       const sales = page.getByRole('combobox', {
         name: t('references.entities.sales'),
         exact: true,
@@ -181,9 +177,7 @@ for (const locale of ['id', 'en'] as const) {
       await expect(sales).toHaveValue(ids.sales.id);
       await expect(expedition).toHaveValue(ids.expedition.id);
       await capture('selected-draft');
-      await nav
-        .getByRole('button', { name: t('shell.nav.references'), exact: true })
-        .click();
+      await navigateTo(page, 'references');
       await page.evaluate(async (ids) => {
         for (const entity of ['sales', 'expedition'] as const) {
           const saved = await window.bengkelin.references.save({
@@ -201,9 +195,7 @@ for (const locale of ['id', 'en'] as const) {
       }, ids);
       ids.sales.label += ' updated';
       ids.expedition.label += ' updated';
-      await nav
-        .getByRole('button', { name: t('shell.nav.workspace'), exact: true })
-        .click();
+      await navigateTo(page, 'workspace');
       await expect(sales.locator('option:checked')).toHaveText(ids.sales.label);
       await expect(expedition.locator('option:checked')).toHaveText(
         ids.expedition.label,
@@ -264,9 +256,7 @@ for (const locale of ['id', 'en'] as const) {
           exact: true,
         })
         .click();
-      await nav
-        .getByRole('button', { name: t('shell.nav.history'), exact: true })
-        .click();
+      await navigateTo(page, 'history');
       await page
         .getByRole('button', {
           name: t('history.table.openInvoice').replace('{{number}}', number),
@@ -292,9 +282,7 @@ for (const locale of ['id', 'en'] as const) {
         }
       }, ids);
       await page.reload();
-      await nav
-        .getByRole('button', { name: t('shell.nav.history'), exact: true })
-        .click();
+      await navigateTo(page, 'history');
       await page
         .getByRole('button', {
           name: t('history.table.openInvoice').replace('{{number}}', number),

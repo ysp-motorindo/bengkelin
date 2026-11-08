@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { readdirSync, readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -85,7 +86,7 @@ test('ADMIN menu in both languages: rebuilt on language change; About, Backup an
   await page.getByTestId('session-name').click();
   await expect(
     page.getByRole('button', {
-      name: tr('en', 'shell.nav.workspace'),
+      name: tr('en', 'shell.nav.newSale'),
       ...exact,
     }),
   ).toBeVisible();
@@ -206,9 +207,7 @@ test('ADMIN screens: cashier management with LAST_ACTIVE_ADMIN, shop settings wi
   await loginWithKeyboard(page, 'admin', ADMIN_PASSWORD);
 
   // ---- Cashiers ----
-  await page
-    .getByRole('button', { name: t('shell.nav.cashiers'), ...exact })
-    .click();
+  await navigateTo(page, 'cashiers');
   await expect(page.getByTestId('cashier-row')).toHaveCount(2);
   const create = page.getByRole('form', { name: t('cashiers.create.title') });
   await create.getByLabel(t('cashiers.fields.username'), exact).fill('joko');
@@ -252,9 +251,7 @@ test('ADMIN screens: cashier management with LAST_ACTIVE_ADMIN, shop settings wi
   ).toContainText(t('cashiers.status.inactive'));
 
   // ---- Shop settings ----
-  await page
-    .getByRole('button', { name: t('shell.nav.settings'), ...exact })
-    .click();
+  await navigateTo(page, 'settings');
   const shop = page.getByRole('form', { name: t('settings.shop.title') });
   await expect(shop.getByLabel(t('settings.shop.name'), exact)).toHaveValue(
     'Bengkel Maju',

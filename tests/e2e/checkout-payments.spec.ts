@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -166,9 +167,7 @@ for (const lang of ['id', 'en'] as const) {
           exact: true,
         })
         .click();
-      await page
-        .getByRole('button', { name: t('shell.nav.history'), exact: true })
-        .click();
+      await navigateTo(page, 'history');
       await page
         .getByRole('button', {
           name: t('history.table.openInvoice').replace('{{number}}', number),

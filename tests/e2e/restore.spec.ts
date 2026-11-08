@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { copyFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -174,9 +175,7 @@ test('ADMIN restores backup A over data B; the app restarts to login with A and 
   expect(await issuedNumbers(page)).toEqual([numberA, numberB]);
 
   // Settings -> Restore: choose, preview, type the phrase, restore.
-  await page
-    .getByRole('button', { name: t('shell.nav.settings'), ...exact })
-    .click();
+  await navigateTo(page, 'settings');
   const section = page.getByTestId('restore-section');
   await section
     .getByRole('button', { name: t('restore.chooseFile'), ...exact })

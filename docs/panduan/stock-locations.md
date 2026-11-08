@@ -4,7 +4,7 @@
 
 An administrator must set up at least one active stock location before creating invoices or importing inventory. A fresh installation does not create Gudang automatically.
 
-1. Open **Reference Data → Stock locations**. Import `references/stock-location-import.csv` or add a location with a permanent code and an editable label. The supplied example is `01 / Gudang`.
+1. Open **Administration → Reference Data → Stock locations**. Import `references/stock-location-import.csv` or add a location with a permanent code and an editable label. The supplied example is `01 / Gudang`.
 2. Mark a location **Default** to prefer it for new invoices and catalog templates. Multiple defaults are allowed: the first active default wins, ordered by label ignoring case, then code and ID. Without a default, the first active location wins. Renaming does not change its identity. Deactivating all locations blocks new invoices with setup guidance.
 3. In **Inventory**, select the location before reading stock, receiving goods, adjusting quantities or setting a count. Opening balances and stock history belong to that location. Selecting another location closes the previous item panel. Inactive historical locations remain readable to administrators; new movements require an active location.
 4. In the invoice header, choose **Stock locations**. One location applies to the whole invoice. Changing it refreshes line stock and preserves prices. Review the location at checkout. Finalization checks that it remains active; if it was deactivated, select an active location and review again.
@@ -18,7 +18,7 @@ Upgrading existing records assigns historical invoices and stock movements to `0
 
 Admin harus menyiapkan setidaknya satu lokasi stok aktif sebelum membuat faktur atau mengimpor persediaan. Instalasi baru tidak membuat Gudang secara otomatis.
 
-1. Buka **Data Referensi → Lokasi stok**. Impor `references/stock-location-import.csv` atau tambah lokasi dengan kode permanen dan label yang dapat diubah. Contoh yang disediakan adalah `01 / Gudang`.
+1. Buka **Administrasi → Data Referensi → Lokasi stok**. Impor `references/stock-location-import.csv` atau tambah lokasi dengan kode permanen dan label yang dapat diubah. Contoh yang disediakan adalah `01 / Gudang`.
 2. Tandai **Default** untuk memprioritaskan lokasi pada faktur baru dan templat katalog. Beberapa Default diperbolehkan: lokasi Default aktif pertama dipilih, diurutkan menurut label tanpa membedakan huruf besar/kecil, lalu kode dan ID. Jika tidak ada Default, lokasi aktif pertama dipilih. Mengubah nama tidak mengubah identitas. Menonaktifkan semua lokasi akan menghalangi faktur baru dengan petunjuk penyiapan.
 3. Di **Persediaan**, pilih lokasi sebelum membaca stok, menerima barang, melakukan penyesuaian atau opname. Saldo awal dan riwayat stok berlaku untuk lokasi tersebut. Mengganti lokasi menutup panel barang sebelumnya. Admin dapat membaca lokasi historis nonaktif; mutasi baru memerlukan lokasi aktif.
 4. Pilih **Lokasi stok** di header faktur. Satu lokasi berlaku untuk seluruh faktur. Menggantinya memperbarui stok baris dan mempertahankan harga. Periksa lokasi saat checkout. Finalisasi memeriksa kembali status aktif; jika sudah nonaktif, pilih lokasi aktif dan tinjau ulang.

@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -57,10 +58,7 @@ test('ADMIN sets an opening balance, sets stock 30 -> 25 and sees delta -5, then
   await page.reload();
   await expect(page.getByTestId('session-name')).toBeVisible();
 
-  await page
-    .getByRole('navigation')
-    .getByRole('button', { name: t('shell.nav.inventory'), ...exact })
-    .click();
+  await navigateTo(page, 'inventory');
   await expect(
     page.getByRole('heading', { name: t('inventory.title'), ...exact }),
   ).toBeVisible();

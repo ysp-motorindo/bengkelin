@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -78,10 +79,7 @@ async function seed(page: Page, as: 'admin' | 'siti') {
 }
 
 async function openCustomers(page: Page) {
-  await page
-    .getByRole('navigation')
-    .getByRole('button', { name: t('shell.nav.customers'), ...exact })
-    .click();
+  await navigateTo(page, 'customers');
   await expect(
     page.getByRole('heading', { name: t('customers.title') }),
   ).toBeVisible();
@@ -212,7 +210,7 @@ test('reference management is ADMIN-only in the UI and in main', async () => {
   launched = await launchApp({ dataDir });
   const { page } = launched;
   await seed(page, 'siti');
-  const nav = page.getByRole('navigation');
+  const nav = page.getByRole('navigation', { name: t('shell.nav.label') });
   await expect(
     nav.getByRole('button', { name: t('shell.nav.references') }),
   ).toHaveCount(0);
@@ -228,7 +226,7 @@ test('reference management is ADMIN-only in the UI and in main', async () => {
   await page
     .getByRole('button', { name: t('auth.login.submit'), ...exact })
     .click();
-  await nav.getByRole('button', { name: t('shell.nav.references') }).click();
+  await navigateTo(page, 'references');
 
   // Mechanics tab: add, then deactivate.
   await page

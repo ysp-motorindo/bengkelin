@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { test, expect } from '@playwright/test';
 import { mkdtemp, rm, mkdir, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -132,11 +133,9 @@ for (const locale of ['id', 'en'] as const)
           { locale, role },
         );
         await page.reload();
+        await navigateTo(page, 'purchases');
         await page
-          .getByRole('navigation')
-          .getByRole('button', { name: t('shell.nav.purchases'), exact: true })
-          .click();
-        await page
+          .getByRole('main')
           .getByRole('button', { name: field('new'), exact: true })
           .click();
         await page
@@ -361,12 +360,9 @@ for (const locale of ['id', 'en'] as const)
           if (!r.ok) throw Error(r.error.code);
         }, role);
         await page.reload();
+        await navigateTo(page, 'purchases');
         await page
-          .getByRole('navigation')
-          .getByRole('button', { name: t('shell.nav.purchases'), exact: true })
-          .click();
-        await page
-          .getByRole('tab', { name: field('history'), exact: true })
+          .getByRole('button', { name: field('history'), exact: true })
           .click();
         await page
           .getByRole('button', { name: state.documentNumber, exact: true })

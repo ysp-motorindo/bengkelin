@@ -69,3 +69,18 @@ Baca [stock-locations.md](stock-locations.md) bersama onboarding dan manual oper
 ## Panduan pembelian
 
 Lihat [Pembelian dari pemasok](pembelian.md) sebagai pelengkap manual operasional untuk faktur pemasok, penerimaan sebagian, retur/kredit, pembayaran, pengembalian dana, laporan, cetak, dan cadangan. Panduan berisi ringkasan Bahasa Indonesia dan English.
+
+## Navigasi dua tingkat / Two-level navigation
+
+| Area / Bagian | Destinations / Tujuan |
+|---|---|
+| Penjualan / Sales | Penjualan baru / New sale; Riwayat penjualan / Sales history; Piutang / Receivables |
+| Pembelian / Purchase | Buat pembelian / New purchase; Riwayat pembelian / Purchase history; Penerimaan / Receiving; Utang & pengembalian dana / Payables & refunds; Pemasok / Suppliers |
+| Katalog & Stok / Catalog & Stock | Katalog & Harga / Catalog & Prices; Persediaan / Inventory; Impor/Ekspor Katalog / Catalog Import/Export (admin) |
+| Pelanggan & Kendaraan / Customers & Vehicles | Langsung / Direct |
+| Laporan Harian / Daily Report | Langsung / Direct |
+| Administrasi / Administration (admin) | Data Referensi / Reference Data; Kasir / Cashiers; Pengaturan / Settings |
+
+Switching areas opens the first destination and preserves transaction drafts. Clicking the current area leaves its current screen in place. Existing HTML/PDF manual screenshots show the older navigation; use this map for current paths.
+
+Berpindah bagian membuka tujuan pertama dan mempertahankan draf transaksi. Mengeklik bagian aktif mempertahankan layar saat ini. Screenshot manual HTML/PDF sebelumnya menampilkan navigasi lama; gunakan peta ini untuk jalur terbaru.

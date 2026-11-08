@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { readdirSync, readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -64,9 +65,7 @@ test('ADMIN chooses a folder and "Backup now" writes a validated file there', as
   await page
     .getByRole('button', { name: t('auth.login.submit'), ...exact })
     .click();
-  await page
-    .getByRole('button', { name: t('shell.nav.settings'), ...exact })
-    .click();
+  await navigateTo(page, 'settings');
 
   const section = page.getByTestId('backup-section');
   await expect(section).toBeVisible();

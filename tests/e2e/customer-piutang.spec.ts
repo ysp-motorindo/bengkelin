@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -77,7 +78,6 @@ test('import opening debt, show invoice Piutang, repay and reconcile daily recei
     'external_id,customer_name,as_of_date,opening_balance\nCU-1,Alpha,2026-09-30,100000\n',
   );
   await page.reload();
-  const nav = page.getByRole('navigation');
   const evidence = path.resolve(
     'output/customer-piutang-e2e',
     new Date().toISOString().replace(/[:.]/g, '-'),
@@ -86,9 +86,7 @@ test('import opening debt, show invoice Piutang, repay and reconcile daily recei
   const capture = async (name: string) => {
     await page.screenshot({ path: path.join(evidence, `${name}.png`) });
   };
-  await nav
-    .getByRole('button', { name: t('shell.nav.customers'), exact: true })
-    .click();
+  await navigateTo(page, 'customers');
   await page
     .getByRole('button', { name: t('history.opening.importOpen'), exact: true })
     .click();
@@ -112,9 +110,7 @@ test('import opening debt, show invoice Piutang, repay and reconcile daily recei
     .getByRole('button', { name: t('customers.edit.cancel'), exact: true })
     .last()
     .click();
-  await nav
-    .getByRole('button', { name: t('shell.nav.workspace'), exact: true })
-    .click();
+  await navigateTo(page, 'workspace');
   await page
     .getByRole('combobox', {
       name: t('workspace.header.customer'),
@@ -126,9 +122,7 @@ test('import opening debt, show invoice Piutang, repay and reconcile daily recei
     page.getByLabel(t('workspace.header.piutang'), { exact: true }),
   ).toHaveText('Rp 100.000');
   await capture('03-invoice-piutang');
-  await nav
-    .getByRole('button', { name: t('shell.nav.receivables'), exact: true })
-    .click();
+  await navigateTo(page, 'receivables');
   await page
     .getByRole('tab', { name: t('history.opening.title'), exact: true })
     .click();
@@ -149,16 +143,12 @@ test('import opening debt, show invoice Piutang, repay and reconcile daily recei
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByText('Rp 70.000', { exact: true })).toBeVisible();
   await capture('05-payment-history');
-  await nav
-    .getByRole('button', { name: t('shell.nav.workspace'), exact: true })
-    .click();
+  await navigateTo(page, 'workspace');
   await expect(
     page.getByLabel(t('workspace.header.piutang'), { exact: true }),
   ).toHaveText('Rp 70.000');
   await capture('06-refreshed-piutang');
-  await nav
-    .getByRole('button', { name: t('shell.nav.reports'), exact: true })
-    .click();
+  await navigateTo(page, 'reports');
   await expect(
     page.locator('[data-field="payments.openingBalanceRepayments"]'),
   ).toHaveText('Rp 30.000');
@@ -175,9 +165,7 @@ test('import opening debt, show invoice Piutang, repay and reconcile daily recei
   );
   expect(report.ok && report.value.sales.netBeforeVoids).toBe('0');
   await page.setViewportSize({ width: 720, height: 1040 });
-  await nav
-    .getByRole('button', { name: t('shell.nav.receivables'), exact: true })
-    .click();
+  await navigateTo(page, 'receivables');
   await page
     .getByRole('tab', { name: t('history.opening.title'), exact: true })
     .click();
@@ -200,13 +188,7 @@ test('import opening debt, show invoice Piutang, repay and reconcile daily recei
     }),
   );
   await page.reload();
-  await page
-    .getByRole('navigation')
-    .getByRole('button', {
-      name: tr('en', 'shell.nav.receivables'),
-      exact: true,
-    })
-    .click();
+  await navigateTo(page, 'receivables');
   await page
     .getByRole('tab', { name: tr('en', 'history.opening.title'), exact: true })
     .click();

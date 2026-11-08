@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -56,11 +57,7 @@ test('ADMIN creates an item with a barcode and two price points, sees the timeli
   );
   await page.reload();
   await expect(page.getByTestId('session-name')).toBeVisible();
-
-  const nav = page.getByRole('navigation');
-  await nav
-    .getByRole('button', { name: t('shell.nav.catalog'), ...exact })
-    .click();
+  await navigateTo(page, 'catalog');
   await expect(
     page.getByRole('heading', { name: t('catalog.title') }),
   ).toBeVisible();
@@ -168,9 +165,7 @@ test('ADMIN creates an item with a barcode and two price points, sees the timeli
   await page
     .getByRole('button', { name: t('auth.login.submit'), ...exact })
     .click();
-  await nav
-    .getByRole('button', { name: t('shell.nav.catalog'), ...exact })
-    .click();
+  await navigateTo(page, 'catalog');
 
   // Cashiers cannot edit; the lookup works by keyboard.
   await expect(

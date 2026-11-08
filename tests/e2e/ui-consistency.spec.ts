@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { launchApp, type LaunchedApp } from './helpers/launch';
 import { tr } from './helpers/i18n';
@@ -75,7 +76,6 @@ for (const language of ['id', 'en'] as const) {
         appearance === 'DARK' ? /dark/ : /^$/,
       );
       const t = (key: string) => tr(language, key);
-      const nav = page.getByRole('navigation');
 
       for (const viewport of [
         { width: 1120, height: 800 },
@@ -83,9 +83,7 @@ for (const language of ['id', 'en'] as const) {
       ]) {
         await page.setViewportSize(viewport);
         for (const view of ['catalog', 'inventory'] as const) {
-          await nav
-            .getByRole('button', { name: t(`shell.nav.${view}`), exact: true })
-            .click();
+          await navigateTo(page, view, language);
           await expect(page.getByRole('heading', { level: 1 })).toHaveText(
             t(`${view}.title`),
           );
@@ -140,9 +138,7 @@ for (const language of ['id', 'en'] as const) {
           await page.keyboard.press('Escape');
           await expect(page.getByRole('dialog')).toHaveCount(0);
         }
-        await nav
-          .getByRole('button', { name: t('shell.nav.settings'), exact: true })
-          .click();
+        await navigateTo(page, 'settings');
         await expect(page.getByRole('heading', { level: 1 })).toHaveText(
           t('shell.nav.settings'),
         );
@@ -159,9 +155,7 @@ for (const language of ['id', 'en'] as const) {
         await expectCompactFields(page);
       }
 
-      await nav
-        .getByRole('button', { name: t('shell.nav.workspace'), exact: true })
-        .click();
+      await navigateTo(page, 'workspace');
       await page
         .getByRole('combobox', { name: t('workspace.search.label') })
         .click();
@@ -200,10 +194,9 @@ for (const language of ['id', 'en'] as const) {
       await expect(
         page.getByRole('combobox', { name: t('workspace.search.label') }),
       ).toHaveCSS('height', '32px');
-      await nav
-        .getByRole('button', { name: t('shell.nav.purchases'), exact: true })
-        .click();
+      await navigateTo(page, 'purchases');
       await page
+        .getByRole('main')
         .getByRole('button', { name: t('purchases.new'), exact: true })
         .click();
       await expect(

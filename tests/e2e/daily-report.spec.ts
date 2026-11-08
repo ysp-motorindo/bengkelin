@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -180,9 +181,7 @@ test('daily report shows today and exports the same figures as CSV', async () =>
   await page
     .getByRole('button', { name: t('auth.login.submit'), ...exact })
     .click();
-  await page
-    .getByRole('button', { name: t('shell.nav.reports'), ...exact })
-    .click();
+  await navigateTo(page, 'reports');
 
   await expect(
     page.getByRole('heading', { name: t('reports.title') }),

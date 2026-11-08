@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import { test, expect, vi } from 'vitest';
 import { Shell } from '@/renderer/features/shell/Shell';
 import { PurchasesScreen } from '@/renderer/features/purchases/PurchasesScreen';
@@ -441,17 +441,29 @@ test('Purchase portals its navigation only while active and returns to its exist
 test('failed Purchase saves retain the entered price across area changes', async () => {
   const { default: userEvent } = await import('@testing-library/user-event');
   const b = bridge();
-  b.purchaseDrafts.apply = vi.fn(async () => ({
-    ok: false as const,
-    error: { code: 'INTERNAL_ERROR', messageKey: 'errors.INTERNAL_ERROR' },
-  })) as typeof b.purchaseDrafts.apply;
-  (window as unknown as { bengkelin: unknown }).bengkelin = b;
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchaseDrafts: {
+      ...b.purchaseDrafts,
+      apply: vi.fn(async () => ({
+        ok: false as const,
+        error: { code: 'INTERNAL_ERROR', messageKey: 'errors.INTERNAL_ERROR' },
+      })),
+    },
+  };
   const rendered = render(<PurchasesScreen active={true} />);
   const price = await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
   await userEvent.type(price, '12500');
   await userEvent.tab();
   rendered.rerender(<PurchasesScreen active={false} />);
   rendered.rerender(<PurchasesScreen active={true} />);
-  expect(price).not.toHaveValue('');
+  expect(price).toHaveValue('12.500');
+  await waitFor(() =>
+    expect(screen.getByTestId('save-state')).toHaveAttribute(
+      'data-state',
+      'failed',
+    ),
+  );
+  expect(price).toHaveValue('12.500');
   expect(price).toBeVisible();
 });

@@ -58,3 +58,7 @@ Supplier credits can cancel undelivered quantities or return quantities from a s
 Use purchase history to review receipts, payments, credits, refunds, and the independent settlement/receiving states. Posted payments, credits, and refunds are immutable; review entries before confirming. Failed requests preserve entries for retry. Negative-stock actions require acknowledgment.
 
 Print bills in A4/thermal and receipts/credits in A4, or export A4 PDFs. Print failures leave the recorded transaction intact. Daily reports keep purchasing separate from sales and use each activity's posting time. Backups include purchasing, and restore protects previously issued document numbers.
+
+Navigation: Purchase → New purchase / Purchase history / Receiving / Payables & refunds / Suppliers. Switching back to Purchase opens the editor and retains your draft.
+
+Navigasi: Pembelian → Buat pembelian / Riwayat pembelian / Penerimaan / Utang & pengembalian dana / Pemasok. Kembali ke Pembelian membuka editor dan mempertahankan draf.

@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import {
   mkdir,
   mkdtemp,
@@ -153,10 +154,7 @@ test('stock location setup, two-location invoice, frozen documents, void and exp
         ).toBeVisible();
       },
     );
-    const nav = page.getByRole('navigation');
-    await nav
-      .getByRole('button', { name: t('shell.nav.references'), ...exact })
-      .click();
+    await navigateTo(page, 'references');
     await page.getByRole('tab', { name: 'Lokasi stok', ...exact }).click();
     await writeFile(
       csv,
@@ -195,9 +193,7 @@ test('stock location setup, two-location invoice, frozen documents, void and exp
       csv,
       'sku,title,type,unit,price_bengkel,stock_location,opening_stock\nDEMO-OIL,Demo Oil,STOCK_ITEM,PCS,1000,01,10\n',
     );
-    await nav
-      .getByRole('button', { name: t('shell.nav.catalogTransfer'), ...exact })
-      .click();
+    await navigateTo(page, 'catalogTransfer');
     await page
       .getByRole('button', { name: t('catalogTransfer.import'), ...exact })
       .click();
@@ -272,9 +268,7 @@ test('stock location setup, two-location invoice, frozen documents, void and exp
       if (!credit.ok) throw new Error(credit.error.code);
       return { a: a.id, branch: branch.id, item: item.id, draft: d.value.id };
     });
-    await nav
-      .getByRole('button', { name: t('shell.nav.inventory'), ...exact })
-      .click();
+    await navigateTo(page, 'inventory');
     const inventoryLocation = page.getByRole('combobox', {
       name: 'Lokasi stok',
       ...exact,
@@ -417,9 +411,7 @@ test('stock location setup, two-location invoice, frozen documents, void and exp
       a: 10,
       branch: 20,
     });
-    await nav
-      .getByRole('button', { name: t('shell.nav.history'), ...exact })
-      .click();
+    await navigateTo(page, 'history');
     await step(
       'issued-history',
       'Voiding restores the original location even after it was renamed and deactivated.',
@@ -490,9 +482,7 @@ test('stock location setup, two-location invoice, frozen documents, void and exp
     );
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
-    await nav
-      .getByRole('button', { name: t('shell.nav.catalogTransfer'), ...exact })
-      .click();
+    await navigateTo(page, 'catalogTransfer');
     await page
       .getByRole('combobox', { name: 'Lokasi stok', ...exact })
       .selectOption(ids.a);

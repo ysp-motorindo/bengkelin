@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -1142,12 +1143,7 @@ for (const viewport of [
             .click();
           await expect(dialog).toHaveCount(0);
         }
-        await page
-          .getByRole('button', {
-            name: t('shell.nav.customers', lang),
-            ...exact,
-          })
-          .click();
+        await navigateTo(page, 'customers');
         await expect(page.getByRole('dialog')).toHaveCount(0);
         const customerForm = page.getByRole('form', {
           name: t('customers.quickCustomer.title', lang),

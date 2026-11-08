@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -187,9 +188,7 @@ test('later payment from History reaches PAID; an unpaid invoice is voided with 
   expect(toVoid).toMatch(/^INV-\d{8}-0002$/);
 
   // ---- History: search by number, open, record the later payment ----
-  await page
-    .getByRole('button', { name: t('shell.nav.history'), ...exact })
-    .click();
+  await navigateTo(page, 'history');
   await expect(page.getByTestId('history-row')).toHaveCount(2);
   await page.getByLabel(t('history.filters.invoiceNumber'), exact).fill(credit);
   await page
@@ -295,9 +294,7 @@ test('later payment from History reaches PAID; an unpaid invoice is voided with 
   await expect(
     page.locator('[data-testid="history-row"][data-status="VOID"]'),
   ).toHaveCount(1);
-  await page
-    .getByRole('button', { name: t('shell.nav.receivables'), ...exact })
-    .click();
+  await navigateTo(page, 'receivables');
   await expect(page.getByTestId('history-empty')).toHaveText(
     t('history.receivables.empty'),
   );

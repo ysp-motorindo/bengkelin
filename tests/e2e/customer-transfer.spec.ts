@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -43,10 +44,7 @@ test('admin imports customers and selects an inactive customer in a transaction'
     if (!login.ok) throw new Error(JSON.stringify(login.error));
   });
   await page.reload();
-  const nav = page.getByRole('navigation');
-  await nav
-    .getByRole('button', { name: t('shell.nav.customers'), exact: true })
-    .click();
+  await navigateTo(page, 'customers');
   await page
     .getByRole('button', { name: t('customers.import.open'), exact: true })
     .click();
@@ -79,9 +77,7 @@ test('admin imports customers and selects an inactive customer in a transaction'
     .getByRole('button', { name: t('customers.edit.cancel'), exact: true })
     .last()
     .click();
-  await nav
-    .getByRole('button', { name: t('shell.nav.workspace'), exact: true })
-    .click();
+  await navigateTo(page, 'workspace');
   const picker = page.getByRole('combobox', {
     name: t('workspace.header.customer'),
     exact: true,

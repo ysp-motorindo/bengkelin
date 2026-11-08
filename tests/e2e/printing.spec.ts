@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { existsSync, readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -177,9 +178,7 @@ test('preview shows the invoice; A4 PDF export writes a multi-page PDF', async (
   await page
     .getByRole('button', { name: t('auth.login.submit'), ...exact })
     .click();
-  await page
-    .getByRole('button', { name: t('shell.nav.history'), ...exact })
-    .click();
+  await navigateTo(page, 'history');
   await page
     .getByRole('button', { name: t('history.table.openInvoice', { number }) })
     .click();

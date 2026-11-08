@@ -1,3 +1,4 @@
+import { navigateTo } from './helpers/navigation';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -311,9 +312,7 @@ test('full cashier workflow: scan, service, discounts, restart, split payment, F
     .toBe(false);
 
   // ---- Later payment from History -> PAID ----
-  await page
-    .getByRole('button', { name: t('shell.nav.history'), ...exact })
-    .click();
+  await navigateTo(page, 'history');
   const row = page.getByTestId('history-row');
   await expect(row).toHaveCount(1);
   await expect(row.getByTestId('payment-status')).toHaveText(
