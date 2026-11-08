@@ -1,4 +1,12 @@
 import type {
+  FinalizePurchaseData,
+  PurchaseFinalizePreview,
+  PurchaseMoneyData,
+  PurchasePage,
+  PurchaseView,
+  SearchPurchasesData,
+} from './contracts/purchases';
+import type {
   SaveSupplierInput,
   SaveSupplierResult,
   SearchSuppliersInput,
@@ -138,6 +146,23 @@ import type { Result } from './primitives';
 
 /** Shape of `window.bengkelin`. Feature tasks add named namespaces here. */
 export interface BengkelinApi {
+  purchases: {
+    previewFinalize(input: {
+      purchaseId: string;
+    }): Promise<Result<PurchaseFinalizePreview>>;
+    finalize(input: FinalizePurchaseData): Promise<Result<PurchaseView>>;
+    get(input: { purchaseId: string }): Promise<Result<PurchaseView>>;
+    search(input: SearchPurchasesData): Promise<Result<PurchasePage>>;
+    recordPayment(input: PurchaseMoneyData): Promise<Result<PurchaseView>>;
+    recordRefund(input: PurchaseMoneyData): Promise<Result<PurchaseView>>;
+    void(input: {
+      requestId: string;
+      purchaseId: string;
+      expectedVersion: number;
+      reason: string;
+    }): Promise<Result<PurchaseView>>;
+  };
+
   suppliers: {
     search(
       input: SearchSuppliersInput,

@@ -14,6 +14,15 @@ const call =
 
 const c = CHANNELS;
 const api: BengkelinApi = Object.freeze({
+  purchases: Object.freeze({
+    previewFinalize: call(c.purchases.previewFinalize),
+    finalize: call(c.purchases.finalize),
+    get: call(c.purchases.get),
+    search: call(c.purchases.search),
+    recordPayment: call(c.purchases.recordPayment),
+    recordRefund: call(c.purchases.recordRefund),
+    void: call(c.purchases.void),
+  }),
   suppliers: Object.freeze({
     search: call(c.suppliers.search),
     get: call(c.suppliers.get),

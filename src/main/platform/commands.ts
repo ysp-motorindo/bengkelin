@@ -1,4 +1,10 @@
 import {
+  finalizePurchaseInputSchema,
+  purchaseMoneyInputSchema,
+  voidPurchaseInputSchema,
+  searchPurchasesInputSchema,
+} from '@/shared/contracts';
+import {
   searchSuppliersInputSchema,
   supplierIdInputSchema,
   saveSupplierInputSchema,
@@ -92,6 +98,9 @@ const C = CHANNELS;
  * mutating: a new channel is blocked during a restore unless listed here.
  */
 const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
+  C.purchases.previewFinalize,
+  C.purchases.get,
+  C.purchases.search,
   C.suppliers.search,
   C.suppliers.get,
   C.purchaseDrafts.list,
@@ -205,6 +214,43 @@ export function buildCommands(services: ApplicationServices): Command[] {
   const session = (windowId: number) => sessions.get(windowId);
 
   const commands: Command[] = [
+    command(
+      C.purchases.previewFinalize,
+      purchaseIdInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.previewFinalize(session(windowId), input),
+    ),
+    command(
+      C.purchases.finalize,
+      finalizePurchaseInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.finalize(session(windowId), input),
+    ),
+    command(C.purchases.get, purchaseIdInputSchema, ({ windowId }, input) =>
+      services.purchases.get(session(windowId), input),
+    ),
+    command(
+      C.purchases.search,
+      searchPurchasesInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.search(session(windowId), input),
+    ),
+    command(
+      C.purchases.recordPayment,
+      purchaseMoneyInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.recordPayment(session(windowId), input),
+    ),
+    command(
+      C.purchases.recordRefund,
+      purchaseMoneyInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.recordRefund(session(windowId), input),
+    ),
+    command(C.purchases.void, voidPurchaseInputSchema, ({ windowId }, input) =>
+      services.purchases.void(session(windowId), input),
+    ),
+
     command(
       C.suppliers.search,
       searchSuppliersInputSchema,

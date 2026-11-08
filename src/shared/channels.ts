@@ -17,6 +17,15 @@ export const CHANNELS = {
     /** Help > About: app and schema version (no session needed). */
     about: 'bengkelin:app:about',
   },
+  purchases: {
+    previewFinalize: 'bengkelin:purchases:previewFinalize',
+    finalize: 'bengkelin:purchases:finalize',
+    get: 'bengkelin:purchases:get',
+    search: 'bengkelin:purchases:search',
+    recordPayment: 'bengkelin:purchases:recordPayment',
+    recordRefund: 'bengkelin:purchases:recordRefund',
+    void: 'bengkelin:purchases:void',
+  },
   suppliers: {
     search: 'bengkelin:suppliers:search',
     get: 'bengkelin:suppliers:get',
