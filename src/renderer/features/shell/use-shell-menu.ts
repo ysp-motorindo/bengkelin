@@ -32,16 +32,18 @@ export type MenuNotice = { tone: 'status' | 'alert'; text: string } | null;
 export function useShellMenu({
   session,
   showView,
+  purchaseActive = false,
 }: {
   session: CashierSession;
-  showView(view: 'workspace' | 'reports'): void;
+  showView(view: 'workspace' | 'reports' | 'purchases'): void;
+  purchaseActive?: boolean;
 }): { notice: MenuNotice; dismiss(): void } {
   const { t } = useTranslation();
   const [notice, setNotice] = useState<MenuNotice>(null);
   const admin = session.role === 'ADMIN';
 
   function toWorkspace() {
-    flushSync(() => showView('workspace'));
+    flushSync(() => showView(purchaseActive ? 'purchases' : 'workspace'));
     return getWorkspaceActions();
   }
 

@@ -1,8 +1,4 @@
-import type {
-  DraftCommand,
-  DraftOperation,
-  DraftView,
-} from '@/shared/contracts';
+import type { DraftOperation, DraftView } from '@/shared/contracts';
 import type { Result } from '@/shared/primitives';
 
 /**
@@ -37,7 +33,9 @@ export type SaveState = 'saved' | 'saving' | 'failed' | 'unsaved';
 export type ClosedCode =
   | 'DRAFT_DISCARDED'
   | 'INVOICE_NOT_DRAFT'
-  | 'DRAFT_NOT_FOUND';
+  | 'DRAFT_NOT_FOUND'
+  | 'PURCHASE_NOT_DRAFT'
+  | 'PURCHASE_NOT_FOUND';
 
 export type QueueError = Extract<Result<never>, { ok: false }>['error'];
 
@@ -47,9 +45,16 @@ export type QueueNotice =
   | { kind: 'unauthenticated' }
   | { kind: 'failed'; error: QueueError };
 
-export interface DraftQueueDeps {
-  apply(command: DraftCommand): Promise<Result<DraftView>>;
-  get(id: string): Promise<Result<DraftView>>;
+export interface QueueCommand<O = DraftOperation> {
+  requestId: string;
+  invoiceId: string;
+  expectedVersion: number;
+  op: O;
+}
+
+export interface DraftQueueDeps<V = DraftView, O = DraftOperation> {
+  apply(command: QueueCommand<O>): Promise<Result<V>>;
+  get(id: string): Promise<Result<V>>;
   newRequestId(): string;
   /** Free-text debounce. Default 300 ms. */
   debounceMs?: number;
@@ -59,8 +64,8 @@ export interface DraftQueueDeps {
   retryDelayMs?: number;
 }
 
-export interface DraftQueueListener {
-  view(view: DraftView): void;
+export interface DraftQueueListener<V = DraftView> {
+  view(view: V): void;
   state(state: SaveState): void;
   notice(notice: QueueNotice): void;
 }
@@ -70,21 +75,23 @@ export interface SendOptions {
   expectedVersion?: number;
 }
 
-interface Item {
-  op: DraftOperation;
+interface Item<V, O> {
+  op: O;
   key: string | null;
   explicitVersion: number | undefined;
   /** Built once at the first attempt; reused verbatim on transport retry. */
-  command: DraftCommand | null;
+  command: QueueCommand<O> | null;
   replayed: boolean;
   retried: boolean;
-  resolve(result: Result<DraftView>): void;
+  resolve(result: Result<V>): void;
 }
 
 const CLOSING_CODES: readonly string[] = [
   'DRAFT_DISCARDED',
   'INVOICE_NOT_DRAFT',
   'DRAFT_NOT_FOUND',
+  'PURCHASE_NOT_DRAFT',
+  'PURCHASE_NOT_FOUND',
 ];
 
 const TRANSPORT_FAILED: QueueError = {
@@ -94,15 +101,18 @@ const TRANSPORT_FAILED: QueueError = {
 
 const noop = () => undefined;
 
-export class DraftCommandQueue {
-  private current: DraftView;
+export class DraftCommandQueue<
+  V extends { id: string; version: number } = DraftView,
+  O = DraftOperation,
+> {
+  private current: V;
   private readonly invoiceId: string;
-  private readonly items: Item[] = [];
+  private readonly items: Item<V, O>[] = [];
   private readonly timers = new Map<
     string,
-    { handle: ReturnType<typeof setTimeout> | undefined; op: DraftOperation }
+    { handle: ReturnType<typeof setTimeout> | undefined; op: O }
   >();
-  private readonly failedKeys = new Map<string, DraftOperation>();
+  private readonly failedKeys = new Map<string, O>();
   private readonly invalidKeys = new Set<string>();
   private idleWaiters: Array<(flushed: boolean) => void> = [];
   private running = false;
@@ -114,9 +124,9 @@ export class DraftCommandQueue {
   private readonly retryDelayMs: number;
 
   constructor(
-    initialView: DraftView,
-    private readonly deps: DraftQueueDeps,
-    private readonly listener: DraftQueueListener,
+    initialView: V,
+    private readonly deps: DraftQueueDeps<V, O>,
+    private readonly listener: DraftQueueListener<V>,
   ) {
     this.current = initialView;
     this.invoiceId = initialView.id;
@@ -125,7 +135,7 @@ export class DraftCommandQueue {
     this.retryDelayMs = deps.retryDelayMs ?? 250;
   }
 
-  get view(): DraftView {
+  get view(): V {
     return this.current;
   }
 
@@ -142,10 +152,7 @@ export class DraftCommandQueue {
   }
 
   /** A discrete action: queued immediately; resolves with its own result. */
-  send(
-    op: DraftOperation,
-    options: SendOptions = {},
-  ): Promise<Result<DraftView>> {
+  send(op: O, options: SendOptions = {}): Promise<Result<V>> {
     if (this.isClosed) return Promise.resolve(this.closedResult());
     return new Promise((resolve) => {
       this.items.push({
@@ -163,7 +170,7 @@ export class DraftCommandQueue {
   }
 
   /** Free text for one field: debounced; only the latest value is sent. */
-  edit(key: string, op: DraftOperation): void {
+  edit(key: string, op: O): void {
     if (this.isClosed) return;
     this.invalidKeys.delete(key);
     const pending = this.timers.get(key);
@@ -177,7 +184,7 @@ export class DraftCommandQueue {
   }
 
   /** Hold inline input until blur or an explicit context flush. */
-  stage(key: string, op: DraftOperation): void {
+  stage(key: string, op: O): void {
     if (this.isClosed) return;
     this.cancelPending(key);
     this.timers.set(key, { handle: undefined, op });
@@ -287,7 +294,7 @@ export class DraftCommandQueue {
 
   // ---- internals ----
 
-  private enqueueText(key: string, op: DraftOperation): void {
+  private enqueueText(key: string, op: O): void {
     if (this.isClosed) return;
     this.items.push({
       op,
@@ -317,7 +324,7 @@ export class DraftCommandQueue {
     }
   }
 
-  private async execute(item: Item): Promise<void> {
+  private async execute(item: Item<V, O>): Promise<void> {
     item.command ??= {
       requestId: this.deps.newRequestId(),
       invoiceId: this.invoiceId,
@@ -430,14 +437,14 @@ export class DraftCommandQueue {
     }
   }
 
-  private acceptView(view: DraftView): void {
+  private acceptView(view: V): void {
     if (view.id !== this.invoiceId) return;
     if (view.version < this.current.version) return; // stale: never go back
     this.current = view;
     this.listener.view(view);
   }
 
-  private closeWith(code: ClosedCode, result: Result<DraftView>): void {
+  private closeWith(code: ClosedCode, result: Result<V>): void {
     this.isClosed = true;
     for (const { handle } of this.timers.values()) clearTimeout(handle);
     this.timers.clear();
@@ -446,7 +453,7 @@ export class DraftCommandQueue {
     this.settleWaiters(true);
   }
 
-  private closedResult(): Result<DraftView> {
+  private closedResult(): Result<V> {
     return {
       ok: false,
       error: { code: 'QUEUE_CLOSED', messageKey: 'errors.DRAFT_DISCARDED' },

@@ -1,3 +1,4 @@
+import { PurchasesScreen } from '@/renderer/features/purchases/PurchasesScreen';
 import { ChevronDown, LogOut, Wrench, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +31,7 @@ import { PreferencesControls } from './PreferencesControls';
 import { useShellMenu } from './use-shell-menu';
 
 type View =
+  | 'purchases'
   | 'workspace'
   | 'history'
   | 'receivables'
@@ -73,7 +75,11 @@ export function Shell({
   const [toolbarSlot, setToolbarSlot] = useState<HTMLDivElement | null>(null);
   const profileMenu = useRef<HTMLDetailsElement>(null);
   const { busy, error, setError, run, check } = useAction();
-  const menu = useShellMenu({ session, showView: setView });
+  const menu = useShellMenu({
+    session,
+    showView: setView,
+    purchaseActive: view === 'purchases',
+  });
 
   // After a reload main may still hold the previous page's print context.
   useEffect(() => reportPrintContext(), []);
@@ -104,6 +110,7 @@ export function Shell({
     session.role === 'ADMIN'
       ? [
           'workspace',
+          'purchases',
           'history',
           'receivables',
           'reports',
@@ -117,6 +124,7 @@ export function Shell({
         ]
       : [
           'workspace',
+          'purchases',
           'history',
           'receivables',
           'reports',
@@ -234,6 +242,9 @@ export function Shell({
             active={view === 'workspace'}
             toolbarSlot={toolbarSlot}
           />
+        </div>
+        <div hidden={view !== 'purchases'}>
+          <PurchasesScreen active={view === 'purchases'} />
         </div>
         {view === 'history' ? <HistoryScreen session={session} /> : null}
         {view === 'receivables' ? <ReceivablesScreen /> : null}

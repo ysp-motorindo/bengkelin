@@ -14,7 +14,8 @@
     "reports": "Daily Report",
     "settings": "Settings",
     "catalogTransfer": "Catalog Import/Export",
-    "cashiers": "Cashiers"
+    "cashiers": "Cashiers",
+    "purchases": "Purchase"
   },
   "preferences": {
     "language": "Language",

@@ -14,7 +14,8 @@
     "reports": "Laporan Harian",
     "settings": "Pengaturan",
     "catalogTransfer": "Impor/Ekspor Katalog",
-    "cashiers": "Kasir"
+    "cashiers": "Kasir",
+    "purchases": "Pembelian"
   },
   "preferences": {
     "language": "Bahasa",

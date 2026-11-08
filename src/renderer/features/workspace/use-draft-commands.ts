@@ -58,7 +58,7 @@ export function useDraftCommands(
     const start = latestView.current;
     setView(start);
     setSaveState('saved');
-    const queue = new DraftCommandQueue(
+    const queue = new DraftCommandQueue<DraftView, DraftOperation>(
       start,
       {
         apply: (command) => window.bengkelin.drafts.apply(command),

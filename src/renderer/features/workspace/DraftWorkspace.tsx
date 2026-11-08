@@ -135,17 +135,16 @@ export function DraftWorkspace({
     setDialog({ kind: 'review' });
   }, [flush, t]);
 
-  useEffect(
-    () =>
-      registerWorkspaceActions({
-        newTransaction: onNewDraft,
-        focusSearch,
-        addCustomItem: () => entryRef.current?.startCustom(),
-        saveDraft: flush,
-        openCheckoutReview: openReview,
-      }),
-    [flush, focusSearch, onNewDraft, openReview],
-  );
+  useEffect(() => {
+    if (!active) return;
+    return registerWorkspaceActions({
+      newTransaction: onNewDraft,
+      focusSearch,
+      addCustomItem: () => entryRef.current?.startCustom(),
+      saveDraft: flush,
+      openCheckoutReview: openReview,
+    });
+  }, [active, flush, focusSearch, onNewDraft, openReview]);
 
   const closeDialog = useCallback(() => setDialog(null), []);
 
