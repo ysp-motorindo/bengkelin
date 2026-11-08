@@ -9,13 +9,17 @@
     "catalog": "Katalog & Harga",
     "inventory": "Persediaan",
     "references": "Data Referensi",
-    "history": "Riwayat",
+    "history": "Riwayat penjualan",
     "receivables": "Piutang",
     "reports": "Laporan Harian",
     "settings": "Pengaturan",
     "catalogTransfer": "Impor/Ekspor Katalog",
     "cashiers": "Kasir",
-    "purchases": "Pembelian"
+    "purchases": "Pembelian",
+    "catalogStock": "Katalog & Stok",
+    "administration": "Administrasi",
+    "newSale": "Penjualan baru",
+    "secondaryLabel": "Navigasi {{area}}"
   },
   "preferences": {
     "language": "Bahasa",

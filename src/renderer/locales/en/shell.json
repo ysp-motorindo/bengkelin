@@ -9,13 +9,17 @@
     "catalog": "Catalog & Prices",
     "inventory": "Inventory",
     "references": "Reference Data",
-    "history": "History",
+    "history": "Sales history",
     "receivables": "Receivables",
     "reports": "Daily Report",
     "settings": "Settings",
     "catalogTransfer": "Catalog Import/Export",
     "cashiers": "Cashiers",
-    "purchases": "Purchase"
+    "purchases": "Purchase",
+    "catalogStock": "Catalog & Stock",
+    "administration": "Administration",
+    "newSale": "New sale",
+    "secondaryLabel": "{{area}} navigation"
   },
   "preferences": {
     "language": "Language",

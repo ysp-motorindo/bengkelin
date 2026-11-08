@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { Shell } from '@/renderer/features/shell/Shell';
@@ -46,11 +46,15 @@ describe('shell', () => {
     expect(
       screen.queryByRole('heading', { name: 'Faktur Penjualan' }),
     ).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Riwayat' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Riwayat penjualan' }),
+    );
     expect(
       screen.queryByRole('button', { name: 'Draft' }),
     ).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Penjualan' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Penjualan baru' }),
+    );
     expect(screen.getByRole('button', { name: 'Draft' })).toBeInTheDocument();
   });
   test('profile preferences start collapsed and expose full-width language options with flags', async () => {
@@ -162,7 +166,7 @@ describe('shell', () => {
     expect(button).toBeEnabled();
   });
 
-  test('reference management is offered to ADMIN only', () => {
+  test('reference management is offered to ADMIN only', async () => {
     (window as unknown as { bengkelin: unknown }).bengkelin = workspaceBridge();
     const { unmount } = render(
       <Shell session={cashier} shopName="Bengkel" onLoggedOut={vi.fn()} />,
@@ -181,8 +185,62 @@ describe('shell', () => {
         onLoggedOut={vi.fn()}
       />,
     );
+    await userEvent.click(screen.getByRole('button', { name: 'Administrasi' }));
     expect(
       screen.getByRole('button', { name: 'Data Referensi' }),
     ).toBeInTheDocument();
   });
 });
+
+for (const role of ['ADMIN', 'CASHIER'] as const) {
+  test(`work areas expose contextual destinations for ${role}`, async () => {
+    (window as unknown as { bengkelin: unknown }).bengkelin = workspaceBridge();
+    render(
+      <Shell
+        session={{ ...cashier, role }}
+        shopName="Bengkel"
+        onLoggedOut={vi.fn()}
+      />,
+    );
+    const primary = screen.getByRole('navigation', { name: 'Navigasi utama' });
+    expect(
+      within(primary)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual([
+      'Penjualan',
+      'Pembelian',
+      'Katalog & Stok',
+      'Pelanggan & Kendaraan',
+      'Laporan Harian',
+      ...(role === 'ADMIN' ? ['Administrasi'] : []),
+    ]);
+    const sales = screen.getByRole('navigation', {
+      name: 'Navigasi Penjualan',
+    });
+    expect(
+      within(sales)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Penjualan baru', 'Riwayat penjualan', 'Piutang']);
+    await userEvent.click(
+      within(sales).getByRole('button', { name: 'Riwayat penjualan' }),
+    );
+    await userEvent.click(
+      within(primary).getByRole('button', { name: 'Penjualan' }),
+    );
+    expect(
+      within(sales).getByRole('button', { name: 'Riwayat penjualan' }),
+    ).toHaveAttribute('aria-current', 'page');
+    await userEvent.click(
+      within(primary).getByRole('button', { name: 'Pelanggan & Kendaraan' }),
+    );
+    expect(screen.getAllByRole('navigation')).toHaveLength(1);
+    await userEvent.click(
+      within(primary).getByRole('button', { name: 'Penjualan' }),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Penjualan baru' }),
+    ).toHaveAttribute('aria-current', 'page');
+  });
+}

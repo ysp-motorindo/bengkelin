@@ -31,14 +31,6 @@
   background: var(--muted-foreground);
 }
 
-.shell-menu-bar {
-  scrollbar-width: none;
-}
-
-.shell-menu-bar::-webkit-scrollbar {
-  display: none;
-}
-
 input[type='date'],
 input[type='datetime-local'] {
   position: relative;

@@ -27,6 +27,7 @@ import type {
   PreferencesInput,
   PublicSettings,
 } from '@/shared/contracts';
+import { NavigationRow } from './NavigationRow';
 import { PreferencesControls } from './PreferencesControls';
 import { useShellMenu } from './use-shell-menu';
 
@@ -106,32 +107,34 @@ export function Shell({
     });
   }
 
-  const views: View[] =
-    session.role === 'ADMIN'
+  const areas: { id: string; labelKey: string; views: View[] }[] = [
+    {
+      id: 'sales',
+      labelKey: 'shell.nav.workspace',
+      views: ['workspace', 'history', 'receivables'],
+    },
+    { id: 'purchases', labelKey: 'shell.nav.purchases', views: ['purchases'] },
+    {
+      id: 'stock',
+      labelKey: 'shell.nav.catalogStock',
+      views:
+        session.role === 'ADMIN'
+          ? ['catalog', 'inventory', 'catalogTransfer']
+          : ['catalog', 'inventory'],
+    },
+    { id: 'customers', labelKey: 'shell.nav.customers', views: ['customers'] },
+    { id: 'reports', labelKey: 'shell.nav.reports', views: ['reports'] },
+    ...(session.role === 'ADMIN'
       ? [
-          'workspace',
-          'purchases',
-          'history',
-          'receivables',
-          'reports',
-          'customers',
-          'catalog',
-          'catalogTransfer',
-          'inventory',
-          'references',
-          'cashiers',
-          'settings',
+          {
+            id: 'administration',
+            labelKey: 'shell.nav.administration',
+            views: ['references', 'cashiers', 'settings'] as View[],
+          },
         ]
-      : [
-          'workspace',
-          'purchases',
-          'history',
-          'receivables',
-          'reports',
-          'customers',
-          'catalog',
-          'inventory',
-        ];
+      : []),
+  ];
+  const area = areas.find((area) => area.views.includes(view))!;
 
   return (
     <div
@@ -182,27 +185,39 @@ export function Shell({
             </details>
           </div>
         </header>
-        <nav
-          aria-label={t('shell.nav.label')}
-          className="shell-menu-bar flex flex-nowrap gap-1 overflow-x-auto border-b border-border bg-card px-4 sm:px-6"
-        >
-          {views.map((name) => (
-            <button
-              key={name}
-              type="button"
-              aria-current={view === name ? 'page' : undefined}
-              onClick={() => setView(name)}
-              className={cn(
-                'shrink-0 whitespace-nowrap px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                view === name
-                  ? 'border-b-2 border-primary text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {t(`shell.nav.${name}`)}
-            </button>
-          ))}
-        </nav>
+        <NavigationRow
+          label={t('shell.nav.label')}
+          level="primary"
+          items={areas.map((item) => ({
+            id: item.id,
+            label: t(item.labelKey),
+            current:
+              item.id === area.id
+                ? item.views.length === 1 && item.id !== 'purchases'
+                  ? 'page'
+                  : 'true'
+                : undefined,
+            onSelect: () => {
+              if (item.id !== area.id) setView(item.views[0]!);
+            },
+          }))}
+        />
+        {area.views.length > 1 ? (
+          <NavigationRow
+            label={t('shell.nav.secondaryLabel', { area: t(area.labelKey) })}
+            level="secondary"
+            items={area.views.map((name) => ({
+              id: name,
+              label: t(
+                name === 'workspace'
+                  ? 'shell.nav.newSale'
+                  : `shell.nav.${name}`,
+              ),
+              current: view === name ? 'page' : undefined,
+              onSelect: () => setView(name),
+            }))}
+          />
+        ) : null}
       </div>
       {session.role === 'ADMIN' ? <BackupNoticeBanner /> : null}
       {session.role === 'ADMIN' ? <RestoreOutcomeNotice /> : null}

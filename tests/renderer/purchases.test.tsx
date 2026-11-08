@@ -82,9 +82,9 @@ for (const role of ['ADMIN', 'CASHIER'] as const)
       numberFormat: 'ID',
     };
     render(<Shell session={session} shopName="Shop" onLoggedOut={() => {}} />);
-    const buttons = within(screen.getByRole('navigation')).getAllByRole(
-      'button',
-    );
+    const buttons = within(
+      screen.getByRole('navigation', { name: 'Navigasi utama' }),
+    ).getAllByRole('button');
     expect(buttons[0]).toHaveTextContent('Penjualan');
     expect(buttons[1]).toHaveTextContent('Pembelian');
   });
