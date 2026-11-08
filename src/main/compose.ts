@@ -1,3 +1,5 @@
+import { SupplierService } from '@/main/features/suppliers/service';
+import { PurchaseDraftService } from '@/main/features/purchases/drafts';
 import { OpeningImportService } from '@/main/features/customer-receivables/import-service';
 import { CustomerReceivablesService } from '@/main/features/customer-receivables/service';
 import { ReferenceTransferService } from '@/main/features/reference-transfer/service';
@@ -137,6 +139,8 @@ export function createApplicationServices(
     ...(restoreDeps.tokenTtlMs ? { tokenTtlMs: restoreDeps.tokenTtlMs } : {}),
   });
   return {
+    suppliers: new SupplierService({ db, clock }),
+    purchaseDrafts: new PurchaseDraftService({ db, clock, catalog }),
     logger,
     sessions,
     maintenance,

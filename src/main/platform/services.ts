@@ -1,3 +1,5 @@
+import type { SupplierService } from '@/main/features/suppliers/service';
+import type { PurchaseDraftService } from '@/main/features/purchases/drafts';
 import type { CustomerReceivablesService } from '@/main/features/customer-receivables/service';
 import type { ReferenceTransferService } from '@/main/features/reference-transfer/service';
 import type { CustomerTransferService } from '@/main/features/customer-transfer/service';
@@ -31,6 +33,8 @@ import type { MenuState } from './menu-state';
  * tests build the same graph the app runs.
  */
 export interface ApplicationServices {
+  suppliers: SupplierService;
+  purchaseDrafts: PurchaseDraftService;
   logger: Logger;
   sessions: SessionStore;
   /** Restore's maintenance flag (checked by the command table). */

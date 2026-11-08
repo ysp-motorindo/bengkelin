@@ -14,6 +14,17 @@ const call =
 
 const c = CHANNELS;
 const api: BengkelinApi = Object.freeze({
+  suppliers: Object.freeze({
+    search: call(c.suppliers.search),
+    get: call(c.suppliers.get),
+    save: call(c.suppliers.save),
+  }),
+  purchaseDrafts: Object.freeze({
+    create: call(c.purchaseDrafts.create),
+    list: call(c.purchaseDrafts.list),
+    get: call(c.purchaseDrafts.get),
+    apply: call(c.purchaseDrafts.apply),
+  }),
   auth: Object.freeze({
     login: call(c.auth.login),
     logout: call(c.auth.logout),

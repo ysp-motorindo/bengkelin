@@ -1,4 +1,12 @@
 import type {
+  SaveSupplierInput,
+  SaveSupplierResult,
+  SearchSuppliersInput,
+  SupplierDto,
+  PurchaseDraftView,
+  PurchaseDraftCommand,
+} from './contracts/purchases';
+import type {
   CustomerOpeningPage,
   CustomerOpeningDetail,
   RecordOpeningPaymentInput,
@@ -130,6 +138,23 @@ import type { Result } from './primitives';
 
 /** Shape of `window.bengkelin`. Feature tasks add named namespaces here. */
 export interface BengkelinApi {
+  suppliers: {
+    search(
+      input: SearchSuppliersInput,
+    ): Promise<Result<{ results: SupplierDto[] }>>;
+    get(input: { id: string }): Promise<Result<SupplierDto>>;
+    save(input: SaveSupplierInput): Promise<Result<SaveSupplierResult>>;
+  };
+  purchaseDrafts: {
+    create(input: {
+      requestId: string;
+      billDate: string;
+    }): Promise<Result<PurchaseDraftView>>;
+    list(): Promise<Result<PurchaseDraftView[]>>;
+    get(input: { purchaseId: string }): Promise<Result<PurchaseDraftView>>;
+    apply(input: PurchaseDraftCommand): Promise<Result<PurchaseDraftView>>;
+  };
+
   readonly auth: {
     login(input: LoginInput): Promise<Result<CashierSession>>;
     logout(): Promise<Result<void>>;

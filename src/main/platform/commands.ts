@@ -1,3 +1,11 @@
+import {
+  searchSuppliersInputSchema,
+  supplierIdInputSchema,
+  saveSupplierInputSchema,
+  createPurchaseDraftInputSchema,
+  purchaseIdInputSchema,
+  purchaseDraftCommandSchema,
+} from '@/shared/contracts';
 import { commitOpeningImportInputSchema } from '@/shared/contracts';
 import {
   openingListInputSchema,
@@ -84,6 +92,10 @@ const C = CHANNELS;
  * mutating: a new channel is blocked during a restore unless listed here.
  */
 const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
+  C.suppliers.search,
+  C.suppliers.get,
+  C.purchaseDrafts.list,
+  C.purchaseDrafts.get,
   C.app.ping,
   C.app.openLogFolder,
   C.app.about,
@@ -193,6 +205,40 @@ export function buildCommands(services: ApplicationServices): Command[] {
   const session = (windowId: number) => sessions.get(windowId);
 
   const commands: Command[] = [
+    command(
+      C.suppliers.search,
+      searchSuppliersInputSchema,
+      ({ windowId }, input) =>
+        services.suppliers.search(session(windowId), input),
+    ),
+    command(C.suppliers.get, supplierIdInputSchema, ({ windowId }, input) =>
+      services.suppliers.get(session(windowId), input),
+    ),
+    command(C.suppliers.save, saveSupplierInputSchema, ({ windowId }, input) =>
+      services.suppliers.save(session(windowId), input),
+    ),
+    command(
+      C.purchaseDrafts.create,
+      createPurchaseDraftInputSchema,
+      ({ windowId }, input) =>
+        services.purchaseDrafts.create(session(windowId), input),
+    ),
+    command(C.purchaseDrafts.list, noInput, ({ windowId }) =>
+      services.purchaseDrafts.list(session(windowId)),
+    ),
+    command(
+      C.purchaseDrafts.get,
+      purchaseIdInputSchema,
+      ({ windowId }, input) =>
+        services.purchaseDrafts.get(session(windowId), input),
+    ),
+    command(
+      C.purchaseDrafts.apply,
+      purchaseDraftCommandSchema,
+      ({ windowId }, input) =>
+        services.purchaseDrafts.apply(session(windowId), input),
+    ),
+
     command(C.app.ping, noInput, () => 'pong'),
     command(C.app.openLogFolder, noInput, ({ windowId }) =>
       app.openLogFolder(session(windowId)),
