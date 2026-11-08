@@ -181,7 +181,7 @@ export function PricingTimeDialog({
               {t('workspace.pricing.backdateTitle')}
             </legend>
             {(['startOfDay', 'chooseTime', 'keep'] as const).map((value) => (
-              <label key={value} className="flex items-start gap-2">
+              <label key={value} className="flex items-start gap-2 text-xs">
                 <input
                   type="radio"
                   name="pricing-choice"
@@ -227,7 +227,7 @@ export function PricingTimeDialog({
             {(['earlier', 'later'] as const).map((which, index) => {
               const instant = candidates[index];
               return (
-                <label key={which} className="flex items-center gap-2">
+                <label key={which} className="flex items-center gap-2 text-xs">
                   <input
                     type="radio"
                     name="offset-choice"

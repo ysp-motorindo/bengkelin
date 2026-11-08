@@ -32,6 +32,14 @@ async function runSetupWizard(
   await expect(
     page.getByRole('heading', { name: id('setup.shop.title') }),
   ).toBeVisible();
+  await expect(page.getByLabel(id('setup.shop.name'), exact)).toHaveCSS(
+    'height',
+    '32px',
+  );
+  await expect(page.getByLabel(id('setup.shop.name'), exact)).toHaveCSS(
+    'font-size',
+    '12px',
+  );
   await page.getByLabel(id('setup.shop.name'), exact).fill('Bengkel Maju Jaya');
   await page
     .getByLabel(id('setup.shop.address'), exact)
@@ -68,6 +76,13 @@ async function runSetupWizard(
   await expect(
     page.getByRole('heading', { name: lang('auth.login.title') }),
   ).toBeVisible();
+  for (const key of ['username', 'password']) {
+    const input = page.getByLabel(lang(`auth.login.${key}`), exact);
+    await expect(input).toHaveCSS('height', '40px');
+    await expect(input).toHaveCSS('font-size', '14px');
+  }
+  for (const label of await page.locator('label').all())
+    await expect(label).toHaveCSS('font-size', '14px');
 }
 
 async function login(

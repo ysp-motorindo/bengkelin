@@ -4,7 +4,7 @@ import { cn } from '@/renderer/lib/utils';
 export function Label({ className, ...props }: ComponentProps<'label'>) {
   return (
     <label
-      className={cn('text-sm font-medium leading-none', className)}
+      className={cn('text-xs font-medium leading-none', className)}
       {...props}
     />
   );

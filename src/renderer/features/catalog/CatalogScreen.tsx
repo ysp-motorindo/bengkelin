@@ -126,7 +126,7 @@ export function CatalogScreen({ role }: { role: Role }) {
               onChange={(event) => setQuery(event.target.value)}
             />
           </FormField>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-xs">
             <input
               type="checkbox"
               disabled={search.busy}

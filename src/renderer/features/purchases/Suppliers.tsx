@@ -132,7 +132,7 @@ export function SupplierForm({
         >
           <Input value={address} onChange={(e) => setAddress(e.target.value)} />
         </FormField>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-2 text-xs">
           <input
             type="checkbox"
             checked={active}
@@ -173,7 +173,7 @@ export function SuppliersScreen() {
         <FormField label={t('purchases.searchSupplier')}>
           <Input value={query} onChange={(e) => setQuery(e.target.value)} />
         </FormField>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-2 text-xs">
           <input
             type="checkbox"
             checked={inactive}

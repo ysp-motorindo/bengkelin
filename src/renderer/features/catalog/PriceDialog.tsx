@@ -213,7 +213,7 @@ export function PriceDialog({
             <fieldset className="flex flex-col gap-1 text-sm">
               <legend>{t('catalog.dialog.ambiguous')}</legend>
               {(['earlier', 'later'] as const).map((which, index) => (
-                <label key={which} className="flex items-center gap-2">
+                <label key={which} className="flex items-center gap-2 text-xs">
                   <input
                     type="radio"
                     name="offset-choice"

@@ -168,7 +168,7 @@ export function ItemForm({ item, onSaved, onCancel }: ItemFormProps) {
         />
       </FormField>
       <div className="flex flex-col gap-1">
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-xs">
           <input
             type="checkbox"
             checked={type === 'SERVICE' ? false : trackInventory}
@@ -183,7 +183,7 @@ export function ItemForm({ item, onSaved, onCancel }: ItemFormProps) {
           </p>
         ) : null}
       </div>
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2 text-xs">
         <input
           type="checkbox"
           checked={isActive}

@@ -61,7 +61,7 @@ export function PreferencesControls({
             return (
               <label
                 key={language}
-                className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-muted focus-within:ring-2 focus-within:ring-ring has-[:disabled]:opacity-50"
+                className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-xs hover:bg-muted focus-within:ring-2 focus-within:ring-ring has-[:disabled]:opacity-50"
               >
                 <input
                   type="radio"
@@ -99,7 +99,7 @@ export function PreferencesControls({
           {APPEARANCES.map((appearance) => (
             <label
               key={appearance}
-              className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-muted focus-within:ring-2 focus-within:ring-ring has-[:disabled]:opacity-50"
+              className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-xs hover:bg-muted focus-within:ring-2 focus-within:ring-ring has-[:disabled]:opacity-50"
             >
               <input
                 type="radio"
@@ -138,7 +138,7 @@ export function PreferencesControls({
           {NUMBER_FORMATS.map((format) => (
             <label
               key={format}
-              className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-muted focus-within:ring-2 focus-within:ring-ring has-[:disabled]:opacity-50"
+              className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-xs hover:bg-muted focus-within:ring-2 focus-within:ring-ring has-[:disabled]:opacity-50"
             >
               <input
                 type="radio"

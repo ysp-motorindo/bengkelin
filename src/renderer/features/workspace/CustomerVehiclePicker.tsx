@@ -245,7 +245,7 @@ export function CustomerVehiclePicker({
       onBlur={closeOnBlur}
       className="relative flex flex-col gap-1.5"
     >
-      <label htmlFor={id} className="flex min-h-5 items-center">
+      <label htmlFor={id} className="flex min-h-5 items-center text-xs">
         {label}
       </label>
       <Input

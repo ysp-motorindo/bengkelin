@@ -594,7 +594,7 @@ export function PurchaseEditor({
               <Alert key={i}>{t(`purchases.${w.code}`, w.params)}</Alert>
             ))}
             {review.preview.warnings.length ? (
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-xs">
                 <input
                   type="checkbox"
                   checked={accepted}

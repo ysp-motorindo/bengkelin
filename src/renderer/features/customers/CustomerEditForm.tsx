@@ -137,7 +137,7 @@ export function CustomerEditForm({
               </div>
             ))}
           </div>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 text-xs">
             <input
               type="checkbox"
               checked={isActive}

@@ -412,7 +412,7 @@ function ReviewBody({
               ) : null,
             )}
           </ul>
-          <label className="mt-2 flex items-center gap-2 font-medium">
+          <label className="mt-2 flex items-center gap-2 font-medium text-xs">
             <input
               type="checkbox"
               checked={stockAcknowledged}

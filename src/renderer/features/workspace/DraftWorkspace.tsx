@@ -317,7 +317,7 @@ function TransactionNote({
     commands.isDirty('note'),
   );
   return (
-    <label className="grid gap-1.5 text-sm font-medium">
+    <label className="grid gap-1.5 text-xs font-medium">
       {t('workspace.header.note')}
       <textarea
         aria-label={t('workspace.header.note')}
@@ -331,7 +331,7 @@ function TransactionNote({
             changes: { note: event.target.value },
           });
         }}
-        className={`${controlClass} h-auto min-h-24 resize-y text-sm font-normal`}
+        className={`${controlClass} h-auto min-h-24 resize-y font-normal`}
       />
     </label>
   );

@@ -315,7 +315,7 @@ export function EditableLineRow({
                     : ''}
                 </div>
                 {line.itemType === 'SERVICE' && (
-                  <label>
+                  <label className="text-xs">
                     {t('workspace.editor.mechanic')}
                     <Select
                       {...common('mechanicId', t('workspace.editor.mechanic'))}

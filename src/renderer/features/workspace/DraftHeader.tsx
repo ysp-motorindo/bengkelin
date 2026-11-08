@@ -158,7 +158,7 @@ export function DraftHeader({
   return (
     <section
       aria-label={t('workspace.header.label')}
-      className="flex flex-col gap-2 [&_input]:h-8 [&_select]:h-8 [&_select]:py-0 [&_select]:leading-normal [&_input]:text-xs [&_select]:text-xs [&_label]:text-xs"
+      className="flex flex-col gap-2"
     >
       {view.customer && view.customerOutstandingAmount !== null && (
         <div className="flex justify-end gap-2 text-sm tabular-nums">

@@ -492,7 +492,7 @@ function EntityForm({
         </>
       ) : null}
       {entity === 'stockLocation' ? (
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-xs">
           <input
             type="checkbox"
             checked={isDefault}

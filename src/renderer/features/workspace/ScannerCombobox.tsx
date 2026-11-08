@@ -274,7 +274,7 @@ export function ScannerCombobox({
     <div className="relative flex flex-col gap-1">
       <label
         htmlFor={`${listId}-input`}
-        className={compact ? 'sr-only' : 'text-sm font-medium'}
+        className={compact ? 'sr-only' : 'text-xs font-medium'}
       >
         {t('workspace.search.label')}
       </label>
@@ -311,10 +311,8 @@ export function ScannerCombobox({
           onClick={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           className={cn(
-            'w-full rounded-md border border-input bg-card pl-11 pr-3 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            compact
-              ? 'h-8 bg-amber-50 text-xs dark:bg-amber-950/40'
-              : 'h-12 text-base',
+            'h-8 w-full rounded-md border border-input bg-card text-xs pl-11 pr-3 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            compact ? 'bg-amber-50 dark:bg-amber-950/40' : '',
           )}
         />
         {createPortal(

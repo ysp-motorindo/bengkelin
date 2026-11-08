@@ -54,7 +54,7 @@ export function LoginScreen({ shopName, onLoggedIn }: LoginScreenProps) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
+    <main className="flex min-h-screen items-center justify-center p-6 [&_label]:text-sm">
       <Card className="w-full max-w-sm">
         <form onSubmit={submit} noValidate>
           <CardHeader>
@@ -72,6 +72,7 @@ export function LoginScreen({ shopName, onLoggedIn }: LoginScreenProps) {
               error={fieldErrors.username}
             >
               <Input
+                className="h-10 py-2 text-sm"
                 autoFocus
                 autoComplete="username"
                 value={username}
@@ -83,6 +84,7 @@ export function LoginScreen({ shopName, onLoggedIn }: LoginScreenProps) {
               error={fieldErrors.password}
             >
               <Input
+                className="h-10 py-2 text-sm"
                 type="password"
                 autoComplete="current-password"
                 value={password}

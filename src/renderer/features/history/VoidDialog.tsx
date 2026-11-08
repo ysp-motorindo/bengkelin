@@ -105,7 +105,7 @@ export function VoidDialog({ invoice, onClose, onVoided }: VoidDialogProps) {
             </p>
           ) : null}
         </div>
-        <label className="flex items-start gap-2 text-sm">
+        <label className="flex items-start gap-2 text-xs">
           <input
             type="checkbox"
             className="mt-1"

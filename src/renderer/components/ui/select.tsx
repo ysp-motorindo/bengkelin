@@ -11,7 +11,11 @@ export function Select({ className, ...props }: ComponentProps<'select'>) {
   return (
     <span className="relative inline-flex">
       <select
-        className={cn(controlClass, 'appearance-none pr-9', className)}
+        className={cn(
+          controlClass,
+          'appearance-none pr-9 py-0 leading-normal',
+          className,
+        )}
         {...props}
       />
       <ChevronDown

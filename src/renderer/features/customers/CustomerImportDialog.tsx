@@ -155,7 +155,7 @@ export function CustomerImportDialog({
             <p>{t('customers.import.truncated')}</p>
           ) : null}
           {preview.requiresDuplicatePhoneAcknowledgement ? (
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-xs">
               <input
                 type="checkbox"
                 checked={acknowledged}

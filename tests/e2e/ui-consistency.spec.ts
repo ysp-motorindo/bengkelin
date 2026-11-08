@@ -1,9 +1,22 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { launchApp, type LaunchedApp } from './helpers/launch';
 import { tr } from './helpers/i18n';
 import { ADMIN_PASSWORD, seedWorkshop } from './helpers/workflow-seed';
 
 let launched: LaunchedApp | undefined;
+
+async function expectCompactFields(root: Page | Locator) {
+  for (const field of await root
+    .locator(
+      'input:visible:not([type="checkbox"]):not([type="radio"]), select:visible',
+    )
+    .all()) {
+    await expect(field).toHaveCSS('height', '32px');
+    await expect(field).toHaveCSS('font-size', '12px');
+  }
+  for (const label of await root.locator('label:visible').all())
+    await expect(label).toHaveCSS('font-size', '12px');
+}
 
 test.afterEach(async () => {
   await launched?.close();
@@ -78,6 +91,7 @@ for (const language of ['id', 'en'] as const) {
           );
           const table = page.getByRole('table').first();
           await expect(table).toBeVisible();
+          await expectCompactFields(page);
           if (viewport.width === 1120) {
             await expect(
               table.getByRole('columnheader').last(),
@@ -142,6 +156,7 @@ for (const language of ['id', 'en'] as const) {
           path: testInfo.outputPath(`settings-${viewport.width}.png`),
           fullPage: true,
         });
+        await expectCompactFields(page);
       }
 
       await nav
@@ -158,6 +173,7 @@ for (const language of ['id', 'en'] as const) {
       const dialog = page.getByRole('dialog', {
         name: t('workspace.custom.title'),
       });
+      await expectCompactFields(dialog);
       const cancel = dialog.getByRole('button', {
         name: t('workspace.common.cancel'),
         exact: true,
@@ -175,6 +191,25 @@ for (const language of ['id', 'en'] as const) {
       await expect(
         page.getByRole('combobox', { name: t('workspace.search.label') }),
       ).toBeFocused();
+      const note = page.getByRole('textbox', {
+        name: t('workspace.header.note'),
+        exact: true,
+      });
+      await expect(note).toHaveCSS('font-size', '12px');
+      await expect(note).toHaveCSS('min-height', '96px');
+      await expect(
+        page.getByRole('combobox', { name: t('workspace.search.label') }),
+      ).toHaveCSS('height', '32px');
+      await nav
+        .getByRole('button', { name: t('shell.nav.purchases'), exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: t('purchases.new'), exact: true })
+        .click();
+      await expect(
+        page.getByRole('combobox', { name: t('workspace.search.label') }),
+      ).toHaveCSS('height', '32px');
+      await expectCompactFields(page);
     });
   }
 }
