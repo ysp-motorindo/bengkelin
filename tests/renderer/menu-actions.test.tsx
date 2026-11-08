@@ -102,7 +102,7 @@ describe('menu action dispatch in the shell', () => {
     );
     await fire('finalize');
     expect(
-      screen.getByRole('button', { name: 'Faktur Penjualan' }),
+      screen.getByRole('button', { name: 'Penjualan' }),
     ).toHaveAttribute('aria-current', 'page');
     expect(
       await screen.findByRole('dialog', { name: 'Tinjau checkout' }),
@@ -240,7 +240,7 @@ describe('menu action dispatch in the shell', () => {
     ).toHaveAttribute('aria-current', 'page');
     await fire('searchItem');
     expect(
-      screen.getByRole('button', { name: 'Faktur Penjualan' }),
+      screen.getByRole('button', { name: 'Penjualan' }),
     ).toHaveAttribute('aria-current', 'page');
     await waitFor(() => expect(search).toHaveFocus());
   });

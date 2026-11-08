@@ -51,7 +51,7 @@ describe('shell', () => {
       screen.queryByRole('button', { name: 'Draft' }),
     ).not.toBeInTheDocument();
     await userEvent.click(
-      screen.getByRole('button', { name: 'Faktur Penjualan' }),
+      screen.getByRole('button', { name: 'Penjualan' }),
     );
     expect(screen.getByRole('button', { name: 'Draft' })).toBeInTheDocument();
   });
