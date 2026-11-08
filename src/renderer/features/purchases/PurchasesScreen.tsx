@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+import { NavigationRow } from '@/renderer/features/shell/NavigationRow';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '@/renderer/components/ui/alert';
@@ -23,7 +25,13 @@ import {
   type WorkspaceActions,
 } from '@/renderer/features/workspace/workspace-actions';
 type Tab = 'editor' | 'history' | 'receiving' | 'payables' | 'suppliers';
-export function PurchasesScreen({ active }: { active: boolean }) {
+export function PurchasesScreen({
+  active,
+  navigationSlot,
+}: {
+  active: boolean;
+  navigationSlot?: HTMLElement | null;
+}) {
   const { t } = useTranslation();
   const action = useAction();
   const [started, setStarted] = useState(false);
@@ -82,6 +90,9 @@ export function PurchasesScreen({ active }: { active: boolean }) {
   const wasActive = useRef(false);
   useEffect(() => {
     if (active && !wasActive.current) {
+      setTab('editor');
+      setDetail(null);
+      setAutoPrint(false);
       if (!started) {
         setStarted(true);
         void action.run(boot);
@@ -143,36 +154,30 @@ export function PurchasesScreen({ active }: { active: boolean }) {
     const r = await window.bengkelin.purchases.get({ purchaseId: detail.id });
     if (action.check(r)) setDetail(r.value);
   };
+  const navigation = (
+    <NavigationRow
+      label={t('shell.nav.secondaryLabel', { area: t('purchases.title') })}
+      level="secondary"
+      items={(
+        ['editor', 'history', 'receiving', 'payables', 'suppliers'] as const
+      ).map((name) => ({
+        id: name,
+        label: t(`purchases.${name}`),
+        current: name === tab ? 'page' : undefined,
+        onSelect: () => navigate(name),
+      }))}
+    />
+  );
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{t('purchases.title')}</h1>
       </div>
-      <div
-        role="tablist"
-        aria-label={t('purchases.title')}
-        className="flex flex-wrap gap-1 border-b"
-      >
-        {(
-          ['editor', 'history', 'receiving', 'payables', 'suppliers'] as const
-        ).map((name) => (
-          <button
-            key={name}
-            type="button"
-            role="tab"
-            aria-selected={name === tab}
-            onClick={() => navigate(name)}
-            className={
-              'border-b-2 px-4 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
-              (name === tab
-                ? 'border-primary text-foreground'
-                : 'border-transparent text-muted-foreground')
-            }
-          >
-            {t(`purchases.${name}`)}
-          </button>
-        ))}
-      </div>
+      {active
+        ? navigationSlot
+          ? createPortal(navigation, navigationSlot)
+          : navigation
+        : null}
       {action.error ? (
         <Alert>
           {action.error}

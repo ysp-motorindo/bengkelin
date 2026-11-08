@@ -74,6 +74,9 @@ export function Shell({
   const { t } = useTranslation();
   const [view, setView] = useState<View>('workspace');
   const [toolbarSlot, setToolbarSlot] = useState<HTMLDivElement | null>(null);
+  const [navigationSlot, setNavigationSlot] = useState<HTMLDivElement | null>(
+    null,
+  );
   const profileMenu = useRef<HTMLDetailsElement>(null);
   const { busy, error, setError, run, check } = useAction();
   const menu = useShellMenu({
@@ -218,6 +221,7 @@ export function Shell({
             }))}
           />
         ) : null}
+        <div ref={setNavigationSlot} hidden={view !== 'purchases'} />
       </div>
       {session.role === 'ADMIN' ? <BackupNoticeBanner /> : null}
       {session.role === 'ADMIN' ? <RestoreOutcomeNotice /> : null}
@@ -259,7 +263,10 @@ export function Shell({
           />
         </div>
         <div hidden={view !== 'purchases'}>
-          <PurchasesScreen active={view === 'purchases'} />
+          <PurchasesScreen
+            active={view === 'purchases'}
+            navigationSlot={navigationSlot}
+          />
         </div>
         {view === 'history' ? <HistoryScreen session={session} /> : null}
         {view === 'receivables' ? <ReceivablesScreen /> : null}

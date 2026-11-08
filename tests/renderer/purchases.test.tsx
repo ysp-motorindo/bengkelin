@@ -243,7 +243,9 @@ test('the custom-item shortcut from purchase history opens the purchase editor d
   };
   render(<PurchasesScreen active={true} />);
   await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
-  await userEvent.click(screen.getByRole('tab', { name: 'Riwayat pembelian' }));
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Riwayat pembelian' }),
+  );
   await act(async () => {
     getWorkspaceActions()?.addCustomItem();
   });
@@ -329,7 +331,9 @@ test('returning to Purchase refreshes added and deactivated receiving locations'
   rendered.rerender(<PurchasesScreen active={false} />);
   activeLocations = [other];
   rendered.rerender(<PurchasesScreen active={true} />);
-  await userEvent.click(screen.getByRole('tab', { name: 'Riwayat pembelian' }));
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Riwayat pembelian' }),
+  );
   await userEvent.click(
     await screen.findByRole('button', { name: bill.documentNumber }),
   );
@@ -390,4 +394,64 @@ test('supplier conflict keeps edits until the user chooses to load saved details
   expect(save).toHaveBeenLastCalledWith(
     expect.objectContaining({ expectedVersion: 2, isActive: false }),
   );
+});
+
+test('Purchase portals its navigation only while active and returns to its existing editor', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const b = bridge();
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchases: {
+      search: async () =>
+        ok({
+          items: [],
+          page: 1,
+          hasMore: false,
+          payableAmount: '0',
+          refundDue: '0',
+        }),
+    },
+  };
+  const slot = document.createElement('div');
+  document.body.append(slot);
+  const rendered = render(
+    <PurchasesScreen active={true} navigationSlot={slot} />,
+  );
+  await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  expect(within(slot).getAllByRole('button')).toHaveLength(5);
+  await userEvent.click(
+    within(slot).getByRole('button', { name: 'Riwayat pembelian' }),
+  );
+  expect(
+    within(slot).getByRole('button', { name: 'Riwayat pembelian' }),
+  ).toHaveAttribute('aria-current', 'page');
+  rendered.rerender(<PurchasesScreen active={false} navigationSlot={slot} />);
+  expect(slot).toBeEmptyDOMElement();
+  rendered.rerender(<PurchasesScreen active={true} navigationSlot={slot} />);
+  expect(
+    await within(slot).findByRole('button', { name: 'Buat pembelian' }),
+  ).toHaveAttribute('aria-current', 'page');
+  expect(screen.getByRole('textbox', { name: /Harga beli.*Oil/ })).toHaveValue(
+    '',
+  );
+  rendered.unmount();
+  slot.remove();
+});
+
+test('failed Purchase saves retain the entered price across area changes', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const b = bridge();
+  b.purchaseDrafts.apply = vi.fn(async () => ({
+    ok: false as const,
+    error: { code: 'INTERNAL_ERROR', messageKey: 'errors.INTERNAL_ERROR' },
+  })) as typeof b.purchaseDrafts.apply;
+  (window as unknown as { bengkelin: unknown }).bengkelin = b;
+  const rendered = render(<PurchasesScreen active={true} />);
+  const price = await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  await userEvent.type(price, '12500');
+  await userEvent.tab();
+  rendered.rerender(<PurchasesScreen active={false} />);
+  rendered.rerender(<PurchasesScreen active={true} />);
+  expect(price).not.toHaveValue('');
+  expect(price).toBeVisible();
 });
