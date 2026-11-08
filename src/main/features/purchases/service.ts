@@ -1,3 +1,15 @@
+import {
+  receivePurchase,
+  reversePurchaseReceipt,
+  reversalPlan,
+} from './receiving';
+import { creditPlan, creditPurchase } from './credits';
+import type {
+  ReceivePurchaseData,
+  ReversePurchaseReceiptData,
+  PurchaseCreditData,
+  PreviewPurchaseCreditData,
+} from '@/shared/contracts';
 import { randomUUID } from 'node:crypto';
 import type { AppDatabase } from '@/main/database/connection';
 import { requireSession } from '@/main/features/auth/authorize';
@@ -26,6 +38,64 @@ import {
 import { purchaseView } from './view';
 export class PurchaseService {
   constructor(private readonly deps: { db: AppDatabase; clock: Clock }) {}
+  receive(session: Session | undefined, input: ReceivePurchaseData) {
+    return writePurchase(
+      this.deps,
+      session,
+      'purchases.receive',
+      input,
+      (ctx, actor, row) => receivePurchase(ctx, actor, input),
+    );
+  }
+  reverseReceipt(
+    session: Session | undefined,
+    input: ReversePurchaseReceiptData,
+  ) {
+    return writePurchase(
+      this.deps,
+      session,
+      'purchases.reverseReceipt',
+      input,
+      (ctx, actor, row) => reversePurchaseReceipt(ctx, actor, input),
+    );
+  }
+  credit(session: Session | undefined, input: PurchaseCreditData) {
+    return writePurchase(
+      this.deps,
+      session,
+      'purchases.credit',
+      input,
+      (ctx, actor, row) => creditPurchase(ctx, actor, input),
+    );
+  }
+  previewCredit(
+    session: Session | undefined,
+    input: PreviewPurchaseCreditData,
+  ) {
+    const actor = requireSession(session);
+    return this.deps.db.transaction(
+      () =>
+        creditPlan(
+          { ...this.deps, repo: new PurchaseRepository(this.deps.db) },
+          actor,
+          input,
+        ).preview,
+    )();
+  }
+  previewReceiptReversal(
+    session: Session | undefined,
+    input: { purchaseId: string; receiptId: string },
+  ) {
+    const actor = requireSession(session);
+    return this.deps.db.transaction(() => {
+      const p = reversalPlan(
+        { ...this.deps, repo: new PurchaseRepository(this.deps.db) },
+        actor,
+        input,
+      );
+      return { version: p.version, warnings: p.warnings };
+    })();
+  }
   previewFinalize(
     session: Session | undefined,
     input: { purchaseId: string },

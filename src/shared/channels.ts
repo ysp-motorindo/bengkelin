@@ -18,6 +18,11 @@ export const CHANNELS = {
     about: 'bengkelin:app:about',
   },
   purchases: {
+    receive: 'bengkelin:purchases:receive',
+    reverseReceipt: 'bengkelin:purchases:reverseReceipt',
+    credit: 'bengkelin:purchases:credit',
+    previewCredit: 'bengkelin:purchases:previewCredit',
+    previewReceiptReversal: 'bengkelin:purchases:previewReceiptReversal',
     previewFinalize: 'bengkelin:purchases:previewFinalize',
     finalize: 'bengkelin:purchases:finalize',
     get: 'bengkelin:purchases:get',

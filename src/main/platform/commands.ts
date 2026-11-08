@@ -1,4 +1,11 @@
 import {
+  receivePurchaseInputSchema,
+  reversePurchaseReceiptInputSchema,
+  purchaseCreditInputSchema,
+  previewPurchaseCreditInputSchema,
+  previewPurchaseReceiptReversalInputSchema,
+} from '@/shared/contracts';
+import {
   finalizePurchaseInputSchema,
   purchaseMoneyInputSchema,
   voidPurchaseInputSchema,
@@ -98,6 +105,8 @@ const C = CHANNELS;
  * mutating: a new channel is blocked during a restore unless listed here.
  */
 const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
+  C.purchases.previewCredit,
+  C.purchases.previewReceiptReversal,
   C.purchases.previewFinalize,
   C.purchases.get,
   C.purchases.search,
@@ -214,6 +223,37 @@ export function buildCommands(services: ApplicationServices): Command[] {
   const session = (windowId: number) => sessions.get(windowId);
 
   const commands: Command[] = [
+    command(
+      C.purchases.receive,
+      receivePurchaseInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.receive(session(windowId), input),
+    ),
+    command(
+      C.purchases.reverseReceipt,
+      reversePurchaseReceiptInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.reverseReceipt(session(windowId), input),
+    ),
+    command(
+      C.purchases.credit,
+      purchaseCreditInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.credit(session(windowId), input),
+    ),
+    command(
+      C.purchases.previewCredit,
+      previewPurchaseCreditInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.previewCredit(session(windowId), input),
+    ),
+    command(
+      C.purchases.previewReceiptReversal,
+      previewPurchaseReceiptReversalInputSchema,
+      ({ windowId }, input) =>
+        services.purchases.previewReceiptReversal(session(windowId), input),
+    ),
+
     command(
       C.purchases.previewFinalize,
       purchaseIdInputSchema,

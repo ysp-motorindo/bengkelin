@@ -1,4 +1,12 @@
 import type {
+  ReceivePurchaseData,
+  ReversePurchaseReceiptData,
+  PurchaseCreditData,
+  PreviewPurchaseCreditData,
+  PurchaseCreditPreview,
+  PurchaseWarning,
+} from './contracts';
+import type {
   FinalizePurchaseData,
   PurchaseFinalizePreview,
   PurchaseMoneyData,
@@ -147,6 +155,19 @@ import type { Result } from './primitives';
 /** Shape of `window.bengkelin`. Feature tasks add named namespaces here. */
 export interface BengkelinApi {
   purchases: {
+    receive(input: ReceivePurchaseData): Promise<Result<PurchaseView>>;
+    reverseReceipt(
+      input: ReversePurchaseReceiptData,
+    ): Promise<Result<PurchaseView>>;
+    credit(input: PurchaseCreditData): Promise<Result<PurchaseView>>;
+    previewCredit(
+      input: PreviewPurchaseCreditData,
+    ): Promise<Result<PurchaseCreditPreview>>;
+    previewReceiptReversal(input: {
+      purchaseId: string;
+      receiptId: string;
+    }): Promise<Result<{ version: number; warnings: PurchaseWarning[] }>>;
+
     previewFinalize(input: {
       purchaseId: string;
     }): Promise<Result<PurchaseFinalizePreview>>;

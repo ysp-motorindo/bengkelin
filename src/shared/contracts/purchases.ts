@@ -345,3 +345,8 @@ export const purchasePrintInputSchema = z.strictObject({
   format: z.enum(['A4', 'THERMAL_58', 'THERMAL_80']),
 });
 export type PurchasePrintInput = z.infer<typeof purchasePrintInputSchema>;
+
+export const previewPurchaseReceiptReversalInputSchema = z.strictObject({
+  purchaseId: uuidSchema,
+  receiptId: uuidSchema,
+});
