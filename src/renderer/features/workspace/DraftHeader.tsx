@@ -160,17 +160,6 @@ export function DraftHeader({
       aria-label={t('workspace.header.label')}
       className="flex flex-col gap-2"
     >
-      {view.customer && view.customerOutstandingAmount !== null && (
-        <div className="flex justify-end gap-2 text-sm tabular-nums">
-          <span>{t('workspace.header.piutang')}</span>
-          <output
-            aria-label={t('workspace.header.piutang')}
-            className="font-semibold"
-          >
-            {formatIdr(view.customerOutstandingAmount)}
-          </output>
-        </div>
-      )}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]">
         <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr]">
           <FormField label={t('workspace.header.channel')}>
@@ -199,6 +188,17 @@ export function DraftHeader({
             onError={onError}
           />
         </div>
+      {view.customer && view.customerOutstandingAmount !== null && (
+        <div className="flex h-8 items-center justify-end gap-2 self-end text-xs tabular-nums lg:col-start-3">
+          <span>{t('workspace.header.piutang')}</span>
+          <output
+            aria-label={t('workspace.header.piutang')}
+            className="font-semibold"
+          >
+            {formatIdr(view.customerOutstandingAmount)}
+          </output>
+        </div>
+      )}
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]">
         <div className="grid content-start gap-2">
