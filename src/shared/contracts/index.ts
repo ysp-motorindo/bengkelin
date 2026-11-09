@@ -25,3 +25,6 @@ export * from './reference-transfer';
 export * from './customer-receivables';
 
 export * from './purchases';
+
+export * from './supplier-payables';
+export * from './supplier-transfer';

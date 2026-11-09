@@ -1,3 +1,9 @@
+import { commitSupplierImportInputSchema } from '@/shared/contracts';
+import {
+  supplierOpeningListInputSchema,
+  supplierOpeningInputSchema,
+  recordSupplierOpeningPaymentInputSchema,
+} from '@/shared/contracts';
 import { purchasePrintInputSchema } from '@/shared/contracts';
 import {
   receivePurchaseInputSchema,
@@ -131,6 +137,8 @@ const READ_ONLY_CHANNELS: ReadonlySet<string> = new Set([
   C.references.list,
   C.customers.search,
   C.customers.get,
+  C.supplierPayables.list,
+  C.supplierPayables.get,
   C.customerReceivables.list,
   C.customerReceivables.get,
   C.vehicles.searchByPlate,
@@ -215,7 +223,9 @@ export function buildCommands(services: ApplicationServices): Command[] {
     catalogTransfer,
     referenceTransfer,
     customerReceivables,
+    supplierPayables,
     customerTransfer,
+    supplierTransfer,
     app,
     menu,
     restoreNotice,
@@ -733,6 +743,22 @@ export function buildCommands(services: ApplicationServices): Command[] {
       ({ windowId }, input) =>
         customerReceivables.recordPayment(session(windowId), input),
     ),
+    command(
+      C.supplierPayables.list,
+      supplierOpeningListInputSchema,
+      ({ windowId }, input) => supplierPayables.list(session(windowId), input),
+    ),
+    command(
+      C.supplierPayables.get,
+      supplierOpeningInputSchema,
+      ({ windowId }, input) => supplierPayables.get(session(windowId), input),
+    ),
+    command(
+      C.supplierPayables.recordPayment,
+      recordSupplierOpeningPaymentInputSchema,
+      ({ windowId }, input) =>
+        supplierPayables.recordPayment(session(windowId), input),
+    ),
     command(C.customerTransfer.previewImport, noInput, ({ windowId }) =>
       customerTransfer.previewImport(session(windowId)),
     ),
@@ -741,6 +767,15 @@ export function buildCommands(services: ApplicationServices): Command[] {
       commitCustomerImportInputSchema,
       ({ windowId }, input) =>
         customerTransfer.commitImport(session(windowId), input),
+    ),
+    command(C.supplierTransfer.previewImport, noInput, ({ windowId }) =>
+      supplierTransfer.previewImport(session(windowId)),
+    ),
+    command(
+      C.supplierTransfer.commitImport,
+      commitSupplierImportInputSchema,
+      ({ windowId }, input) =>
+        supplierTransfer.commitImport(session(windowId), input),
     ),
     command(C.catalogTransfer.previewImport, noInput, ({ windowId }) =>
       catalogTransfer.previewImport(session(windowId)),

@@ -1,3 +1,4 @@
+import { SupplierImportDialog } from './SupplierImportDialog';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogActions } from '@/renderer/components/ui/dialog';
@@ -147,7 +148,10 @@ export function SupplierForm({
     </Dialog>
   );
 }
-export function SuppliersScreen() {
+export function SuppliersScreen({
+  role = 'CASHIER',
+}: { role?: import('@/shared/contracts').Role } = {}) {
+  const [importing, setImporting] = useState(false);
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [inactive, setInactive] = useState(false);
@@ -172,6 +176,17 @@ export function SuppliersScreen() {
   }, [query, inactive]);
   return (
     <section className="space-y-4">
+      {importing && (
+        <SupplierImportDialog
+          onClose={() => setImporting(false)}
+          onImported={load}
+        />
+      )}
+      {role === 'ADMIN' && (
+        <Button onClick={() => setImporting(true)}>
+          {t('purchases.supplierImport.open')}
+        </Button>
+      )}
       <div className="flex flex-wrap items-end gap-3">
         <FormField label={t('purchases.searchSupplier')}>
           <Input value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -215,7 +230,14 @@ export function SuppliersScreen() {
             <tbody>
               {items.map((s) => (
                 <tr key={s.id}>
-                  <td className="border-b p-3 font-medium">{s.name}</td>
+                  <td className="border-b p-3 font-medium">
+                    {s.name}
+                    {s.externalId && (
+                      <span className="ml-2 text-muted-foreground">
+                        {s.externalId}
+                      </span>
+                    )}
+                  </td>
                   <td className="border-b p-3">{s.phoneNumber}</td>
                   <td className="border-b p-3">{s.email}</td>
                   <td className="border-b p-3">

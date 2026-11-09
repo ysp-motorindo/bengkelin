@@ -1,3 +1,4 @@
+import type { Logger } from '@/main/platform/logger';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { AppDatabase } from '@/main/database/connection';
@@ -35,6 +36,7 @@ export class PurchasePrintingService {
   constructor(
     private readonly deps: {
       db: AppDatabase;
+      logger: Logger;
       clock: Clock;
       printing: PrintingService;
       driver: PrintDriver;
@@ -194,34 +196,44 @@ export class PurchasePrintingService {
     action: string,
     outcome: Pick<PrintOutcomeDto, 'outcome' | 'code'>,
   ) {
-    withWriteTransaction(this.deps.db, () => {
-      this.deps.db
-        .prepare(
-          'INSERT INTO purchase_print_jobs(purchase_id,document_type,document_id,format,action,outcome,error_code,is_reprint,requested_at,requested_by) VALUES(?,?,?,?,?,?,?,?,?,?)',
-        )
-        .run(
-          input.purchaseId,
-          input.documentType,
-          input.documentId,
-          format,
-          action,
-          outcome.outcome,
-          outcome.code ?? null,
-          reprint ? 1 : 0,
-          this.deps.clock.now(),
-          actor.cashierId,
-        );
-      appendAudit(this.deps.db, this.deps.clock, {
-        cashierId: actor.cashierId,
-        action: 'PURCHASE_' + action,
-        entityType: 'purchase',
-        entityId: input.purchaseId,
-        metadata: {
-          documentType: input.documentType,
-          documentId: input.documentId,
-          outcome: outcome.outcome,
-        },
+    try {
+      withWriteTransaction(this.deps.db, () => {
+        this.deps.db
+          .prepare(
+            'INSERT INTO purchase_print_jobs(purchase_id,document_type,document_id,format,action,outcome,error_code,is_reprint,requested_at,requested_by) VALUES(?,?,?,?,?,?,?,?,?,?)',
+          )
+          .run(
+            input.purchaseId,
+            input.documentType,
+            input.documentId,
+            format,
+            action,
+            outcome.outcome,
+            outcome.code ?? null,
+            reprint ? 1 : 0,
+            this.deps.clock.now(),
+            actor.cashierId,
+          );
+        appendAudit(this.deps.db, this.deps.clock, {
+          cashierId: actor.cashierId,
+          action: 'PURCHASE_' + action,
+          entityType: 'purchase',
+          entityId: input.purchaseId,
+          metadata: {
+            documentType: input.documentType,
+            documentId: input.documentId,
+            outcome: outcome.outcome,
+          },
+        });
       });
-    });
+    } catch (error) {
+      this.deps.logger.error('purchase_printing.record_failed', {
+        error,
+        documentId: input.documentId,
+        purchaseId: input.purchaseId,
+        documentType: input.documentType,
+        action,
+      });
+    }
   }
 }

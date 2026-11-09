@@ -120,3 +120,53 @@ test('purchase printouts show the entered bill date separately from posting time
     expect(result.html).toContain('30/09/2026');
   }
 });
+
+test.each(['purchase_print_jobs', 'audit_log'] as const)(
+  'a %s write failure preserves successful print and PDF outcomes',
+  async (table) => {
+    const { vi } = await import('vitest');
+    const { readFile } = await import('node:fs/promises');
+    const path = await import('node:path');
+    const { draft } = await purchaseDraft(h);
+    const p = await finalizePurchase(h, draft);
+    const log = vi.spyOn(h.services.logger, 'error');
+    h.db.exec(
+      `CREATE TRIGGER fail_print_record BEFORE INSERT ON ${table} BEGIN SELECT RAISE(ABORT,'injected log failure'); END`,
+    );
+    const input: PurchasePrintInput = {
+      purchaseId: p.id,
+      documentId: p.id,
+      documentType: 'BILL',
+      format: 'A4',
+    };
+    const printed = value(
+      await h.call<PrintOutcomeDto>(C.purchasePrinting.print, input),
+    );
+    expect(printed.outcome).toBe('PRINTED');
+    expect(driver.printCalls).toHaveLength(1);
+    const target = path.join(h.dir, 'purchase.pdf');
+    dialogs.saveAnswers.push(target);
+    const pdf = value(
+      await h.call<PrintOutcomeDto>(C.purchasePrinting.exportPdf, input),
+    );
+    expect(pdf).toMatchObject({ outcome: 'PRINTED', fileName: 'purchase.pdf' });
+    expect(await readFile(target)).toEqual(Buffer.from(driver.pdfBytes));
+    expect(driver.pdfCalls).toHaveLength(1);
+    driver.willReturn({ outcome: 'FAILED', code: 'PRINT_FAILED' });
+    expect(
+      value(await h.call<PrintOutcomeDto>(C.purchasePrinting.print, input)),
+    ).toMatchObject({ outcome: 'FAILED', code: 'PRINT_FAILED' });
+    expect(
+      value(await h.call<PrintOutcomeDto>(C.purchasePrinting.exportPdf, input))
+        .outcome,
+    ).toBe('CANCELLED');
+    expect(log).toHaveBeenCalledWith(
+      'purchase_printing.record_failed',
+      expect.objectContaining({ error: expect.any(Error), documentId: p.id }),
+    );
+    expect(
+      h.db.prepare('SELECT count(*) AS n FROM purchase_print_jobs').get(),
+    ).toEqual({ n: 0n });
+    log.mockRestore();
+  },
+);

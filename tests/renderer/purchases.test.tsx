@@ -9,6 +9,7 @@ import type {
   CashierSession,
 } from '@/shared/contracts';
 const supplier = {
+  externalId: null,
   version: 1,
   id: 's',
   name: 'Supplier A',
@@ -1094,3 +1095,325 @@ test('conflict recovery cannot record a preview newer than the displayed draft',
     expect.objectContaining({ expectedVersion: 2 }),
   );
 });
+
+test.each(['quantity', 'price', 'discount'] as const)(
+  'removing a line cancels its pending %s edit even during a slow removal',
+  async (field) => {
+    const { act, fireEvent } = await import('@testing-library/react');
+    const { PurchaseEditor } =
+      await import('@/renderer/features/purchases/PurchaseEditor');
+    let saved = structuredClone(draft);
+    let finish: () => void = () => {};
+    const b = bridge();
+    b.purchaseDrafts.apply = vi.fn(async (c: PurchaseDraftCommand) => {
+      if (c.op.kind === 'removeLine') {
+        await new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+        saved = { ...saved, version: saved.version + 1, lines: [] };
+        return ok(saved);
+      }
+      throw new Error('Edit sent for removed line');
+    });
+    (window as unknown as { bengkelin: unknown }).bengkelin = b;
+    let actions:
+      | import('@/renderer/features/workspace/workspace-actions').WorkspaceActions
+      | undefined;
+    render(
+      <PurchaseEditor
+        initial={saved}
+        active
+        units={[]}
+        onNew={async () => true}
+        onViewBill={() => {}}
+        onPosted={() => {}}
+        onDiscarded={() => {}}
+        onChanged={() => {}}
+        registerDraftActions={(a) => {
+          actions = a;
+          return () => {};
+        }}
+      />,
+    );
+    const input =
+      field === 'discount'
+        ? screen.getAllByRole('textbox', { name: 'Tahap 1 l' })[0]!
+        : screen.getByRole('textbox', {
+            name: field === 'price' ? /Harga beli.*Oil/ : /Jumlah.*Oil/,
+          });
+    fireEvent.change(input, {
+      target: { value: field === 'price' ? '10000' : '2' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus Oil' }));
+    let flushed!: Promise<boolean>;
+    await act(async () => {
+      flushed = actions!.saveDraft();
+      finish();
+    });
+    expect(await flushed).toBe(true);
+    expect(
+      screen.queryByRole('button', { name: 'Hapus Oil' }),
+    ).not.toBeInTheDocument();
+    expect(b.purchaseDrafts.apply).toHaveBeenCalledTimes(1);
+  },
+);
+
+test('failed line removal retains the entered price for saving', async () => {
+  const { act, fireEvent } = await import('@testing-library/react');
+  const { getWorkspaceActions } =
+    await import('@/renderer/features/workspace/workspace-actions');
+  const b = bridge();
+  let saved = structuredClone(draft);
+  const apply = async (c: PurchaseDraftCommand) => {
+    if (c.op.kind === 'removeLine')
+      return {
+        ok: false as const,
+        error: { code: 'INTERNAL_ERROR', messageKey: 'errors.INTERNAL_ERROR' },
+      };
+    if (c.op.kind === 'updateLine')
+      saved = {
+        ...saved,
+        version: saved.version + 1,
+        lines: saved.lines.map((l) => ({ ...l, unitPrice: '10000' })),
+      };
+    return ok(saved);
+  };
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchaseDrafts: { ...b.purchaseDrafts, apply },
+  };
+  render(<PurchasesScreen active />);
+  const price = await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  fireEvent.change(price, { target: { value: '10000' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Hapus Oil' }));
+  await act(async () => {
+    expect(await getWorkspaceActions()!.saveDraft()).toBe(true);
+  });
+  expect(price).toHaveValue('10.000');
+  expect(saved.lines[0]!.unitPrice).toBe('10000');
+});
+
+test('removing a line does not clear an unrelated invalid header', async () => {
+  const { act, fireEvent } = await import('@testing-library/react');
+  const { getWorkspaceActions } =
+    await import('@/renderer/features/workspace/workspace-actions');
+  const b = bridge();
+  b.purchaseDrafts.apply = vi.fn(async () =>
+    ok({ ...draft, version: 2, lines: [] }),
+  );
+  (window as unknown as { bengkelin: unknown }).bengkelin = b;
+  render(<PurchasesScreen active />);
+  await screen.findByRole('button', { name: 'Hapus Oil' });
+  fireEvent.change(screen.getByLabelText('Nomor faktur pemasok'), {
+    target: { value: 'x'.repeat(101) },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Hapus Oil' }));
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: 'Hapus Oil' }),
+    ).not.toBeInTheDocument(),
+  );
+  await act(async () => {
+    expect(await getWorkspaceActions()!.saveDraft()).toBe(false);
+  });
+});
+
+test.each(['ADMIN', 'CASHIER'] as const)(
+  'native New Transaction works on an empty purchase editor for %s',
+  async (role) => {
+    const { act } = await import('@testing-library/react');
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const b = bridge();
+    let listener: ((a: import('@/shared/menu').MenuAction) => void) | undefined;
+    const create = vi
+      .fn(async () => ok(draft))
+      .mockRejectedValueOnce(Error('boot failed'));
+    (window as unknown as { bengkelin: unknown }).bengkelin = {
+      ...b,
+      app: {
+        onMenuAction: (fn: typeof listener) => {
+          listener = fn;
+          return () => {
+            listener = undefined;
+          };
+        },
+      },
+      purchaseDrafts: { ...b.purchaseDrafts, list: async () => ok([]), create },
+    };
+    const session: CashierSession = {
+      cashierId: 'actor',
+      username: 'cashier',
+      displayName: 'Cashier',
+      role,
+      language: 'id',
+      appearance: 'LIGHT',
+      numberFormat: 'ID',
+    };
+    render(<Shell session={session} shopName="Shop" onLoggedOut={() => {}} />);
+    await screen.findByRole('combobox', { name: 'Cari barang' });
+    const salesBefore = b.drafts.create.mock.calls.length;
+    await userEvent.click(screen.getByRole('button', { name: 'Pembelian' }));
+    await screen.findByRole('button', { name: 'Pembelian baru' });
+    await act(async () => {
+      listener!('newTransaction');
+    });
+    await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(b.drafts.create).toHaveBeenCalledTimes(salesBefore);
+    await userEvent.click(screen.getByRole('button', { name: 'Penjualan' }));
+    await act(async () => {
+      listener!('newTransaction');
+    });
+    await waitFor(() =>
+      expect(b.drafts.create).toHaveBeenCalledTimes(salesBefore + 1),
+    );
+    expect(create).toHaveBeenCalledTimes(2);
+  },
+);
+
+test('New Transaction works after discarding the final purchase draft', async () => {
+  const { act } = await import('@testing-library/react');
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const { getWorkspaceActions } =
+    await import('@/renderer/features/workspace/workspace-actions');
+  const b = bridge();
+  let discarded = false;
+  const create = vi.fn(async () => ok({ ...draft, id: 'next' }));
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchaseDrafts: {
+      ...b.purchaseDrafts,
+      create,
+      list: async () => ok(discarded ? [] : [draft]),
+      apply: async () => {
+        discarded = true;
+        return ok({ ...draft, version: 2, discardedAt: draft.updatedAt });
+      },
+    },
+  };
+  render(<PurchasesScreen active />);
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Draf tersimpan' }),
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Buang draf Supplier A' }),
+  );
+  await userEvent.click(
+    within(screen.getByRole('dialog', { name: 'Buang draf' })).getByRole(
+      'button',
+      {
+        name: 'Buang draf',
+      },
+    ),
+  );
+  await screen.findByRole('button', { name: 'Pembelian baru' });
+  await act(async () => {
+    await getWorkspaceActions()?.newTransaction();
+  });
+  expect(create).toHaveBeenCalledTimes(1);
+  await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+});
+
+test('native New Transaction works after finalizing the last purchase draft', async () => {
+  const { act } = await import('@testing-library/react');
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const { getWorkspaceActions } =
+    await import('@/renderer/features/workspace/workspace-actions');
+  const b = bridge();
+  const totals = {
+    subtotal: '10000',
+    discountAmount: '0',
+    amount: '10000',
+    taxSubtotal: '10000',
+    itemDiscountAmount: '0',
+    billDiscountAmount: '0',
+    vatAmount: '0',
+  };
+  const ready = {
+    ...draft,
+    totals,
+    lines: draft.lines.map((l) => ({
+      ...l,
+      unitPrice: '10000',
+      amount: '10000',
+      taxSubtotal: '10000',
+      vatAmount: '0',
+    })),
+  };
+  const posted: import('@/shared/contracts').PurchaseView = {
+    ...ready,
+    version: 2,
+    status: 'FINALIZED',
+    documentNumber: 'PUR-20260930-0001',
+    finalizedAt: draft.updatedAt,
+    shop: { name: 'Shop', address: null, phoneNumber: null },
+    outgoingPayments: [],
+    refunds: [],
+    receipts: [],
+    credits: [],
+    creditedAmount: '0',
+    netAmount: '10000',
+    paidAmount: '0',
+    refundedAmount: '0',
+    outstandingAmount: '10000',
+    refundDue: '0',
+    settlementStatus: 'UNPAID',
+    receivingStatus: 'NOT_RECEIVED',
+    void: null,
+  };
+  const create = vi.fn(async () => ok({ ...ready, id: 'next' }));
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchaseDrafts: {
+      ...b.purchaseDrafts,
+      list: async () => ok([ready]),
+      create,
+    },
+    purchases: {
+      previewFinalize: async () =>
+        ok({
+          purchaseId: draft.id,
+          version: 1,
+          totals,
+          errors: [],
+          warnings: [],
+        }),
+      finalize: async () => ok(posted),
+    },
+    printing: {
+      getOptions: async () =>
+        ok({
+          defaultInvoiceFormat: 'A4',
+          thermalFormat: 'THERMAL_58',
+          autoPrintAfterFinalize: false,
+        }),
+    },
+  };
+  render(<PurchasesScreen active />);
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Tinjau pembelian' }),
+  );
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Catat faktur pemasok' }),
+  );
+  await screen.findByRole('dialog', { name: 'Pembelian tercatat' });
+  await act(async () => {
+    await getWorkspaceActions()?.newTransaction();
+  });
+  expect(create).toHaveBeenCalledTimes(1);
+  await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+});
+
+test.each(['ADMIN', 'CASHIER'] as const)(
+  'purchase supplier import respects %s role',
+  async (role) => {
+    const { default: user } = await import('@testing-library/user-event');
+    Object.assign(window, { bengkelin: bridge() });
+    render(<PurchasesScreen active role={role} />);
+    await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+    await user.click(screen.getByRole('button', { name: 'Pemasok' }));
+    const button = screen.queryByRole('button', { name: 'Impor CSV pemasok' });
+    if (role === 'ADMIN') expect(button).toBeVisible();
+    else expect(button).not.toBeInTheDocument();
+  },
+);

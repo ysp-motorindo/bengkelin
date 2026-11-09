@@ -148,5 +148,48 @@
   "clearSupplier": "Clear supplier",
   "updatedAt": "Updated",
   "recordedTitle": "Purchase recorded",
-  "viewBill": "View bill"
+  "viewBill": "View bill",
+  "supplierImport": {
+    "title": "Import suppliers",
+    "open": "Import supplier CSV",
+    "choose": "Choose CSV...",
+    "description": "Import suppliers and opening payables. Exclude debt already recorded in purchase invoices.",
+    "total": "{{count}} rows",
+    "acknowledge": "I understand these phone numbers belong to multiple suppliers",
+    "truncated": "Showing the first 500 rows or issues; counts include all rows.",
+    "externalId": "External ID",
+    "action": "Action",
+    "done": "Imported {{count}} suppliers.",
+    "creates": "New suppliers",
+    "updates": "Updated suppliers",
+    "unchanged": "Unchanged suppliers"
+  },
+  "opening": {
+    "title": "Opening payables",
+    "description": "Supplier debt brought into the app; payments are recorded separately.",
+    "importTitle": "Import supplier opening balances",
+    "importOpen": "Import opening balances...",
+    "importDescription": "Choose CSV: external_id, supplier_name, as_of_date, opening_balance. Suppliers must already exist. Names are informational. Identical reimports do nothing; changed dates or amounts are blocked.",
+    "imported": "{{count}} opening balances imported.",
+    "paymentTitle": "Pay opening debt: {{number}}",
+    "externalId": "External ID",
+    "supplier": "Supplier",
+    "asOfDate": "As of",
+    "original": "Original balance",
+    "paid": "Paid",
+    "outstanding": "Outstanding",
+    "status": "Status",
+    "action": "Balance action",
+    "creates": "New balances",
+    "pagination": "Page {{page}} of {{pages}} · {{total}} balances",
+    "source": "Payable source",
+    "review": "Pay {{amount}} to {{supplier}}?",
+    "actions": {
+      "CREATE": "Create",
+      "UNCHANGED": "Unchanged",
+      "SKIPPED": "Skipped",
+      "INVALID": "Invalid"
+    }
+  },
+  "cashier": "Paid by"
 }

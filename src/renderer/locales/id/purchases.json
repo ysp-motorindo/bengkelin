@@ -148,5 +148,48 @@
   "clearSupplier": "Hapus pilihan pemasok",
   "updatedAt": "Diperbarui",
   "recordedTitle": "Pembelian tercatat",
-  "viewBill": "Lihat faktur"
+  "viewBill": "Lihat faktur",
+  "supplierImport": {
+    "title": "Impor pemasok",
+    "open": "Impor CSV pemasok",
+    "choose": "Pilih CSV...",
+    "description": "Impor pemasok dan saldo awal utang. Jangan impor utang yang sudah tercatat pada faktur pembelian.",
+    "total": "{{count}} baris",
+    "acknowledge": "Saya memahami nomor telepon dipakai beberapa pemasok",
+    "truncated": "Menampilkan 500 baris atau masalah pertama; jumlah mencakup seluruh baris.",
+    "externalId": "ID eksternal",
+    "action": "Tindakan",
+    "done": "{{count}} pemasok diimpor.",
+    "creates": "Pemasok baru",
+    "updates": "Pemasok diperbarui",
+    "unchanged": "Tanpa perubahan"
+  },
+  "opening": {
+    "title": "Saldo awal utang",
+    "description": "Saldo awal utang pemasok sebelum penggunaan aplikasi; pembayaran dicatat terpisah.",
+    "importTitle": "Impor saldo awal pemasok",
+    "importOpen": "Impor saldo awal...",
+    "importDescription": "Pilih CSV: external_id, supplier_name, as_of_date, opening_balance. Pemasok harus sudah ada. Nama hanya informasi. Impor ulang identik tidak mengubah saldo; perubahan tanggal atau nominal ditolak.",
+    "imported": "{{count}} saldo awal diimpor.",
+    "paymentTitle": "Bayar saldo awal utang: {{number}}",
+    "externalId": "ID eksternal",
+    "supplier": "Pemasok",
+    "asOfDate": "Per tanggal",
+    "original": "Saldo awal",
+    "paid": "Dibayar",
+    "outstanding": "Sisa piutang",
+    "status": "Status",
+    "action": "Tindakan saldo",
+    "creates": "Saldo baru",
+    "pagination": "Halaman {{page}} dari {{pages}} · {{total}} saldo",
+    "source": "Sumber utang",
+    "review": "Bayar {{amount}} kepada {{supplier}}?",
+    "actions": {
+      "CREATE": "Buat",
+      "UNCHANGED": "Tetap",
+      "SKIPPED": "Dilewati",
+      "INVALID": "Tidak valid"
+    }
+  },
+  "cashier": "Dibayar oleh"
 }

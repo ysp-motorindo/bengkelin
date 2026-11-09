@@ -1,3 +1,5 @@
+import type { SupplierTransferService } from '@/main/features/supplier-transfer/service';
+import type { SupplierPayablesService } from '@/main/features/supplier-payables/service';
 import type { PurchasePrintingService } from '@/main/features/purchases/printing';
 import type { PurchaseService } from '@/main/features/purchases/service';
 import type { SupplierService } from '@/main/features/suppliers/service';
@@ -37,7 +39,9 @@ import type { MenuState } from './menu-state';
 export interface ApplicationServices {
   purchasePrinting: PurchasePrintingService;
   purchases: PurchaseService;
+  supplierTransfer: SupplierTransferService;
   suppliers: SupplierService;
+  supplierPayables: SupplierPayablesService;
   purchaseDrafts: PurchaseDraftService;
   logger: Logger;
   sessions: SessionStore;

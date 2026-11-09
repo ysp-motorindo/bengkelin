@@ -74,7 +74,7 @@ export function readPurchasingReport(
   ): PurchaseCashFlow => {
     const rows = db
       .prepare(
-        `SELECT method,count(*) AS n,sum(amount) AS amount FROM ${table} WHERE ${where('created_at', 'created_by')} GROUP BY method`,
+        `SELECT method,count(*) AS n,sum(amount) AS amount FROM ${table === 'purchase_payments' ? '(SELECT method,amount,created_at,created_by FROM purchase_payments UNION ALL SELECT method,amount,created_at,created_by FROM supplier_opening_payments)' : table} WHERE ${where('created_at', 'created_by')} GROUP BY method`,
       )
       .all(...params) as { method: PaymentMethod; n: bigint; amount: bigint }[];
     return {

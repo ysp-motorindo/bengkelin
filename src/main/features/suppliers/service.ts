@@ -17,7 +17,8 @@ import type {
 } from '@/shared/contracts';
 import { DomainError } from '@/shared/primitives';
 import type { Clock } from '@/shared/time';
-interface SupplierRow {
+export interface SupplierRow {
+  external_id: string | null;
   version: bigint;
   id: string;
   name: string;
@@ -28,8 +29,9 @@ interface SupplierRow {
   created_at: string;
   updated_at: string;
 }
-const dto = (r: SupplierRow): SupplierDto => ({
+export const toSupplierDto = (r: SupplierRow): SupplierDto => ({
   id: r.id,
+  externalId: r.external_id,
   version: Number(r.version),
   name: r.name,
   phoneNumber: r.phone_number,
@@ -52,17 +54,18 @@ export class SupplierService {
       results: (
         this.deps.db
           .prepare(
-            `SELECT * FROM suppliers WHERE (? OR is_active=1) AND (name LIKE ? ESCAPE '\\' OR phone_number LIKE ? ESCAPE '\\' OR (?<>'' AND normalized_phone LIKE ? ESCAPE '\\')) ORDER BY name COLLATE NOCASE,id LIMIT ?`,
+            `SELECT * FROM suppliers WHERE (? OR is_active=1) AND (external_id LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\' OR phone_number LIKE ? ESCAPE '\\' OR (?<>'' AND normalized_phone LIKE ? ESCAPE '\\')) ORDER BY name COLLATE NOCASE,id LIMIT ?`,
           )
           .all(
             input.includeInactive ? 1 : 0,
+            q,
             q,
             q,
             normalizePhone(input.query),
             phone,
             input.limit ?? 25,
           ) as SupplierRow[]
-      ).map(dto),
+      ).map(toSupplierDto),
     };
   }
   get(session: Session | undefined, input: { id: string }): SupplierDto {
@@ -71,7 +74,7 @@ export class SupplierService {
       .prepare('SELECT * FROM suppliers WHERE id=?')
       .get(input.id) as SupplierRow | undefined;
     if (!r) throw new DomainError('SUPPLIER_NOT_FOUND');
-    return dto(r);
+    return toSupplierDto(r);
   }
   save(
     session: Session | undefined,
@@ -107,7 +110,7 @@ export class SupplierService {
                       'SELECT * FROM suppliers WHERE normalized_phone=? AND id<>?',
                     )
                     .all(phone, input.id ?? '') as SupplierRow[]
-                ).map(dto)
+                ).map(toSupplierDto)
               : [];
           if (matches.length && !input.acknowledgeDuplicates)
             return {
