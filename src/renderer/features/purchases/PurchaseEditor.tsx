@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { formatDisplayDate } from '@/renderer/lib/date-format';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
@@ -39,6 +41,8 @@ import { SupplierForm } from './Suppliers';
 import { PurchasePaymentsDialog } from './PurchasePaymentsDialog';
 export function PurchaseEditor({
   initial,
+  toolbarSlot,
+  draftSelector,
   active,
   units,
   onNew,
@@ -48,6 +52,8 @@ export function PurchaseEditor({
   onChanged,
 }: {
   initial: PurchaseDraftView;
+  toolbarSlot?: HTMLElement | null;
+  draftSelector?: ReactNode;
   active: boolean;
   units: ReferenceDto[];
   onNew: () => Promise<void>;
@@ -172,57 +178,51 @@ export function PurchaseEditor({
       : ('other' as const);
   };
   const controlsDisabled = action.busy;
-  return (
-    <section className="space-y-4" aria-label={t('purchases.editor')}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold">{t('purchases.editor')}</h2>
-          <p className="text-sm text-muted-foreground">
-            {view.supplier?.name ?? t('purchases.chooseSupplier')}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <SaveIndicator state={commands.saveState} onRetry={commands.retry} />
-          <Button
-            variant="outline"
-            onClick={() =>
-              void commands.flush().then((ok) => {
-                if (ok) return onNew();
-              })
-            }
-            disabled={controlsDisabled}
-          >
-            {t('purchases.new')}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setDiscard(true)}
-            disabled={controlsDisabled}
-          >
-            {t('purchases.discard')}
-          </Button>
-          <Button
-            onClick={() => void reviewBill()}
-            disabled={
-              controlsDisabled ||
-              !view.totals ||
-              !view.supplier ||
-              !view.lines.length ||
-              commands.saveState === 'failed' ||
-              commands.saveState === 'unsaved'
-            }
-          >
-            {t('purchases.review')}
-          </Button>
-        </div>
+  const toolbar = (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {draftSelector}
+        <SaveIndicator state={commands.saveState} onRetry={commands.retry} />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            void commands.flush().then((ok) => {
+              if (ok) return onNew();
+            })
+          }
+          disabled={controlsDisabled}
+        >
+          {t('purchases.new')}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setDiscard(true)}
+          disabled={controlsDisabled}
+        >
+          {t('purchases.discard')}
+        </Button>
       </div>
+    </div>
+  );
+  return (
+    <section
+      className="flex h-full min-h-0 flex-col gap-2"
+      aria-label={t('purchases.editor')}
+    >
+      {toolbarSlot
+        ? active
+          ? createPortal(toolbar, toolbarSlot)
+          : null
+        : toolbar}
       {notice ? <Alert>{notice}</Alert> : null}
       {action.error ? <Alert>{action.error}</Alert> : null}
       <fieldset
         disabled={controlsDisabled}
-        className="grid gap-4 rounded-md border bg-card p-4 md:grid-cols-3 xl:grid-cols-4"
+        className="grid shrink-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]"
       >
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <FormField label={t('purchases.supplier')}>
             <Select
               value={view.supplier?.id ?? ''}
@@ -256,80 +256,53 @@ export function PurchaseEditor({
             </Button>
           </div>
         </div>
-        <DraftField
-          commands={commands}
-          field="billReference"
-          label={t('purchases.billReference')}
-          value={view.supplierBillReference ?? ''}
-          parse={(v) =>
-            v.length <= 100
-              ? {
-                  kind: 'updateHeader',
-                  changes: { supplierBillReference: v || null },
-                }
-              : null
-          }
-        />
-        <DraftField
-          commands={commands}
-          field="date"
-          label={t('purchases.billDate')}
-          value={view.billDate}
-          type="date"
-          parse={(v) =>
-            /^\d{4}-\d{2}-\d{2}$/.test(v)
-              ? { kind: 'updateHeader', changes: { billDate: v } }
-              : null
-          }
-        />
-        <div>
+        <div className="grid min-w-0 gap-2 lg:col-start-3 lg:grid-cols-3">
           <DraftField
             commands={commands}
-            field="top"
-            label={t('purchases.topDays')}
-            value={String(view.topDays)}
-            numeric
+            field="billReference"
+            label={t('purchases.billReference')}
+            value={view.supplierBillReference ?? ''}
             parse={(v) =>
-              /^\d+$/.test(v) && Number(v) <= 3650
-                ? { kind: 'updateHeader', changes: { topDays: Number(v) } }
+              v.length <= 100
+                ? {
+                    kind: 'updateHeader',
+                    changes: { supplierBillReference: v || null },
+                  }
                 : null
             }
           />
-          <p className="mt-2 text-xs text-muted-foreground">
-            {t('purchases.dueDate')}: {view.dueDate}
-          </p>
-        </div>
-        <DraftField
-          commands={commands}
-          field="note"
-          label={t('purchases.note')}
-          value={view.note ?? ''}
-          parse={(v) =>
-            v.length <= 1000
-              ? { kind: 'updateHeader', changes: { note: v || null } }
-              : null
-          }
-        />
-        <DraftField
-          commands={commands}
-          field="vat"
-          label={t('purchases.vat')}
-          value={formatBpsAsPercentage(view.vatRateBps)}
-          numeric
-          decimal
-          parse={(v) => {
-            try {
-              return {
-                kind: 'setVatRate',
-                vatRateBps: parsePercentageToBps(v),
-              };
-            } catch {
-              return null;
+          <DraftField
+            commands={commands}
+            field="date"
+            label={t('purchases.billDate')}
+            value={view.billDate}
+            type="date"
+            parse={(v) =>
+              /^\d{4}-\d{2}-\d{2}$/.test(v)
+                ? { kind: 'updateHeader', changes: { billDate: v } }
+                : null
             }
-          }}
-        />
+          />
+          <div className="grid min-w-0 grid-cols-[1fr_2fr] gap-2">
+            <DraftField
+              commands={commands}
+              field="top"
+              label={t('purchases.topDays')}
+              value={String(view.topDays)}
+              numeric
+              parse={(v) =>
+                /^\d+$/.test(v) && Number(v) <= 3650
+                  ? { kind: 'updateHeader', changes: { topDays: Number(v) } }
+                  : null
+              }
+            />
+            <FormField label={t('purchases.dueDate')}>
+              <Input readOnly value={formatDisplayDate(view.dueDate)} />
+            </FormField>
+          </div>
+        </div>
       </fieldset>
-      <div className="overflow-x-auto rounded-md border bg-card">
+      <div className="transaction-lines min-h-48 min-w-0 flex-1 overflow-auto border bg-card lg:min-h-0">
         <table className="w-full min-w-[850px] table-fixed text-sm">
           <colgroup>
             <col className="w-[25%]" />
@@ -350,7 +323,10 @@ export function PurchaseEditor({
                 'lineAmount',
                 'remove',
               ].map((k) => (
-                <th className="p-3 text-left text-xs font-medium" key={k}>
+                <th
+                  className="px-2 py-1.5 text-left text-xs font-medium"
+                  key={k}
+                >
                   {t(`purchases.${k}`)}
                 </th>
               ))}
@@ -363,14 +339,14 @@ export function PurchaseEditor({
                 data-purchase-line={l.id}
                 className="border-t align-top"
               >
-                <td className="min-w-44 p-3">
+                <td className="min-w-44 px-2 py-1.5">
                   <span className="font-medium">{l.title}</span>
                   <p className="text-xs text-muted-foreground">
                     {l.itemCode ? `${l.itemCode} · ` : ''}
                     {l.unitLabel}
                   </p>
                 </td>
-                <td className="w-28 p-3">
+                <td className="w-28 px-2 py-1.5">
                   <DraftField
                     commands={commands}
                     compact
@@ -389,7 +365,7 @@ export function PurchaseEditor({
                     }
                   />
                 </td>
-                <td className="min-w-40 p-3" data-purchase-price>
+                <td className="min-w-40 px-2 py-1.5" data-purchase-price>
                   <DraftField
                     commands={commands}
                     compact
@@ -419,17 +395,17 @@ export function PurchaseEditor({
                     </p>
                   ) : null}
                 </td>
-                <td className="min-w-64 p-3">
+                <td className="min-w-64 px-2 py-1.5">
                   <DraftDiscounts
                     commands={commands}
                     lineId={l.id}
                     stages={l.discountStages}
                   />
                 </td>
-                <td className="p-3 text-right tabular-nums">
+                <td className="px-2 py-1.5 text-right tabular-nums">
                   {l.amount === null ? '—' : formatIdr(l.amount)}
                 </td>
-                <td className="p-3">
+                <td className="px-2 py-1.5">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -464,8 +440,22 @@ export function PurchaseEditor({
           ) : null}
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-4 rounded-md border bg-card p-4">
+      <div className="grid shrink-0 items-start gap-3 border-t border-border bg-card pt-2 lg:grid-cols-[minmax(0,1fr)_minmax(23rem,0.45fr)]">
+        <div className="min-w-0">
+          <DraftField
+            commands={commands}
+            field="note"
+            multiline
+            label={t('purchases.note')}
+            value={view.note ?? ''}
+            parse={(v) =>
+              v.length <= 1000
+                ? { kind: 'updateHeader', changes: { note: v || null } }
+                : null
+            }
+          />
+        </div>
+        <div className="min-w-0 space-y-2">
           <DraftDiscounts
             commands={commands}
             lineId={null}
@@ -475,17 +465,41 @@ export function PurchaseEditor({
             variant="outline"
             aria-label={t('purchases.outgoingPayments')}
             aria-haspopup="dialog"
-            onClick={() => void action.run(async () => {
-              if (await commands.flush()) setPaymentsOpen(true);
-              else action.setError(t('workspace.notices.unsaved'));
-            })}
+            onClick={() =>
+              void action.run(async () => {
+                if (await commands.flush()) setPaymentsOpen(true);
+                else action.setError(t('workspace.notices.unsaved'));
+              })
+            }
           >
-            {t('purchases.outgoingPayments')}: {formatIdr(view.payments.reduce((sum, row) => sum + BigInt(row.amount), 0n).toString())}
+            {t('purchases.outgoingPayments')}:{' '}
+            {formatIdr(
+              view.payments
+                .reduce((sum, row) => sum + BigInt(row.amount), 0n)
+                .toString(),
+            )}
           </Button>
-        </div>
-        <div className="space-y-3 rounded-md border bg-card p-4">
+          <DraftField
+            commands={commands}
+            field="vat"
+            label={t('purchases.vat')}
+            value={formatBpsAsPercentage(view.vatRateBps)}
+            numeric
+            decimal
+            parse={(v) => {
+              try {
+                return {
+                  kind: 'setVatRate',
+                  vatRateBps: parsePercentageToBps(v),
+                };
+              } catch {
+                return null;
+              }
+            }}
+          />
+
           {view.totals ? (
-            <dl className="space-y-2">
+            <dl className="border border-border [&>div]:border-b [&>div]:border-border [&>div]:px-2 [&>div]:py-1 [&>div:last-child]:border-b-0">
               {(
                 [
                   'subtotal',
@@ -500,7 +514,7 @@ export function PurchaseEditor({
                   className={
                     'flex justify-between gap-4 ' +
                     (k === 'amount'
-                      ? 'border-t pt-3 text-lg font-semibold'
+                      ? 'bg-amber-50 font-semibold dark:bg-amber-950/40'
                       : 'text-sm')
                   }
                 >
@@ -512,12 +526,31 @@ export function PurchaseEditor({
           ) : (
             <p role="status">{t('purchases.missingPrices')}</p>
           )}
-          <p className="text-sm text-muted-foreground">
+          <Button
+            className="w-full"
+            onClick={() => void reviewBill()}
+            disabled={
+              controlsDisabled ||
+              !view.totals ||
+              !view.supplier ||
+              !view.lines.length ||
+              commands.saveState === 'failed' ||
+              commands.saveState === 'unsaved'
+            }
+          >
+            {t('purchases.review')}
+          </Button>
+          <p className="text-xs text-muted-foreground">
             {t('purchases.finalizeNotice')}
           </p>
         </div>
       </div>
-      {paymentsOpen ? <PurchasePaymentsDialog commands={commands} onClose={() => setPaymentsOpen(false)} /> : null}
+      {paymentsOpen ? (
+        <PurchasePaymentsDialog
+          commands={commands}
+          onClose={() => setPaymentsOpen(false)}
+        />
+      ) : null}
       {supplierForm ? (
         <SupplierForm
           onClose={() => setSupplierForm(false)}

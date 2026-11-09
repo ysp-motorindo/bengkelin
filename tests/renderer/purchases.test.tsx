@@ -473,22 +473,43 @@ test('purchase payments keep invalid rows open and persist corrected entries on 
   const b = bridge();
   let saved = structuredClone(draft);
   b.purchaseDrafts.apply = vi.fn(async (command: PurchaseDraftCommand) => {
-    if (command.op.kind === 'setPayments') saved = { ...saved, version: saved.version + 1, payments: command.op.payments };
+    if (command.op.kind === 'setPayments')
+      saved = {
+        ...saved,
+        version: saved.version + 1,
+        payments: command.op.payments,
+      };
     return ok(saved);
   });
   (window as unknown as { bengkelin: unknown }).bengkelin = b;
   render(<PurchasesScreen active />);
-  await userEvent.click(await screen.findByRole('button', { name: 'Pembayaran keluar' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Pembayaran keluar' }),
+  );
   const dialog = screen.getByRole('dialog', { name: 'Pembayaran keluar' });
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Tambah pembayaran' }));
-  await userEvent.click(within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!);
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'Tambah pembayaran' }),
+  );
+  await userEvent.click(
+    within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!,
+  );
   expect(dialog).toBeVisible();
   await userEvent.type(within(dialog).getByLabelText('Jumlah dana'), '25000');
-  await userEvent.click(within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!);
-  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  expect(screen.getByRole('button', { name: 'Pembayaran keluar' })).toHaveTextContent('25.000');
-  await userEvent.click(screen.getByRole('button', { name: 'Pembayaran keluar' }));
-  expect(within(screen.getByRole('dialog')).getByLabelText('Jumlah dana')).toHaveValue('25.000');
+  await userEvent.click(
+    within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!,
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+  );
+  expect(
+    screen.getByRole('button', { name: 'Pembayaran keluar' }),
+  ).toHaveTextContent('25.000');
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Pembayaran keluar' }),
+  );
+  expect(
+    within(screen.getByRole('dialog')).getByLabelText('Jumlah dana'),
+  ).toHaveValue('25.000');
 });
 
 test('purchase payment failure preserves amount and can retry before closing', async () => {
@@ -498,20 +519,122 @@ test('purchase payment failure preserves amount and can retry before closing', a
   let saved = structuredClone(draft);
   b.purchaseDrafts.apply = vi.fn(async (command: PurchaseDraftCommand) => {
     if (failed) throw new Error('connection failed');
-    if (command.op.kind === 'setPayments') saved = { ...saved, version: saved.version + 1, payments: command.op.payments };
+    if (command.op.kind === 'setPayments')
+      saved = {
+        ...saved,
+        version: saved.version + 1,
+        payments: command.op.payments,
+      };
     return ok(saved);
   });
   (window as unknown as { bengkelin: unknown }).bengkelin = b;
   render(<PurchasesScreen active />);
-  await userEvent.click(await screen.findByRole('button', { name: 'Pembayaran keluar' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Pembayaran keluar' }),
+  );
   const dialog = screen.getByRole('dialog', { name: 'Pembayaran keluar' });
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Tambah pembayaran' }));
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'Tambah pembayaran' }),
+  );
   await userEvent.type(within(dialog).getByLabelText('Jumlah dana'), '10000');
-  await userEvent.click(within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!);
-  await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Coba simpan lagi' })).toBeVisible());
+  await userEvent.click(
+    within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!,
+  );
+  await waitFor(() =>
+    expect(
+      within(dialog).getByRole('button', { name: 'Coba simpan lagi' }),
+    ).toBeVisible(),
+  );
   expect(within(dialog).getByLabelText('Jumlah dana')).toHaveValue('10.000');
   failed = false;
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Coba simpan lagi' }));
-  await userEvent.click(within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!);
-  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'Coba simpan lagi' }),
+  );
+  await userEvent.click(
+    within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!,
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+  );
+});
+
+test('purchase toolbar replaces sale controls and leaves history normally scrollable', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const b = bridge();
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchases: {
+      search: async () =>
+        ok({
+          items: [],
+          page: 1,
+          hasMore: false,
+          payableAmount: '0',
+          refundDue: '0',
+        }),
+    },
+  };
+  const session: CashierSession = {
+    cashierId: 'actor',
+    username: 'cashier',
+    displayName: 'Cashier',
+    role: 'CASHIER',
+    language: 'id',
+    appearance: 'LIGHT',
+    numberFormat: 'ID',
+  };
+  render(<Shell session={session} shopName="Shop" onLoggedOut={() => {}} />);
+  await screen.findByRole('button', { name: 'Buat Baru' });
+  await userEvent.click(
+    within(
+      screen.getByRole('navigation', { name: 'Navigasi utama' }),
+    ).getByRole('button', { name: 'Pembelian' }),
+  );
+  await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  const header = screen
+    .getByText('Cashier', { exact: true })
+    .closest('header')!;
+  expect(
+    within(header).getByRole('button', { name: 'Pembelian baru' }),
+  ).toBeVisible();
+  expect(
+    within(header).queryByRole('button', { name: 'Buat Baru' }),
+  ).not.toBeInTheDocument();
+  expect(within(header).getByLabelText('Draf tersimpan')).toBeVisible();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Riwayat Pembelian' }),
+  );
+  expect(
+    within(header).queryByRole('button', { name: 'Pembelian baru' }),
+  ).not.toBeInTheDocument();
+  await userEvent.click(
+    within(
+      screen.getByRole('navigation', { name: 'Navigasi utama' }),
+    ).getByRole('button', { name: 'Penjualan' }),
+  );
+  expect(
+    within(header).getByRole('button', { name: 'Buat Baru' }),
+  ).toBeVisible();
+  expect(
+    within(header).queryByRole('button', { name: 'Pembelian baru' }),
+  ).not.toBeInTheDocument();
+});
+
+test('purchase notes support multiline text and preserve it after saving', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const b = bridge();
+  let saved = structuredClone(draft);
+  b.purchaseDrafts.apply = vi.fn(async (command: PurchaseDraftCommand) => {
+    if (command.op.kind === 'updateHeader')
+      saved = { ...saved, ...command.op.changes, version: saved.version + 1 };
+    return ok(saved);
+  });
+  (window as unknown as { bengkelin: unknown }).bengkelin = b;
+  render(<PurchasesScreen active />);
+  const note = await screen.findByRole('textbox', { name: 'Catatan' });
+  expect(note.tagName).toBe('TEXTAREA');
+  await userEvent.type(note, 'First line{Enter}Second line');
+  await userEvent.tab();
+  await waitFor(() => expect(saved.note).toBe('First line\nSecond line'));
+  expect(note).toHaveValue('First line\nSecond line');
 });

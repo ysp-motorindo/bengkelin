@@ -121,9 +121,17 @@ test('import opening debt, show invoice Piutang, repay and reconcile daily recei
   await expect(
     page.getByLabel(t('workspace.header.piutang'), { exact: true }),
   ).toHaveText('Rp 100.000');
-  const channelBox = await page.getByLabel(t('workspace.header.channel'), { exact: true }).boundingBox();
-  const debtBox = await page.getByLabel(t('workspace.header.piutang'), { exact: true }).boundingBox();
-  expect(Math.abs(channelBox!.y + channelBox!.height / 2 - debtBox!.y - debtBox!.height / 2)).toBeLessThan(2);
+  const channelBox = await page
+    .getByLabel(t('workspace.header.channel'), { exact: true })
+    .boundingBox();
+  const debtBox = await page
+    .getByLabel(t('workspace.header.piutang'), { exact: true })
+    .boundingBox();
+  expect(
+    Math.abs(
+      channelBox!.y + channelBox!.height / 2 - debtBox!.y - debtBox!.height / 2,
+    ),
+  ).toBeLessThan(2);
   await capture('03-invoice-piutang');
   await navigateTo(page, 'receivables');
   await page

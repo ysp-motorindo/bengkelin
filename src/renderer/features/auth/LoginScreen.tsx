@@ -93,7 +93,11 @@ export function LoginScreen({ shopName, onLoggedIn }: LoginScreenProps) {
             </FormField>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="h-10 w-full gap-2 px-4 py-2 text-sm" disabled={busy}>
+            <Button
+              type="submit"
+              className="h-10 w-full gap-2 px-4 py-2 text-sm"
+              disabled={busy}
+            >
               {busy ? (
                 <LoaderCircle aria-hidden="true" className="animate-spin" />
               ) : null}

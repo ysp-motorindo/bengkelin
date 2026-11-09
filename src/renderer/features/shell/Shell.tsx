@@ -73,6 +73,9 @@ export function Shell({
 }: ShellProps) {
   const { t } = useTranslation();
   const [view, setView] = useState<View>('workspace');
+  const [purchaseWorkspace, setPurchaseWorkspace] = useState(false);
+  const workspaceLayout =
+    view === 'workspace' || (view === 'purchases' && purchaseWorkspace);
   const [toolbarSlot, setToolbarSlot] = useState<HTMLDivElement | null>(null);
   const [navigationSlot, setNavigationSlot] = useState<HTMLDivElement | null>(
     null,
@@ -142,8 +145,8 @@ export function Shell({
   return (
     <div
       className={
-        view === 'workspace'
-          ? 'flex min-h-screen flex-col lg:h-screen lg:overflow-hidden'
+        workspaceLayout
+          ? 'transaction-workspace-shell flex min-h-screen flex-col'
           : 'flex min-h-screen flex-col'
       }
     >
@@ -154,7 +157,7 @@ export function Shell({
             <span>{shopName || t('common.appName')}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <div ref={setToolbarSlot} hidden={view !== 'workspace'} />
+            <div ref={setToolbarSlot} hidden={!workspaceLayout} />
             <details ref={profileMenu} className="relative text-sm select-none">
               <summary
                 aria-label={t('shell.profileMenuLabel')}
@@ -225,8 +228,8 @@ export function Shell({
       {session.role === 'ADMIN' ? <RestoreOutcomeNotice /> : null}
       <main
         className={
-          view === 'workspace'
-            ? 'min-w-0 flex-1 p-3 sm:p-4 lg:min-h-0 lg:overflow-hidden'
+          workspaceLayout
+            ? 'transaction-workspace-main min-w-0 flex-1 p-3 sm:p-4'
             : 'min-w-0 flex-1 p-3 sm:p-4 lg:p-6'
         }
       >
@@ -260,10 +263,15 @@ export function Shell({
             toolbarSlot={toolbarSlot}
           />
         </div>
-        <div hidden={view !== 'purchases'}>
+        <div
+          hidden={view !== 'purchases'}
+          className={purchaseWorkspace ? 'h-full min-h-0' : undefined}
+        >
           <PurchasesScreen
             active={view === 'purchases'}
             navigationSlot={navigationSlot}
+            toolbarSlot={toolbarSlot}
+            onWorkspaceActiveChange={setPurchaseWorkspace}
           />
         </div>
         {view === 'history' ? <HistoryScreen session={session} /> : null}

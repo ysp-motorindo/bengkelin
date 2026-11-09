@@ -28,9 +28,13 @@ type Tab = 'editor' | 'history' | 'receiving' | 'payables' | 'suppliers';
 export function PurchasesScreen({
   active,
   navigationSlot,
+  toolbarSlot,
+  onWorkspaceActiveChange,
 }: {
   active: boolean;
   navigationSlot?: HTMLElement | null;
+  toolbarSlot?: HTMLElement | null;
+  onWorkspaceActiveChange?: (active: boolean) => void;
 }) {
   const { t } = useTranslation();
   const action = useAction();
@@ -143,6 +147,9 @@ export function PurchasesScreen({
       },
     });
   }, [active, tab, create]);
+  useEffect(() => {
+    onWorkspaceActiveChange?.(active && tab === 'editor');
+  }, [active, tab, onWorkspaceActiveChange]);
   if (!started) return null;
   const navigate = (next: Tab) => {
     setAutoPrint(false);
@@ -167,11 +174,47 @@ export function PurchasesScreen({
       }))}
     />
   );
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t('purchases.title')}</h1>
+  const draftSelector = drafts.length ? (
+    <div className="min-w-0 max-w-64">
+      <div>
+        <Select
+          aria-label={t('purchases.drafts')}
+          className="max-w-64"
+          value={current?.id ?? ''}
+          onChange={(e) => {
+            const id = e.target.value;
+            void flushDraft().then((ok) => {
+              if (ok)
+                void action.run(async () => {
+                  const r = await window.bengkelin.purchaseDrafts.get({
+                    purchaseId: id,
+                  });
+                  if (action.check(r)) setCurrent(r.value);
+                });
+            });
+          }}
+        >
+          {drafts.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.supplier?.name ?? t('purchases.chooseSupplier')} ·{' '}
+              {formatDisplayDate(d.billDate)} · {d.id.slice(0, 8)}
+            </option>
+          ))}
+        </Select>
       </div>
+    </div>
+  ) : null;
+  return (
+    <div
+      className={
+        tab === 'editor' ? 'flex h-full min-h-0 flex-col gap-2' : 'space-y-5'
+      }
+    >
+      {tab !== 'editor' ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold">{t('purchases.title')}</h1>
+        </div>
+      ) : null}
       {active
         ? navigationSlot
           ? createPortal(navigation, navigationSlot)
@@ -186,39 +229,13 @@ export function PurchasesScreen({
         </Alert>
       ) : null}
       {notice ? <p role="status">{notice}</p> : null}
-      <div hidden={tab !== 'editor'}>
-        {drafts.length ? (
-          <div className="mb-4 flex flex-wrap items-end gap-3">
-            <FormField label={t('purchases.drafts')}>
-              <Select
-                value={current?.id ?? ''}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  void flushDraft().then((ok) => {
-                    if (ok)
-                      void action.run(async () => {
-                        const r = await window.bengkelin.purchaseDrafts.get({
-                          purchaseId: id,
-                        });
-                        if (action.check(r)) setCurrent(r.value);
-                      });
-                  });
-                }}
-              >
-                {drafts.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.supplier?.name ?? t('purchases.chooseSupplier')} ·{' '}
-                    {formatDisplayDate(d.billDate)} · {d.id.slice(0, 8)}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-          </div>
-        ) : null}
+      <div hidden={tab !== 'editor'} className="min-h-0 flex-1">
         {current ? (
           <PurchaseEditor
             key={current.id}
             initial={current}
+            toolbarSlot={toolbarSlot}
+            draftSelector={draftSelector}
             active={active && tab === 'editor'}
             units={units}
             registerDraftActions={registerDraftActions}

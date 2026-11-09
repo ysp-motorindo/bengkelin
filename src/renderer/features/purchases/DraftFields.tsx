@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
-import { Input } from '@/renderer/components/ui/input';
+import { Input, controlClass } from '@/renderer/components/ui/input';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
 import { useSyncedValue } from '@/renderer/features/workspace/synced-field';
 import { formatBpsAsPercentage } from '@/shared/percentage';
@@ -20,6 +20,7 @@ export function DraftField({
   parse,
   disabled = false,
   compact = false,
+  multiline = false,
 }: {
   commands: PurchaseCommands;
   field: string;
@@ -31,6 +32,7 @@ export function DraftField({
   parse: (v: string) => PurchaseDraftOperation | null;
   disabled?: boolean;
   compact?: boolean;
+  multiline?: boolean;
 }) {
   const { t } = useTranslation();
   const [text, setText] = useSyncedValue(value, () => commands.dirty(field));
@@ -65,7 +67,16 @@ export function DraftField({
     );
   return (
     <FormField label={label} error={valid ? undefined : 'validation.invalid'}>
-      {numeric ? (
+      {multiline ? (
+        <textarea
+          rows={4}
+          maxLength={1000}
+          value={text}
+          onChange={(e) => change(e.target.value)}
+          disabled={disabled}
+          className={`${controlClass} h-auto min-h-24 resize-y font-normal`}
+        />
+      ) : numeric ? (
         <NumericInput
           value={text}
           onValueChange={change}

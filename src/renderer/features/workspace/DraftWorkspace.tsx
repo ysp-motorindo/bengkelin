@@ -229,7 +229,11 @@ export function DraftWorkspace({
         </p>
       ) : null}
 
-      {toolbarSlot ? createPortal(toolbar, toolbarSlot) : toolbar}
+      {toolbarSlot
+        ? active
+          ? createPortal(toolbar, toolbarSlot)
+          : null
+        : toolbar}
       <DraftHeader
         commands={commands}
         channels={references.channels}

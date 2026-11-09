@@ -188,17 +188,17 @@ export function DraftHeader({
             onError={onError}
           />
         </div>
-      {view.customer && view.customerOutstandingAmount !== null && (
-        <div className="flex h-8 items-center justify-end gap-2 self-end text-xs tabular-nums lg:col-start-3">
-          <span>{t('workspace.header.piutang')}</span>
-          <output
-            aria-label={t('workspace.header.piutang')}
-            className="font-semibold"
-          >
-            {formatIdr(view.customerOutstandingAmount)}
-          </output>
-        </div>
-      )}
+        {view.customer && view.customerOutstandingAmount !== null && (
+          <div className="flex h-8 items-center justify-end gap-2 self-end text-xs tabular-nums lg:col-start-3">
+            <span>{t('workspace.header.piutang')}</span>
+            <output
+              aria-label={t('workspace.header.piutang')}
+              className="font-semibold"
+            >
+              {formatIdr(view.customerOutstandingAmount)}
+            </output>
+          </div>
+        )}
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]">
         <div className="grid content-start gap-2">

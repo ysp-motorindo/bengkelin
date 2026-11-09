@@ -19,7 +19,7 @@ export function NavigationRow({
   return (
     <nav
       aria-label={label}
-      className="flex flex-nowrap gap-1 overflow-x-auto border-b border-border bg-card px-4 sm:px-6"
+      className="flex flex-nowrap gap-1 overflow-x-auto [scrollbar-width:thin] border-b border-border bg-card px-4 sm:px-6"
     >
       {items.map((item) => (
         <Button

@@ -10,25 +10,47 @@ import { FormField } from '@/renderer/components/form-field';
 import { SaveIndicator } from '@/renderer/features/workspace/SaveIndicator';
 import { useSyncedValue } from '@/renderer/features/workspace/synced-field';
 import { useAction } from '@/renderer/lib/use-action';
-import { priceSchema, PAYMENT_METHODS, type PurchaseAllocation } from '@/shared/contracts';
+import {
+  priceSchema,
+  PAYMENT_METHODS,
+  type PurchaseAllocation,
+} from '@/shared/contracts';
 import type { PurchaseCommands } from './DraftFields';
 
-export function PurchasePaymentsDialog({commands, onClose}: {commands: PurchaseCommands; onClose(): void}) {
-  const {t} = useTranslation();
+export function PurchasePaymentsDialog({
+  commands,
+  onClose,
+}: {
+  commands: PurchaseCommands;
+  onClose(): void;
+}) {
+  const { t } = useTranslation();
   const action = useAction();
-  const close = () => void action.run(async () => {
-    if (await commands.flush()) onClose();
-    else action.setError(t('workspace.notices.unsaved'));
-  });
-  return <Dialog title={t('purchases.outgoingPayments')} onClose={close}
-    closeLabel={action.busy ? undefined : t('purchases.close')}
-    footer={<div className="flex items-center justify-between gap-2">
-      <SaveIndicator state={commands.saveState} onRetry={commands.retry} />
-      <Button disabled={action.busy} onClick={close}>{t(action.busy ? 'common.saving' : 'purchases.close')}</Button>
-    </div>}>
-    {action.error ? <Alert>{action.error}</Alert> : null}
-    <fieldset disabled={action.busy} aria-busy={action.busy}><DraftPayments commands={commands}/></fieldset>
-  </Dialog>;
+  const close = () =>
+    void action.run(async () => {
+      if (await commands.flush()) onClose();
+      else action.setError(t('workspace.notices.unsaved'));
+    });
+  return (
+    <Dialog
+      title={t('purchases.outgoingPayments')}
+      onClose={close}
+      closeLabel={action.busy ? undefined : t('purchases.close')}
+      footer={
+        <div className="flex items-center justify-between gap-2">
+          <SaveIndicator state={commands.saveState} onRetry={commands.retry} />
+          <Button disabled={action.busy} onClick={close}>
+            {t(action.busy ? 'common.saving' : 'purchases.close')}
+          </Button>
+        </div>
+      }
+    >
+      {action.error ? <Alert>{action.error}</Alert> : null}
+      <fieldset disabled={action.busy} aria-busy={action.busy}>
+        <DraftPayments commands={commands} />
+      </fieldset>
+    </Dialog>
+  );
 }
 
 function DraftPayments({ commands }: { commands: PurchaseCommands }) {

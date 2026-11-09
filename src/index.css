@@ -42,3 +42,22 @@ input[type='datetime-local']::-webkit-calendar-picker-indicator {
   position: absolute;
   right: 0.75rem;
 }
+
+/* Short windows keep normal document scrolling so transaction actions remain reachable. */
+@media (min-width: 1024px) and (min-height: 760px) {
+  .transaction-workspace-shell {
+    height: 100vh;
+    overflow: hidden;
+  }
+  .transaction-workspace-main {
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+@media (min-width: 1024px) and (max-height: 759px) {
+  .transaction-lines {
+    min-height: 12rem;
+    max-height: 24rem;
+    flex: none;
+  }
+}
