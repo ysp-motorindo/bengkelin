@@ -97,7 +97,6 @@ test.each(['rejection', 'INTERNAL_ERROR'] as const)(
         expect(control).toBeDisabled();
       const cancel = screen.getAllByRole('button', {
         name: 'Batal',
-        exact: true,
       });
       expect(cancel.at(-1)).toBeDisabled();
       await user.click(cancel[0]!);
