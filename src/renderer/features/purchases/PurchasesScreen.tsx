@@ -126,7 +126,7 @@ export function PurchasesScreen({
     });
   }, [action.run, action.check, timezone, flushDraft]);
   useEffect(() => {
-    if (!active || tab === 'editor') return;
+    if (!active || (tab === 'editor' && current !== null)) return;
     return registerWorkspaceActions({
       newTransaction: create,
       focusSearch: () => {
@@ -146,7 +146,7 @@ export function PurchasesScreen({
         await editorActions.current?.openCheckoutReview();
       },
     });
-  }, [active, tab, create]);
+  }, [active, tab, create, current]);
   useEffect(() => {
     onWorkspaceActiveChange?.(active && tab === 'editor');
   }, [active, tab, onWorkspaceActiveChange]);
