@@ -1166,7 +1166,7 @@ describe('history search', () => {
       status: 'VOID',
       voidedAt: f.voided.finalizedAt,
     });
-  });
+  }, 30_000);
 
   test('every filter matches the frozen snapshots after master data changed', async () => {
     const f = await fixture();

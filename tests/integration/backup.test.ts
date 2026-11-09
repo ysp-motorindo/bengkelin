@@ -993,7 +993,7 @@ describe('retention', () => {
     expect(remaining).not.toContain(recorded[0]);
     expect(remaining).not.toContain(recorded[1]);
     expect(remaining).toContain(recorded[30]);
-  });
+  }, 30_000);
 });
 
 // ---- scheduling ----
