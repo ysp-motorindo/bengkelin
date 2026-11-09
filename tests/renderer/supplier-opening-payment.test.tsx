@@ -77,13 +77,9 @@ test.each(['rejection', 'INTERNAL_ERROR'] as const)(
     await user.selectOptions(method, 'BANK_TRANSFER');
     await user.type(reference, 'PAY-1');
     await user.type(note, 'Test payment');
-    await user.click(
-      screen.getByRole('button', { name: 'Tinjau', exact: true }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Tinjau' }));
     expect(recordPayment).not.toHaveBeenCalled();
-    await user.click(
-      screen.getByRole('button', { name: 'Konfirmasi', exact: true }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Konfirmasi' }));
     expect(recordPayment).toHaveBeenCalledTimes(1);
     const firstPayload = structuredClone(recordPayment.mock.calls[0]![0]);
     expect(firstPayload).toEqual({
@@ -132,9 +128,7 @@ test.each(['rejection', 'INTERNAL_ERROR'] as const)(
     expect(reference).toHaveValue('PAY-1');
     expect(note).toHaveValue('Test payment');
     expect(onRecorded).not.toHaveBeenCalled();
-    await user.click(
-      screen.getByRole('button', { name: 'Konfirmasi', exact: true }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Konfirmasi' }));
     await waitFor(() => expect(onRecorded).toHaveBeenCalledTimes(1));
     expect(recordPayment).toHaveBeenCalledTimes(2);
     expect(recordPayment.mock.calls[1]![0]).toEqual(firstPayload);
