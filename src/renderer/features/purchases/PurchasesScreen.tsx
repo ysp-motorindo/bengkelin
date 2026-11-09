@@ -243,7 +243,7 @@ export function PurchasesScreen({
             onNew={create}
             onPosted={(p) => {
               setDrafts((ds) => ds.filter((d) => d.id !== p.id));
-              setCurrent(null);
+              setCurrent(drafts.find((d) => d.id !== p.id) ?? null);
               setAutoPrint(true);
               setDetail(p);
               setTab('history');

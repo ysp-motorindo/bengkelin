@@ -62,3 +62,9 @@ Print bills in A4/thermal and receipts/credits in A4, or export A4 PDFs. Print f
 Navigation: Purchase → New Purchase / Purchase History / Receiving / Payables & Refunds / Suppliers. Switching back to Purchase opens the editor and retains your draft.
 
 Navigasi: Pembelian → Buat Pembelian / Riwayat Pembelian / Penerimaan / Utang & Pengembalian Dana / Pemasok. Kembali ke Pembelian membuka editor dan mempertahankan draf.
+
+## Tata letak ringkas / Compact workspace
+
+**Indonesia:** Draf tersimpan, Pembelian baru, Buang draf, dan status simpan berada di bilah atas. Pemasok dan rincian faktur berada di atas tabel barang. Catatan berada di kiri bawah; diskon, PPN, pembayaran keluar, total, dan Tinjau pembelian berada di kanan bawah. Pilih Pembayaran keluar untuk mengisi pembayaran; Tutup menyimpan perubahan sebelum menutup dialog. Jika nilai belum valid atau penyimpanan gagal, isian tetap tersedia untuk diperbaiki atau dicoba simpan lagi. Pada jendela pendek, gulir halaman untuk menjangkau ringkasan. Penerimaan barang tetap dicatat terpisah setelah faktur dicatat.
+
+**English:** Saved drafts, New purchase, Discard draft, and save status are in the top toolbar. Supplier and bill details sit above the item table. Notes are below left; discounts, VAT, outgoing payments, totals, and Review purchase are below right. Select Outgoing payments to enter payments; Close saves changes before dismissing the dialog. Invalid or failed saves keep entries available for correction or retry. In short windows, scroll the page to reach the summary. Goods receiving remains a separate action after the bill is recorded.
