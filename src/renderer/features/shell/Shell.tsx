@@ -190,7 +190,6 @@ export function Shell({
         </header>
         <NavigationRow
           label={t('shell.nav.label')}
-          level="primary"
           items={areas.map((item) => ({
             id: item.id,
             label: t(item.labelKey),
@@ -208,7 +207,6 @@ export function Shell({
         {area.views.length > 1 ? (
           <NavigationRow
             label={t('shell.nav.secondaryLabel', { area: t(area.labelKey) })}
-            level="secondary"
             items={area.views.map((name) => ({
               id: name,
               label: t(

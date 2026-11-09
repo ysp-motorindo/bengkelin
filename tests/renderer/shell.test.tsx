@@ -47,13 +47,13 @@ describe('shell', () => {
       screen.queryByRole('heading', { name: 'Faktur Penjualan' }),
     ).not.toBeInTheDocument();
     await userEvent.click(
-      screen.getByRole('button', { name: 'Riwayat penjualan' }),
+      screen.getByRole('button', { name: 'Riwayat Penjualan' }),
     );
     expect(
       screen.queryByRole('button', { name: 'Draft' }),
     ).not.toBeInTheDocument();
     await userEvent.click(
-      screen.getByRole('button', { name: 'Penjualan baru' }),
+      screen.getByRole('button', { name: 'Penjualan Baru' }),
     );
     expect(screen.getByRole('button', { name: 'Draft' })).toBeInTheDocument();
   });
@@ -222,15 +222,15 @@ for (const role of ['ADMIN', 'CASHIER'] as const) {
       within(sales)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(['Penjualan baru', 'Riwayat penjualan', 'Piutang']);
+    ).toEqual(['Penjualan Baru', 'Riwayat Penjualan', 'Piutang']);
     await userEvent.click(
-      within(sales).getByRole('button', { name: 'Riwayat penjualan' }),
+      within(sales).getByRole('button', { name: 'Riwayat Penjualan' }),
     );
     await userEvent.click(
       within(primary).getByRole('button', { name: 'Penjualan' }),
     );
     expect(
-      within(sales).getByRole('button', { name: 'Riwayat penjualan' }),
+      within(sales).getByRole('button', { name: 'Riwayat Penjualan' }),
     ).toHaveAttribute('aria-current', 'page');
     await userEvent.click(
       within(primary).getByRole('button', { name: 'Pelanggan & Kendaraan' }),
@@ -240,7 +240,7 @@ for (const role of ['ADMIN', 'CASHIER'] as const) {
       within(primary).getByRole('button', { name: 'Penjualan' }),
     );
     expect(
-      screen.getByRole('button', { name: 'Penjualan baru' }),
+      screen.getByRole('button', { name: 'Penjualan Baru' }),
     ).toHaveAttribute('aria-current', 'page');
   });
 }

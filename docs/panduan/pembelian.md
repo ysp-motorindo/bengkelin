@@ -16,7 +16,7 @@ Draf disimpan otomatis. Periksa indikator tersimpan sebelum keluar. Jika penyimp
 
 ## Menerima barang atau jasa
 
-Buka faktur melalui Riwayat pembelian atau Penerimaan, lalu catat jumlah yang benar-benar diterima. Pilih lokasi untuk setiap penerimaan. Pengiriman dapat diterima sebagian dan di lokasi berbeda. Produk dengan pelacakan persediaan menambah stok; barang nonstok/jasa hanya mencatat penerimaan.
+Buka faktur melalui Riwayat Pembelian atau Penerimaan, lalu catat jumlah yang benar-benar diterima. Pilih lokasi untuk setiap penerimaan. Pengiriman dapat diterima sebagian dan di lokasi berbeda. Produk dengan pelacakan persediaan menambah stok; barang nonstok/jasa hanya mencatat penerimaan.
 
 Periksa nomor `RCV-...`, lokasi, jumlah diterima, dan sisa penerimaan. Pembayaran faktur tidak berubah. Penerimaan yang salah dapat dibatalkan seluruhnya sebelum ada kredit dari penerimaan tersebut. Pembatalan mengurangi stok dan mengembalikan jumlah menjadi belum diterima.
 
@@ -59,6 +59,6 @@ Use purchase history to review receipts, payments, credits, refunds, and the ind
 
 Print bills in A4/thermal and receipts/credits in A4, or export A4 PDFs. Print failures leave the recorded transaction intact. Daily reports keep purchasing separate from sales and use each activity's posting time. Backups include purchasing, and restore protects previously issued document numbers.
 
-Navigation: Purchase → New purchase / Purchase history / Receiving / Payables & refunds / Suppliers. Switching back to Purchase opens the editor and retains your draft.
+Navigation: Purchase → New Purchase / Purchase History / Receiving / Payables & Refunds / Suppliers. Switching back to Purchase opens the editor and retains your draft.
 
-Navigasi: Pembelian → Buat pembelian / Riwayat pembelian / Penerimaan / Utang & pengembalian dana / Pemasok. Kembali ke Pembelian membuka editor dan mempertahankan draf.
+Navigasi: Pembelian → Buat Pembelian / Riwayat Pembelian / Penerimaan / Utang & Pengembalian Dana / Pemasok. Kembali ke Pembelian membuka editor dan mempertahankan draf.

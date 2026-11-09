@@ -157,7 +157,6 @@ export function PurchasesScreen({
   const navigation = (
     <NavigationRow
       label={t('shell.nav.secondaryLabel', { area: t('purchases.title') })}
-      level="secondary"
       items={(
         ['editor', 'history', 'receiving', 'payables', 'suppliers'] as const
       ).map((name) => ({

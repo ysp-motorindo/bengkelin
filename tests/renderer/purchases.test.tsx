@@ -244,7 +244,7 @@ test('the custom-item shortcut from purchase history opens the purchase editor d
   render(<PurchasesScreen active={true} />);
   await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
   await userEvent.click(
-    screen.getByRole('button', { name: 'Riwayat pembelian' }),
+    screen.getByRole('button', { name: 'Riwayat Pembelian' }),
   );
   await act(async () => {
     getWorkspaceActions()?.addCustomItem();
@@ -332,7 +332,7 @@ test('returning to Purchase refreshes added and deactivated receiving locations'
   activeLocations = [other];
   rendered.rerender(<PurchasesScreen active={true} />);
   await userEvent.click(
-    screen.getByRole('button', { name: 'Riwayat pembelian' }),
+    screen.getByRole('button', { name: 'Riwayat Pembelian' }),
   );
   await userEvent.click(
     await screen.findByRole('button', { name: bill.documentNumber }),
@@ -420,16 +420,16 @@ test('Purchase portals its navigation only while active and returns to its exist
   await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
   expect(within(slot).getAllByRole('button')).toHaveLength(5);
   await userEvent.click(
-    within(slot).getByRole('button', { name: 'Riwayat pembelian' }),
+    within(slot).getByRole('button', { name: 'Riwayat Pembelian' }),
   );
   expect(
-    within(slot).getByRole('button', { name: 'Riwayat pembelian' }),
+    within(slot).getByRole('button', { name: 'Riwayat Pembelian' }),
   ).toHaveAttribute('aria-current', 'page');
   rendered.rerender(<PurchasesScreen active={false} navigationSlot={slot} />);
   expect(slot).toBeEmptyDOMElement();
   rendered.rerender(<PurchasesScreen active={true} navigationSlot={slot} />);
   expect(
-    await within(slot).findByRole('button', { name: 'Buat pembelian' }),
+    await within(slot).findByRole('button', { name: 'Buat Pembelian' }),
   ).toHaveAttribute('aria-current', 'page');
   expect(screen.getByRole('textbox', { name: /Harga beli.*Oil/ })).toHaveValue(
     '',

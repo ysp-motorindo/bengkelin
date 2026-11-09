@@ -1,9 +1,9 @@
 {
   "title": "Purchase",
-  "editor": "New purchase",
-  "history": "Purchase history",
+  "editor": "New Purchase",
+  "history": "Purchase History",
   "receiving": "Receiving",
-  "payables": "Payables & refunds",
+  "payables": "Payables & Refunds",
   "suppliers": "Suppliers",
   "new": "New purchase",
   "drafts": "Saved drafts",

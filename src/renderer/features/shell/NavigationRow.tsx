@@ -11,11 +11,9 @@ export interface NavigationItem {
 
 export function NavigationRow({
   label,
-  level,
   items,
 }: {
   label: string;
-  level: 'primary' | 'secondary';
   items: readonly NavigationItem[];
 }): ReactElement {
   return (
@@ -30,11 +28,9 @@ export function NavigationRow({
           aria-current={item.current}
           onClick={item.onSelect}
           className={cn(
-            'shrink-0 rounded-none px-3 py-2 text-sm font-medium',
+            'shrink-0 rounded-none border-b-2 border-transparent px-3 font-medium',
             item.current
-              ? level === 'primary'
-                ? 'bg-accent text-accent-foreground'
-                : 'border-b-2 border-primary text-foreground'
+              ? 'border-primary text-foreground'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >

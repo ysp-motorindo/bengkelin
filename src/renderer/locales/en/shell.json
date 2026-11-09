@@ -9,7 +9,7 @@
     "catalog": "Catalog & Prices",
     "inventory": "Inventory",
     "references": "Reference Data",
-    "history": "Sales history",
+    "history": "Sales History",
     "receivables": "Receivables",
     "reports": "Daily Report",
     "settings": "Settings",
@@ -18,7 +18,7 @@
     "purchases": "Purchase",
     "catalogStock": "Catalog & Stock",
     "administration": "Administration",
-    "newSale": "New sale",
+    "newSale": "New Sale",
     "secondaryLabel": "{{area}} navigation"
   },
   "preferences": {

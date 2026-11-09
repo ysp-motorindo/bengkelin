@@ -9,7 +9,7 @@
     "catalog": "Katalog & Harga",
     "inventory": "Persediaan",
     "references": "Data Referensi",
-    "history": "Riwayat penjualan",
+    "history": "Riwayat Penjualan",
     "receivables": "Piutang",
     "reports": "Laporan Harian",
     "settings": "Pengaturan",
@@ -18,7 +18,7 @@
     "purchases": "Pembelian",
     "catalogStock": "Katalog & Stok",
     "administration": "Administrasi",
-    "newSale": "Penjualan baru",
+    "newSale": "Penjualan Baru",
     "secondaryLabel": "Navigasi {{area}}"
   },
   "preferences": {

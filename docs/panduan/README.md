@@ -74,8 +74,8 @@ Lihat [Pembelian dari pemasok](pembelian.md) sebagai pelengkap manual operasiona
 
 | Area / Bagian | Destinations / Tujuan |
 |---|---|
-| Penjualan / Sales | Penjualan baru / New sale; Riwayat penjualan / Sales history; Piutang / Receivables |
-| Pembelian / Purchase | Buat pembelian / New purchase; Riwayat pembelian / Purchase history; Penerimaan / Receiving; Utang & pengembalian dana / Payables & refunds; Pemasok / Suppliers |
+| Penjualan / Sales | Penjualan Baru / New Sale; Riwayat Penjualan / Sales History; Piutang / Receivables |
+| Pembelian / Purchase | Buat Pembelian / New Purchase; Riwayat Pembelian / Purchase History; Penerimaan / Receiving; Utang & Pengembalian Dana / Payables & Refunds; Pemasok / Suppliers |
 | Katalog & Stok / Catalog & Stock | Katalog & Harga / Catalog & Prices; Persediaan / Inventory; Impor/Ekspor Katalog / Catalog Import/Export (admin) |
 | Pelanggan & Kendaraan / Customers & Vehicles | Langsung / Direct |
 | Laporan Harian / Daily Report | Langsung / Direct |
