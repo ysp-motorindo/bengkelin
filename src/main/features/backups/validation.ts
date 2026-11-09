@@ -50,6 +50,7 @@ const CORE_TABLES: readonly (readonly [number, readonly string[]])[] = [
   [11, ['backup_runs']],
   [16, ['sales', 'expeditions']],
   [18, ['stock_locations']],
+  [23, ['supplier_opening_balances', 'supplier_opening_payments']],
   [21, ['customer_opening_balances', 'customer_opening_payments']],
   [
     22,

@@ -333,6 +333,12 @@ FIXTURE_ROWS[22] = {
   purchase_print_jobs: 1,
 };
 
+FIXTURE_ROWS[23] = {
+  ...FIXTURE_ROWS[22],
+  supplier_opening_balances: 1,
+  supplier_opening_payments: 1,
+};
+
 const fixtures = readdirSync(FIXTURE_DIR)
   .map((file) => /^schema-v(\d{3})-populated\.sqlite$/.exec(file))
   .filter((m): m is RegExpExecArray => m !== null)
@@ -900,6 +906,14 @@ describe('progressive upgrade from an empty database', () => {
             );
           }
         },
+        23: async () => {
+          db.exec(
+            "INSERT INTO supplier_opening_balances SELECT id,'2026-10-31',100,'2026-11-01T00:00:00.000Z',(SELECT id FROM cashiers LIMIT 1) FROM suppliers LIMIT 1",
+          );
+          db.exec(
+            "INSERT INTO supplier_opening_payments SELECT 'supplier-opening-payment',supplier_id,'CASH',50,'2026-11-01T00:00:00.000Z',NULL,NULL,(SELECT id FROM cashiers LIMIT 1),'Fixture' FROM supplier_opening_balances LIMIT 1",
+          );
+        },
         22: async () => {
           const a = await app();
           const call: import('../fixtures/db/populate').FixtureContext['call'] =
@@ -1443,6 +1457,13 @@ function probeEveryTrigger(
   cloneInsert(
     'customer_opening_payments_within_outstanding',
     'customer_opening_payments',
+    '1=1',
+    [],
+    { id: '88888888-8888-4888-8888-888888888888', amount: 51 },
+  );
+  cloneInsert(
+    'supplier_opening_payments_within_outstanding',
+    'supplier_opening_payments',
     '1=1',
     [],
     { id: '88888888-8888-4888-8888-888888888888', amount: 51 },

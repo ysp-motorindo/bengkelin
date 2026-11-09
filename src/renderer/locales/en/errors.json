@@ -163,7 +163,7 @@
   "CUSTOMER_OPENING_NOT_FOUND": "Customer opening balance not found.",
   "SUPPLIER_REQUIRED": "Select a supplier before recording this bill.",
   "SUPPLIER_INACTIVE": "This supplier is inactive. Choose an active supplier.",
-  "SUPPLIER_NOT_FOUND": "Supplier not found. Choose another supplier.",
+  "SUPPLIER_NOT_FOUND": "Supplier not found.",
   "PURCHASE_NOT_FOUND": "Purchase not found. Return to history and reload.",
   "PURCHASE_NOT_DRAFT": "This purchase is already recorded. Open it in purchase history.",
   "PURCHASE_NOT_FINALIZED": "Record the supplier bill first.",
@@ -179,5 +179,13 @@
   "REFUND_EXCEEDS_AMOUNT": "The refund exceeds the money due from this supplier. Reload and check the refund due.",
   "INVALID_PURCHASE_BALANCE": "The purchase balance is inconsistent. Reload the bill and contact support if it persists.",
   "INVALID_CREDIT_QUANTITY": "Check the credit quantity and original purchase quantities.",
-  "SUPPLIER_VERSION_CONFLICT": "This supplier changed while you were editing. Your entries are kept. Load the latest saved details before saving again."
+  "SUPPLIER_VERSION_CONFLICT": "This supplier changed while you were editing. Your entries are kept. Load the latest saved details before saving again.",
+  "SUPPLIER_NAME_OR_PHONE_REQUIRED": "Enter the supplier name or phone number.",
+  "SUPPLIER_IMPORT_HEADER": "Use the six supported supplier CSV columns, without duplicates.",
+  "SUPPLIER_IMPORT_INVALID_ROW": "Invalid supplier row. Check the columns, external ID, field lengths and true/false status.",
+  "SUPPLIER_IMPORT_DUPLICATE_ID": "External IDs must be unique within the CSV.",
+  "SUPPLIER_IMPORT_DUPLICATE_PHONES": "Acknowledge duplicate phone numbers before importing.",
+  "OPENING_IMPORT_UNKNOWN_SUPPLIER": "Supplier ID is unknown. Import the supplier master first.",
+  "SUPPLIER_OPENING_NOT_FOUND": "Supplier opening balance not found.",
+  "SUPPLIER_IMPORT_OPENING": "Opening date/amount is invalid or conflicts with the original balance."
 }

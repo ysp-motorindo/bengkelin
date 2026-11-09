@@ -58,6 +58,14 @@ export async function generateFixture(outFile: string) {
       exportDir,
       answerSave: (file) => dialogs.saveAnswers.push(file),
     });
+
+    h.db.exec(
+      "INSERT INTO supplier_opening_balances SELECT id,'2026-10-31',100,'2026-11-01T00:00:00.000Z',(SELECT id FROM cashiers LIMIT 1) FROM suppliers LIMIT 1",
+    );
+    h.db.exec(
+      "INSERT INTO supplier_opening_payments SELECT 'supplier-opening-payment',supplier_id,'CASH',50,'2026-11-01T00:00:00.000Z',NULL,NULL,(SELECT id FROM cashiers LIMIT 1),'Fixture' FROM supplier_opening_balances LIMIT 1",
+    );
+
     const counts = tableCounts(h.db);
     const schemaVersion = readSchemaVersion(h.db);
     h.db.pragma('wal_checkpoint(TRUNCATE)');

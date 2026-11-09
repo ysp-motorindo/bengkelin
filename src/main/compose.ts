@@ -1,3 +1,5 @@
+import { SupplierTransferService } from '@/main/features/supplier-transfer/service';
+import { SupplierPayablesService } from '@/main/features/supplier-payables/service';
 import { PurchasePrintingService } from '@/main/features/purchases/printing';
 import { PurchaseService } from '@/main/features/purchases/service';
 import { SupplierService } from '@/main/features/suppliers/service';
@@ -151,7 +153,16 @@ export function createApplicationServices(
       systemNumberLocale: deps.systemNumberLocale ?? 'id-ID',
     }),
     purchases: new PurchaseService({ db, clock }),
+    supplierTransfer: new SupplierTransferService({
+      db,
+      clock,
+      dialogs,
+      backups,
+      logger,
+      sessions,
+    }),
     suppliers: new SupplierService({ db, clock }),
+    supplierPayables: new SupplierPayablesService({ db, clock }),
     purchaseDrafts: new PurchaseDraftService({ db, clock, catalog }),
     logger,
     sessions,
