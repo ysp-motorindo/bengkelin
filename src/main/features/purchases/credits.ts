@@ -99,6 +99,8 @@ export function creditPlan(
     totals: {
       subtotal: amount.toString(),
       discountAmount: '0',
+      itemDiscountAmount: '0',
+      billDiscountAmount: '0',
       amount: amount.toString(),
       taxSubtotal: sum('taxSubtotal').toString(),
       vatAmount: sum('vatAmount').toString(),

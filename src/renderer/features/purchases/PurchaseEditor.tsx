@@ -1,3 +1,4 @@
+import { PurchaseSummary } from './PurchaseSummary';
 import { SupplierPicker } from './SupplierPicker';
 import { FilePlus } from 'lucide-react';
 import { ResizableTransactionTable } from '@/renderer/components/resizable-transaction-table';
@@ -29,10 +30,6 @@ import {
   type ReferenceDto,
   type PurchaseFinalizePreview,
 } from '@/shared/contracts';
-import {
-  parsePercentageToBps,
-  formatBpsAsPercentage,
-} from '@/shared/percentage';
 import { usePurchaseDraft } from './use-purchase-draft';
 import {
   DraftField,
@@ -402,95 +399,17 @@ export function PurchaseEditor({
             }
           />
         </div>
-        <div className="min-w-0 space-y-2">
-          <DraftDiscounts
-            commands={commands}
-            lineId={null}
-            stages={view.discountStages}
-          />
-          <Button
-            variant="outline"
-            aria-label={t('purchases.outgoingPayments')}
-            aria-haspopup="dialog"
-            onClick={() =>
-              void action.run(async () => {
-                if (await commands.flush()) setPaymentsOpen(true);
-                else action.setError(t('workspace.notices.unsaved'));
-              })
-            }
-          >
-            {t('purchases.outgoingPayments')}:{' '}
-            {formatIdr(
-              view.payments
-                .reduce((sum, row) => sum + BigInt(row.amount), 0n)
-                .toString(),
-            )}
-          </Button>
-          <DraftField
-            commands={commands}
-            field="vat"
-            label={t('purchases.vat')}
-            value={formatBpsAsPercentage(view.vatRateBps)}
-            numeric
-            decimal
-            parse={(v) => {
-              try {
-                return {
-                  kind: 'setVatRate',
-                  vatRateBps: parsePercentageToBps(v),
-                };
-              } catch {
-                return null;
-              }
-            }}
-          />
-
-          {view.totals ? (
-            <dl className="border border-border [&>div]:border-b [&>div]:border-border [&>div]:px-2 [&>div]:py-1 [&>div:last-child]:border-b-0">
-              {(
-                [
-                  'subtotal',
-                  'discountAmount',
-                  'taxSubtotal',
-                  'vatAmount',
-                  'amount',
-                ] as const
-              ).map((k) => (
-                <div
-                  key={k}
-                  className={
-                    'flex justify-between gap-4 ' +
-                    (k === 'amount'
-                      ? 'bg-amber-50 font-semibold dark:bg-amber-950/40'
-                      : 'text-sm')
-                  }
-                >
-                  <dt>{t(`purchases.${k === 'amount' ? 'total' : k}`)}</dt>
-                  <dd className="tabular-nums">{formatIdr(view.totals![k])}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : (
-            <p role="status">{t('purchases.missingPrices')}</p>
-          )}
-          <Button
-            className="w-full"
-            onClick={() => void reviewBill()}
-            disabled={
-              controlsDisabled ||
-              !view.totals ||
-              !view.supplier ||
-              !view.lines.length ||
-              commands.saveState === 'failed' ||
-              commands.saveState === 'unsaved'
-            }
-          >
-            {t('purchases.review')}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            {t('purchases.finalizeNotice')}
-          </p>
-        </div>
+        <PurchaseSummary
+          commands={commands}
+          disabled={controlsDisabled}
+          onReview={() => void reviewBill()}
+          onPayments={() =>
+            void action.run(async () => {
+              if (await commands.flush()) setPaymentsOpen(true);
+              else action.setError(t('workspace.notices.unsaved'));
+            })
+          }
+        />
       </div>
       {paymentsOpen ? (
         <PurchasePaymentsDialog

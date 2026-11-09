@@ -157,6 +157,8 @@ export const purchaseDraftCommandSchema = z.strictObject({
 export type PurchaseDraftCommand = z.output<typeof purchaseDraftCommandSchema>;
 export type PurchaseDraftOperation = PurchaseDraftCommand['op'];
 export interface PurchaseTotals {
+  itemDiscountAmount: Rupiah;
+  billDiscountAmount: Rupiah;
   subtotal: Rupiah;
   discountAmount: Rupiah;
   amount: Rupiah;

@@ -120,6 +120,8 @@ test('explicit zero requires warning acknowledgment before posting the purchase'
         vatAmount: '0',
       })),
       totals: {
+        itemDiscountAmount: '0',
+        billDiscountAmount: '0',
         subtotal: '0',
         discountAmount: '0',
         amount: '0',
@@ -137,6 +139,8 @@ test('explicit zero requires warning acknowledgment before posting the purchase'
           purchaseId: 'p',
           version: 2,
           totals: {
+            itemDiscountAmount: '0',
+            billDiscountAmount: '0',
             subtotal: '0',
             discountAmount: '0',
             amount: '0',
@@ -287,6 +291,8 @@ test('returning to Purchase refreshes added and deactivated receiving locations'
       vatAmount: '0',
     })),
     totals: {
+      itemDiscountAmount: '0',
+      billDiscountAmount: '0',
       subtotal: '10000',
       discountAmount: '0',
       amount: '10000',
@@ -472,7 +478,7 @@ test('failed Purchase saves retain the entered price across area changes', async
   expect(price).toBeVisible();
 });
 
-test('purchase payments keep invalid rows open and persist corrected entries on close', async () => {
+test('purchase payments keep invalid rows open and persist corrected entries on Apply', async () => {
   const { default: userEvent } = await import('@testing-library/user-event');
   const b = bridge();
   let saved = structuredClone(draft);
@@ -492,15 +498,12 @@ test('purchase payments keep invalid rows open and persist corrected entries on 
   );
   const dialog = screen.getByRole('dialog', { name: 'Pembayaran keluar' });
   await userEvent.click(
-    within(dialog).getByRole('button', { name: 'Tambah pembayaran' }),
-  );
-  await userEvent.click(
-    within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!,
+    within(dialog).getByRole('button', { name: 'Terapkan' }),
   );
   expect(dialog).toBeVisible();
   await userEvent.type(within(dialog).getByLabelText('Jumlah dana'), '25000');
   await userEvent.click(
-    within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!,
+    within(dialog).getByRole('button', { name: 'Terapkan' }),
   );
   await waitFor(() =>
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
@@ -537,12 +540,9 @@ test('purchase payment failure preserves amount and can retry before closing', a
     await screen.findByRole('button', { name: 'Pembayaran keluar' }),
   );
   const dialog = screen.getByRole('dialog', { name: 'Pembayaran keluar' });
-  await userEvent.click(
-    within(dialog).getByRole('button', { name: 'Tambah pembayaran' }),
-  );
   await userEvent.type(within(dialog).getByLabelText('Jumlah dana'), '10000');
   await userEvent.click(
-    within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!,
+    within(dialog).getByRole('button', { name: 'Terapkan' }),
   );
   await waitFor(() =>
     expect(
@@ -553,9 +553,6 @@ test('purchase payment failure preserves amount and can retry before closing', a
   failed = false;
   await userEvent.click(
     within(dialog).getByRole('button', { name: 'Coba simpan lagi' }),
-  );
-  await userEvent.click(
-    within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!,
   );
   await waitFor(() =>
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
@@ -649,7 +646,7 @@ test('purchase table exposes twelve independently resizable columns', async () =
   Object.assign(window, { bengkelin: bridge() });
   render(<PurchasesScreen active={true} />);
   await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
-  const table = screen.getByRole('table');
+  const table = screen.getByRole('table', { name: 'Barang / jasa' });
   expect(within(table).getAllByRole('columnheader')).toHaveLength(12);
   expect(within(table).getAllByRole('separator')).toHaveLength(12);
 });
@@ -729,4 +726,59 @@ test('supplier search failure retains its query and supports retry', async () =>
   expect(
     await screen.findByRole('option', { name: 'Supplier A' }),
   ).toBeVisible();
+});
+
+test('purchase bill has one Disc percentage and writes one stage', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const b = bridge();
+  Object.assign(window, { bengkelin: b });
+  render(<PurchasesScreen active />);
+  const disc = await screen.findByRole('textbox', { name: 'Disc' });
+  await user.type(disc, '2,5');
+  await waitFor(() =>
+    expect(b.purchaseDrafts.apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        op: { kind: 'setDiscounts', lineId: null, stages: [250] },
+      }),
+    ),
+  );
+});
+
+test('purchase payment Cancel discards unapplied amount', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const b = bridge();
+  Object.assign(window, { bengkelin: b });
+  render(<PurchasesScreen active />);
+  await user.click(
+    await screen.findByRole('button', { name: 'Pembayaran keluar' }),
+  );
+  const dialog = screen.getByRole('dialog');
+  await user.type(within(dialog).getByLabelText('Jumlah dana'), '25000');
+  await user.click(within(dialog).getByRole('button', { name: 'Batal' }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(b.purchaseDrafts.apply).not.toHaveBeenCalled();
+});
+
+test('legacy purchase bill discounts require explicit replacement', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const b = bridge();
+  const legacy = { ...draft, discountStages: [5000, 5000] };
+  b.purchaseDrafts.list.mockResolvedValue(ok([legacy]));
+  b.purchaseDrafts.apply.mockResolvedValue(
+    ok({ ...legacy, version: 2, discountStages: [] }),
+  );
+  Object.assign(window, { bengkelin: b });
+  render(<PurchasesScreen active />);
+  const replace = await screen.findByRole('button', { name: 'Ganti diskon' });
+  expect(
+    screen.queryByRole('textbox', { name: 'Disc' }),
+  ).not.toBeInTheDocument();
+  expect(b.purchaseDrafts.apply).not.toHaveBeenCalled();
+  await user.click(replace);
+  expect(await screen.findByRole('textbox', { name: 'Disc' })).toBeVisible();
+  expect(b.purchaseDrafts.apply).toHaveBeenCalledWith(
+    expect.objectContaining({
+      op: { kind: 'setDiscounts', lineId: null, stages: [] },
+    }),
+  );
 });

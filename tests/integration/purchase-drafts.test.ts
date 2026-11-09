@@ -199,3 +199,28 @@ test('stale supplier edits cannot undo a deactivation and successful updates rep
     ).code,
   ).toBe('VALIDATION_FAILED');
 });
+
+test('purchase totals separate item and bill discounts without changing recorded amounts', async () => {
+  let d = await draft();
+  const units = value(
+    await h.call<ReferenceDto[]>(C.references.listActive, { entity: 'unit' }),
+  );
+  d = await apply(d, {
+    kind: 'addCustomLine',
+    type: 'NON_STOCK_ITEM',
+    title: 'Part',
+    unitId: units[0]!.id,
+    unitPrice: '100000',
+  });
+  d = await apply(d, {
+    kind: 'setDiscounts',
+    lineId: d.lines[0]!.id,
+    stages: [1000],
+  });
+  d = await apply(d, { kind: 'setDiscounts', lineId: null, stages: [250] });
+  expect(d.totals).toMatchObject({
+    itemDiscountAmount: '10000',
+    billDiscountAmount: '2250',
+    amount: '87750',
+  });
+});

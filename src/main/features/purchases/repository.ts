@@ -145,15 +145,25 @@ export class PurchaseRepository {
       );
   }
   totals(r: PurchaseRow): PurchaseTotals | null {
-    return r.amount === null
-      ? null
-      : {
-          subtotal: r.subtotal!.toString(),
-          discountAmount: r.discount_amount!.toString(),
-          amount: r.amount.toString(),
-          taxSubtotal: r.tax_subtotal!.toString(),
-          vatAmount: r.vat_amount!.toString(),
-        };
+    if (r.amount === null) return null;
+    const calculation = calculateInvoice({
+      vatRateBps: Number(r.vat_rate_bps),
+      lines: this.lines(r.id).map((l) => ({
+        quantity: Number(l.quantity),
+        unitPrice: l.unit_price!,
+        discountStages: this.stages(r.id, l.id),
+      })),
+      discountStages: this.stages(r.id, null),
+    });
+    return {
+      itemDiscountAmount: calculation.itemDiscountTotal.toString(),
+      billDiscountAmount: calculation.invoiceDiscountTotal.toString(),
+      subtotal: r.subtotal!.toString(),
+      discountAmount: r.discount_amount!.toString(),
+      amount: r.amount.toString(),
+      taxSubtotal: r.tax_subtotal!.toString(),
+      vatAmount: r.vat_amount!.toString(),
+    };
   }
   draftView(actor: Session, id: string, clock: Clock): PurchaseDraftView {
     const r = this.find(id);
