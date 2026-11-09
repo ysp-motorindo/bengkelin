@@ -198,29 +198,32 @@ test('an unrelated unsaved sales field does not block creating a purchase', asyn
 test('the draft switcher shows the supplier selected on the current draft', async () => {
   const { default: userEvent } = await import('@testing-library/user-event');
   const { waitFor } = await import('@testing-library/react');
-  const empty = { ...draft, supplier: null };
+  let latest = { ...draft, supplier: null as typeof draft.supplier };
   const b = bridge();
   (window as unknown as { bengkelin: unknown }).bengkelin = {
     ...b,
     purchaseDrafts: {
       ...b.purchaseDrafts,
-      list: async () => ok([empty]),
-      apply: async () => ok({ ...draft, version: 2 }),
+      list: async () => ok([latest]),
+      apply: async () => {
+        latest = { ...draft, version: 2 };
+        return ok(latest);
+      },
     },
   };
   render(<PurchasesScreen active={true} />);
-  await screen.findByRole('option', { name: 'Supplier A' });
-  await userEvent.selectOptions(
-    await screen.findByLabelText('Pemasok', { exact: true }),
-    's',
+  const picker = await screen.findByRole('combobox', {
+    name: 'Pemasok',
+  });
+  await userEvent.click(picker);
+  await userEvent.click(
+    await screen.findByRole('option', { name: 'Supplier A' }),
   );
-  await waitFor(() =>
-    expect(
-      within(screen.getByLabelText('Draf tersimpan')).getByRole('option', {
-        selected: true,
-      }),
-    ).toHaveTextContent('Supplier A'),
-  );
+  await waitFor(() => expect(picker).toHaveValue('Supplier A'));
+  await userEvent.click(screen.getByRole('button', { name: 'Draf tersimpan' }));
+  expect(
+    await screen.findByRole('dialog', { name: 'Draf tersimpan' }),
+  ).toHaveTextContent('Supplier A');
 });
 
 test('the custom-item shortcut from purchase history opens the purchase editor dialog', async () => {
@@ -601,7 +604,9 @@ test('purchase toolbar replaces sale controls and leaves history normally scroll
   expect(
     within(header).queryByRole('button', { name: 'Buat Baru' }),
   ).not.toBeInTheDocument();
-  expect(within(header).getByLabelText('Draf tersimpan')).toBeVisible();
+  expect(
+    within(header).getByRole('button', { name: 'Draf tersimpan' }),
+  ).toBeVisible();
   await userEvent.click(
     screen.getByRole('button', { name: 'Riwayat Pembelian' }),
   );
@@ -660,4 +665,68 @@ test('Escape cancels an unsent purchase quantity edit', async () => {
   await userEvent.keyboard('{Escape}');
   expect(quantity).toHaveValue('1');
   expect(b.purchaseDrafts.apply).not.toHaveBeenCalled();
+});
+
+test('supplier search supports keyboard selection and opens saved drafts as a dialog', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const b = bridge();
+  const next = { ...supplier, id: 'second', name: 'Supplier B' };
+  b.suppliers.search.mockResolvedValue(ok({ results: [next] }));
+  b.purchaseDrafts.apply.mockResolvedValue(
+    ok({ ...draft, supplier: next, version: 2 }),
+  );
+  Object.assign(window, { bengkelin: b });
+  render(<PurchasesScreen active={true} />);
+  const picker = await screen.findByRole('combobox', {
+    name: 'Pemasok',
+  });
+  await user.click(picker);
+  await user.type(picker, 'Supplier B');
+  await screen.findByRole('option', { name: /Supplier B/ });
+  await user.keyboard('{ArrowDown}{Enter}');
+  await waitFor(() => expect(picker).toHaveValue('Supplier B'));
+  await user.click(screen.getByRole('button', { name: 'Draf tersimpan' }));
+  expect(
+    await screen.findByRole('dialog', { name: 'Draf tersimpan' }),
+  ).toBeVisible();
+});
+
+test('opening Purchase with no drafts creates one using the shop date', async () => {
+  const b = bridge();
+  const create = vi.fn(async () => ok(draft));
+  Object.assign(window, {
+    bengkelin: {
+      ...b,
+      purchaseDrafts: { ...b.purchaseDrafts, list: async () => ok([]), create },
+    },
+  });
+  render(<PurchasesScreen active />);
+  await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  expect(create).toHaveBeenCalledTimes(1);
+});
+
+test('supplier search failure retains its query and supports retry', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const { SupplierPicker } =
+    await import('@/renderer/features/purchases/SupplierPicker');
+  const b = bridge();
+  b.suppliers.search.mockRejectedValue(new Error('offline'));
+  Object.assign(window, { bengkelin: b });
+  render(
+    <SupplierPicker
+      supplier={null}
+      disabled={false}
+      onSelect={async () => true}
+      onAdd={() => {}}
+    />,
+  );
+  const picker = screen.getByRole('combobox', { name: 'Pemasok' });
+  await user.type(picker, 'Supplier A');
+  const retry = await screen.findByRole('button', { name: 'Coba lagi' });
+  b.suppliers.search.mockResolvedValue(ok({ results: [supplier] }));
+  await user.click(retry);
+  expect(picker).toHaveValue('Supplier A');
+  expect(
+    await screen.findByRole('option', { name: 'Supplier A' }),
+  ).toBeVisible();
 });

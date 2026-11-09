@@ -1,3 +1,6 @@
+import { errorMessage } from '@/renderer/lib/errors';
+import { FolderOpen } from 'lucide-react';
+import { PurchaseDraftSwitcher } from './PurchaseDraftSwitcher';
 import { createPortal } from 'react-dom';
 import { NavigationRow } from '@/renderer/features/shell/NavigationRow';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -39,6 +42,7 @@ export function PurchasesScreen({
   const { t } = useTranslation();
   const action = useAction();
   const [started, setStarted] = useState(false);
+  const [switcher, setSwitcher] = useState(false);
   const [tab, setTab] = useState<Tab>('editor');
   const [drafts, setDrafts] = useState<PurchaseDraftView[]>([]);
   const [current, setCurrent] = useState<PurchaseDraftView | null>(null);
@@ -79,16 +83,32 @@ export function PurchasesScreen({
     ]);
     if (action.check(u)) setUnits(u.value);
     if (action.check(l)) setLocations(l.value);
-    if (action.check(s)) setTimezone(s.value.timezone);
+    if (action.check(s)) {
+      setTimezone(s.value.timezone);
+      return s.value.timezone;
+    }
+    return null;
   }, [action.check]);
   const boot = useCallback(async () => {
-    const [d] = await Promise.all([
+    const [d, zone] = await Promise.all([
       window.bengkelin.purchaseDrafts.list(),
       refreshReferences(),
     ]);
     if (action.check(d)) {
       setDrafts(d.value);
-      setCurrent((old) => old ?? d.value[0] ?? null);
+      if (d.value.length) setCurrent((old) => old ?? d.value[0] ?? null);
+      else if (zone) {
+        newRequest.current ??= crypto.randomUUID();
+        const r = await window.bengkelin.purchaseDrafts.create({
+          requestId: newRequest.current,
+          billDate: todayInShop(zone),
+        });
+        if (action.check(r)) {
+          newRequest.current = null;
+          setCurrent(r.value);
+          setDrafts([r.value]);
+        }
+      }
     }
   }, [action.check, refreshReferences]);
   const wasActive = useRef(false);
@@ -100,7 +120,10 @@ export function PurchasesScreen({
       if (!started) {
         setStarted(true);
         void action.run(boot);
-      } else void action.run(refreshReferences);
+      } else
+        void action.run(async () => {
+          await refreshReferences();
+        });
     }
     wasActive.current = active;
   }, [active, started, boot, refreshReferences, action.run]);
@@ -174,36 +197,24 @@ export function PurchasesScreen({
       }))}
     />
   );
-  const draftSelector = drafts.length ? (
-    <div className="min-w-0 max-w-64">
-      <div>
-        <Select
-          aria-label={t('purchases.drafts')}
-          className="max-w-64"
-          value={current?.id ?? ''}
-          onChange={(e) => {
-            const id = e.target.value;
-            void flushDraft().then((ok) => {
-              if (ok)
-                void action.run(async () => {
-                  const r = await window.bengkelin.purchaseDrafts.get({
-                    purchaseId: id,
-                  });
-                  if (action.check(r)) setCurrent(r.value);
-                });
-            });
-          }}
-        >
-          {drafts.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.supplier?.name ?? t('purchases.chooseSupplier')} ·{' '}
-              {formatDisplayDate(d.billDate)} · {d.id.slice(0, 8)}
-            </option>
-          ))}
-        </Select>
-      </div>
-    </div>
-  ) : null;
+  const draftSelector = (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() =>
+        void action.run(async () => {
+          const r = await window.bengkelin.purchaseDrafts.list();
+          if (action.check(r)) {
+            setDrafts(r.value);
+            setSwitcher(true);
+          }
+        })
+      }
+    >
+      <FolderOpen aria-hidden="true" />
+      {t('purchases.drafts')}
+    </Button>
+  );
   return (
     <div
       className={
@@ -291,6 +302,45 @@ export function PurchasesScreen({
       {!detail &&
       (tab === 'history' || tab === 'receiving' || tab === 'payables') ? (
         <PurchaseList tab={tab} onOpen={(p) => setDetail(p)} />
+      ) : null}
+      {switcher ? (
+        <PurchaseDraftSwitcher
+          drafts={drafts}
+          currentId={current?.id ?? null}
+          timezone={timezone}
+          onClose={() => setSwitcher(false)}
+          onResume={async (id) => {
+            if (!(await flushDraft())) {
+              setNotice(t('workspace.notices.unsaved'));
+              return false;
+            }
+            const r = await window.bengkelin.purchaseDrafts.get({
+              purchaseId: id,
+            });
+            if (action.check(r)) {
+              setCurrent(r.value);
+              return true;
+            }
+            return false;
+          }}
+          onDiscard={async (d) => {
+            if (!(await flushDraft())) return t('workspace.notices.unsaved');
+            const r = await window.bengkelin.purchaseDrafts.apply({
+              requestId: crypto.randomUUID(),
+              purchaseId: d.id,
+              expectedVersion: d.version,
+              op: { kind: 'discard' },
+            });
+            if (!r.ok) return errorMessage(t, r.error);
+            const remaining = drafts.filter((x) => x.id !== d.id);
+            setDrafts(remaining);
+            if (current?.id === d.id) {
+              setCurrent(remaining[0] ?? null);
+              if (!remaining.length) setSwitcher(false);
+            }
+            return null;
+          }}
+        />
       ) : null}
       {tab === 'suppliers' ? <SuppliersScreen /> : null}
     </div>

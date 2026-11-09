@@ -1,3 +1,5 @@
+import { SupplierPicker } from './SupplierPicker';
+import { FilePlus } from 'lucide-react';
 import { ResizableTransactionTable } from '@/renderer/components/resizable-transaction-table';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -24,7 +26,6 @@ import {
   type PurchaseDraftView,
   type PurchaseDraftOperation,
   type PurchaseView,
-  type SupplierDto,
   type ReferenceDto,
   type PurchaseFinalizePreview,
 } from '@/shared/contracts';
@@ -87,11 +88,9 @@ export function PurchaseEditor({
     [registerDraftActions, commands.flush, onNew, view.id, view.version],
   );
   useEffect(() => onChanged(view), [view, onChanged]);
-  const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
   const [supplierForm, setSupplierForm] = useState(false);
   const [custom, setCustom] = useState(false);
   const [paymentsOpen, setPaymentsOpen] = useState(false);
-  const [discard, setDiscard] = useState(false);
   const [review, setReview] = useState<{
     preview: PurchaseFinalizePreview;
     requestId: string;
@@ -99,26 +98,9 @@ export function PurchaseEditor({
   const [accepted, setAccepted] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const search = useRef<HTMLInputElement>(null);
-  const supplierQuery = useRef(0);
-  function loadSuppliers(query = '') {
-    const rev = ++supplierQuery.current;
-    void window.bengkelin.suppliers
-      .search({ query, limit: 50 })
-      .then((r) => {
-        if (rev === supplierQuery.current) {
-          if (r.ok) setSuppliers(r.value.results);
-          else setNotice(errorMessage(t, r.error));
-        }
-      })
-      .catch(() => setNotice(t('errors.INTERNAL_ERROR')));
-  }
-  useEffect(() => {
-    loadSuppliers();
-  }, []);
   const returning = useRef(active);
   useEffect(() => {
     if (active && !returning.current) {
-      loadSuppliers();
       void commands.flush().then((ok) => (ok ? commands.refresh() : undefined));
     }
     returning.current = active;
@@ -183,7 +165,6 @@ export function PurchaseEditor({
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-2">
         {draftSelector}
-        <SaveIndicator state={commands.saveState} onRetry={commands.retry} />
         <Button
           variant="outline"
           size="sm"
@@ -194,17 +175,11 @@ export function PurchaseEditor({
           }
           disabled={controlsDisabled}
         >
+          <FilePlus aria-hidden="true" />
           {t('purchases.new')}
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setDiscard(true)}
-          disabled={controlsDisabled}
-        >
-          {t('purchases.discard')}
-        </Button>
       </div>
+      <SaveIndicator state={commands.saveState} onRetry={commands.retry} />
     </div>
   );
   return (
@@ -224,38 +199,14 @@ export function PurchaseEditor({
         className="grid shrink-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_3fr]"
       >
         <div className="min-w-0 space-y-2">
-          <FormField label={t('purchases.supplier')}>
-            <Select
-              value={view.supplier?.id ?? ''}
-              onChange={(e) =>
-                void send({
-                  kind: 'updateHeader',
-                  changes: { supplierId: e.target.value || null },
-                })
-              }
-            >
-              <option value="">{t('purchases.chooseSupplier')}</option>
-              {view.supplier &&
-              !suppliers.some((s) => s.id === view.supplier!.id) ? (
-                <option value={view.supplier.id}>{view.supplier.name}</option>
-              ) : null}
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          <div className="flex gap-2">
-            <Input
-              aria-label={t('purchases.searchSupplier')}
-              placeholder={t('purchases.searchSupplier')}
-              onChange={(e) => loadSuppliers(e.target.value)}
-            />
-            <Button variant="outline" onClick={() => setSupplierForm(true)}>
-              {t('purchases.addSupplier')}
-            </Button>
-          </div>
+          <SupplierPicker
+            supplier={view.supplier}
+            disabled={controlsDisabled}
+            onSelect={async (supplierId) =>
+              (await send({ kind: 'updateHeader', changes: { supplierId } })).ok
+            }
+            onAdd={() => setSupplierForm(true)}
+          />
         </div>
         <div className="grid min-w-0 gap-2 lg:col-start-3 lg:grid-cols-3">
           <DraftField
@@ -551,7 +502,6 @@ export function PurchaseEditor({
         <SupplierForm
           onClose={() => setSupplierForm(false)}
           onSaved={(s) => {
-            setSuppliers((prev) => [s, ...prev.filter((x) => x.id !== s.id)]);
             void send({ kind: 'updateHeader', changes: { supplierId: s.id } });
             setSupplierForm(false);
           }}
@@ -644,26 +594,6 @@ export function PurchaseEditor({
             ) : null}
             {action.error ? <Alert>{action.error}</Alert> : null}
           </div>
-        </Dialog>
-      ) : null}
-      {discard ? (
-        <Dialog
-          title={t('purchases.discard')}
-          onClose={() => setDiscard(false)}
-          footer={
-            <Button
-              variant="destructive"
-              onClick={() =>
-                void send({ kind: 'discard' }).then((r) => {
-                  if (r.ok) onDiscarded();
-                })
-              }
-            >
-              {t('purchases.discard')}
-            </Button>
-          }
-        >
-          <p>{t('purchases.discardNotice')}</p>
         </Dialog>
       ) : null}
     </section>

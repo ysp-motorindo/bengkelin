@@ -144,5 +144,7 @@
   "creditedTotal": "Kredit pemasok",
   "adjustedTotal": "Nilai faktur setelah kredit",
   "refundedTotal": "Dana kembali diterima",
-  "loadLatestSupplier": "Muat data terbaru (ganti isian)"
+  "loadLatestSupplier": "Muat data terbaru (ganti isian)",
+  "clearSupplier": "Hapus pilihan pemasok",
+  "updatedAt": "Diperbarui"
 }

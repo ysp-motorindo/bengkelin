@@ -144,5 +144,7 @@
   "creditedTotal": "Supplier credits",
   "adjustedTotal": "Adjusted bill total",
   "refundedTotal": "Refunds received",
-  "loadLatestSupplier": "Load latest saved details (replace entries)"
+  "loadLatestSupplier": "Load latest saved details (replace entries)",
+  "clearSupplier": "Clear supplier",
+  "updatedAt": "Updated"
 }
