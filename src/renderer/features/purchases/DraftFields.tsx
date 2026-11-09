@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '@/renderer/components/form-field';
 import { Input, controlClass } from '@/renderer/components/ui/input';
@@ -37,15 +37,18 @@ export function DraftField({
   const { t } = useTranslation();
   const [text, setText] = useSyncedValue(value, () => commands.dirty(field));
   useEffect(
-    () => () => commands.invalid(field, false),
-    [commands.invalid, field],
+    () => () => commands.cancelPending(field),
+    [commands.cancelPending, field],
   );
   const valid = parse(text) !== null;
   const change = (next: string) => {
     setText(next);
     const op = parse(next);
     commands.invalid(field, op === null);
-    if (op) commands.edit(field, op);
+    if (op) {
+      if (compact) commands.stage(field, op);
+      else commands.edit(field, op);
+    }
   };
   if (compact)
     return (
@@ -55,6 +58,16 @@ export function DraftField({
           onValueChange={change}
           decimal={decimal}
           disabled={disabled}
+          className="h-8 rounded-sm border-transparent bg-amber-50 px-1.5 text-right text-xs shadow-none focus-visible:border-amber-600 dark:bg-amber-950/40"
+          onBlur={() => void commands.flush()}
+          onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              event.stopPropagation();
+              commands.cancelPending(field);
+              setText(value);
+            }
+          }}
           aria-label={label}
           aria-invalid={!valid}
         />
@@ -98,10 +111,12 @@ export function DraftDiscounts({
   commands,
   lineId,
   stages,
+  cells = false,
 }: {
   commands: PurchaseCommands;
   lineId: string | null;
   stages: number[];
+  cells?: boolean;
 }) {
   const { t } = useTranslation();
   const key = 'discounts:' + lineId;
@@ -113,7 +128,57 @@ export function DraftDiscounts({
     JSON.stringify(stages),
   );
   const parsed = parseStageTexts(texts);
-  useEffect(() => () => commands.invalid(key, false), [commands.invalid, key]);
+  useEffect(
+    () => () => commands.cancelPending(key),
+    [commands.cancelPending, key],
+  );
+  if (cells)
+    return (
+      <>
+        {texts.map((text, i) => (
+          <td key={i}>
+            <NumericInput
+              decimal
+              value={text}
+              aria-label={t('purchases.stage', { n: i + 1 }) + ' ' + lineId}
+              aria-invalid={!parsed.ok && parsed.index === i}
+              className="h-8 rounded-sm border-transparent bg-amber-50 px-1.5 text-right text-xs dark:bg-amber-950/40"
+              onBlur={() => void commands.flush()}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  commands.cancelPending(key);
+                  setTexts(
+                    Array.from({ length: 4 }, (_, j) =>
+                      stages[j] === undefined
+                        ? ''
+                        : formatBpsAsPercentage(stages[j]!),
+                    ),
+                  );
+                }
+              }}
+              onValueChange={(v) => {
+                const next = [...texts];
+                next[i] = v;
+                setTexts(next);
+                const p = parseStageTexts(next);
+                commands.invalid(key, !p.ok);
+                if (p.ok)
+                  commands.stage(key, {
+                    kind: 'setDiscounts',
+                    lineId,
+                    stages: p.stages,
+                  });
+              }}
+            />
+            {!parsed.ok && parsed.index === i ? (
+              <p role="alert">{t('validation.invalid')}</p>
+            ) : null}
+          </td>
+        ))}
+      </>
+    );
   return (
     <fieldset className="space-y-2">
       <legend className="text-xs font-medium">

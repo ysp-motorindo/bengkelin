@@ -66,6 +66,14 @@ export function usePurchaseDraft(
     (key: string, op: PurchaseDraftOperation) => queue.current?.edit(key, op),
     [],
   );
+  const stage = useCallback(
+    (key: string, op: PurchaseDraftOperation) => queue.current?.stage(key, op),
+    [],
+  );
+  const cancelPending = useCallback(
+    (key: string) => queue.current?.cancelPending(key),
+    [],
+  );
   const invalid = useCallback(
     (key: string, value: boolean) => queue.current?.markInvalid(key, value),
     [],
@@ -89,6 +97,8 @@ export function usePurchaseDraft(
     saveState,
     send,
     edit,
+    stage,
+    cancelPending,
     invalid,
     dirty,
     flush,

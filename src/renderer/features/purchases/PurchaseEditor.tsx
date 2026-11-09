@@ -1,3 +1,4 @@
+import { ResizableTransactionTable } from '@/renderer/components/resizable-transaction-table';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { formatDisplayDate } from '@/renderer/lib/date-format';
@@ -302,143 +303,138 @@ export function PurchaseEditor({
           </div>
         </div>
       </fieldset>
-      <div className="transaction-lines min-h-48 min-w-0 flex-1 overflow-auto border bg-card lg:min-h-0">
-        <table className="w-full min-w-[850px] table-fixed text-sm">
-          <colgroup>
-            <col className="w-[25%]" />
-            <col className="w-[8%]" />
-            <col className="w-[16%]" />
-            <col className="w-[32%]" />
-            <col className="w-[13%]" />
-            <col className="w-[6%]" />
-          </colgroup>
-          <caption className="sr-only">{t('purchases.item')}</caption>
-          <thead className="bg-muted/40">
-            <tr>
-              {[
-                'item',
-                'quantity',
-                'unitPrice',
-                'discounts',
-                'lineAmount',
-                'remove',
-              ].map((k) => (
-                <th
-                  className="px-2 py-1.5 text-left text-xs font-medium"
-                  key={k}
-                >
-                  {t(`purchases.${k}`)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {view.lines.map((l) => (
-              <tr
-                key={l.id}
-                data-purchase-line={l.id}
-                className="border-t align-top"
-              >
-                <td className="min-w-44 px-2 py-1.5">
-                  <span className="font-medium">{l.title}</span>
-                  <p className="text-xs text-muted-foreground">
-                    {l.itemCode ? `${l.itemCode} · ` : ''}
-                    {l.unitLabel}
-                  </p>
-                </td>
-                <td className="w-28 px-2 py-1.5">
-                  <DraftField
-                    commands={commands}
-                    compact
-                    field={'qty:' + l.id}
-                    label={t('purchases.quantityLabel', { title: l.title })}
-                    value={String(l.quantity)}
-                    numeric
-                    parse={(v) =>
-                      /^\d+$/.test(v) && Number(v) > 0 && Number(v) <= 1000000
+      <div className="transaction-lines min-h-48 min-w-0 flex-1 overflow-auto lg:min-h-0">
+        <ResizableTransactionTable
+          caption={t('purchases.item')}
+          storageKey="bengkelin.purchase-column-widths.v1"
+          columns={[
+            '#',
+            t('workspace.lines.code'),
+            t('purchases.item'),
+            t('purchases.unit'),
+            t('purchases.quantity'),
+            t('purchases.unitPrice'),
+            'D1',
+            'D2',
+            'D3',
+            'D4',
+            t('purchases.lineAmount'),
+            t('workspace.lines.actions'),
+          ].map((label, i) => ({
+            label,
+            minWidth: [32, 96, 192, 56, 64, 112, 56, 56, 56, 56, 128, 80][i]!,
+          }))}
+        >
+          {view.lines.map((l, index) => (
+            <tr
+              key={l.id}
+              data-purchase-line={l.id}
+              className="border-t align-top"
+            >
+              <td className="text-right text-muted-foreground">{index + 1}</td>
+              <td className="truncate" title={l.itemCode ?? undefined}>
+                {l.itemCode ?? '—'}
+              </td>
+              <td className="min-w-48">
+                <span className="font-medium">{l.title}</span>
+              </td>
+              <td className="text-center">{l.unitLabel}</td>
+              <td className="w-28 px-2 py-1.5">
+                <DraftField
+                  commands={commands}
+                  compact
+                  field={'qty:' + l.id}
+                  label={t('purchases.quantityLabel', { title: l.title })}
+                  value={String(l.quantity)}
+                  numeric
+                  parse={(v) =>
+                    /^\d+$/.test(v) && Number(v) > 0 && Number(v) <= 1000000
+                      ? {
+                          kind: 'updateLine',
+                          lineId: l.id,
+                          changes: { quantity: Number(v) },
+                        }
+                      : null
+                  }
+                />
+              </td>
+              <td className="min-w-40 px-2 py-1.5" data-purchase-price>
+                <DraftField
+                  commands={commands}
+                  compact
+                  field={'price:' + l.id}
+                  label={t('purchases.priceLabel', { title: l.title })}
+                  value={l.unitPrice ?? ''}
+                  numeric
+                  parse={(v) =>
+                    v === ''
+                      ? {
+                          kind: 'updateLine',
+                          lineId: l.id,
+                          changes: { unitPrice: null },
+                        }
+                      : priceSchema.safeParse(v).success
                         ? {
                             kind: 'updateLine',
                             lineId: l.id,
-                            changes: { quantity: Number(v) },
+                            changes: { unitPrice: v },
                           }
                         : null
-                    }
-                  />
-                </td>
-                <td className="min-w-40 px-2 py-1.5" data-purchase-price>
-                  <DraftField
-                    commands={commands}
-                    compact
-                    field={'price:' + l.id}
-                    label={t('purchases.priceLabel', { title: l.title })}
-                    value={l.unitPrice ?? ''}
-                    numeric
-                    parse={(v) =>
-                      v === ''
-                        ? {
-                            kind: 'updateLine',
-                            lineId: l.id,
-                            changes: { unitPrice: null },
-                          }
-                        : priceSchema.safeParse(v).success
-                          ? {
-                              kind: 'updateLine',
-                              lineId: l.id,
-                              changes: { unitPrice: v },
-                            }
-                          : null
-                    }
-                  />
-                  {l.unitPrice === null ? (
-                    <p className="mt-1 text-xs text-destructive">
-                      {t('purchases.unpriced')}
-                    </p>
-                  ) : null}
-                </td>
-                <td className="min-w-64 px-2 py-1.5">
-                  <DraftDiscounts
-                    commands={commands}
-                    lineId={l.id}
-                    stages={l.discountStages}
-                  />
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums">
-                  {l.amount === null ? '—' : formatIdr(l.amount)}
-                </td>
-                <td className="px-2 py-1.5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label={t('purchases.remove') + ' ' + l.title}
-                    onClick={() =>
-                      void send({ kind: 'removeLine', lineId: l.id })
-                    }
-                  >
-                    {t('purchases.remove')}
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="border-t bg-amber-50/60 p-3 dark:bg-amber-950/20">
-          <ScannerCombobox
-            inputRef={search}
-            disabled={controlsDisabled}
-            onCustom={() => setCustom(true)}
-            onScan={(code) => add({ barcode: code })}
-            onPick={async (item) => {
-              await add({ catalogItemId: item.id });
-            }}
-            feedback={feedback}
-            onClearFeedback={() => setFeedback(null)}
-          />
-          {!view.lines.length ? (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {t('purchases.emptyLines')}
-            </p>
-          ) : null}
-        </div>
+                  }
+                />
+                {l.unitPrice === null ? (
+                  <p className="mt-1 text-xs text-destructive">
+                    {t('purchases.unpriced')}
+                  </p>
+                ) : null}
+              </td>
+              <DraftDiscounts
+                commands={commands}
+                lineId={l.id}
+                stages={l.discountStages}
+                cells
+              />
+              <td className="px-2 py-1.5 text-right tabular-nums">
+                {l.amount === null ? '—' : formatIdr(l.amount)}
+              </td>
+              <td className="px-2 py-1.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={t('purchases.remove') + ' ' + l.title}
+                  onClick={() =>
+                    void send({ kind: 'removeLine', lineId: l.id })
+                  }
+                >
+                  {t('purchases.remove')}
+                </Button>
+              </td>
+            </tr>
+          ))}
+          <tr className="border-t-2 border-amber-300 bg-amber-50/60 dark:bg-amber-950/20">
+            <td />
+            <td colSpan={2} className="px-2 py-2">
+              <ScannerCombobox
+                compact
+                inputRef={search}
+                disabled={controlsDisabled}
+                onCustom={() => setCustom(true)}
+                onScan={(code) => add({ barcode: code })}
+                onPick={async (item) => {
+                  await add({ catalogItemId: item.id });
+                }}
+                feedback={feedback}
+                onClearFeedback={() => setFeedback(null)}
+              />
+              {!view.lines.length ? (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {t('purchases.emptyLines')}
+                </p>
+              ) : null}
+            </td>
+            <td colSpan={9} />
+          </tr>
+        </ResizableTransactionTable>
       </div>
       <div className="grid shrink-0 items-start gap-3 border-t border-border bg-card pt-2 lg:grid-cols-[minmax(0,1fr)_minmax(23rem,0.45fr)]">
         <div className="min-w-0">

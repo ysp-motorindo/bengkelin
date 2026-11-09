@@ -154,6 +154,7 @@ test('explicit zero requires warning acknowledgment before posting the purchase'
   const user = userEvent.setup();
   const price = await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
   await user.type(price, '0');
+  await user.tab();
   const review = await screen.findByRole('button', {
     name: 'Tinjau pembelian',
   });
@@ -637,4 +638,26 @@ test('purchase notes support multiline text and preserve it after saving', async
   await userEvent.tab();
   await waitFor(() => expect(saved.note).toBe('First line\nSecond line'));
   expect(note).toHaveValue('First line\nSecond line');
+});
+
+test('purchase table exposes twelve independently resizable columns', async () => {
+  Object.assign(window, { bengkelin: bridge() });
+  render(<PurchasesScreen active={true} />);
+  await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  const table = screen.getByRole('table');
+  expect(within(table).getAllByRole('columnheader')).toHaveLength(12);
+  expect(within(table).getAllByRole('separator')).toHaveLength(12);
+});
+
+test('Escape cancels an unsent purchase quantity edit', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const b = bridge();
+  Object.assign(window, { bengkelin: b });
+  render(<PurchasesScreen active={true} />);
+  const quantity = await screen.findByRole('textbox', { name: /Jumlah.*Oil/ });
+  await userEvent.clear(quantity);
+  await userEvent.type(quantity, '7');
+  await userEvent.keyboard('{Escape}');
+  expect(quantity).toHaveValue('1');
+  expect(b.purchaseDrafts.apply).not.toHaveBeenCalled();
 });
