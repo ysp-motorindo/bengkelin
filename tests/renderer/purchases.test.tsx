@@ -638,3 +638,124 @@ test('purchase notes support multiline text and preserve it after saving', async
   await waitFor(() => expect(saved.note).toBe('First line\nSecond line'));
   expect(note).toHaveValue('First line\nSecond line');
 });
+
+test.each(['quantity', 'price', 'discount'] as const)(
+  'removing a line cancels its pending %s edit even during a slow removal',
+  async (field) => {
+    const { act, fireEvent } = await import('@testing-library/react');
+    const { PurchaseEditor } =
+      await import('@/renderer/features/purchases/PurchaseEditor');
+    let saved = structuredClone(draft);
+    let finish: () => void = () => {};
+    const b = bridge();
+    b.purchaseDrafts.apply = vi.fn(async (c: PurchaseDraftCommand) => {
+      if (c.op.kind === 'removeLine') {
+        await new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+        saved = { ...saved, version: saved.version + 1, lines: [] };
+        return ok(saved);
+      }
+      throw new Error('Edit sent for removed line');
+    });
+    (window as unknown as { bengkelin: unknown }).bengkelin = b;
+    let actions:
+      | import('@/renderer/features/workspace/workspace-actions').WorkspaceActions
+      | undefined;
+    render(
+      <PurchaseEditor
+        initial={saved}
+        active
+        units={[]}
+        onNew={async () => {}}
+        onPosted={() => {}}
+        onDiscarded={() => {}}
+        onChanged={() => {}}
+        registerDraftActions={(a) => {
+          actions = a;
+          return () => {};
+        }}
+      />,
+    );
+    const input =
+      field === 'discount'
+        ? screen.getAllByRole('textbox', { name: 'Tahap 1' })[0]!
+        : screen.getByRole('textbox', {
+            name: field === 'price' ? /Harga beli.*Oil/ : /Jumlah.*Oil/,
+          });
+    fireEvent.change(input, {
+      target: { value: field === 'price' ? '10000' : '2' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus Oil' }));
+    let flushed!: Promise<boolean>;
+    await act(async () => {
+      flushed = actions!.saveDraft();
+      finish();
+    });
+    expect(await flushed).toBe(true);
+    expect(
+      screen.queryByRole('button', { name: 'Hapus Oil' }),
+    ).not.toBeInTheDocument();
+    expect(b.purchaseDrafts.apply).toHaveBeenCalledTimes(1);
+  },
+);
+
+test('failed line removal retains the entered price for saving', async () => {
+  const { act, fireEvent } = await import('@testing-library/react');
+  const { getWorkspaceActions } =
+    await import('@/renderer/features/workspace/workspace-actions');
+  const b = bridge();
+  let saved = structuredClone(draft);
+  const apply = async (c: PurchaseDraftCommand) => {
+    if (c.op.kind === 'removeLine')
+      return {
+        ok: false as const,
+        error: { code: 'INTERNAL_ERROR', messageKey: 'errors.INTERNAL_ERROR' },
+      };
+    if (c.op.kind === 'updateLine')
+      saved = {
+        ...saved,
+        version: saved.version + 1,
+        lines: saved.lines.map((l) => ({ ...l, unitPrice: '10000' })),
+      };
+    return ok(saved);
+  };
+  (window as unknown as { bengkelin: unknown }).bengkelin = {
+    ...b,
+    purchaseDrafts: { ...b.purchaseDrafts, apply },
+  };
+  render(<PurchasesScreen active />);
+  const price = await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  fireEvent.change(price, { target: { value: '10000' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Hapus Oil' }));
+  await act(async () => {
+    expect(await getWorkspaceActions()!.saveDraft()).toBe(true);
+  });
+  expect(price).toHaveValue('10.000');
+  expect(saved.lines[0]!.unitPrice).toBe('10000');
+});
+
+test('removing a line does not clear an unrelated invalid header', async () => {
+  const { act, fireEvent } = await import('@testing-library/react');
+  const { getWorkspaceActions } =
+    await import('@/renderer/features/workspace/workspace-actions');
+  const b = bridge();
+  b.purchaseDrafts.apply = vi.fn(async () =>
+    ok({ ...draft, version: 2, lines: [] }),
+  );
+  (window as unknown as { bengkelin: unknown }).bengkelin = b;
+  render(<PurchasesScreen active />);
+  await screen.findByRole('button', { name: 'Hapus Oil' });
+  fireEvent.change(screen.getByLabelText('Nomor faktur pemasok'), {
+    target: { value: 'x'.repeat(101) },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Hapus Oil' }));
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: 'Hapus Oil' }),
+    ).not.toBeInTheDocument(),
+  );
+  await act(async () => {
+    expect(await getWorkspaceActions()!.saveDraft()).toBe(false);
+  });
+});

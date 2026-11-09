@@ -84,6 +84,10 @@ export function usePurchaseDraft(
   );
   const current = useCallback(() => queue.current?.view ?? initial, [initial]);
   const retry = useCallback(() => queue.current?.retry(), []);
+  const cancelPending = useCallback(
+    (key: string) => queue.current?.cancelPending(key),
+    [],
+  );
   return {
     view: view.id === initial.id ? view : initial,
     saveState,
@@ -95,5 +99,6 @@ export function usePurchaseDraft(
     refresh,
     current,
     retry,
+    cancelPending,
   };
 }

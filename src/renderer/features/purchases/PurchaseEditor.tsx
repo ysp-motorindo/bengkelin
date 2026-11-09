@@ -124,6 +124,10 @@ export function PurchaseEditor({
   }, [active, commands.flush, commands.refresh]);
   async function send(op: PurchaseDraftOperation) {
     const r = await commands.send(op);
+    if (r.ok && op.kind === 'removeLine') {
+      for (const key of ['qty:', 'price:', 'discounts:'])
+        commands.cancelPending(key + op.lineId);
+    }
     if (!r.ok) setNotice(errorMessage(t, r.error));
     return r;
   }
