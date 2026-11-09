@@ -143,6 +143,7 @@ export function createApplicationServices(
   return {
     purchasePrinting: new PurchasePrintingService({
       db,
+      logger,
       clock,
       printing,
       driver: deps.printDriver ?? unavailablePrintDriver,
