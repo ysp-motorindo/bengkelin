@@ -157,7 +157,10 @@ export function SupplierImportDialog({
                     <td>
                       {row.openingBalance === null
                         ? '—'
-                        : formatIdr(row.openingBalance)}
+                        : row.openingAction === 'CREATE' ||
+                            row.openingAction === 'UNCHANGED'
+                          ? formatIdr(row.openingBalance)
+                          : row.openingBalance}
                     </td>
                     <td>
                       {t(`purchases.opening.actions.${row.openingAction}`)}
