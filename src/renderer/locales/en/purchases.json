@@ -146,5 +146,7 @@
   "refundedTotal": "Refunds received",
   "loadLatestSupplier": "Load latest saved details (replace entries)",
   "clearSupplier": "Clear supplier",
-  "updatedAt": "Updated"
+  "updatedAt": "Updated",
+  "recordedTitle": "Purchase recorded",
+  "viewBill": "View bill"
 }

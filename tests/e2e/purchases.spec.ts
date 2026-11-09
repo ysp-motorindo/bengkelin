@@ -135,12 +135,15 @@ for (const locale of ['id', 'en'] as const)
         await page.reload();
         await navigateTo(page, 'purchases');
         await page
-          .getByRole('main')
+          .locator('header')
           .getByRole('button', { name: field('new'), exact: true })
           .click();
         await page
           .getByLabel(field('supplier'), { exact: true })
-          .selectOption({ label: 'Supplier A' });
+          .fill('Supplier A');
+        await page
+          .getByRole('option', { name: 'Supplier A', exact: true })
+          .click();
         const scanner = page.getByRole('combobox', {
           name: t('workspace.search.label'),
           exact: true,
@@ -152,6 +155,7 @@ for (const locale of ['id', 'en'] as const)
           exact: true,
         });
         await expect(price).toHaveValue('');
+        await expect(price).toBeFocused();
         await capture('blank-price');
         await page
           .getByRole('textbox', { name: qtyLabel, exact: true })
@@ -161,14 +165,14 @@ for (const locale of ['id', 'en'] as const)
           .getByRole('button', { name: field('outgoingPayments'), exact: true })
           .click();
         await page
-          .getByRole('button', { name: field('addPayment'), exact: true })
-          .click();
-        await page
           .getByRole('textbox', { name: field('amount'), exact: true })
           .fill('60000');
         await page
           .getByRole('dialog')
-          .getByRole('button', { name: field('close'), exact: true })
+          .getByRole('button', {
+            name: t('workspace.checkout.apply'),
+            exact: true,
+          })
           .last()
           .click();
         await page
@@ -180,6 +184,10 @@ for (const locale of ['id', 'en'] as const)
         });
         await dialog
           .getByRole('button', { name: field('finalize'), exact: true })
+          .click();
+        await page
+          .getByRole('dialog', { name: field('recordedTitle'), exact: true })
+          .getByRole('button', { name: field('viewBill'), exact: true })
           .click();
         await expect(
           page.getByRole('heading', { name: /PUR-\d{8}-\d+/ }),

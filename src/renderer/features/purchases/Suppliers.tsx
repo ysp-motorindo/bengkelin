@@ -9,10 +9,12 @@ import { useAction } from '@/renderer/lib/use-action';
 import type { SupplierDto } from '@/shared/contracts';
 export function SupplierForm({
   initial,
+  returnFocus,
   onSaved,
   onClose,
 }: {
   initial?: SupplierDto;
+  returnFocus?: () => void;
   onSaved: (s: SupplierDto) => void;
   onClose: () => void;
 }) {
@@ -73,6 +75,7 @@ export function SupplierForm({
   return (
     <Dialog
       title={t('purchases.addSupplier')}
+      returnFocus={returnFocus}
       onClose={() => {
         if (!action.busy) onClose();
       }}

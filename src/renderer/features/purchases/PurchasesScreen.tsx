@@ -127,11 +127,12 @@ export function PurchasesScreen({
     }
     wasActive.current = active;
   }, [active, started, boot, refreshReferences, action.run]);
-  const create = useCallback(async () => {
+  const create = useCallback(async (): Promise<boolean> => {
+    let created = false;
     if (!(await flushDraft())) {
       setNotice(t('workspace.notices.unsaved'));
       setTab('editor');
-      return;
+      return false;
     }
     await action.run(async () => {
       newRequest.current ??= crypto.randomUUID();
@@ -145,13 +146,17 @@ export function PurchasesScreen({
         setDrafts((ds) => [r.value, ...ds]);
         setDetail(null);
         setTab('editor');
+        created = true;
       }
     });
+    return created;
   }, [action.run, action.check, timezone, flushDraft]);
   useEffect(() => {
     if (!active || tab === 'editor') return;
     return registerWorkspaceActions({
-      newTransaction: create,
+      newTransaction: async () => {
+        await create();
+      },
       focusSearch: () => {
         setTab('editor');
         requestAnimationFrame(() => editorActions.current?.focusSearch());
@@ -254,8 +259,10 @@ export function PurchasesScreen({
             onNew={create}
             onPosted={(p) => {
               setDrafts((ds) => ds.filter((d) => d.id !== p.id));
+            }}
+            onViewBill={(p) => {
               setCurrent(drafts.find((d) => d.id !== p.id) ?? null);
-              setAutoPrint(true);
+              setAutoPrint(false);
               setDetail(p);
               setTab('history');
               setNotice(t('purchases.billRecorded'));

@@ -782,3 +782,221 @@ test('legacy purchase bill discounts require explicit replacement', async () => 
     }),
   );
 });
+
+function recordedPurchaseBridge() {
+  const totals = {
+    subtotal: '100000',
+    discountAmount: '0',
+    itemDiscountAmount: '0',
+    billDiscountAmount: '0',
+    amount: '100000',
+    taxSubtotal: '100000',
+    vatAmount: '0',
+  };
+  const ready = {
+    ...draft,
+    supplierBillReference: 'BILL-42',
+    totals,
+    lines: draft.lines.map((l) => ({
+      ...l,
+      unitPrice: '100000',
+      amount: '100000',
+      taxSubtotal: '100000',
+      vatAmount: '0',
+    })),
+  };
+  const recorded = {
+    ...ready,
+    status: 'FINALIZED' as const,
+    documentNumber: 'PUR-20260930-1',
+    finalizedAt: ready.updatedAt,
+    shop: { name: 'Shop', address: null, phoneNumber: null },
+    outgoingPayments: [],
+    refunds: [],
+    receipts: [],
+    credits: [],
+    creditedAmount: '0',
+    netAmount: '100000',
+    paidAmount: '0',
+    refundedAmount: '0',
+    outstandingAmount: '100000',
+    refundDue: '0',
+    settlementStatus: 'UNPAID' as const,
+    receivingStatus: 'NOT_RECEIVED' as const,
+    void: null,
+  };
+  const b = bridge();
+  b.purchaseDrafts.list.mockResolvedValue(ok([ready]));
+  const finalize = vi.fn(
+    async (): Promise<import('@/shared/primitives').Result<typeof recorded>> =>
+      ok(recorded),
+  );
+  const create = vi.fn(async () => ok({ ...draft, id: 'next' }));
+  const print = vi.fn(async () =>
+    ok({ outcome: 'PRINTED', format: 'A4', isReprint: false }),
+  );
+  return {
+    finalize,
+    create,
+    print,
+    b: {
+      ...b,
+      purchaseDrafts: { ...b.purchaseDrafts, create },
+      purchases: {
+        previewFinalize: vi.fn(async () =>
+          ok({
+            purchaseId: ready.id,
+            version: ready.version,
+            totals,
+            errors: [],
+            warnings: [],
+          }),
+        ),
+        finalize,
+      },
+      printing: {
+        getOptions: async () =>
+          ok({
+            defaultInvoiceFormat: 'A4',
+            thermalFormat: 'THERMAL_58',
+            autoPrintAfterFinalize: true,
+          }),
+      },
+      purchasePrinting: { print },
+    },
+  };
+}
+
+test('recording keeps a result dialog and viewing the bill does not auto-print again', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const fixture = recordedPurchaseBridge();
+  Object.assign(window, { bengkelin: fixture.b });
+  render(<PurchasesScreen active />);
+  await user.click(
+    await screen.findByRole('button', { name: 'Tinjau pembelian' }),
+  );
+  const review = screen.getByRole('dialog');
+  expect(review).toHaveTextContent('BILL-42');
+  await user.click(
+    within(review).getByRole('button', { name: 'Catat faktur pemasok' }),
+  );
+  const result = await screen.findByRole('dialog', {
+    name: 'Pembelian tercatat',
+  });
+  expect(result).toHaveTextContent('PUR-20260930-1');
+  await waitFor(() => expect(fixture.print).toHaveBeenCalledTimes(1));
+  await user.click(
+    within(result).getByRole('button', { name: 'Lihat faktur' }),
+  );
+  expect(
+    await screen.findByRole('heading', { name: 'PUR-20260930-1' }),
+  ).toBeVisible();
+  expect(fixture.print).toHaveBeenCalledTimes(1);
+  expect(fixture.finalize).toHaveBeenCalledTimes(1);
+});
+
+test('failed next-purchase creation retains the recorded result for retry', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const fixture = recordedPurchaseBridge();
+  fixture.create.mockRejectedValueOnce(Error('offline'));
+  Object.assign(window, { bengkelin: fixture.b });
+  render(<PurchasesScreen active />);
+  await user.click(
+    await screen.findByRole('button', { name: 'Tinjau pembelian' }),
+  );
+  await user.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Catat faktur pemasok',
+    }),
+  );
+  const result = await screen.findByRole('dialog', {
+    name: 'Pembelian tercatat',
+  });
+  await user.click(
+    within(result).getByRole('button', { name: 'Pembelian baru' }),
+  );
+  expect(result).toBeVisible();
+  expect(await within(result).findByRole('alert')).toBeVisible();
+  await user.click(
+    within(result).getByRole('button', { name: 'Pembelian baru' }),
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+  );
+  expect(fixture.finalize).toHaveBeenCalledTimes(1);
+  expect(fixture.create).toHaveBeenCalledTimes(2);
+});
+
+test('failed conflict preview blocks recording until refreshed successfully', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const fixture = recordedPurchaseBridge();
+  fixture.finalize.mockResolvedValueOnce({
+    ok: false,
+    error: {
+      code: 'DRAFT_VERSION_CONFLICT',
+      messageKey: 'errors.DRAFT_VERSION_CONFLICT',
+    },
+  });
+  Object.assign(window, { bengkelin: fixture.b });
+  render(<PurchasesScreen active />);
+  await user.click(
+    await screen.findByRole('button', { name: 'Tinjau pembelian' }),
+  );
+  fixture.b.purchases.previewFinalize.mockRejectedValueOnce(Error('offline'));
+  const dialog = screen.getByRole('dialog');
+  await user.click(
+    within(dialog).getByRole('button', { name: 'Catat faktur pemasok' }),
+  );
+  await within(dialog).findByRole('alert');
+  expect(
+    within(dialog).getByRole('button', { name: 'Catat faktur pemasok' }),
+  ).toBeDisabled();
+  await user.click(within(dialog).getByRole('button', { name: 'Coba lagi' }));
+  await waitFor(() =>
+    expect(
+      within(dialog).getByRole('button', { name: 'Catat faktur pemasok' }),
+    ).toBeEnabled(),
+  );
+  expect(fixture.finalize).toHaveBeenCalledTimes(1);
+});
+
+test('pending purchase line removal disables repeated activation', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const b = bridge();
+  let release!: (r: ReturnType<typeof ok<PurchaseDraftView>>) => void;
+  b.purchaseDrafts.apply.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  Object.assign(window, { bengkelin: b });
+  render(<PurchasesScreen active />);
+  const remove = await screen.findByRole('button', { name: 'Hapus Oil' });
+  await user.click(remove);
+  const disabled = remove.hasAttribute('disabled');
+  release(ok({ ...draft, version: 2, lines: [] }));
+  expect(disabled).toBe(true);
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: 'Hapus Oil' }),
+    ).not.toBeInTheDocument(),
+  );
+});
+
+test('keyboard supplier creation returns focus to the picker on cancel', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const b = bridge();
+  b.purchaseDrafts.list.mockResolvedValue(ok([{ ...draft, supplier: null }]));
+  Object.assign(window, { bengkelin: b });
+  render(<PurchasesScreen active />);
+  const picker = await screen.findByRole('combobox', { name: 'Pemasok' });
+  await user.click(picker);
+  await screen.findByRole('option', { name: 'Supplier A' });
+  await user.tab();
+  expect(screen.getByRole('button', { name: 'Tambah pemasok' })).toHaveFocus();
+  await user.keyboard('{Enter}');
+  const form = await screen.findByRole('dialog', { name: 'Tambah pemasok' });
+  await user.click(within(form).getByRole('button', { name: 'Batal' }));
+  await waitFor(() => expect(picker).toHaveFocus());
+});

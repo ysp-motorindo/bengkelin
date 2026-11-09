@@ -1,12 +1,13 @@
+import { PurchaseReviewDialog } from './PurchaseReviewDialog';
 import { PurchaseSummary } from './PurchaseSummary';
 import { SupplierPicker } from './SupplierPicker';
-import { FilePlus } from 'lucide-react';
+import { FilePlus, Trash2, Check, X } from 'lucide-react';
 import { ResizableTransactionTable } from '@/renderer/components/resizable-transaction-table';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { formatDisplayDate } from '@/renderer/lib/date-format';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/renderer/components/ui/button';
+import { Button, IconButton } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { Select } from '@/renderer/components/ui/select';
 import { NumericInput } from '@/renderer/components/ui/numeric-input';
@@ -46,6 +47,7 @@ export function PurchaseEditor({
   units,
   onNew,
   onPosted,
+  onViewBill,
   onDiscarded,
   registerDraftActions,
   onChanged,
@@ -55,8 +57,9 @@ export function PurchaseEditor({
   draftSelector?: ReactNode;
   active: boolean;
   units: ReferenceDto[];
-  onNew: () => Promise<void>;
+  onNew: () => Promise<boolean>;
   onPosted: (p: PurchaseView) => void;
+  onViewBill: (p: PurchaseView) => void;
   onDiscarded: () => void;
   registerDraftActions: (actions: WorkspaceActions) => () => void;
   onChanged: (view: PurchaseDraftView) => void;
@@ -86,15 +89,33 @@ export function PurchaseEditor({
   );
   useEffect(() => onChanged(view), [view, onChanged]);
   const [supplierForm, setSupplierForm] = useState(false);
+  const supplierReturnFocus = useRef<() => void>(() => {});
   const [custom, setCustom] = useState(false);
   const [paymentsOpen, setPaymentsOpen] = useState(false);
   const [review, setReview] = useState<{
     preview: PurchaseFinalizePreview;
     requestId: string;
   } | null>(null);
-  const [accepted, setAccepted] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const search = useRef<HTMLInputElement>(null);
+  const [priceFocus, setPriceFocus] = useState<string | null>(null);
+  useEffect(() => {
+    if (!priceFocus || !active) return;
+    const input = document.querySelector<HTMLInputElement>(
+      `[data-purchase-line="${priceFocus}"] [data-purchase-price] input`,
+    );
+    if (input) {
+      if (
+        document.activeElement === search.current ||
+        document.activeElement === document.body
+      )
+        input.focus();
+      setPriceFocus(null);
+    }
+  }, [priceFocus, view.lines, active]);
+  useEffect(() => {
+    if (active) search.current?.focus();
+  }, []);
   const returning = useRef(active);
   useEffect(() => {
     if (active && !returning.current) {
@@ -118,7 +139,6 @@ export function PurchaseEditor({
       });
       if (action.check(r)) {
         setReview({ preview: r.value, requestId: crypto.randomUUID() });
-        setAccepted(false);
       }
     });
   }
@@ -142,14 +162,7 @@ export function PurchaseEditor({
     if (r.ok) {
       setFeedback(null);
       const line = r.value.lines.find((l) => !before.has(l.id));
-      if (line && active)
-        requestAnimationFrame(() =>
-          document
-            .querySelector<HTMLInputElement>(
-              `[data-purchase-line="${line.id}"] [data-purchase-price] input`,
-            )
-            ?.focus(),
-        );
+      if (line && active) setPriceFocus(line.id);
       return 'added' as const;
     }
     setFeedback(errorMessage(t, r.error));
@@ -202,7 +215,10 @@ export function PurchaseEditor({
             onSelect={async (supplierId) =>
               (await send({ kind: 'updateHeader', changes: { supplierId } })).ok
             }
-            onAdd={() => setSupplierForm(true)}
+            onAdd={(returnFocus) => {
+              supplierReturnFocus.current = returnFocus;
+              setSupplierForm(true);
+            }}
           />
         </div>
         <div className="grid min-w-0 gap-2 lg:col-start-3 lg:grid-cols-3">
@@ -277,7 +293,7 @@ export function PurchaseEditor({
             <tr
               key={l.id}
               data-purchase-line={l.id}
-              className="border-t align-top"
+              className="border-t text-xs [&>td]:px-1 [&>td]:py-1"
             >
               <td className="text-right text-muted-foreground">{index + 1}</td>
               <td className="truncate" title={l.itemCode ?? undefined}>
@@ -346,16 +362,19 @@ export function PurchaseEditor({
                 {l.amount === null ? '—' : formatIdr(l.amount)}
               </td>
               <td className="px-2 py-1.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-label={t('purchases.remove') + ' ' + l.title}
+                <IconButton
+                  destructive
+                  className="size-8"
+                  disabled={controlsDisabled}
+                  label={t('purchases.remove') + ' ' + l.title}
                   onClick={() =>
-                    void send({ kind: 'removeLine', lineId: l.id })
+                    void action.run(async () => {
+                      await send({ kind: 'removeLine', lineId: l.id });
+                    })
                   }
                 >
-                  {t('purchases.remove')}
-                </Button>
+                  <Trash2 className="size-3.5" />
+                </IconButton>
               </td>
             </tr>
           ))}
@@ -419,6 +438,7 @@ export function PurchaseEditor({
       ) : null}
       {supplierForm ? (
         <SupplierForm
+          returnFocus={() => supplierReturnFocus.current()}
           onClose={() => setSupplierForm(false)}
           onSaved={(s) => {
             void send({ kind: 'updateHeader', changes: { supplierId: s.id } });
@@ -434,86 +454,15 @@ export function PurchaseEditor({
         />
       ) : null}
       {review ? (
-        <Dialog
-          title={t('purchases.review')}
-          onClose={() => {
-            if (!action.busy) setReview(null);
-          }}
-          closeLabel={t('purchases.close')}
-          footer={
-            <DialogActions
-              secondary={
-                <Button
-                  variant="outline"
-                  disabled={action.busy}
-                  onClick={() => setReview(null)}
-                >
-                  {t('purchases.cancel')}
-                </Button>
-              }
-            >
-              <Button
-                disabled={
-                  action.busy ||
-                  review.preview.errors.length > 0 ||
-                  (review.preview.warnings.length > 0 && !accepted)
-                }
-                onClick={() =>
-                  void action.run(async () => {
-                    const r = await window.bengkelin.purchases.finalize({
-                      requestId: review.requestId,
-                      purchaseId: view.id,
-                      expectedVersion: review.preview.version,
-                      acknowledgedWarnings: review.preview.warnings,
-                    });
-                    if (action.check(r)) {
-                      setReview(null);
-                      onPosted(r.value);
-                    } else if (
-                      !r.ok &&
-                      [
-                        'DRAFT_VERSION_CONFLICT',
-                        'FINALIZE_WARNINGS_CHANGED',
-                      ].includes(r.error.code)
-                    ) {
-                      setReview(null);
-                      await commands.refresh();
-                    }
-                  })
-                }
-              >
-                {t('purchases.finalize')}
-              </Button>
-            </DialogActions>
-          }
-        >
-          <div className="space-y-4">
-            <p>{t('purchases.finalizeNotice')}</p>
-            <p className="text-lg font-semibold">
-              {view.supplier?.name} ·{' '}
-              {review.preview.totals
-                ? formatIdr(review.preview.totals.amount)
-                : '—'}
-            </p>
-            {review.preview.errors.map((e, i) => (
-              <Alert key={i}>{t(`errors.${e.code}`, e.params)}</Alert>
-            ))}
-            {review.preview.warnings.map((w, i) => (
-              <Alert key={i}>{t(`purchases.${w.code}`, w.params)}</Alert>
-            ))}
-            {review.preview.warnings.length ? (
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={accepted}
-                  onChange={(e) => setAccepted(e.target.checked)}
-                />
-                {t('purchases.acknowledge')}
-              </label>
-            ) : null}
-            {action.error ? <Alert>{action.error}</Alert> : null}
-          </div>
-        </Dialog>
+        <PurchaseReviewDialog
+          initial={review.preview}
+          commands={commands}
+          active={active}
+          onClose={() => setReview(null)}
+          onRecorded={onPosted}
+          onNew={onNew}
+          onViewBill={onViewBill}
+        />
       ) : null}
     </section>
   );
@@ -536,42 +485,55 @@ function CustomLine({
   const [unit, setUnit] = useState(units[0]?.id ?? '');
   const [quantity, setQuantity] = useState('1');
   const [price, setPrice] = useState('');
+  const typeInput = useRef<HTMLSelectElement>(null);
   return (
     <Dialog
       title={t('purchases.customLine')}
+      initialFocus={typeInput}
+      closeLabel={action.busy ? undefined : t('purchases.close')}
       onClose={() => {
         if (!action.busy) onClose();
       }}
       footer={
-        <Button
-          disabled={
-            action.busy ||
-            !title.trim() ||
-            !unit ||
-            !/^\d+$/.test(quantity) ||
-            Number(quantity) < 1 ||
-            Number(quantity) > 1000000 ||
-            (price !== '' && !priceSchema.safeParse(price).success)
-          }
-          onClick={() =>
-            void action.run(async () => {
-              const r = await commands.send({
-                kind: 'addCustomLine',
-                type,
-                title,
-                unitId: unit,
-                quantity: Number(quantity),
-                unitPrice: price || null,
-              });
-              if (action.check(r)) onClose();
-            })
+        <DialogActions
+          secondary={
+            <Button variant="outline" disabled={action.busy} onClick={onClose}>
+              <X aria-hidden="true" />
+              {t('purchases.cancel')}
+            </Button>
           }
         >
-          {t('purchases.add')}
-        </Button>
+          <Button
+            disabled={
+              action.busy ||
+              !title.trim() ||
+              !unit ||
+              !/^\d+$/.test(quantity) ||
+              Number(quantity) < 1 ||
+              Number(quantity) > 1000000 ||
+              (price !== '' && !priceSchema.safeParse(price).success)
+            }
+            onClick={() =>
+              void action.run(async () => {
+                const r = await commands.send({
+                  kind: 'addCustomLine',
+                  type,
+                  title,
+                  unitId: unit,
+                  quantity: Number(quantity),
+                  unitPrice: price || null,
+                });
+                if (action.check(r)) onClose();
+              })
+            }
+          >
+            <Check aria-hidden="true" />
+            {t('purchases.add')}
+          </Button>
+        </DialogActions>
       }
     >
-      <div className="space-y-4">
+      <fieldset disabled={action.busy} className="space-y-4">
         {action.error ? <Alert>{action.error}</Alert> : null}
         <FormField label={t('purchases.item')}>
           <Input
@@ -582,6 +544,7 @@ function CustomLine({
         </FormField>
         <FormField label={t('purchases.type')}>
           <Select
+            ref={typeInput}
             value={type}
             onChange={(e) => setType(e.target.value as typeof type)}
           >
@@ -612,7 +575,7 @@ function CustomLine({
         <FormField label={t('purchases.unitPrice')}>
           <NumericInput value={price} onValueChange={setPrice} />
         </FormField>
-      </div>
+      </fieldset>
     </Dialog>
   );
 }

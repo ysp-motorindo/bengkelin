@@ -146,5 +146,7 @@
   "refundedTotal": "Dana kembali diterima",
   "loadLatestSupplier": "Muat data terbaru (ganti isian)",
   "clearSupplier": "Hapus pilihan pemasok",
-  "updatedAt": "Diperbarui"
+  "updatedAt": "Diperbarui",
+  "recordedTitle": "Pembelian tercatat",
+  "viewBill": "Lihat faktur"
 }

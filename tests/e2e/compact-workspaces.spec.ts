@@ -115,16 +115,34 @@ test('compact purchase workspace supports payment recovery and responsive layout
       );
       await navigateTo(page, 'purchases', lang);
       await page
-        .getByRole('main')
-        .getByRole('button', { name: t('purchases.new'), exact: true })
-        .click();
-      await page
         .locator('header')
         .getByRole('button', { name: t('purchases.new'), exact: true })
         .click();
       await page
         .getByLabel(t('purchases.supplier'), { exact: true })
-        .selectOption({ label: 'Test supplier' });
+        .fill('Test supplier');
+      await page
+        .getByRole('option', { name: 'Test supplier', exact: true })
+        .click();
+      const supplierPicker = page.getByRole('combobox', {
+        name: t('purchases.supplier'),
+        exact: true,
+      });
+      await supplierPicker.click();
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Enter');
+      await expect(
+        page.getByRole('dialog', {
+          name: t('purchases.addSupplier'),
+          exact: true,
+        }),
+      ).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(supplierPicker).toBeFocused();
+      await supplierPicker.press('Escape');
+      await expect(supplierPicker).toHaveValue('Test supplier');
+
       const search = page.getByRole('combobox', {
         name: t('workspace.search.label'),
         exact: true,
@@ -137,6 +155,18 @@ test('compact purchase workspace supports payment recovery and responsive layout
           exact: true,
         })
         .fill('10000');
+      await page
+        .locator('[data-purchase-line]')
+        .getByRole('textbox', {
+          name: t('purchases.stage').replace('{{n}}', '1'),
+        })
+        .fill('10');
+      await page
+        .getByRole('textbox', {
+          name: t('workspace.checkout.singleDiscount'),
+          exact: true,
+        })
+        .fill('2,5');
       await page
         .getByRole('textbox', { name: t('purchases.note'), exact: true })
         .fill('First line\nSecond line');
@@ -178,10 +208,10 @@ test('compact purchase workspace supports payment recovery and responsive layout
         exact: true,
       });
       await dialog
-        .getByRole('button', { name: t('purchases.addPayment'), exact: true })
-        .click();
-      await dialog
-        .getByRole('button', { name: t('purchases.close'), exact: true })
+        .getByRole('button', {
+          name: t('workspace.checkout.apply'),
+          exact: true,
+        })
         .last()
         .click();
       await step(
@@ -190,14 +220,19 @@ test('compact purchase workspace supports payment recovery and responsive layout
         'Pembayaran kosong mempertahankan dialog dengan petunjuk perbaikan.',
         async () => {
           await expect(dialog).toBeVisible();
-          await expect(dialog.getByRole('alert')).toBeVisible();
+          await expect(
+            dialog.getByLabel(t('purchases.amount'), { exact: true }),
+          ).toHaveAttribute('aria-invalid', 'true');
         },
       );
       await dialog
         .getByLabel(t('purchases.amount'), { exact: true })
-        .fill('10000');
+        .fill('5000');
       await dialog
-        .getByRole('button', { name: t('purchases.close'), exact: true })
+        .getByRole('button', {
+          name: t('workspace.checkout.apply'),
+          exact: true,
+        })
         .last()
         .click();
       await step(
@@ -206,10 +241,22 @@ test('compact purchase workspace supports payment recovery and responsive layout
         'Pembayaran yang diperbaiki tersimpan dan fokus kembali ke baris ringkasan.',
         async () => {
           await expect(dialog).toHaveCount(0);
-          await expect(payments).toContainText('10.000');
+          await expect(payments).toContainText('5.000');
           await expect(payments).toBeFocused();
         },
       );
+      const savedDiscounts = await page.evaluate(async () => {
+        const r = await window.bengkelin.purchaseDrafts.list();
+        if (!r.ok) throw Error(r.error.code);
+        return r.value.find((d) => d.note === 'First line\nSecond line')!;
+      });
+      expect(savedDiscounts.discountStages).toEqual([250]);
+      expect(savedDiscounts.lines[0]!.discountStages).toEqual([1000]);
+      expect(savedDiscounts.totals).toMatchObject({
+        itemDiscountAmount: '1000',
+        billDiscountAmount: '225',
+        amount: '8775',
+      });
       await page
         .getByRole('button', { name: t('purchases.review'), exact: true })
         .click();
@@ -232,7 +279,7 @@ test('compact purchase workspace supports payment recovery and responsive layout
         },
       );
       await dialog
-        .getByRole('button', { name: t('purchases.cancel'), exact: true })
+        .getByRole('button', { name: t('workspace.review.back'), exact: true })
         .click();
       for (const viewport of [
         { width: 1280, height: 800 },
@@ -279,15 +326,51 @@ test('compact purchase workspace supports payment recovery and responsive layout
         .getByRole('dialog', { name: t('purchases.review'), exact: true })
         .getByRole('button', { name: t('purchases.finalize'), exact: true })
         .click();
+      await step(
+        'recorded',
+        'Recorded bill shows its number and separate receiving status.',
+        'Faktur tercatat menampilkan nomor dan status penerimaan terpisah.',
+        async () => {
+          await expect(
+            page.getByRole('dialog', {
+              name: t('purchases.recordedTitle'),
+              exact: true,
+            }),
+          ).toBeVisible();
+        },
+      );
+      await page
+        .getByRole('dialog', {
+          name: t('purchases.recordedTitle'),
+          exact: true,
+        })
+        .getByRole('button', { name: t('purchases.viewBill'), exact: true })
+        .click();
       await page
         .getByRole('navigation')
         .getByRole('button', { name: t('purchases.editor'), exact: true })
         .click();
       const remainingDraft = page
         .locator('header')
-        .getByLabel(t('purchases.drafts'), { exact: true });
+        .getByRole('button', { name: t('purchases.drafts'), exact: true });
       await expect(remainingDraft).toBeVisible();
-      await expect(remainingDraft.getByRole('option')).toHaveCount(1);
+      await remainingDraft.click();
+      const draftDialog = page.getByRole('dialog', {
+        name: t('purchases.drafts'),
+        exact: true,
+      });
+      await step(
+        'saved-drafts',
+        'Saved drafts retain the other purchase after recording.',
+        'Draf tersimpan mempertahankan pembelian lain setelah pencatatan.',
+        async () => {
+          await expect(draftDialog.locator('tbody tr')).toHaveCount(1);
+        },
+      );
+      await draftDialog
+        .getByRole('button', { name: t('purchases.close'), exact: true })
+        .last()
+        .click();
       await expect(
         page.getByRole('textbox', { name: t('purchases.note'), exact: true }),
       ).toHaveValue('');

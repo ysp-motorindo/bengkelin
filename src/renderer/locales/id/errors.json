@@ -179,5 +179,6 @@
   "REFUND_EXCEEDS_AMOUNT": "Pengembalian melebihi dana yang terutang dari pemasok. Muat ulang dan periksa saldo pengembalian.",
   "INVALID_PURCHASE_BALANCE": "Saldo pembelian tidak konsisten. Muat ulang faktur dan hubungi dukungan jika tetap terjadi.",
   "INVALID_CREDIT_QUANTITY": "Periksa jumlah kredit dan jumlah pembelian asal.",
-  "SUPPLIER_VERSION_CONFLICT": "Pemasok berubah saat Anda mengedit. Isian Anda tetap tersimpan di formulir. Muat data terbaru sebelum menyimpan lagi."
+  "SUPPLIER_VERSION_CONFLICT": "Pemasok berubah saat Anda mengedit. Isian Anda tetap tersimpan di formulir. Muat data terbaru sebelum menyimpan lagi.",
+  "PAYMENT_EXCEEDS_AMOUNT": "Pembayaran keluar melebihi total faktur. Kurangi pembayaran sebelum mencatat faktur."
 }

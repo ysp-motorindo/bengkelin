@@ -4,13 +4,13 @@ Menu **Pembelian** berada tepat setelah **Penjualan**. Kasir dan admin dapat men
 
 ## Mencatat faktur pemasok
 
-1. Buka Pembelian dan buat pembelian baru, atau lanjutkan draf tersimpan.
+1. Buka Pembelian. Draf terbaru dilanjutkan otomatis; jika belum ada draf, aplikasi membuat satu draf. Gunakan Draf tersimpan untuk melanjutkan atau membuang draf lain.
 2. Pilih pemasok. Gunakan Tambah pemasok bila belum tersedia. Nama wajib; telepon, email, dan alamat opsional. Pemasok nonaktif tetap tersimpan untuk riwayat dan penyelesaian faktur lama.
 3. Isi nomor faktur pemasok jika ada, tanggal, tempo pembayaran, dan catatan.
 4. Cari/pindai barang atau tambahkan barang/jasa khusus. **Harga beli selalu kosong saat barang baru dipilih.** Isi jumlah dan harga beli; harga jual katalog tidak berubah.
-5. Isi diskon bertahap dan PPN termasuk bila diperlukan. Lengkapi semua harga untuk menghitung total. Harga nol memerlukan persetujuan saat tinjauan.
-6. Tambahkan pembayaran yang benar-benar sudah dilakukan, atau biarkan kosong untuk faktur belum dibayar.
-7. Tinjau lalu catat faktur. Periksa nomor `PUR-...`, total, sisa utang, dan status penerimaan. Mencatat faktur tidak menambah stok.
+5. Isi diskon barang D1–D4 dan satu diskon faktur **Disc** jika diperlukan, lalu PPN termasuk. Draf lama dengan beberapa diskon faktur tetap dipertahankan; pilih **Ganti diskon** hanya jika ingin menggantinya dengan satu diskon. Lengkapi semua harga untuk menghitung total. Harga nol memerlukan persetujuan saat tinjauan.
+6. Buka Pembayaran keluar dan isi pembayaran yang benar-benar sudah dilakukan. Pilih **Terapkan** untuk menyimpan; **Batal**, Escape, atau Tutup membuang perubahan yang belum diterapkan. Hapus semua baris lalu Terapkan untuk faktur belum dibayar. Jika penyimpanan gagal, isian tetap tersedia untuk dicoba kembali.
+7. Tinjau lalu catat faktur. Dialog hasil menampilkan nomor `PUR-...`, total, status pembayaran/penerimaan, serta pilihan cetak. Pilih **Pembelian baru** untuk transaksi berikutnya atau **Lihat faktur** untuk membuka rincian dan mencatat penerimaan. Menutup dialog hasil memulai pembelian baru. Jika draf baru gagal dibuat, hasil faktur tetap tersedia untuk dicoba kembali. Mencatat faktur tidak menambah stok.
 
 Draf disimpan otomatis. Periksa indikator tersimpan sebelum keluar. Jika penyimpanan gagal, pertahankan isian dan gunakan Coba lagi. Jika data berubah oleh petugas lain, tinjau versi terbaru sebelum mengulangi tindakan.
 
@@ -49,7 +49,7 @@ Untuk validasi dengan kasir, berikan faktur dan rincian pengiriman/retur tanpa m
 
 # Supplier purchases — quick guide
 
-Open **Purchase**, immediately after Sales. Select or create a supplier, enter the supplier bill details, then select products or custom goods/services. Every new product starts with a blank purchase price. Enter quantities and prices; discounts and inclusive VAT follow sales conventions. Record actual outgoing payments or leave the bill unpaid. Review and record the bill. Finalization does not add stock or alter catalog prices.
+Open **Purchase**, immediately after Sales. Select or create a supplier, enter the supplier bill details, then select products or custom goods/services. Every new product starts with a blank purchase price. Enter quantities, prices, item discounts D1–D4, one bill-level Disc percentage, and inclusive VAT. Existing multi-stage bill discounts remain intact until Replace discount is explicitly selected. Outgoing payments stay local until Apply; Cancel, Escape, and Close discard unapplied changes. Remove all payment rows and Apply to leave the bill unpaid. Review and record the bill. The recorded-result dialog offers printing, New purchase, and View bill. Closing the result starts a new purchase; failed creation keeps the recorded bill available for retry. Finalization does not add stock or alter catalog prices.
 
 Record deliveries separately, including partial quantities and the location of each delivery. Only tracked products add stock. Check the receipt number, location, and quantity still expected. Reverse an incorrect whole receipt before any of its quantities have been credited.
 
@@ -65,6 +65,6 @@ Navigasi: Pembelian → Buat Pembelian / Riwayat Pembelian / Penerimaan / Utang 
 
 ## Tata letak ringkas / Compact workspace
 
-**Indonesia:** Draf tersimpan, Pembelian baru, Buang draf, dan status simpan berada di bilah atas. Pemasok dan rincian faktur berada di atas tabel barang. Catatan berada di kiri bawah; diskon, PPN, pembayaran keluar, total, dan Tinjau pembelian berada di kanan bawah. Pilih Pembayaran keluar untuk mengisi pembayaran; Tutup menyimpan perubahan sebelum menutup dialog. Jika nilai belum valid atau penyimpanan gagal, isian tetap tersedia untuk diperbaiki atau dicoba simpan lagi. Pada jendela pendek, gulir halaman untuk menjangkau ringkasan. Penerimaan barang tetap dicatat terpisah setelah faktur dicatat.
+**Indonesia:** Draf tersimpan dan Pembelian baru berada di kiri bilah atas; indikator simpan di kanan. Buang draf berada di dialog Draf tersimpan dan memerlukan konfirmasi. Pemasok menggunakan satu kolom pencarian/pilihan dengan navigasi keyboard. Tabel barang mengikuti penjualan, dengan lebar kolom yang dapat diubah dan D1–D4 terpisah. Isian jumlah, harga, dan diskon barang disimpan saat berpindah kolom; Escape membatalkan perubahan yang belum dikirim. Catatan di kiri bawah; satu Disc faktur, PPN, pembayaran keluar, total, dan Tinjau pembelian di kanan bawah. Pembayaran hanya disimpan dengan Terapkan. Pada jendela pendek, gulir halaman untuk menjangkau ringkasan. Penerimaan tetap terpisah melalui Lihat faktur.
 
-**English:** Saved drafts, New purchase, Discard draft, and save status are in the top toolbar. Supplier and bill details sit above the item table. Notes are below left; discounts, VAT, outgoing payments, totals, and Review purchase are below right. Select Outgoing payments to enter payments; Close saves changes before dismissing the dialog. Invalid or failed saves keep entries available for correction or retry. In short windows, scroll the page to reach the summary. Goods receiving remains a separate action after the bill is recorded.
+**English:** Saved drafts and New purchase sit on the left of the top toolbar; save status sits on the right. Discard is in the saved-drafts dialog and requires confirmation. Supplier selection uses one searchable, keyboard-operable picker. The item table follows sales with resizable columns and separate D1–D4 cells. Quantity, price, and item-discount edits commit on blur; Escape cancels unsent changes. Notes sit below left; one bill Disc, VAT, outgoing payments, totals, and Review purchase sit below right. Payments are saved only with Apply. In short windows, scroll to reach the summary. Receiving remains separate through View bill.

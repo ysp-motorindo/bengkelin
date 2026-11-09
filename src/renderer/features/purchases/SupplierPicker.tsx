@@ -14,10 +14,12 @@ export function SupplierPicker({
   supplier: SupplierDto | null;
   disabled: boolean;
   onSelect(id: string | null): Promise<boolean>;
-  onAdd(): void;
+  onAdd(returnFocus: () => void): void;
 }) {
   const { t } = useTranslation();
   const id = useId();
+  const container = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
   const revision = useRef(0);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -67,12 +69,13 @@ export function SupplierPicker({
     }
   }
   return (
-    <div className="relative min-w-0">
+    <div ref={container} className="relative min-w-0">
       <label htmlFor={id} className="mb-1.5 block text-xs font-medium">
         {t('purchases.supplier')}
       </label>
       <Input
         id={id}
+        ref={input}
         role="combobox"
         aria-expanded={open}
         aria-controls={id + '-list'}
@@ -88,8 +91,8 @@ export function SupplierPicker({
         placeholder={t('purchases.chooseSupplier')}
         onFocus={() => setOpen(true)}
         onClick={() => setOpen(true)}
-        onBlur={() => {
-          if (!busy) {
+        onBlur={(event) => {
+          if (!busy && !container.current?.contains(event.relatedTarget)) {
             setOpen(false);
             setQuery('');
           }
@@ -182,7 +185,7 @@ export function SupplierPicker({
               disabled={busy}
               onClick={() => {
                 setOpen(false);
-                onAdd();
+                onAdd(() => input.current?.focus());
               }}
             >
               {t('purchases.addSupplier')}
