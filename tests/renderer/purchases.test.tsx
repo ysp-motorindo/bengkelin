@@ -1000,3 +1000,97 @@ test('keyboard supplier creation returns focus to the picker on cancel', async (
   await user.click(within(form).getByRole('button', { name: 'Batal' }));
   await waitFor(() => expect(picker).toHaveFocus());
 });
+
+test('recovered boot creation retires its request before starting another purchase', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const b = bridge();
+  const created = new Map<string, PurchaseDraftView>();
+  const create = vi.fn(async ({ requestId }: { requestId: string }) => {
+    const existing = created.get(requestId);
+    if (existing) return ok(existing);
+    const next = { ...draft, id: `purchase-${created.size + 1}` };
+    created.set(requestId, next);
+    if (created.size === 1) throw Error('response lost after commit');
+    return ok(next);
+  });
+  Object.assign(window, {
+    bengkelin: {
+      ...b,
+      purchaseDrafts: {
+        ...b.purchaseDrafts,
+        list: async () => ok([...created.values()]),
+        create,
+      },
+    },
+  });
+  render(<PurchasesScreen active />);
+  await user.click(await screen.findByRole('button', { name: 'Coba lagi' }));
+  await screen.findByRole('textbox', { name: /Harga beli.*Oil/ });
+  await user.click(screen.getByRole('button', { name: 'Pembelian baru' }));
+  await waitFor(() => expect(create).toHaveBeenCalledTimes(2));
+  expect(create.mock.calls[1]![0].requestId).not.toBe(
+    create.mock.calls[0]![0].requestId,
+  );
+  expect(created.size).toBe(2);
+});
+
+test('conflict recovery cannot record a preview newer than the displayed draft', async () => {
+  const { default: user } = await import('@testing-library/user-event');
+  const fixture = recordedPurchaseBridge();
+  const ready = (await fixture.b.purchaseDrafts.list()).value[0]!;
+  const preview = (await fixture.b.purchases.previewFinalize()).value;
+  const newer = {
+    ...ready,
+    version: 2,
+    supplier: { ...supplier, name: 'Supplier B' },
+    supplierBillReference: 'BILL-NEW',
+    payments: [
+      {
+        method: 'CASH' as const,
+        amount: '25000',
+        reference: 'PAY-NEW',
+        note: null,
+      },
+    ],
+  };
+  fixture.finalize.mockResolvedValueOnce({
+    ok: false,
+    error: {
+      code: 'DRAFT_VERSION_CONFLICT',
+      messageKey: 'errors.DRAFT_VERSION_CONFLICT',
+    },
+  });
+  fixture.b.purchaseDrafts.get.mockRejectedValue(Error('offline'));
+  Object.assign(window, { bengkelin: fixture.b });
+  render(<PurchasesScreen active />);
+  await user.click(
+    await screen.findByRole('button', { name: 'Tinjau pembelian' }),
+  );
+  fixture.b.purchases.previewFinalize.mockResolvedValue({
+    ...ok({ ...preview, version: 2 }),
+  });
+  const dialog = screen.getByRole('dialog');
+  const confirm = within(dialog).getByRole('button', {
+    name: 'Catat faktur pemasok',
+  });
+  await user.click(confirm);
+  await waitFor(() =>
+    expect(fixture.b.purchaseDrafts.get).toHaveBeenCalledTimes(3),
+  );
+  await waitFor(() =>
+    expect(confirm).toHaveTextContent('Catat faktur pemasok'),
+  );
+  expect(confirm).toBeDisabled();
+  expect(dialog).toHaveTextContent('BILL-42');
+  expect(fixture.finalize).toHaveBeenCalledTimes(1);
+  fixture.b.purchaseDrafts.get.mockResolvedValue(ok(newer));
+  await user.click(within(dialog).getByRole('button', { name: 'Coba lagi' }));
+  await waitFor(() => expect(confirm).toBeEnabled());
+  expect(dialog).toHaveTextContent('Supplier B');
+  expect(dialog).toHaveTextContent('BILL-NEW');
+  expect(dialog).toHaveTextContent('PAY-NEW');
+  await user.click(confirm);
+  expect(fixture.finalize).toHaveBeenLastCalledWith(
+    expect.objectContaining({ expectedVersion: 2 }),
+  );
+});

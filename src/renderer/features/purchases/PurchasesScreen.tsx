@@ -52,6 +52,7 @@ export function PurchasesScreen({
   const [autoPrint, setAutoPrint] = useState(false);
   const [detail, setDetail] = useState<PurchaseView | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const bootRequest = useRef<string | null>(null);
   const newRequest = useRef<string | null>(null);
   const editorActions = useRef<WorkspaceActions | null>(null);
   const registerDraftActions = useCallback((actions: WorkspaceActions) => {
@@ -96,15 +97,17 @@ export function PurchasesScreen({
     ]);
     if (action.check(d)) {
       setDrafts(d.value);
-      if (d.value.length) setCurrent((old) => old ?? d.value[0] ?? null);
-      else if (zone) {
-        newRequest.current ??= crypto.randomUUID();
+      if (d.value.length) {
+        bootRequest.current = null;
+        setCurrent((old) => old ?? d.value[0] ?? null);
+      } else if (zone) {
+        bootRequest.current ??= crypto.randomUUID();
         const r = await window.bengkelin.purchaseDrafts.create({
-          requestId: newRequest.current,
+          requestId: bootRequest.current,
           billDate: todayInShop(zone),
         });
         if (action.check(r)) {
-          newRequest.current = null;
+          bootRequest.current = null;
           setCurrent(r.value);
           setDrafts([r.value]);
         }

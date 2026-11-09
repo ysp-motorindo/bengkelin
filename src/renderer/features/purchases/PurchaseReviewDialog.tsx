@@ -59,10 +59,12 @@ export function PurchaseReviewDialog({
     });
   }, [recorded, active, onNew]);
   async function refreshPreview() {
+    await commands.refresh();
     const fresh = await window.bengkelin.purchases.previewFinalize({
       purchaseId: view.id,
     });
     if (action.check(fresh)) {
+      if (fresh.value.version !== commands.current().version) return;
       setPreview(fresh.value);
       request.current = crypto.randomUUID();
       setNeedsPreview(false);
@@ -90,12 +92,12 @@ export function PurchaseReviewDialog({
         setAccepted(false);
         setNeedsPreview(true);
         setNotice(t('workspace.finalize.reviewAgain'));
-        await commands.refresh();
         await refreshPreview();
       }
     });
   }
   const totals = preview.totals;
+  const needsRefresh = needsPreview || preview.version !== view.version;
   const paid = view.payments.reduce((s, p) => s + BigInt(p.amount), 0n);
   const close = () => {
     if (action.busy) return;
@@ -142,7 +144,7 @@ export function PurchaseReviewDialog({
             <Button
               disabled={
                 action.busy ||
-                needsPreview ||
+                needsRefresh ||
                 preview.errors.length > 0 ||
                 (preview.warnings.length > 0 && !accepted)
               }
@@ -159,7 +161,7 @@ export function PurchaseReviewDialog({
       }
     >
       {notice ? <p role="status">{notice}</p> : null}
-      {needsPreview ? (
+      {needsRefresh ? (
         <Button
           disabled={action.busy}
           onClick={() => void action.run(refreshPreview)}
