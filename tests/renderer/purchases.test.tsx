@@ -467,3 +467,51 @@ test('failed Purchase saves retain the entered price across area changes', async
   expect(price).toHaveValue('12.500');
   expect(price).toBeVisible();
 });
+
+test('purchase payments keep invalid rows open and persist corrected entries on close', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const b = bridge();
+  let saved = structuredClone(draft);
+  b.purchaseDrafts.apply = vi.fn(async (command: PurchaseDraftCommand) => {
+    if (command.op.kind === 'setPayments') saved = { ...saved, version: saved.version + 1, payments: command.op.payments };
+    return ok(saved);
+  });
+  (window as unknown as { bengkelin: unknown }).bengkelin = b;
+  render(<PurchasesScreen active />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Pembayaran keluar' }));
+  const dialog = screen.getByRole('dialog', { name: 'Pembayaran keluar' });
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Tambah pembayaran' }));
+  await userEvent.click(within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!);
+  expect(dialog).toBeVisible();
+  await userEvent.type(within(dialog).getByLabelText('Jumlah dana'), '25000');
+  await userEvent.click(within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!);
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(screen.getByRole('button', { name: 'Pembayaran keluar' })).toHaveTextContent('25.000');
+  await userEvent.click(screen.getByRole('button', { name: 'Pembayaran keluar' }));
+  expect(within(screen.getByRole('dialog')).getByLabelText('Jumlah dana')).toHaveValue('25.000');
+});
+
+test('purchase payment failure preserves amount and can retry before closing', async () => {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const b = bridge();
+  let failed = true;
+  let saved = structuredClone(draft);
+  b.purchaseDrafts.apply = vi.fn(async (command: PurchaseDraftCommand) => {
+    if (failed) throw new Error('connection failed');
+    if (command.op.kind === 'setPayments') saved = { ...saved, version: saved.version + 1, payments: command.op.payments };
+    return ok(saved);
+  });
+  (window as unknown as { bengkelin: unknown }).bengkelin = b;
+  render(<PurchasesScreen active />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Pembayaran keluar' }));
+  const dialog = screen.getByRole('dialog', { name: 'Pembayaran keluar' });
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Tambah pembayaran' }));
+  await userEvent.type(within(dialog).getByLabelText('Jumlah dana'), '10000');
+  await userEvent.click(within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!);
+  await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Coba simpan lagi' })).toBeVisible());
+  expect(within(dialog).getByLabelText('Jumlah dana')).toHaveValue('10.000');
+  failed = false;
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Coba simpan lagi' }));
+  await userEvent.click(within(dialog).getAllByRole('button', { name: 'Tutup' }).at(-1)!);
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+});

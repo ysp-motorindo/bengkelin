@@ -157,12 +157,14 @@ for (const locale of ['id', 'en'] as const)
           .getByRole('textbox', { name: qtyLabel, exact: true })
           .fill('10');
         await price.fill('10000');
+        await page.getByRole('button', { name: field('outgoingPayments'), exact: true }).click();
         await page
           .getByRole('button', { name: field('addPayment'), exact: true })
           .click();
         await page
           .getByRole('textbox', { name: field('amount'), exact: true })
           .fill('60000');
+        await page.getByRole('dialog').getByRole('button', { name: field('close'), exact: true }).last().click();
         await page
           .getByRole('button', { name: field('review'), exact: true })
           .click();

@@ -13,20 +13,17 @@ import {
   registerWorkspaceActions,
   type WorkspaceActions,
 } from '@/renderer/features/workspace/workspace-actions';
-import { useSyncedValue } from '@/renderer/features/workspace/synced-field';
 import { useNumberFormat } from '@/renderer/lib/number-format';
 import { useAction } from '@/renderer/lib/use-action';
 import { errorMessage } from '@/renderer/lib/errors';
 import {
   priceSchema,
-  PAYMENT_METHODS,
   type PurchaseDraftView,
   type PurchaseDraftOperation,
   type PurchaseView,
   type SupplierDto,
   type ReferenceDto,
   type PurchaseFinalizePreview,
-  type PurchaseAllocation,
 } from '@/shared/contracts';
 import {
   parsePercentageToBps,
@@ -39,6 +36,7 @@ import {
   type PurchaseCommands,
 } from './DraftFields';
 import { SupplierForm } from './Suppliers';
+import { PurchasePaymentsDialog } from './PurchasePaymentsDialog';
 export function PurchaseEditor({
   initial,
   active,
@@ -85,6 +83,7 @@ export function PurchaseEditor({
   const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
   const [supplierForm, setSupplierForm] = useState(false);
   const [custom, setCustom] = useState(false);
+  const [paymentsOpen, setPaymentsOpen] = useState(false);
   const [discard, setDiscard] = useState(false);
   const [review, setReview] = useState<{
     preview: PurchaseFinalizePreview;
@@ -472,7 +471,17 @@ export function PurchaseEditor({
             lineId={null}
             stages={view.discountStages}
           />
-          <DraftPayments commands={commands} />
+          <Button
+            variant="outline"
+            aria-label={t('purchases.outgoingPayments')}
+            aria-haspopup="dialog"
+            onClick={() => void action.run(async () => {
+              if (await commands.flush()) setPaymentsOpen(true);
+              else action.setError(t('workspace.notices.unsaved'));
+            })}
+          >
+            {t('purchases.outgoingPayments')}: {formatIdr(view.payments.reduce((sum, row) => sum + BigInt(row.amount), 0n).toString())}
+          </Button>
         </div>
         <div className="space-y-3 rounded-md border bg-card p-4">
           {view.totals ? (
@@ -508,6 +517,7 @@ export function PurchaseEditor({
           </p>
         </div>
       </div>
+      {paymentsOpen ? <PurchasePaymentsDialog commands={commands} onClose={() => setPaymentsOpen(false)} /> : null}
       {supplierForm ? (
         <SupplierForm
           onClose={() => setSupplierForm(false)}
@@ -628,108 +638,6 @@ export function PurchaseEditor({
         </Dialog>
       ) : null}
     </section>
-  );
-}
-function DraftPayments({ commands }: { commands: PurchaseCommands }) {
-  const { t } = useTranslation();
-  const key = 'payments';
-  const [rows, setRows] = useSyncedValue(
-    commands.view.payments,
-    () => commands.dirty(key),
-    JSON.stringify(commands.view.payments),
-  );
-  const change = (next: PurchaseAllocation[]) => {
-    setRows(next);
-    const valid = next.every(
-      (p) => priceSchema.safeParse(p.amount).success && BigInt(p.amount) > 0n,
-    );
-    commands.invalid(key, !valid);
-    if (valid) commands.edit(key, { kind: 'setPayments', payments: next });
-  };
-  useEffect(() => () => commands.invalid(key, false), [commands.invalid]);
-  return (
-    <fieldset className="space-y-3">
-      <legend className="text-sm font-medium">
-        {t('purchases.outgoingPayments')}
-      </legend>
-      {rows.map((p, i) => (
-        <div
-          key={i}
-          className="grid grid-cols-2 items-end gap-2 xl:grid-cols-4"
-        >
-          <FormField label={t('purchases.method')}>
-            <Select
-              value={p.method}
-              onChange={(e) =>
-                change(
-                  rows.map((r, j) =>
-                    j === i
-                      ? {
-                          ...r,
-                          method: e.target
-                            .value as PurchaseAllocation['method'],
-                        }
-                      : r,
-                  ),
-                )
-              }
-            >
-              {PAYMENT_METHODS.map((m) => (
-                <option key={m} value={m}>
-                  {t(`workspace.paymentMethod.${m}`)}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          <FormField
-            label={t('purchases.amount')}
-            error={
-              priceSchema.safeParse(p.amount).success && BigInt(p.amount) > 0n
-                ? undefined
-                : 'validation.invalidMoney'
-            }
-          >
-            <NumericInput
-              value={p.amount}
-              onValueChange={(v) =>
-                change(rows.map((r, j) => (j === i ? { ...r, amount: v } : r)))
-              }
-            />
-          </FormField>
-          <FormField label={t('purchases.reference')}>
-            <Input
-              value={p.reference ?? ''}
-              maxLength={100}
-              onChange={(e) =>
-                change(
-                  rows.map((r, j) =>
-                    j === i ? { ...r, reference: e.target.value || null } : r,
-                  ),
-                )
-              }
-            />
-          </FormField>
-          <Button
-            variant="outline"
-            onClick={() => change(rows.filter((_, j) => j !== i))}
-          >
-            {t('purchases.remove')}
-          </Button>
-        </div>
-      ))}
-      <Button
-        variant="outline"
-        disabled={rows.length >= 10}
-        onClick={() =>
-          change([
-            ...rows,
-            { method: 'CASH', amount: '', reference: null, note: null },
-          ])
-        }
-      >
-        {t('purchases.addPayment')}
-      </Button>
-    </fieldset>
   );
 }
 function CustomLine({
