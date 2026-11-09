@@ -64,6 +64,7 @@ export type SaveSupplierInput = z.input<typeof saveSupplierInputSchema>;
 export type SaveSupplierData = z.output<typeof saveSupplierInputSchema>;
 export type SearchSuppliersInput = z.infer<typeof searchSuppliersInputSchema>;
 export interface SupplierDto {
+  externalId: string | null;
   version: number;
   id: string;
   name: string;

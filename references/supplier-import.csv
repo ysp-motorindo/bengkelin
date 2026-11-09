@@ -1,0 +1,4 @@
+﻿external_id,name,phone_number,email,address,is_active,as_of_date,opening_balance
+SU-0003,LESTARI MOTOR,,,,true,2026-10-31,0
+SU-0002,PT. NUSANTARA SAKTI,,,,true,2026-10-31,0
+SU-0001,PT. YSP MOTORINDO PARTS,81386919191,,"Pergudangan mutiara kosambi 2 blok A10 no 15, Dadap, Banten, TANGERANG",true,2026-10-31,1284002694

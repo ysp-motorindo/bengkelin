@@ -268,6 +268,7 @@ export function Shell({
           className={purchaseWorkspace ? 'h-full min-h-0' : undefined}
         >
           <PurchasesScreen
+            role={session.role}
             active={view === 'purchases'}
             navigationSlot={navigationSlot}
             toolbarSlot={toolbarSlot}

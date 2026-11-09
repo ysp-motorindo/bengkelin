@@ -9,6 +9,7 @@ import type {
   CashierSession,
 } from '@/shared/contracts';
 const supplier = {
+  externalId: null,
   version: 1,
   id: 's',
   name: 'Supplier A',

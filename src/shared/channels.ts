@@ -163,9 +163,18 @@ export const CHANNELS = {
     get: 'bengkelin:customerReceivables:get',
     recordPayment: 'bengkelin:customerReceivables:recordPayment',
   },
+  supplierPayables: {
+    list: 'bengkelin:supplierPayables:list',
+    get: 'bengkelin:supplierPayables:get',
+    recordPayment: 'bengkelin:supplierPayables:recordPayment',
+  },
   customerTransfer: {
     previewImport: 'bengkelin:customerTransfer:previewImport',
     commitImport: 'bengkelin:customerTransfer:commitImport',
+  },
+  supplierTransfer: {
+    previewImport: 'bengkelin:supplierTransfer:previewImport',
+    commitImport: 'bengkelin:supplierTransfer:commitImport',
   },
   catalogTransfer: {
     previewImport: 'bengkelin:catalogTransfer:previewImport',

@@ -1,3 +1,13 @@
+import type {
+  SupplierImportPreviewDto,
+  SupplierImportSummaryDto,
+  CommitSupplierImportInput,
+} from './contracts';
+import type {
+  SupplierOpeningPage,
+  SupplierOpeningDetail,
+  RecordSupplierOpeningPaymentInput,
+} from './contracts';
 import type { PurchasePrintInput } from './contracts';
 import type {
   ReceivePurchaseData,
@@ -428,11 +438,26 @@ export interface BengkelinApi {
       input: RecordOpeningPaymentInput,
     ): Promise<Result<CustomerOpeningDetail>>;
   };
+  readonly supplierPayables: {
+    list(input: {
+      page?: import('./contracts').PageInput;
+    }): Promise<Result<SupplierOpeningPage>>;
+    get(input: { supplierId: string }): Promise<Result<SupplierOpeningDetail>>;
+    recordPayment(
+      input: RecordSupplierOpeningPaymentInput,
+    ): Promise<Result<SupplierOpeningDetail>>;
+  };
   readonly customerTransfer: {
     previewImport(): Promise<Result<CustomerImportPreviewDto>>;
     commitImport(
       input: CommitCustomerImportInput,
     ): Promise<Result<CustomerImportSummaryDto>>;
+  };
+  readonly supplierTransfer: {
+    previewImport(): Promise<Result<SupplierImportPreviewDto>>;
+    commitImport(
+      input: CommitSupplierImportInput,
+    ): Promise<Result<SupplierImportSummaryDto>>;
   };
   readonly catalogTransfer: {
     previewImport(): Promise<Result<ImportPreviewDto>>;

@@ -163,7 +163,7 @@
   "CUSTOMER_OPENING_NOT_FOUND": "Saldo awal pelanggan tidak ditemukan.",
   "SUPPLIER_REQUIRED": "Pilih pemasok sebelum mencatat faktur.",
   "SUPPLIER_INACTIVE": "Pemasok ini nonaktif. Pilih pemasok aktif.",
-  "SUPPLIER_NOT_FOUND": "Pemasok tidak ditemukan. Pilih pemasok lain.",
+  "SUPPLIER_NOT_FOUND": "Pelanggan tidak ditemukan.",
   "PURCHASE_NOT_FOUND": "Pembelian tidak ditemukan. Kembali ke riwayat dan muat ulang.",
   "PURCHASE_NOT_DRAFT": "Pembelian sudah tercatat. Buka di riwayat pembelian.",
   "PURCHASE_NOT_FINALIZED": "Catat faktur pemasok terlebih dahulu.",
@@ -179,5 +179,13 @@
   "REFUND_EXCEEDS_AMOUNT": "Pengembalian melebihi dana yang terutang dari pemasok. Muat ulang dan periksa saldo pengembalian.",
   "INVALID_PURCHASE_BALANCE": "Saldo pembelian tidak konsisten. Muat ulang faktur dan hubungi dukungan jika tetap terjadi.",
   "INVALID_CREDIT_QUANTITY": "Periksa jumlah kredit dan jumlah pembelian asal.",
-  "SUPPLIER_VERSION_CONFLICT": "Pemasok berubah saat Anda mengedit. Isian Anda tetap tersimpan di formulir. Muat data terbaru sebelum menyimpan lagi."
+  "SUPPLIER_VERSION_CONFLICT": "Pemasok berubah saat Anda mengedit. Isian Anda tetap tersimpan di formulir. Muat data terbaru sebelum menyimpan lagi.",
+  "SUPPLIER_NAME_OR_PHONE_REQUIRED": "Isi nama atau nomor telepon pemasok.",
+  "SUPPLIER_IMPORT_HEADER": "Gunakan enam kolom CSV pemasok yang didukung tanpa duplikasi.",
+  "SUPPLIER_IMPORT_INVALID_ROW": "Baris pemasok tidak valid. Periksa kolom, ID eksternal, panjang data, dan status true/false.",
+  "SUPPLIER_IMPORT_DUPLICATE_ID": "ID eksternal harus unik dalam CSV.",
+  "SUPPLIER_IMPORT_DUPLICATE_PHONES": "Konfirmasi nomor telepon duplikat sebelum mengimpor.",
+  "OPENING_IMPORT_UNKNOWN_SUPPLIER": "ID pemasok belum terdaftar. Impor master pemasok terlebih dahulu.",
+  "SUPPLIER_OPENING_NOT_FOUND": "Saldo awal pemasok tidak ditemukan.",
+  "SUPPLIER_IMPORT_OPENING": "Tanggal/jumlah saldo awal tidak valid atau berbeda dari saldo asli."
 }

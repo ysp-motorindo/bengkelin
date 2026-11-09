@@ -1,3 +1,4 @@
+import { SupplierOpeningBalances } from './SupplierOpeningBalances';
 import { createPortal } from 'react-dom';
 import { NavigationRow } from '@/renderer/features/shell/NavigationRow';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -27,17 +28,20 @@ import {
 type Tab = 'editor' | 'history' | 'receiving' | 'payables' | 'suppliers';
 export function PurchasesScreen({
   active,
+  role = 'CASHIER',
   navigationSlot,
   toolbarSlot,
   onWorkspaceActiveChange,
 }: {
   active: boolean;
+  role?: import('@/shared/contracts').Role;
   navigationSlot?: HTMLElement | null;
   toolbarSlot?: HTMLElement | null;
   onWorkspaceActiveChange?: (active: boolean) => void;
 }) {
   const { t } = useTranslation();
   const action = useAction();
+  const [payablesSource, setPayablesSource] = useState('PURCHASES');
   const [started, setStarted] = useState(false);
   const [tab, setTab] = useState<Tab>('editor');
   const [drafts, setDrafts] = useState<PurchaseDraftView[]>([]);
@@ -288,11 +292,26 @@ export function PurchasesScreen({
           }}
         />
       ) : null}
+      {tab === 'payables' && !detail && (
+        <FormField label={t('purchases.opening.source')}>
+          <Select
+            value={payablesSource}
+            onChange={(e) => setPayablesSource(e.target.value)}
+          >
+            <option value="PURCHASES">{t('purchases.history')}</option>
+            <option value="OPENING">{t('purchases.opening.title')}</option>
+          </Select>
+        </FormField>
+      )}
+      {tab === 'payables' && !detail && payablesSource === 'OPENING' && (
+        <SupplierOpeningBalances timezone={timezone} />
+      )}
       {!detail &&
+      (tab !== 'payables' || payablesSource === 'PURCHASES') &&
       (tab === 'history' || tab === 'receiving' || tab === 'payables') ? (
         <PurchaseList tab={tab} onOpen={(p) => setDetail(p)} />
       ) : null}
-      {tab === 'suppliers' ? <SuppliersScreen /> : null}
+      {tab === 'suppliers' ? <SuppliersScreen role={role} /> : null}
     </div>
   );
 }
